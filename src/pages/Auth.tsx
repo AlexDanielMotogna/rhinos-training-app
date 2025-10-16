@@ -12,7 +12,6 @@ import {
   MenuItem,
   Link,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { saveUser } from '../services/mock';
@@ -22,7 +21,6 @@ const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', '
 
 export const Auth: React.FC = () => {
   const { t } = useI18n();
-  const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(false);
 
   const [name, setName] = useState('');

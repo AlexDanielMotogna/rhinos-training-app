@@ -27,7 +27,7 @@ export const Attendance: React.FC = () => {
     setSessions(upcomingSessions);
 
     const savedCheckins = localStorage.getItem('checkins');
-    const checkinSet = savedCheckins ? new Set(JSON.parse(savedCheckins)) : new Set<string>();
+    const checkinSet = savedCheckins ? new Set<string>(JSON.parse(savedCheckins)) : new Set<string>();
     setCheckedIn(checkinSet);
 
     const rows = sessionsToAttendanceRows(upcomingSessions, checkinSet);

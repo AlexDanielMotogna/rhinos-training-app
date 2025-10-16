@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: Complete Rhinos Training App\n\n- React + TypeScript + Material UI application\n- Complete authentication with role system (Player/Coach)\n- Training management with coach plans and free sessions\n- Workout logging with set-by-set tracking\n- Attendance system with check-in functionality\n- Leaderboard with rankings and filtering\n- Notification system with bell and hard notifications\n- Profile page with metrics and projections\n- Admin panel for coaches with:\n  - Exercise catalog management (60+ exercises with YouTube videos)\n  - Team sessions management with date scheduling\n  - Training types management (Strength, Speed, CB Drills, etc.)\n  - Policies configuration (free sessions, compliance rules)\n- Full i18n support (English/German)\n- Mobile-responsive design\n- Info tooltips explaining exercise types\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []

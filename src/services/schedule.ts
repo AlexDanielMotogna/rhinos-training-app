@@ -7,7 +7,6 @@ import type { TeamSession, AttendanceRow, Weekday } from '../types/attendance';
 export function getUpcomingTeamSessions(): TeamSession[] {
   const sessions: TeamSession[] = [];
   const now = new Date();
-  const viennaTZ = 'Europe/Vienna';
 
   // Get next 14 days to ensure we capture at least 4 Tue/Thu
   for (let i = 0; i < 14; i++) {
