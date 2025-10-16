@@ -112,7 +112,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
       const mergedEntry: WorkoutEntry = {
         ...existing,
         setData: [...(existing.setData || []), ...renumberedNewSets],
-        sets: (existing.sets || 0) + (entry.sets || 0),
+        sets: existing.sets || entry.sets, // Keep the target sets (not sum)
         notes: entry.notes || existing.notes, // Use new notes if provided
         rpe: entry.rpe, // Always use the latest RPE
       };
@@ -275,6 +275,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
           <WorkoutForm
             exercise={exerciseForForm}
             initialData={existingEntryForForm}
+            targetSets={selectedExercise?.targetSets}
             onSave={handleSaveExercise}
             onCancel={() => setSelectedExerciseIndex(null)}
           />

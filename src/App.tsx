@@ -7,6 +7,7 @@ import { AppShell } from './components/AppShell';
 import { HardNotification } from './components/HardNotification';
 import { Auth } from './pages/Auth';
 import { MyTraining } from './pages/MyTraining';
+import { MyStats } from './pages/MyStats';
 import { Profile } from './pages/Profile';
 import { Attendance } from './pages/Attendance';
 import { Leaderboard } from './pages/Leaderboard';
@@ -81,6 +82,7 @@ function App() {
             {currentUser ? (
               <Route element={<AppShell><Outlet /></AppShell>}>
                 <Route path="/training" element={<MyTraining />} />
+                <Route path="/stats" element={<MyStats />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />

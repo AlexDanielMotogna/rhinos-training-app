@@ -114,7 +114,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
       const mergedEntry: WorkoutEntry = {
         ...existing,
         setData: [...(existing.setData || []), ...renumberedNewSets],
-        sets: (existing.sets || 0) + (entry.sets || 0),
+        sets: existing.sets || entry.sets, // Keep target sets (don't sum)
         notes: entry.notes || existing.notes,
         rpe: entry.rpe,
       };
@@ -133,7 +133,32 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
 
   const handleFinishWorkout = () => {
     const duration = Math.round((Date.now() - startTime) / 1000 / 60); // minutes
-    onFinish(completedEntries, workoutNotes, duration);
+
+    // Create entries for ALL exercises in the block, not just completed ones
+    const allEntries: WorkoutEntry[] = block.items.map((exercise, index) => {
+      // Check if this exercise has logged data
+      const existing = completedEntries.find(e => e.name === exercise.name);
+
+      if (existing) {
+        // Exercise was logged - use the logged data
+        return existing;
+      } else {
+        // Exercise was NOT logged - create empty entry with target sets
+        const targetSets = getTargetSets(index);
+        return {
+          exerciseId: exercise.id,
+          name: exercise.name,
+          category: exercise.category,
+          sets: targetSets || 0, // Target sets
+          setData: [], // No sets completed
+          source: 'coach' as const,
+          specific: false,
+          youtubeUrl: exercise.youtubeUrl,
+        };
+      }
+    });
+
+    onFinish(allEntries, workoutNotes, duration);
 
     // Clear persisted data after finishing
     if (persistenceKey) {

@@ -95,7 +95,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
       exerciseId: exercise?.id,
       name,
       category,
-      sets: validSets.length,
+      sets: targetSets || validSets.length, // Use targetSets if provided, otherwise use what was logged
       setData: validSets,
       rpe: rpe,
       source: 'player',
