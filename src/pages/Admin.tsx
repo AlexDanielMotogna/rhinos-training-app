@@ -700,6 +700,13 @@ export const Admin: React.FC = () => {
                           ))}
                         </Box>
                       )}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxHeight: 300,
+                          },
+                        },
+                      }}
                     >
                       {categories.map((cat) => (
                         <MenuItem key={cat} value={cat}>
@@ -707,6 +714,9 @@ export const Admin: React.FC = () => {
                         </MenuItem>
                       ))}
                     </Select>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Click outside or press ESC to close
+                    </Typography>
                   </FormControl>
                 </Box>
 
@@ -784,11 +794,21 @@ export const Admin: React.FC = () => {
                 label={t('admin.positions')}
                 onChange={(e) => setNewExercise({ ...newExercise, positionTags: e.target.value as Position[] })}
                 renderValue={(selected) => (selected as string[]).join(', ')}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                    },
+                  },
+                }}
               >
                 {positions.map((pos) => (
                   <MenuItem key={pos} value={pos}>{pos}</MenuItem>
                 ))}
               </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Click outside or press ESC to close
+              </Typography>
             </FormControl>
 
             <TextField
@@ -976,11 +996,21 @@ export const Admin: React.FC = () => {
                     ))}
                   </Box>
                 )}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                    },
+                  },
+                }}
               >
                 {positions.map((pos) => (
                   <MenuItem key={pos} value={pos}>{pos}</MenuItem>
                 ))}
               </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Click outside or press ESC to close
+              </Typography>
             </FormControl>
 
             <Box>
@@ -1070,6 +1100,13 @@ export const Admin: React.FC = () => {
                 label={t('admin.selectExercises')}
                 onChange={(e) => setCurrentBlock({ ...currentBlock, exerciseIds: e.target.value as string[] })}
                 renderValue={(selected) => `${selected.length} selected`}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                    },
+                  },
+                }}
               >
                 {globalCatalog.map((exercise) => (
                   <MenuItem key={exercise.id} value={exercise.id}>
@@ -1077,6 +1114,9 @@ export const Admin: React.FC = () => {
                   </MenuItem>
                 ))}
               </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Click outside or press ESC to close
+              </Typography>
             </FormControl>
 
             <Alert severity="info">
