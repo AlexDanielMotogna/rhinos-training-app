@@ -67,10 +67,9 @@ export function getTrainingTemplates(): TrainingTemplate[] {
     return JSON.parse(stored);
   }
 
-  // Initialize with default templates
-  const defaults = createDefaultTemplates();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-  return defaults;
+  // Return empty array - no hardcoded defaults
+  // Coaches must create their own templates
+  return [];
 }
 
 /**
@@ -190,83 +189,6 @@ export function toggleTemplateActive(id: string): void {
     template.updatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
   }
-}
-
-/**
- * Create default templates for demo purposes
- */
-function createDefaultTemplates(): TrainingTemplate[] {
-  const now = new Date().toISOString();
-
-  return [
-    // Strength & Conditioning for RB
-    {
-      id: 'template-1',
-      trainingTypeId: '1',
-      trainingTypeName: 'Strength & Conditioning',
-      positions: ['RB'],
-      durationWeeks: 8,
-      frequencyPerWeek: '2-3',
-      blocks: [
-        {
-          id: 'block-1-1',
-          title: 'Compound Lifts',
-          order: 1,
-          exercises: [
-            globalCatalog.find(e => e.id === 'ex-001')!, // Squat
-            globalCatalog.find(e => e.id === 'ex-002')!, // Bench Press
-            globalCatalog.find(e => e.id === 'ex-003')!, // Deadlift
-          ],
-        },
-        {
-          id: 'block-1-2',
-          title: 'Accessory Work',
-          order: 2,
-          exercises: [
-            globalCatalog.find(e => e.id === 'ex-009')!, // Lunges
-            globalCatalog.find(e => e.id === 'ex-008')!, // Dumbbell Rows
-            globalCatalog.find(e => e.id === 'ex-007')!, // Pull-ups
-          ],
-        },
-      ],
-      active: true,
-      createdAt: now,
-      updatedAt: now,
-    },
-    // Sprints/Speed for WR
-    {
-      id: 'template-2',
-      trainingTypeId: '2',
-      trainingTypeName: 'Sprints / Speed',
-      positions: ['WR'],
-      durationWeeks: 6,
-      frequencyPerWeek: '2',
-      blocks: [
-        {
-          id: 'block-2-1',
-          title: 'Speed Work',
-          order: 1,
-          exercises: [
-            globalCatalog.find(e => e.id === 'ex-044')!, // Form Running
-            globalCatalog.find(e => e.id === 'ex-014')!, // 10-Yard Sprint
-            globalCatalog.find(e => e.id === 'ex-015')!, // Flying 20s
-          ],
-        },
-        {
-          id: 'block-2-2',
-          title: 'Agility',
-          order: 2,
-          exercises: [
-            globalCatalog.find(e => e.id === 'ex-021')!, // 5-10-5 Shuttle
-            globalCatalog.find(e => e.id === 'ex-022')!, // L-Drill
-          ],
-        },
-      ],
-      active: true,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
 }
 
 /**
