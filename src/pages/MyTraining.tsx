@@ -16,7 +16,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import { useI18n } from '../i18n/I18nProvider';
 import { WorkoutBlock } from '../components/workout/WorkoutBlock';
-import { WorkoutLogDialog } from '../components/workout/WorkoutLogDialog';
+import { CoachBlockWorkoutDialog } from '../components/workout/CoachBlockWorkoutDialog';
 import { FreeSessionDialog } from '../components/workout/FreeSessionDialog';
 import { WorkoutHistory } from '../components/workout/WorkoutHistory';
 import { EditWorkoutDialog } from '../components/workout/EditWorkoutDialog';
@@ -25,10 +25,9 @@ import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
 import { getUser, getTemplatesForPosition, getTrainingTypes } from '../services/mock';
 import { getActiveAssignmentsForPlayer } from '../services/trainingBuilder';
-import { saveWorkoutLog, saveWorkoutEntry, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
+import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
-import type { TrainingTypeKey, PositionTemplate } from '../types/template';
-import type { Exercise } from '../types/exercise';
+import type { TrainingTypeKey, PositionTemplate, TemplateBlock } from '../types/template';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
 import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
 import { sanitizeYouTubeUrl } from '../services/yt';
@@ -45,8 +44,6 @@ export const MyTraining: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TrainingTypeKey>('strength_conditioning');
   const [template, setTemplate] = useState<PositionTemplate | null>(null);
   const [showFreeSession, setShowFreeSession] = useState(false);
-  const [showLogDialog, setShowLogDialog] = useState(false);
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [editWorkout, setEditWorkout] = useState<WorkoutLog | null>(null);
@@ -55,6 +52,8 @@ export const MyTraining: React.FC = () => {
   const [editingPlan, setEditingPlan] = useState<UserPlanTemplate | null>(null);
   const [startingPlan, setStartingPlan] = useState<UserPlanTemplate | null>(null);
   const [showStartWorkout, setShowStartWorkout] = useState(false);
+  const [selectedBlock, setSelectedBlock] = useState<TemplateBlock | null>(null);
+  const [showBlockWorkout, setShowBlockWorkout] = useState(false);
 
   const user = getUser();
   const trainingTypes = getTrainingTypes();
@@ -112,22 +111,6 @@ export const MyTraining: React.FC = () => {
       refreshWorkoutHistory();
       setShowFreeSession(false);
       setSuccessMessage(t('workout.sessionSaved'));
-      setTimeout(() => setSuccessMessage(''), 3000);
-    }
-  };
-
-  const handleLogWorkout = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
-    setShowLogDialog(true);
-  };
-
-  const handleSaveWorkoutLog = (entry: WorkoutEntry) => {
-    if (user) {
-      saveWorkoutEntry(user.id, entry);
-      refreshWorkoutHistory();
-      setShowLogDialog(false);
-      setSelectedExercise(null);
-      setSuccessMessage(t('workout.workoutLogged'));
       setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
@@ -234,6 +217,40 @@ export const MyTraining: React.FC = () => {
       refreshWorkoutHistory();
       setStartingPlan(null);
       setSuccessMessage(`Workout completed! Duration: ${duration} min`);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
+  // Coach block handlers
+  const handleStartBlock = (block: TemplateBlock) => {
+    setSelectedBlock(block);
+    setShowBlockWorkout(true);
+  };
+
+  const handleFinishBlockWorkout = (entries: WorkoutEntry[], notes: string, duration: number) => {
+    if (user && selectedBlock) {
+      const today = new Date().toISOString().split('T')[0];
+
+      const workoutLog = {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        date: today,
+        entries,
+        notes,
+        source: 'coach' as const,
+        blockName: selectedBlock.title,
+        trainingType: activeTab,
+        duration,
+        createdAt: new Date().toISOString(),
+      };
+
+      const allLogs = getWorkoutLogs();
+      allLogs.push(workoutLog);
+      localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
+
+      refreshWorkoutHistory();
+      setSelectedBlock(null);
+      setSuccessMessage(`Block completed! Duration: ${duration} min`);
       setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
@@ -443,8 +460,8 @@ export const MyTraining: React.FC = () => {
                           <WorkoutBlock
                             key={block.order}
                             block={block}
-                            showLogButtons={true}
-                            onLogWorkout={handleLogWorkout}
+                            showLogButtons={false}
+                            onStartBlock={handleStartBlock}
                             onVideoClick={handleVideoClick}
                             trainingType={activeTab}
                           />
@@ -474,16 +491,6 @@ export const MyTraining: React.FC = () => {
           )}
         </Box>
       )}
-
-      <WorkoutLogDialog
-        open={showLogDialog}
-        exercise={selectedExercise}
-        onClose={() => {
-          setShowLogDialog(false);
-          setSelectedExercise(null);
-        }}
-        onSave={handleSaveWorkoutLog}
-      />
 
       <FreeSessionDialog
         open={showFreeSession}
@@ -516,6 +523,18 @@ export const MyTraining: React.FC = () => {
           setStartingPlan(null);
         }}
         onFinish={handleFinishWorkout}
+      />
+
+      <CoachBlockWorkoutDialog
+        open={showBlockWorkout}
+        block={selectedBlock}
+        blockTitle={selectedBlock?.title || ''}
+        trainingType={activeTab}
+        onClose={() => {
+          setShowBlockWorkout(false);
+          setSelectedBlock(null);
+        }}
+        onFinish={handleFinishBlockWorkout}
       />
 
       <Dialog
