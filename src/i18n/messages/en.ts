@@ -249,6 +249,11 @@ export const messagesEN = {
   'training.programProgress': 'Program Progress',
   'training.completeTraining': 'Complete your training {{frequency}} times per week. Use the exercises below or add free sessions.',
   'training.noProgramAssigned': 'No training program assigned yet. Contact your coach to get started with a personalized training plan.',
+
+  // MyTraining session tabs
+  'training.mySessions': 'My Sessions',
+  'training.teamSessions': 'Team Sessions',
+  'training.teamSessionsComingSoon': 'Team sessions feature coming soon. Your coach will be able to schedule team training sessions here.',
 };
 
 export type MessageKey = keyof typeof messagesEN;

@@ -249,4 +249,9 @@ export const messagesDE = {
   'training.programProgress': 'Programmfortschritt',
   'training.completeTraining': 'Absolvieren Sie Ihr Training {{frequency}} Mal pro Woche. Verwenden Sie die unten stehenden Übungen oder fügen Sie freie Einheiten hinzu.',
   'training.noProgramAssigned': 'Noch kein Trainingsprogramm zugewiesen. Kontaktieren Sie Ihren Trainer, um mit einem personalisierten Trainingsplan zu beginnen.',
+
+  // MyTraining session tabs
+  'training.mySessions': 'Meine Sitzungen',
+  'training.teamSessions': 'Team-Sitzungen',
+  'training.teamSessionsComingSoon': 'Team-Sitzungsfunktion kommt bald. Ihr Trainer kann hier Team-Trainingseinheiten planen.',
 };
