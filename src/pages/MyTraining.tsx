@@ -8,6 +8,10 @@ import {
   Dialog,
   DialogContent,
   Alert,
+  LinearProgress,
+  Chip,
+  Card,
+  CardContent,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useI18n } from '../i18n/I18nProvider';
@@ -15,6 +19,7 @@ import { WorkoutBlock } from '../components/workout/WorkoutBlock';
 import { WorkoutLogDialog } from '../components/workout/WorkoutLogDialog';
 import { FreeSessionDialog } from '../components/workout/FreeSessionDialog';
 import { getUser, getTemplatesForPosition, getTrainingTypes } from '../services/mock';
+import { getActiveAssignmentsForPlayer } from '../services/trainingBuilder';
 import type { TrainingTypeKey, PositionTemplate } from '../types/template';
 import type { Exercise } from '../types/exercise';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
@@ -32,6 +37,23 @@ export const MyTraining: React.FC = () => {
 
   const user = getUser();
   const trainingTypes = getTrainingTypes();
+  const activeAssignments = user ? getActiveAssignmentsForPlayer(user.id) : [];
+
+  // Calculate program progress
+  const calculateProgress = (startDate: string, endDate: string) => {
+    const today = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const elapsedDays = Math.ceil((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+    const totalWeeks = Math.ceil(totalDays / 7);
+    const currentWeek = Math.min(Math.ceil(elapsedDays / 7), totalWeeks);
+    const progressPercent = Math.min(Math.max((elapsedDays / totalDays) * 100, 0), 100);
+
+    return { currentWeek, totalWeeks, progressPercent };
+  };
 
   useEffect(() => {
     if (user) {
@@ -106,6 +128,76 @@ export const MyTraining: React.FC = () => {
             />
           ))}
       </Tabs>
+
+      {/* Assigned Programs Section */}
+      {activeAssignments.length > 0 ? (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+            Your Assigned Programs
+          </Typography>
+
+          {activeAssignments.map((assignment) => {
+            const { currentWeek, totalWeeks, progressPercent } = calculateProgress(
+              assignment.startDate,
+              assignment.endDate
+            );
+
+            return (
+              <Card key={assignment.id} sx={{ mb: 2 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box>
+                      <Typography variant="h6" sx={{ mb: 0.5 }}>
+                        {assignment.template.trainingTypeName}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Chip
+                          label={`Week ${currentWeek} of ${totalWeeks}`}
+                          size="small"
+                          color="primary"
+                        />
+                        <Chip
+                          label={`${assignment.template.frequencyPerWeek}x per week`}
+                          size="small"
+                          variant="outlined"
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          {assignment.startDate} → {assignment.endDate}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ mb: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Program Progress
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {Math.round(progressPercent)}%
+                      </Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={progressPercent}
+                      sx={{ height: 8, borderRadius: 1 }}
+                    />
+                  </Box>
+
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    Complete your training {assignment.template.frequencyPerWeek} times per week.
+                    Use the exercises below or add free sessions.
+                  </Alert>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Box>
+      ) : (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          No training program assigned yet. Contact your coach to get started with a personalized training plan.
+        </Alert>
+      )}
 
       {template ? (
         <Box>
