@@ -172,7 +172,7 @@ export const MyTraining: React.FC = () => {
           </Alert>
 
           <WorkoutHistory
-            workouts={workoutHistory}
+            workouts={workoutHistory.filter(w => w.source === 'player')}
             onDelete={handleDeleteWorkout}
             onEdit={handleEditWorkout}
           />
@@ -291,6 +291,18 @@ export const MyTraining: React.FC = () => {
                   No training plan available for this type
                 </Alert>
               )}
+
+              {/* Workout History for Team Sessions */}
+              <Box sx={{ mt: 6 }}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
+                  Training History
+                </Typography>
+                <WorkoutHistory
+                  workouts={workoutHistory.filter(w => w.source === 'coach')}
+                  onDelete={handleDeleteWorkout}
+                  onEdit={handleEditWorkout}
+                />
+              </Box>
             </>
           ) : (
             <Alert severity="warning">

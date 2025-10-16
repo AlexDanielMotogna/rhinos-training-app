@@ -22,7 +22,7 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
   showLogButtons = false,
   trainingType = 'strength_conditioning'
 }) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // Get custom block info from coach configuration
   const blockInfo = getBlockInfo(block.title, trainingType);
@@ -38,7 +38,10 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
     return '';
   };
 
-  const infoMessage = blockInfo?.infoText || getDefaultInfoMessage();
+  // Use locale-specific text from blockInfo, or fallback to i18n
+  const infoMessage = blockInfo
+    ? (locale === 'de' ? blockInfo.infoText_de : blockInfo.infoText_en)
+    : getDefaultInfoMessage();
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>

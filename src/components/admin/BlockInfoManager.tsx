@@ -39,7 +39,8 @@ export const BlockInfoManager: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [formData, setFormData] = useState<BlockInfoPayload>({
     blockName: '',
-    infoText: '',
+    infoText_en: '',
+    infoText_de: '',
     trainingType: 'strength_conditioning',
   });
 
@@ -57,14 +58,16 @@ export const BlockInfoManager: React.FC = () => {
       setEditingInfo(info);
       setFormData({
         blockName: info.blockName,
-        infoText: info.infoText,
+        infoText_en: info.infoText_en,
+        infoText_de: info.infoText_de,
         trainingType: info.trainingType,
       });
     } else {
       setEditingInfo(null);
       setFormData({
         blockName: '',
-        infoText: '',
+        infoText_en: '',
+        infoText_de: '',
         trainingType: 'strength_conditioning',
       });
     }
@@ -142,7 +145,10 @@ export const BlockInfoManager: React.FC = () => {
                           : t('training.sprints')}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        {info.infoText}
+                        <strong>EN:</strong> {info.infoText_en.substring(0, 80)}...
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        <strong>DE:</strong> {info.infoText_de.substring(0, 80)}...
                       </Typography>
                     </Box>
                     <Box>
@@ -203,20 +209,31 @@ export const BlockInfoManager: React.FC = () => {
             </FormControl>
 
             <TextField
-              label={t('admin.infoText')}
-              value={formData.infoText}
-              onChange={(e) => setFormData({ ...formData, infoText: e.target.value })}
+              label={`${t('admin.infoText')} (English)`}
+              value={formData.infoText_en}
+              onChange={(e) => setFormData({ ...formData, infoText_en: e.target.value })}
               fullWidth
               required
               multiline
               rows={4}
-              placeholder={t('admin.blockInfoPlaceholder')}
-              helperText="This text will appear in the info tooltip (ⓘ) next to the block title"
+              placeholder="Enter information in English..."
+              helperText="This text will appear in the info tooltip (ⓘ) for English users"
+            />
+
+            <TextField
+              label={`${t('admin.infoText')} (Deutsch)`}
+              value={formData.infoText_de}
+              onChange={(e) => setFormData({ ...formData, infoText_de: e.target.value })}
+              fullWidth
+              required
+              multiline
+              rows={4}
+              placeholder="Informationen auf Deutsch eingeben..."
+              helperText="This text will appear in the info tooltip (ⓘ) for German users"
             />
 
             <Alert severity="info">
-              This information will be displayed to players when they click the info icon (ⓘ) next
-              to the block title in their training plan.
+              <strong>Multi-language ready:</strong> When integrated with a database, these fields will be stored as separate columns (infoText_en, infoText_de), making it easy to add more languages later.
             </Alert>
           </Box>
         </DialogContent>
@@ -225,7 +242,7 @@ export const BlockInfoManager: React.FC = () => {
           <Button
             onClick={handleSave}
             variant="contained"
-            disabled={!formData.blockName || !formData.infoText}
+            disabled={!formData.blockName || !formData.infoText_en || !formData.infoText_de}
           >
             {t('common.save')}
           </Button>

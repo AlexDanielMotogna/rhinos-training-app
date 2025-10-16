@@ -43,7 +43,8 @@ export function saveBlockInfo(payload: BlockInfoPayload): BlockInfo {
     // Update existing
     const updated: BlockInfo = {
       ...allInfo[existingIndex],
-      infoText: payload.infoText,
+      infoText_en: payload.infoText_en,
+      infoText_de: payload.infoText_de,
       updatedAt: new Date().toISOString(),
     };
     allInfo[existingIndex] = updated;
@@ -85,17 +86,19 @@ export function initializeDefaultBlockInfo(): void {
   const existing = getAllBlockInfo();
 
   if (existing.length === 0) {
-    // Add default info for common blocks
+    // Add default info for common blocks (multi-language)
     const defaults: BlockInfoPayload[] = [
       {
         blockName: 'Compound Lifts',
         trainingType: 'strength_conditioning',
-        infoText: 'Multi-joint exercises that work multiple muscle groups simultaneously. These are the foundation of your strength program (e.g., Squat, Bench Press, Deadlift). Use heavier weights and focus on proper form.',
+        infoText_en: 'Multi-joint exercises that work multiple muscle groups simultaneously. These are the foundation of your strength program (e.g., Squat, Bench Press, Deadlift). Use heavier weights and focus on proper form.',
+        infoText_de: 'Mehrgelenkübungen, die mehrere Muskelgruppen gleichzeitig trainieren. Diese bilden die Grundlage Ihres Kraftprogramms (z. B. Kniebeuge, Bankdrücken, Kreuzheben). Verwenden Sie schwerere Gewichte und konzentrieren Sie sich auf die richtige Form.',
       },
       {
         blockName: 'Accessory Work',
         trainingType: 'strength_conditioning',
-        infoText: 'Supplementary exercises that target specific muscle groups to support the main lifts. These help prevent injuries, correct muscle imbalances, and improve overall performance (e.g., Lunges, Rows, Pull-ups). Use moderate weights with controlled movements.',
+        infoText_en: 'Supplementary exercises that target specific muscle groups to support the main lifts. These help prevent injuries, correct muscle imbalances, and improve overall performance (e.g., Lunges, Rows, Pull-ups). Use moderate weights with controlled movements.',
+        infoText_de: 'Ergänzende Übungen, die spezifische Muskelgruppen ansprechen, um die Hauptübungen zu unterstützen. Diese helfen Verletzungen vorzubeugen, muskuläre Dysbalancen zu korrigieren und die Gesamtleistung zu verbessern (z. B. Ausfallschritte, Rudern, Klimmzüge). Verwenden Sie moderate Gewichte mit kontrollierten Bewegungen.',
       },
     ];
 

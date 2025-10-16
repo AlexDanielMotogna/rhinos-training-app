@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -8,10 +8,15 @@ import {
   IconButton,
   Alert,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { WorkoutLog } from '../../services/workoutLog';
 
@@ -21,15 +26,41 @@ interface WorkoutHistoryProps {
   onEdit?: (workout: WorkoutLog) => void;
 }
 
+type DateFilter = 'all' | '7days' | '30days' | '90days';
+
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   workouts,
   onDelete,
   onEdit,
 }) => {
   const { t } = useI18n();
+  const [dateFilter, setDateFilter] = useState<DateFilter>('30days');
+
+  // Filter workouts by date range
+  const filterWorkoutsByDate = (workouts: WorkoutLog[]): WorkoutLog[] => {
+    if (dateFilter === 'all') return workouts;
+
+    const now = new Date();
+    const daysMap: Record<DateFilter, number> = {
+      '7days': 7,
+      '30days': 30,
+      '90days': 90,
+      'all': 0,
+    };
+
+    const cutoffDate = new Date(now);
+    cutoffDate.setDate(cutoffDate.getDate() - daysMap[dateFilter]);
+
+    return workouts.filter(workout => {
+      const workoutDate = new Date(workout.date);
+      return workoutDate >= cutoffDate;
+    });
+  };
+
+  const filteredWorkouts = filterWorkoutsByDate(workouts);
 
   // Group workouts by date
-  const groupedByDate = workouts.reduce((acc, workout) => {
+  const groupedByDate = filteredWorkouts.reduce((acc, workout) => {
     const date = workout.date;
     if (!acc[date]) {
       acc[date] = [];
@@ -73,7 +104,33 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
 
   return (
     <Box>
-      {sortedDates.map((date) => (
+      {/* Filter Controls */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        <FilterListIcon color="action" />
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Time Period</InputLabel>
+          <Select
+            value={dateFilter}
+            label="Time Period"
+            onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+          >
+            <MenuItem value="7days">Last 7 Days</MenuItem>
+            <MenuItem value="30days">Last 30 Days</MenuItem>
+            <MenuItem value="90days">Last 90 Days</MenuItem>
+            <MenuItem value="all">All Time</MenuItem>
+          </Select>
+        </FormControl>
+        <Typography variant="body2" color="text.secondary">
+          {filteredWorkouts.length} workout{filteredWorkouts.length !== 1 ? 's' : ''} found
+        </Typography>
+      </Box>
+
+      {filteredWorkouts.length === 0 ? (
+        <Alert severity="info">
+          No workouts found in this time period. Try selecting a different filter.
+        </Alert>
+      ) : (
+        sortedDates.map((date) => (
         <Box key={date} sx={{ mb: 4 }}>
           {/* Date Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -192,7 +249,8 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
             </Card>
           ))}
         </Box>
-      ))}
+      ))
+      )}
     </Box>
   );
 };
