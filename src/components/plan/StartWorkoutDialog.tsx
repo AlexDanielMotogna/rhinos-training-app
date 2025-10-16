@@ -92,7 +92,40 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
   const selectedExercise = selectedExerciseIndex !== null ? plan.exercises[selectedExerciseIndex] : null;
 
   const handleSaveExercise = (entry: WorkoutEntry) => {
-    setCompletedEntries([...completedEntries, entry]);
+    const exerciseName = selectedExercise?.name;
+    if (!exerciseName) return;
+
+    // Find existing entry for this exercise
+    const existingIndex = completedEntries.findIndex(e => e.name === exerciseName);
+
+    if (existingIndex >= 0) {
+      // Merge sets with existing entry
+      const existing = completedEntries[existingIndex];
+
+      // Renumber new sets to continue from where we left off
+      const lastSetNumber = Math.max(...(existing.setData?.map(s => s.setNumber) || [0]));
+      const renumberedNewSets = entry.setData?.map((set, idx) => ({
+        ...set,
+        setNumber: lastSetNumber + idx + 1
+      })) || [];
+
+      const mergedEntry: WorkoutEntry = {
+        ...existing,
+        setData: [...(existing.setData || []), ...renumberedNewSets],
+        sets: (existing.sets || 0) + (entry.sets || 0),
+        notes: entry.notes || existing.notes, // Use new notes if provided
+        rpe: entry.rpe, // Always use the latest RPE
+      };
+
+      // Update the existing entry
+      const newEntries = [...completedEntries];
+      newEntries[existingIndex] = mergedEntry;
+      setCompletedEntries(newEntries);
+    } else {
+      // First time logging this exercise
+      setCompletedEntries([...completedEntries, entry]);
+    }
+
     setSelectedExerciseIndex(null); // Close form after saving
   };
 
@@ -111,10 +144,16 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
     setSelectedExerciseIndex(index);
   };
 
-  const isExerciseCompleted = (index: number): boolean => {
-    return completedEntries.some(entry =>
-      entry.name === plan.exercises[index].name
-    );
+  // Get the logged entry for a specific exercise (if any)
+  const getExerciseEntry = (index: number): WorkoutEntry | undefined => {
+    const exerciseName = plan.exercises[index].name;
+    return completedEntries.find(entry => entry.name === exerciseName);
+  };
+
+  // Get how many sets have been logged for an exercise
+  const getCompletedSetsCount = (index: number): number => {
+    const entry = getExerciseEntry(index);
+    return entry?.setData?.length || 0;
   };
 
   // Convert PlanExercise to Exercise format for WorkoutForm
@@ -149,42 +188,68 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
               Select an exercise to log:
             </Typography>
             <List>
-              {plan.exercises.map((exercise, index) => (
-                <ListItem
-                  key={index}
-                  disablePadding
-                  sx={{ mb: 1 }}
-                >
-                  <ListItemButton
-                    onClick={() => handleSelectExercise(index)}
-                    sx={{
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                      },
-                    }}
+              {plan.exercises.map((exercise, index) => {
+                const completedSets = getCompletedSetsCount(index);
+                const targetSets = exercise.targetSets;
+                const isCompleted = completedSets >= targetSets;
+
+                return (
+                  <ListItem
+                    key={index}
+                    disablePadding
+                    sx={{ mb: 1 }}
                   >
-                    <ListItemIcon>
-                      {isExerciseCompleted(index) ? (
-                        <CheckCircleIcon color="success" />
-                      ) : (
-                        <RadioButtonUncheckedIcon color="action" />
-                      )}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={exercise.name}
-                      secondary={
-                        <>
-                          {exercise.targetSets} sets × {exercise.targetReps || '-'} reps
-                          {exercise.targetDurationSec && ` • ${exercise.targetDurationSec} min`}
-                        </>
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
+                    <ListItemButton
+                      onClick={() => handleSelectExercise(index)}
+                      sx={{
+                        border: 1,
+                        borderColor: isCompleted ? 'success.main' : 'divider',
+                        borderRadius: 1,
+                        bgcolor: isCompleted ? 'success.lighter' : 'transparent',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                        },
+                      }}
+                    >
+                      <ListItemIcon>
+                        {isCompleted ? (
+                          <CheckCircleIcon color="success" />
+                        ) : completedSets > 0 ? (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              width: 24,
+                              height: 24,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '50%',
+                              bgcolor: 'primary.main',
+                              color: 'white',
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {completedSets}
+                          </Typography>
+                        ) : (
+                          <RadioButtonUncheckedIcon color="action" />
+                        )}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={exercise.name}
+                        secondary={
+                          <>
+                            {completedSets > 0 && `${completedSets}/${targetSets} sets • `}
+                            Target: {targetSets} × {exercise.targetReps || '-'} reps
+                            {exercise.targetDurationSec && ` • ${exercise.targetDurationSec}s`}
+                          </>
+                        }
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
             </List>
 
             <Divider sx={{ my: 3 }} />
