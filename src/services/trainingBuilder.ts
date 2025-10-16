@@ -1,4 +1,4 @@
-import type { TrainingTemplate, TrainingTemplateDTO, TrainingType } from '../types/trainingBuilder';
+import type { TrainingTemplate, TrainingTemplateDTO, TrainingType, TrainingAssignment, TrainingAssignmentDTO } from '../types/trainingBuilder';
 import type { Position, Exercise } from '../types/exercise';
 import { globalCatalog } from './catalog';
 
@@ -8,6 +8,7 @@ import { globalCatalog } from './catalog';
  */
 const STORAGE_KEY = 'training_templates';
 const TRAINING_TYPES_KEY = 'training_types';
+const ASSIGNMENTS_KEY = 'training_assignments';
 
 /**
  * Get all training types
@@ -105,6 +106,8 @@ export function createTrainingTemplate(dto: TrainingTemplateDTO): TrainingTempla
     trainingTypeId: dto.trainingTypeId,
     trainingTypeName: trainingType.nameEN,
     positions: dto.positions,
+    durationWeeks: dto.durationWeeks,
+    frequencyPerWeek: dto.frequencyPerWeek,
     blocks: dto.blocks.map(blockDto => ({
       id: `block-${Date.now()}-${Math.random()}`,
       title: blockDto.title,
@@ -147,6 +150,8 @@ export function updateTrainingTemplate(id: string, dto: TrainingTemplateDTO): Tr
     trainingTypeId: dto.trainingTypeId,
     trainingTypeName: trainingType.nameEN,
     positions: dto.positions,
+    durationWeeks: dto.durationWeeks,
+    frequencyPerWeek: dto.frequencyPerWeek,
     blocks: dto.blocks.map(blockDto => ({
       id: `block-${Date.now()}-${Math.random()}`,
       title: blockDto.title,
@@ -200,6 +205,8 @@ function createDefaultTemplates(): TrainingTemplate[] {
       trainingTypeId: '1',
       trainingTypeName: 'Strength & Conditioning',
       positions: ['RB'],
+      durationWeeks: 8,
+      frequencyPerWeek: '2-3',
       blocks: [
         {
           id: 'block-1-1',
@@ -232,6 +239,8 @@ function createDefaultTemplates(): TrainingTemplate[] {
       trainingTypeId: '2',
       trainingTypeName: 'Sprints / Speed',
       positions: ['WR'],
+      durationWeeks: 6,
+      frequencyPerWeek: '2',
       blocks: [
         {
           id: 'block-2-1',
@@ -277,4 +286,94 @@ export function getTemplatesForPosition(position: Position): { [trainingTypeKey:
   });
 
   return result;
+}
+
+/**
+ * ======================================
+ * TRAINING ASSIGNMENTS
+ * ======================================
+ */
+
+/**
+ * Get all training assignments
+ */
+export function getTrainingAssignments(): TrainingAssignment[] {
+  const stored = localStorage.getItem(ASSIGNMENTS_KEY);
+  return stored ? JSON.parse(stored) : [];
+}
+
+/**
+ * Create a new training assignment
+ */
+export function createTrainingAssignment(dto: TrainingAssignmentDTO, coachId: string): TrainingAssignment {
+  const assignments = getTrainingAssignments();
+  const template = getTrainingTemplates().find(t => t.id === dto.templateId);
+
+  if (!template) {
+    throw new Error('Template not found');
+  }
+
+  // Calculate end date based on template duration
+  const startDate = new Date(dto.startDate);
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + (template.durationWeeks * 7));
+
+  const newAssignment: TrainingAssignment = {
+    id: Date.now().toString(),
+    templateId: dto.templateId,
+    playerIds: dto.playerIds,
+    startDate: dto.startDate,
+    endDate: endDate.toISOString().split('T')[0],
+    active: true,
+    createdAt: new Date().toISOString(),
+    createdBy: coachId,
+  };
+
+  assignments.push(newAssignment);
+  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
+
+  return newAssignment;
+}
+
+/**
+ * Get active assignments for a specific player
+ */
+export function getActiveAssignmentsForPlayer(playerId: string): Array<TrainingAssignment & { template: TrainingTemplate }> {
+  const assignments = getTrainingAssignments();
+  const templates = getTrainingTemplates();
+  const today = new Date().toISOString().split('T')[0];
+
+  return assignments
+    .filter(a =>
+      a.active &&
+      a.playerIds.includes(playerId) &&
+      a.startDate <= today &&
+      a.endDate >= today
+    )
+    .map(assignment => {
+      const template = templates.find(t => t.id === assignment.templateId)!;
+      return { ...assignment, template };
+    });
+}
+
+/**
+ * Deactivate an assignment
+ */
+export function deactivateAssignment(id: string): void {
+  const assignments = getTrainingAssignments();
+  const assignment = assignments.find(a => a.id === id);
+
+  if (assignment) {
+    assignment.active = false;
+    localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
+  }
+}
+
+/**
+ * Delete an assignment
+ */
+export function deleteAssignment(id: string): void {
+  const assignments = getTrainingAssignments();
+  const filtered = assignments.filter(a => a.id !== id);
+  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(filtered));
 }

@@ -123,10 +123,14 @@ export const Admin: React.FC = () => {
   const [newTemplateData, setNewTemplateData] = useState<{
     trainingTypeId: string;
     positions: Position[];
+    durationWeeks: number;
+    frequencyPerWeek: string;
     blocks: { title: string; order: number; exerciseIds: string[] }[];
   }>({
     trainingTypeId: '',
     positions: ['RB'],
+    durationWeeks: 8,
+    frequencyPerWeek: '2-3',
     blocks: [],
   });
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
@@ -255,6 +259,8 @@ export const Admin: React.FC = () => {
       setNewTemplateData({
         trainingTypeId: template.trainingTypeId,
         positions: template.positions,
+        durationWeeks: template.durationWeeks,
+        frequencyPerWeek: template.frequencyPerWeek,
         blocks: template.blocks.map(b => ({
           title: b.title,
           order: b.order,
@@ -266,6 +272,8 @@ export const Admin: React.FC = () => {
       setNewTemplateData({
         trainingTypeId: trainingTypes[0]?.id || '',
         positions: ['RB'],
+        durationWeeks: 8,
+        frequencyPerWeek: '2-3',
         blocks: [],
       });
     }
@@ -383,6 +391,10 @@ export const Admin: React.FC = () => {
                             color={template.active ? 'success' : 'default'}
                           />
                         </Box>
+
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          {template.durationWeeks} weeks • {template.frequencyPerWeek}x/week
+                        </Typography>
 
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                           {template.blocks.length} block(s)
@@ -1012,6 +1024,27 @@ export const Admin: React.FC = () => {
                 Click outside or press ESC to close
               </Typography>
             </FormControl>
+
+            <TextField
+              label="Program Duration (weeks)"
+              type="number"
+              value={newTemplateData.durationWeeks}
+              onChange={(e) => setNewTemplateData({ ...newTemplateData, durationWeeks: Number(e.target.value) })}
+              fullWidth
+              required
+              inputProps={{ min: 1, max: 52 }}
+              helperText="How many weeks should this program last?"
+            />
+
+            <TextField
+              label="Frequency (times per week)"
+              value={newTemplateData.frequencyPerWeek}
+              onChange={(e) => setNewTemplateData({ ...newTemplateData, frequencyPerWeek: e.target.value })}
+              fullWidth
+              required
+              placeholder="2-3, 3, 4-5, etc."
+              helperText="Recommended training frequency per week (e.g., '2-3' or '3')"
+            />
 
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

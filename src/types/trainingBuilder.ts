@@ -21,6 +21,8 @@ export interface TrainingTemplate {
   trainingTypeName: string; // Denormalized for display
   positions: Position[]; // Which positions this template is for (can be multiple)
   blocks: TrainingBlock[]; // Ordered blocks
+  durationWeeks: number; // Program duration in weeks (e.g., 8)
+  frequencyPerWeek: string; // Recommended frequency (e.g., "2-3")
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -32,11 +34,36 @@ export interface TrainingTemplate {
 export interface TrainingTemplateDTO {
   trainingTypeId: string;
   positions: Position[]; // Multiple positions can share the same template
+  durationWeeks: number; // Program duration in weeks
+  frequencyPerWeek: string; // Recommended frequency (e.g., "2-3", "3", "4-5")
   blocks: {
     title: string;
     order: number;
     exerciseIds: string[];
   }[];
+}
+
+/**
+ * Training Assignment - When a coach assigns a template to players with specific dates
+ */
+export interface TrainingAssignment {
+  id: string;
+  templateId: string; // FK to TrainingTemplate
+  playerIds: string[]; // All players assigned to this program
+  startDate: string; // ISO date string (e.g., "2025-10-16")
+  endDate: string; // ISO date string (calculated from startDate + durationWeeks)
+  active: boolean;
+  createdAt: string;
+  createdBy: string; // Coach who assigned it
+}
+
+/**
+ * DTO for creating a training assignment
+ */
+export interface TrainingAssignmentDTO {
+  templateId: string;
+  playerIds: string[];
+  startDate: string; // ISO date string
 }
 
 /**
