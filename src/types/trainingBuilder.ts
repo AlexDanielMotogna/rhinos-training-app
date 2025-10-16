@@ -29,6 +29,14 @@ export interface TrainingTemplate {
 }
 
 /**
+ * Exercise configuration within a block
+ */
+export interface ExerciseConfig {
+  exerciseId: string;
+  sets?: number; // Target sets for this specific exercise
+}
+
+/**
  * DTO for creating/editing a training template
  */
 export interface TrainingTemplateDTO {
@@ -40,6 +48,8 @@ export interface TrainingTemplateDTO {
     title: string;
     order: number;
     exerciseIds: string[];
+    exerciseConfigs?: ExerciseConfig[]; // Configuration for each exercise (sets, etc.)
+    globalSets?: number; // Global sets that apply to all exercises in the block
   }[];
 }
 

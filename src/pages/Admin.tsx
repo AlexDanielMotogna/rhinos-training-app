@@ -133,7 +133,13 @@ export const Admin: React.FC = () => {
     positions: Position[];
     durationWeeks: number;
     frequencyPerWeek: string;
-    blocks: { title: string; order: number; exerciseIds: string[] }[];
+    blocks: {
+      title: string;
+      order: number;
+      exerciseIds: string[];
+      globalSets?: number;
+      exerciseConfigs?: { exerciseId: string; sets?: number }[];
+    }[];
   }>({
     trainingTypeId: '',
     positions: ['RB'],
@@ -143,9 +149,16 @@ export const Admin: React.FC = () => {
   });
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
-  const [currentBlock, setCurrentBlock] = useState<{ title: string; exerciseIds: string[] }>({
+  const [currentBlock, setCurrentBlock] = useState<{
+    title: string;
+    exerciseIds: string[];
+    globalSets?: number;
+    exerciseConfigs?: { exerciseId: string; sets?: number }[];
+  }>({
     title: '',
     exerciseIds: [],
+    globalSets: undefined,
+    exerciseConfigs: [],
   });
 
   // Assignment State
@@ -289,6 +302,8 @@ export const Admin: React.FC = () => {
           title: b.title,
           order: b.order,
           exerciseIds: b.exercises.map(ex => ex.id),
+          globalSets: (b as any).globalSets,
+          exerciseConfigs: (b as any).exerciseConfigs,
         })) || [],
       });
     } else {
@@ -324,14 +339,24 @@ export const Admin: React.FC = () => {
 
   const handleAddBlock = () => {
     setEditingBlockIndex(null);
-    setCurrentBlock({ title: '', exerciseIds: [] });
+    setCurrentBlock({
+      title: '',
+      exerciseIds: [],
+      globalSets: undefined,
+      exerciseConfigs: [],
+    });
     setBlockDialogOpen(true);
   };
 
   const handleEditBlock = (index: number) => {
     setEditingBlockIndex(index);
     const block = newTemplateData.blocks[index];
-    setCurrentBlock({ title: block.title, exerciseIds: block.exerciseIds });
+    setCurrentBlock({
+      title: block.title,
+      exerciseIds: block.exerciseIds,
+      globalSets: block.globalSets,
+      exerciseConfigs: block.exerciseConfigs || [],
+    });
     setBlockDialogOpen(true);
   };
 
@@ -343,6 +368,8 @@ export const Admin: React.FC = () => {
         ...updatedBlocks[editingBlockIndex],
         title: currentBlock.title,
         exerciseIds: currentBlock.exerciseIds,
+        globalSets: currentBlock.globalSets,
+        exerciseConfigs: currentBlock.exerciseConfigs,
       };
       setNewTemplateData({
         ...newTemplateData,
@@ -354,6 +381,8 @@ export const Admin: React.FC = () => {
         title: currentBlock.title,
         order: newTemplateData.blocks.length + 1,
         exerciseIds: currentBlock.exerciseIds,
+        globalSets: currentBlock.globalSets,
+        exerciseConfigs: currentBlock.exerciseConfigs,
       };
       setNewTemplateData({
         ...newTemplateData,
@@ -1342,7 +1371,17 @@ export const Admin: React.FC = () => {
                 multiple
                 value={currentBlock.exerciseIds}
                 label={t('admin.selectExercises')}
-                onChange={(e) => setCurrentBlock({ ...currentBlock, exerciseIds: e.target.value as string[] })}
+                onChange={(e) => {
+                  const newExerciseIds = e.target.value as string[];
+                  setCurrentBlock({ ...currentBlock, exerciseIds: newExerciseIds });
+
+                  // Initialize exerciseConfigs for new exercises
+                  const newConfigs = newExerciseIds.map(exId => {
+                    const existing = currentBlock.exerciseConfigs?.find(c => c.exerciseId === exId);
+                    return existing || { exerciseId: exId, sets: undefined };
+                  });
+                  setCurrentBlock({ ...currentBlock, exerciseIds: newExerciseIds, exerciseConfigs: newConfigs });
+                }}
                 renderValue={(selected) => `${selected.length} selected`}
                 MenuProps={{
                   PaperProps: {
@@ -1363,8 +1402,69 @@ export const Admin: React.FC = () => {
               </Typography>
             </FormControl>
 
+            {currentBlock.exerciseIds.length > 0 && (
+              <>
+                <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mt: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                    Sets Configuration
+                  </Typography>
+
+                  <TextField
+                    label="Global Sets (apply to all exercises)"
+                    type="number"
+                    value={currentBlock.globalSets || ''}
+                    onChange={(e) => setCurrentBlock({ ...currentBlock, globalSets: e.target.value ? Number(e.target.value) : undefined })}
+                    fullWidth
+                    inputProps={{ min: 1, max: 10 }}
+                    helperText="Leave empty if you want to set sets individually per exercise"
+                    sx={{ mb: 2 }}
+                  />
+
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Or set individual sets per exercise (overrides global):
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1 }}>
+                    {currentBlock.exerciseIds.map((exerciseId) => {
+                      const exercise = getFilteredExercises(newTemplateData.trainingTypeId).find(ex => ex.id === exerciseId);
+                      const config = currentBlock.exerciseConfigs?.find(c => c.exerciseId === exerciseId);
+
+                      return (
+                        <Box key={exerciseId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Typography variant="body2" sx={{ flex: 1, fontSize: '0.875rem' }}>
+                            {exercise?.name}
+                          </Typography>
+                          <TextField
+                            label="Sets"
+                            type="number"
+                            value={config?.sets || ''}
+                            onChange={(e) => {
+                              const newConfigs = [...(currentBlock.exerciseConfigs || [])];
+                              const configIndex = newConfigs.findIndex(c => c.exerciseId === exerciseId);
+                              const newSets = e.target.value ? Number(e.target.value) : undefined;
+
+                              if (configIndex >= 0) {
+                                newConfigs[configIndex] = { ...newConfigs[configIndex], sets: newSets };
+                              } else {
+                                newConfigs.push({ exerciseId, sets: newSets });
+                              }
+
+                              setCurrentBlock({ ...currentBlock, exerciseConfigs: newConfigs });
+                            }}
+                            size="small"
+                            inputProps={{ min: 1, max: 10 }}
+                            sx={{ width: 100 }}
+                          />
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              </>
+            )}
+
             <Alert severity="info">
-              Select exercises that belong to this block. You can select multiple exercises.
+              Select exercises that belong to this block. You can set a global number of sets or configure each exercise individually.
             </Alert>
           </Box>
         </DialogContent>
