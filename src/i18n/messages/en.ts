@@ -488,6 +488,11 @@ export const messagesEN = {
   'reports.compliance': 'Compliance',
   'reports.topImprovements': 'Top Improvements',
   'reports.needsAttention': 'Needs Attention',
+  'reports.filters.all': 'All Players',
+  'reports.filters.offense': 'Offense',
+  'reports.filters.defense': 'Defense',
+  'reports.filters.position': 'Position',
+  'reports.filters.allPositions': 'All Positions',
 };
 
 export type MessageKey = keyof typeof messagesEN;

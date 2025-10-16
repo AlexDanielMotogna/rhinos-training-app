@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -16,6 +16,10 @@ import {
   TableRow,
   Chip,
   LinearProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
@@ -26,10 +30,20 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useI18n } from '../i18n/I18nProvider';
 import { generateDailyReport, generateWeeklyReport, generateMonthlyReport, getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from '../services/reports';
 import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod } from '../types/report';
+import type { Position } from '../types/exercise';
+
+type UnitFilter = 'all' | 'offense' | 'defense';
+
+// Position categories
+const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OL'];
+const DEFENSE_POSITIONS: Position[] = ['DL', 'LB', 'DB'];
+const ALL_POSITIONS: Position[] = [...OFFENSE_POSITIONS, ...DEFENSE_POSITIONS, 'K/P'];
 
 export const Reports: React.FC = () => {
   const { t } = useI18n();
   const [period, setPeriod] = useState<ReportPeriod>('day');
+  const [unitFilter, setUnitFilter] = useState<UnitFilter>('all');
+  const [positionFilter, setPositionFilter] = useState<Position | 'all'>('all');
   const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
@@ -41,9 +55,66 @@ export const Reports: React.FC = () => {
     setMonthlyReport(generateMonthlyReport());
   }, []);
 
+  // Reset position filter when unit filter changes
+  useEffect(() => {
+    setPositionFilter('all');
+  }, [unitFilter]);
+
   const currentReport = period === 'day' ? dailyReport : period === 'week' ? weeklyReport : monthlyReport;
 
-  if (!currentReport) {
+  // Get available positions based on unit filter
+  const availablePositions = useMemo(() => {
+    if (unitFilter === 'offense') return OFFENSE_POSITIONS;
+    if (unitFilter === 'defense') return DEFENSE_POSITIONS;
+    return ALL_POSITIONS;
+  }, [unitFilter]);
+
+  // Filter players based on unit and position
+  const filteredPlayers = useMemo(() => {
+    if (!currentReport) return [];
+
+    let filtered = [...currentReport.players];
+
+    // Apply unit filter
+    if (unitFilter === 'offense') {
+      filtered = filtered.filter(p => OFFENSE_POSITIONS.includes(p.position));
+    } else if (unitFilter === 'defense') {
+      filtered = filtered.filter(p => DEFENSE_POSITIONS.includes(p.position));
+    }
+
+    // Apply position filter
+    if (positionFilter !== 'all') {
+      filtered = filtered.filter(p => p.position === positionFilter);
+    }
+
+    return filtered;
+  }, [currentReport, unitFilter, positionFilter]);
+
+  // Recalculate summary for filtered players
+  const filteredSummary = useMemo(() => {
+    if (!currentReport || filteredPlayers.length === 0) return currentReport?.summary;
+
+    const activePlayers = filteredPlayers.filter(p => p.status === 'active').length;
+    const partialPlayers = filteredPlayers.filter(p => p.status === 'partial').length;
+    const absentPlayers = filteredPlayers.filter(p => p.status === 'absent').length;
+    const avgScore = Math.round(filteredPlayers.reduce((sum, p) => sum + p.currentScore, 0) / filteredPlayers.length);
+    const avgCompliance = Math.round(filteredPlayers.reduce((sum, p) => sum + p.compliance, 0) / filteredPlayers.length);
+    const totalMinutes = filteredPlayers.reduce((sum, p) => sum + p.minutesTrained, 0);
+
+    return {
+      ...currentReport.summary,
+      totalPlayers: filteredPlayers.length,
+      activePlayers,
+      partialPlayers,
+      absentPlayers,
+      avgScore,
+      avgCompliance,
+      totalMinutes,
+      avgMinutesPerPlayer: Math.round(totalMinutes / filteredPlayers.length),
+    };
+  }, [currentReport, filteredPlayers]);
+
+  if (!currentReport || !filteredSummary) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography variant="h6" color="text.secondary">
@@ -53,7 +124,8 @@ export const Reports: React.FC = () => {
     );
   }
 
-  const { summary, players } = currentReport;
+  const summary = filteredSummary;
+  const players = filteredPlayers;
 
   return (
     <Box>
@@ -71,6 +143,34 @@ export const Reports: React.FC = () => {
         <Tab label={t('reports.week')} value="week" />
         <Tab label={t('reports.month')} value="month" />
       </Tabs>
+
+      {/* Filters */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6}>
+          <Tabs value={unitFilter} onChange={(_, val) => setUnitFilter(val)} variant="fullWidth">
+            <Tab label={t('reports.filters.all')} value="all" />
+            <Tab label={t('reports.filters.offense')} value="offense" />
+            <Tab label={t('reports.filters.defense')} value="defense" />
+          </Tabs>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth>
+            <InputLabel>{t('reports.filters.position')}</InputLabel>
+            <Select
+              value={positionFilter}
+              label={t('reports.filters.position')}
+              onChange={(e) => setPositionFilter(e.target.value as Position | 'all')}
+            >
+              <MenuItem value="all">{t('reports.filters.allPositions')}</MenuItem>
+              {availablePositions.map((pos) => (
+                <MenuItem key={pos} value={pos}>
+                  {pos}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
 
       {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>

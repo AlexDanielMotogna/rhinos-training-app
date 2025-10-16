@@ -488,4 +488,9 @@ export const messagesDE = {
   'reports.compliance': 'Einhaltung',
   'reports.topImprovements': 'Top-Verbesserungen',
   'reports.needsAttention': 'Benötigt Aufmerksamkeit',
+  'reports.filters.all': 'Alle Spieler',
+  'reports.filters.offense': 'Offense',
+  'reports.filters.defense': 'Defense',
+  'reports.filters.position': 'Position',
+  'reports.filters.allPositions': 'Alle Positionen',
 };
