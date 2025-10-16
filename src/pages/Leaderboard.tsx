@@ -13,7 +13,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useI18n } from '../i18n/I18nProvider';
 import { getMockLeaderboard } from '../services/mock';
 import type { LeaderboardRow } from '../types/leaderboard';
@@ -78,25 +81,67 @@ export const Leaderboard: React.FC = () => {
           <TableHead>
             <TableRow sx={{ backgroundColor: 'primary.main' }}>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                {t('leaderboard.rank')}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {t('leaderboard.rank')}
+                  <Tooltip title={t('leaderboard.rankInfo')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
                 {t('leaderboard.player')}
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                {t('leaderboard.pos')}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {t('leaderboard.pos')}
+                  <Tooltip title={t('leaderboard.posInfo')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('leaderboard.score')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('leaderboard.score')}
+                  <Tooltip title={t('leaderboard.scoreInfo')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('leaderboard.compliance')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('leaderboard.compliance')}
+                  <Tooltip title={t('leaderboard.complianceInfo')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('leaderboard.attendance')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('leaderboard.attendance')}
+                  <Tooltip title={t('leaderboard.attendanceInfo')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('leaderboard.freeShare')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('leaderboard.freeShare')}
+                  <Tooltip title={t('leaderboard.freeShareInfo')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
             </TableRow>
           </TableHead>

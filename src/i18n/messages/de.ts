@@ -179,6 +179,12 @@ export const messagesDE = {
   'leaderboard.allPositions': 'Alle Positionen',
   'leaderboard.7d': 'Letzte 7 Tage',
   'leaderboard.30d': 'Letzte 30 Tage',
+  'leaderboard.rankInfo': 'Spielerrangliste basierend auf der Gesamtpunktzahl. Höhere Punktzahlen bedeuten bessere Platzierungen.',
+  'leaderboard.posInfo': 'Spielerposition im Team (RB, WR, QB, usw.)',
+  'leaderboard.scoreInfo': 'Gesamtleistungspunktzahl (0-100). Berechnet aus Trainingsqualität, -volumen und -beständigkeit.',
+  'leaderboard.complianceInfo': 'Prozentsatz der vom Trainer zugewiesenen Trainingseinheiten, die abgeschlossen wurden. Höhere Einhaltung bedeutet bessere Befolgung des Trainingsplans.',
+  'leaderboard.attendanceInfo': 'Prozentsatz der besuchten Team-Trainingseinheiten. Zeigt Engagement und Teampartizipation.',
+  'leaderboard.freeShareInfo': 'Prozentsatz des Gesamttrainings, das selbstgesteuert ist (nicht vom Trainerplan). Niedriger ist normalerweise besser - zeigt Fokus auf zugewiesene Arbeit.',
 
   // Coach
   'coach.activate': 'Aktivieren',
