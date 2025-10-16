@@ -234,6 +234,21 @@ export const messagesEN = {
   'admin.blockTitle': 'Block Title',
   'admin.selectExercises': 'Select Exercises',
   'admin.noBlocksYet': 'No blocks added yet. Click "Add Block" to create the first block.',
+  'admin.assignProgramsTab': 'Assign Programs',
+  'admin.assignProgram': 'Assign Program',
+  'admin.selectTemplate': 'Select Template',
+  'admin.selectPlayers': 'Select Players',
+  'admin.startDate': 'Start Date',
+  'admin.programDuration': 'Program Duration',
+  'admin.frequency': 'Frequency',
+
+  // MyTraining assigned programs
+  'training.yourAssignedPrograms': 'Your Assigned Programs',
+  'training.weekOf': 'Week {{current}} of {{total}}',
+  'training.xPerWeek': '{{frequency}}x per week',
+  'training.programProgress': 'Program Progress',
+  'training.completeTraining': 'Complete your training {{frequency}} times per week. Use the exercises below or add free sessions.',
+  'training.noProgramAssigned': 'No training program assigned yet. Contact your coach to get started with a personalized training plan.',
 };
 
 export type MessageKey = keyof typeof messagesEN;

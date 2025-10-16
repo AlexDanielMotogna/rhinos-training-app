@@ -234,4 +234,19 @@ export const messagesDE = {
   'admin.blockTitle': 'Block-Titel',
   'admin.selectExercises': 'Übungen auswählen',
   'admin.noBlocksYet': 'Noch keine Blöcke hinzugefügt. Klicken Sie auf "Block hinzufügen", um den ersten Block zu erstellen.',
+  'admin.assignProgramsTab': 'Programme zuweisen',
+  'admin.assignProgram': 'Programm zuweisen',
+  'admin.selectTemplate': 'Vorlage auswählen',
+  'admin.selectPlayers': 'Spieler auswählen',
+  'admin.startDate': 'Startdatum',
+  'admin.programDuration': 'Programmdauer',
+  'admin.frequency': 'Häufigkeit',
+
+  // MyTraining assigned programs
+  'training.yourAssignedPrograms': 'Ihre zugewiesenen Programme',
+  'training.weekOf': 'Woche {{current}} von {{total}}',
+  'training.xPerWeek': '{{frequency}}x pro Woche',
+  'training.programProgress': 'Programmfortschritt',
+  'training.completeTraining': 'Absolvieren Sie Ihr Training {{frequency}} Mal pro Woche. Verwenden Sie die unten stehenden Übungen oder fügen Sie freie Einheiten hinzu.',
+  'training.noProgramAssigned': 'Noch kein Trainingsprogramm zugewiesen. Kontaktieren Sie Ihren Trainer, um mit einem personalisierten Trainingsplan zu beginnen.',
 };
