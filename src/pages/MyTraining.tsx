@@ -456,13 +456,19 @@ export const MyTraining: React.FC = () => {
                         // Only show tabs for training types that are in activeAssignments
                         return activeAssignments.some(assignment => assignment.template.trainingTypeId === tt.id);
                       })
-                      .map((tt) => (
-                        <Tab
-                          key={tt.key}
-                          value={tt.key}
-                          label={t(`training.${tt.key === 'strength_conditioning' ? 'strength' : 'sprints'}` as any)}
-                        />
-                      ))}
+                      .map((tt) => {
+                        // Use actual training type name from the assignment
+                        const assignment = activeAssignments.find(a => a.template.trainingTypeId === tt.id);
+                        const displayName = assignment?.template.trainingTypeName || tt.nameEN;
+
+                        return (
+                          <Tab
+                            key={tt.key}
+                            value={tt.key}
+                            label={displayName}
+                          />
+                        );
+                      })}
                   </Tabs>
 
                   {/* Coach Plan Exercises */}
