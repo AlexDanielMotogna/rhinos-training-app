@@ -23,8 +23,8 @@ import { EditWorkoutDialog } from '../components/workout/EditWorkoutDialog';
 import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
-import { getUser, getTemplatesForPosition, getTrainingTypes } from '../services/mock';
-import { getActiveAssignmentsForPlayer } from '../services/trainingBuilder';
+import { getUser, getTemplatesForPosition } from '../services/mock';
+import { getActiveAssignmentsForPlayer, getTrainingTypes } from '../services/trainingBuilder';
 import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, PositionTemplate, TemplateBlock } from '../types/template';
@@ -428,7 +428,7 @@ export const MyTraining: React.FC = () => {
               {/* Training Plan Tab */}
               {teamSessionTab === 'plan' && (
                 <>
-                  {/* Training Type Tabs */}
+                  {/* Training Type Tabs - Only show assigned programs */}
                   <Tabs
                     value={activeTab}
                     onChange={(_, value) => setActiveTab(value)}
@@ -437,7 +437,10 @@ export const MyTraining: React.FC = () => {
                     scrollButtons="auto"
                   >
                     {trainingTypes
-                      .filter((tt) => tt.active)
+                      .filter((tt) => {
+                        // Only show tabs for training types that are in activeAssignments
+                        return activeAssignments.some(assignment => assignment.template.trainingTypeId === tt.id);
+                      })
                       .map((tt) => (
                         <Tab
                           key={tt.key}

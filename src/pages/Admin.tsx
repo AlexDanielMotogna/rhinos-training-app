@@ -419,6 +419,45 @@ export const Admin: React.FC = () => {
         playerIds: assignToAllPlayers ? getPlayersForTemplate(newAssignment.templateId) : newAssignment.playerIds
       };
 
+      // Get the template to check its training type
+      const template = templates.find(t => t.id === assignmentData.templateId);
+      if (!template) {
+        alert('Template not found!');
+        return;
+      }
+
+      // Check for duplicate assignments (same training type for the same player with overlapping dates)
+      const today = new Date().toISOString().split('T')[0];
+      const existingActiveAssignments = assignments.filter(a => a.active && a.endDate >= today);
+
+      const conflicts: string[] = [];
+      assignmentData.playerIds.forEach(playerId => {
+        const playerAssignments = existingActiveAssignments.filter(a => a.playerIds.includes(playerId));
+
+        playerAssignments.forEach(existingAssignment => {
+          const existingTemplate = templates.find(t => t.id === existingAssignment.templateId);
+
+          // Check if same training type
+          if (existingTemplate && existingTemplate.trainingTypeId === template.trainingTypeId) {
+            const player = mockPlayers.find(p => p.id === playerId);
+            conflicts.push(`${player?.name || 'Player'} already has an active ${template.trainingTypeName} program (ends ${existingAssignment.endDate})`);
+          }
+        });
+      });
+
+      // If there are conflicts, show warning and ask for confirmation
+      if (conflicts.length > 0) {
+        const confirmMessage =
+          'WARNING: Duplicate program assignments detected:\n\n' +
+          conflicts.join('\n') +
+          '\n\nAssigning will create multiple active programs of the same type for these players.\n\n' +
+          'Do you want to proceed anyway?';
+
+        if (!window.confirm(confirmMessage)) {
+          return; // User cancelled
+        }
+      }
+
       createTrainingAssignment(assignmentData, currentUser.id);
       setAssignments(getTrainingAssignments());
       setAssignDialogOpen(false);
