@@ -377,3 +377,16 @@ export function deleteAssignment(id: string): void {
   const filtered = assignments.filter(a => a.id !== id);
   localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(filtered));
 }
+
+/**
+ * Get mock players for assignment (in real app, would fetch from backend)
+ */
+export function getMockPlayers() {
+  return [
+    { id: '1', name: 'John Doe', position: 'RB', jerseyNumber: 23 },
+    { id: '2', name: 'Mike Smith', position: 'WR', jerseyNumber: 12 },
+    { id: '3', name: 'James Brown', position: 'LB', jerseyNumber: 55 },
+    { id: '4', name: 'David Wilson', position: 'QB', jerseyNumber: 7 },
+    { id: '5', name: 'Chris Lee', position: 'TE', jerseyNumber: 88 },
+  ];
+}
