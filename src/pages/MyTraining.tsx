@@ -23,8 +23,8 @@ import { EditWorkoutDialog } from '../components/workout/EditWorkoutDialog';
 import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
-import { getUser, getTemplatesForPosition } from '../services/mock';
-import { getActiveAssignmentsForPlayer, getTrainingTypes } from '../services/trainingBuilder';
+import { getUser } from '../services/mock';
+import { getActiveAssignmentsForPlayer, getTrainingTypes, getTemplatesForPosition } from '../services/trainingBuilder';
 import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, PositionTemplate, TemplateBlock } from '../types/template';
@@ -94,8 +94,23 @@ export const MyTraining: React.FC = () => {
   useEffect(() => {
     if (user) {
       const templates = getTemplatesForPosition(user.position);
-      const currentTemplate = templates[activeTab]?.[user.position];
-      setTemplate(currentTemplate || null);
+      const trainingTemplate = templates[activeTab];
+
+      if (trainingTemplate) {
+        // Convert TrainingTemplate to PositionTemplate format
+        const positionTemplate: PositionTemplate = {
+          blocks: trainingTemplate.blocks.map(block => ({
+            order: block.order,
+            title: block.title,
+            items: block.exercises,
+            globalSets: (block as any).globalSets,
+            exerciseConfigs: (block as any).exerciseConfigs,
+          }))
+        };
+        setTemplate(positionTemplate);
+      } else {
+        setTemplate(null);
+      }
     }
   }, [user, activeTab]);
 
