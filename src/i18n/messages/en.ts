@@ -192,6 +192,7 @@ export const messagesEN = {
   // Admin
   'admin.title': 'Admin Panel',
   'admin.coachOnlyAccess': 'This panel is only accessible to coaches/admins',
+  'admin.trainingBuilderTab': 'Training Builder',
   'admin.exercisesTab': 'Exercises',
   'admin.sessionsTab': 'Sessions',
   'admin.trainingTypesTab': 'Training Types',
@@ -223,6 +224,16 @@ export const messagesEN = {
   'admin.trainingTypeNameEN': 'Name (English)',
   'admin.trainingTypeNameDE': 'Name (German)',
   'admin.season': 'Season',
+  'admin.trainingTemplates': 'Training Templates',
+  'admin.createTemplate': 'Create Template',
+  'admin.editTemplate': 'Edit Template',
+  'admin.trainingType': 'Training Type',
+  'admin.position': 'Position',
+  'admin.blocks': 'Blocks',
+  'admin.addBlock': 'Add Block',
+  'admin.blockTitle': 'Block Title',
+  'admin.selectExercises': 'Select Exercises',
+  'admin.noBlocksYet': 'No blocks added yet. Click "Add Block" to create the first block.',
 };
 
 export type MessageKey = keyof typeof messagesEN;

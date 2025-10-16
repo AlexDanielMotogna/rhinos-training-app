@@ -192,6 +192,7 @@ export const messagesDE = {
   // Admin
   'admin.title': 'Admin-Panel',
   'admin.coachOnlyAccess': 'Dieses Panel ist nur für Trainer/Admins zugänglich',
+  'admin.trainingBuilderTab': 'Trainings-Builder',
   'admin.exercisesTab': 'Übungen',
   'admin.sessionsTab': 'Einheiten',
   'admin.trainingTypesTab': 'Trainingstypen',
@@ -223,4 +224,14 @@ export const messagesDE = {
   'admin.trainingTypeNameEN': 'Name (Englisch)',
   'admin.trainingTypeNameDE': 'Name (Deutsch)',
   'admin.season': 'Saison',
+  'admin.trainingTemplates': 'Trainingsvorlagen',
+  'admin.createTemplate': 'Vorlage erstellen',
+  'admin.editTemplate': 'Vorlage bearbeiten',
+  'admin.trainingType': 'Trainingstyp',
+  'admin.position': 'Position',
+  'admin.blocks': 'Blöcke',
+  'admin.addBlock': 'Block hinzufügen',
+  'admin.blockTitle': 'Block-Titel',
+  'admin.selectExercises': 'Übungen auswählen',
+  'admin.noBlocksYet': 'Noch keine Blöcke hinzugefügt. Klicken Sie auf "Block hinzufügen", um den ersten Block zu erstellen.',
 };

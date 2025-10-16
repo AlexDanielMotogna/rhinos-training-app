@@ -34,6 +34,15 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useI18n } from '../i18n/I18nProvider';
 import { globalCatalog } from '../services/catalog';
 import type { Exercise, ExerciseCategory, Position } from '../types/exercise';
+import type { TrainingTemplate } from '../types/trainingBuilder';
+import {
+  getTrainingTemplates,
+  getTrainingTypes as getTrainingTypesFromService,
+  createTrainingTemplate,
+  updateTrainingTemplate,
+  deleteTrainingTemplate,
+  saveTrainingTypes,
+} from '../services/trainingBuilder';
 
 interface TeamSession {
   id: string;
@@ -97,11 +106,7 @@ export const Admin: React.FC = () => {
   const [policiesModified, setPoliciesModified] = useState(false);
 
   // Training Types Management State
-  const [trainingTypes, setTrainingTypes] = useState<TrainingType[]>([
-    { id: '1', key: 'strength_conditioning', nameEN: 'Strength & Conditioning', nameDE: 'Kraft & Kondition', season: 'off-season', active: true },
-    { id: '2', key: 'sprints_speed', nameEN: 'Sprints / Speed', nameDE: 'Sprints / Geschwindigkeit', season: 'off-season', active: true },
-    { id: '3', key: 'cb_drills', nameEN: 'CB Drills', nameDE: 'CB-Übungen', season: 'in-season', active: true },
-  ]);
+  const [trainingTypes, setTrainingTypes] = useState<TrainingType[]>(() => getTrainingTypesFromService());
   const [trainingTypeDialogOpen, setTrainingTypeDialogOpen] = useState(false);
   const [newTrainingType, setNewTrainingType] = useState<Partial<TrainingType>>({
     key: '',
@@ -109,6 +114,25 @@ export const Admin: React.FC = () => {
     nameDE: '',
     season: 'off-season',
     active: true,
+  });
+
+  // Training Builder State
+  const [templates, setTemplates] = useState<TrainingTemplate[]>(() => getTrainingTemplates());
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<TrainingTemplate | null>(null);
+  const [newTemplateData, setNewTemplateData] = useState<{
+    trainingTypeId: string;
+    positions: Position[];
+    blocks: { title: string; order: number; exerciseIds: string[] }[];
+  }>({
+    trainingTypeId: '',
+    positions: ['RB'],
+    blocks: [],
+  });
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [currentBlock, setCurrentBlock] = useState<{ title: string; exerciseIds: string[] }>({
+    title: '',
+    exerciseIds: [],
   });
 
   // Exercise Management Handlers
@@ -218,8 +242,78 @@ export const Admin: React.FC = () => {
 
   const handleDeleteTrainingType = (id: string) => {
     if (window.confirm('Are you sure you want to delete this training type?')) {
-      setTrainingTypes(trainingTypes.filter(tt => tt.id !== id));
+      const updated = trainingTypes.filter(tt => tt.id !== id);
+      setTrainingTypes(updated);
+      saveTrainingTypes(updated);
     }
+  };
+
+  // Training Builder Handlers
+  const handleOpenTemplateDialog = (template?: TrainingTemplate) => {
+    if (template) {
+      setEditingTemplate(template);
+      setNewTemplateData({
+        trainingTypeId: template.trainingTypeId,
+        positions: template.positions,
+        blocks: template.blocks.map(b => ({
+          title: b.title,
+          order: b.order,
+          exerciseIds: b.exercises.map(ex => ex.id),
+        })),
+      });
+    } else {
+      setEditingTemplate(null);
+      setNewTemplateData({
+        trainingTypeId: trainingTypes[0]?.id || '',
+        positions: ['RB'],
+        blocks: [],
+      });
+    }
+    setTemplateDialogOpen(true);
+  };
+
+  const handleSaveTemplate = () => {
+    if (editingTemplate) {
+      updateTrainingTemplate(editingTemplate.id, newTemplateData);
+      setTemplates(getTrainingTemplates());
+    } else {
+      createTrainingTemplate(newTemplateData);
+      setTemplates(getTrainingTemplates());
+    }
+    setTemplateDialogOpen(false);
+  };
+
+  const handleDeleteTemplate = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this template?')) {
+      deleteTrainingTemplate(id);
+      setTemplates(getTrainingTemplates());
+    }
+  };
+
+  const handleAddBlock = () => {
+    setCurrentBlock({ title: '', exerciseIds: [] });
+    setBlockDialogOpen(true);
+  };
+
+  const handleSaveBlock = () => {
+    const newBlock = {
+      title: currentBlock.title,
+      order: newTemplateData.blocks.length + 1,
+      exerciseIds: currentBlock.exerciseIds,
+    };
+    setNewTemplateData({
+      ...newTemplateData,
+      blocks: [...newTemplateData.blocks, newBlock],
+    });
+    setBlockDialogOpen(false);
+  };
+
+  const handleRemoveBlock = (index: number) => {
+    const updated = newTemplateData.blocks.filter((_, i) => i !== index);
+    setNewTemplateData({
+      ...newTemplateData,
+      blocks: updated.map((b, i) => ({ ...b, order: i + 1 })),
+    });
   };
 
   const categories: ExerciseCategory[] = [
@@ -246,14 +340,92 @@ export const Admin: React.FC = () => {
         variant="scrollable"
         scrollButtons="auto"
       >
+        <Tab label={t('admin.trainingBuilderTab')} />
         <Tab label={t('admin.exercisesTab')} />
         <Tab label={t('admin.sessionsTab')} />
         <Tab label={t('admin.trainingTypesTab')} />
         <Tab label={t('admin.policiesTab')} />
       </Tabs>
 
-      {/* Exercises Management Tab */}
+      {/* Training Builder Tab */}
       {activeTab === 0 && (
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6">
+              {t('admin.trainingTemplates')} ({templates.length})
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenTemplateDialog()}
+            >
+              {t('admin.createTemplate')}
+            </Button>
+          </Box>
+
+          <Grid container spacing={2}>
+            {templates.map((template) => (
+              <Grid item xs={12} md={6} key={template.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="h6">
+                            {template.trainingTypeName}
+                          </Typography>
+                          {template.positions.map((pos) => (
+                            <Chip key={pos} label={pos} size="small" color="primary" />
+                          ))}
+                          <Chip
+                            label={template.active ? 'Active' : 'Inactive'}
+                            size="small"
+                            color={template.active ? 'success' : 'default'}
+                          />
+                        </Box>
+
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          {template.blocks.length} block(s)
+                        </Typography>
+
+                        {template.blocks.map((block, idx) => (
+                          <Box key={block.id} sx={{ mb: 1 }}>
+                            <Typography variant="body2" fontWeight={600}>
+                              {idx + 1}. {block.title}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {block.exercises.length} exercise(s)
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                      <Box>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleOpenTemplateDialog(template)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteTemplate(template.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {/* Exercises Management Tab */}
+      {activeTab === 1 && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
@@ -341,7 +513,7 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Sessions Management Tab */}
-      {activeTab === 1 && (
+      {activeTab === 2 && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
@@ -400,7 +572,7 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Training Types Management Tab */}
-      {activeTab === 2 && (
+      {activeTab === 3 && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
@@ -467,7 +639,7 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Policies Management Tab */}
-      {activeTab === 3 && (
+      {activeTab === 4 && (
         <Box>
           <Typography variant="h6" sx={{ mb: 3 }}>
             {t('admin.trainingPolicies')}
@@ -759,6 +931,169 @@ export const Admin: React.FC = () => {
             disabled={!newTrainingType.nameEN || !newTrainingType.nameDE}
           >
             {t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Training Template Dialog */}
+      <Dialog
+        open={templateDialogOpen}
+        onClose={() => setTemplateDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {editingTemplate ? t('admin.editTemplate') : t('admin.createTemplate')}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <FormControl fullWidth required>
+              <InputLabel>{t('admin.trainingType')}</InputLabel>
+              <Select
+                value={newTemplateData.trainingTypeId}
+                label={t('admin.trainingType')}
+                onChange={(e) => setNewTemplateData({ ...newTemplateData, trainingTypeId: e.target.value })}
+              >
+                {trainingTypes.filter(tt => tt.active).map((type) => (
+                  <MenuItem key={type.id} value={type.id}>
+                    {type.nameEN}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth required>
+              <InputLabel>{t('admin.position')}</InputLabel>
+              <Select
+                multiple
+                value={newTemplateData.positions}
+                label={t('admin.position')}
+                onChange={(e) => setNewTemplateData({ ...newTemplateData, positions: e.target.value as Position[] })}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip key={value} label={value} size="small" />
+                    ))}
+                  </Box>
+                )}
+              >
+                {positions.map((pos) => (
+                  <MenuItem key={pos} value={pos}>{pos}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {t('admin.blocks')}
+                </Typography>
+                <Button
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddBlock}
+                >
+                  {t('admin.addBlock')}
+                </Button>
+              </Box>
+
+              {newTemplateData.blocks.length === 0 && (
+                <Alert severity="info">
+                  {t('admin.noBlocksYet')}
+                </Alert>
+              )}
+
+              {newTemplateData.blocks.map((block, index) => (
+                <Card key={index} sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Box>
+                        <Typography variant="body1" fontWeight={600}>
+                          {index + 1}. {block.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {block.exerciseIds.length} exercise(s)
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleRemoveBlock(index)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTemplateDialogOpen(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={handleSaveTemplate}
+            variant="contained"
+            disabled={!newTemplateData.trainingTypeId || newTemplateData.positions.length === 0 || newTemplateData.blocks.length === 0}
+          >
+            {t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Block Dialog */}
+      <Dialog
+        open={blockDialogOpen}
+        onClose={() => setBlockDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>{t('admin.addBlock')}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              label={t('admin.blockTitle')}
+              value={currentBlock.title}
+              onChange={(e) => setCurrentBlock({ ...currentBlock, title: e.target.value })}
+              fullWidth
+              required
+              placeholder="Compound Lifts, Accessory Work, Speed Drills, etc."
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>{t('admin.selectExercises')}</InputLabel>
+              <Select
+                multiple
+                value={currentBlock.exerciseIds}
+                label={t('admin.selectExercises')}
+                onChange={(e) => setCurrentBlock({ ...currentBlock, exerciseIds: e.target.value as string[] })}
+                renderValue={(selected) => `${selected.length} selected`}
+              >
+                {globalCatalog.map((exercise) => (
+                  <MenuItem key={exercise.id} value={exercise.id}>
+                    {exercise.name} ({exercise.category})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Alert severity="info">
+              Select exercises that belong to this block. You can select multiple exercises.
+            </Alert>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBlockDialogOpen(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={handleSaveBlock}
+            variant="contained"
+            disabled={!currentBlock.title || currentBlock.exerciseIds.length === 0}
+          >
+            {t('admin.addBlock')}
           </Button>
         </DialogActions>
       </Dialog>
