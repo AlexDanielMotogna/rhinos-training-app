@@ -5,24 +5,30 @@ import type { TemplateBlock } from '../../types/template';
 import type { Exercise } from '../../types/exercise';
 import { ExerciseRow } from './ExerciseRow';
 import { useI18n } from '../../i18n/I18nProvider';
+import { getBlockInfo } from '../../services/blockInfo';
 
 interface WorkoutBlockProps {
   block: TemplateBlock;
   onVideoClick?: (youtubeUrl: string) => void;
   onLogWorkout?: (exercise: Exercise) => void;
   showLogButtons?: boolean;
+  trainingType?: 'strength_conditioning' | 'sprints_speed';
 }
 
 export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
   block,
   onVideoClick,
   onLogWorkout,
-  showLogButtons = false
+  showLogButtons = false,
+  trainingType = 'strength_conditioning'
 }) => {
   const { t } = useI18n();
 
-  // Determine which info message to show based on block title
-  const getInfoMessage = () => {
+  // Get custom block info from coach configuration
+  const blockInfo = getBlockInfo(block.title, trainingType);
+
+  // Fallback to default i18n messages if no custom info
+  const getDefaultInfoMessage = () => {
     const title = block.title.toLowerCase();
     if (title.includes('compound') || title.includes('lift')) {
       return t('training.compoundLiftsInfo');
@@ -32,7 +38,7 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
     return '';
   };
 
-  const infoMessage = getInfoMessage();
+  const infoMessage = blockInfo?.infoText || getDefaultInfoMessage();
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>

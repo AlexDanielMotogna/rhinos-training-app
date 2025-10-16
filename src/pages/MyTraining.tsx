@@ -282,6 +282,7 @@ export const MyTraining: React.FC = () => {
                         showLogButtons={true}
                         onLogWorkout={handleLogWorkout}
                         onVideoClick={handleVideoClick}
+                        trainingType={activeTab}
                       />
                     ))}
                 </Box>

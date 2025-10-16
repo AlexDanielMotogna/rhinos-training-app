@@ -48,6 +48,7 @@ import {
   getMockPlayers,
 } from '../services/trainingBuilder';
 import { getUser } from '../services/mock';
+import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 
 interface TeamSession {
   id: string;
@@ -395,6 +396,7 @@ export const Admin: React.FC = () => {
         <Tab label={t('admin.sessionsTab')} />
         <Tab label={t('admin.trainingTypesTab')} />
         <Tab label={t('admin.policiesTab')} />
+        <Tab label={t('admin.blockInfoTab')} />
       </Tabs>
 
       {/* Training Builder Tab */}
@@ -875,6 +877,9 @@ export const Admin: React.FC = () => {
           </Card>
         </Box>
       )}
+
+      {/* Block Info Management Tab */}
+      {activeTab === 6 && <BlockInfoManager />}
 
       {/* Exercise Dialog */}
       <Dialog
