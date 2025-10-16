@@ -253,7 +253,8 @@ export const messagesEN = {
   // MyTraining session tabs
   'training.mySessions': 'My Sessions',
   'training.teamSessions': 'Team Sessions',
-  'training.teamSessionsComingSoon': 'Team sessions feature coming soon. Your coach will be able to schedule team training sessions here.',
+  'training.mySessionsInfo': 'This is where you track your personal free sessions. Add custom workouts and view your training history.',
+  'training.coachPlan': 'Coach Plan',
 };
 
 export type MessageKey = keyof typeof messagesEN;

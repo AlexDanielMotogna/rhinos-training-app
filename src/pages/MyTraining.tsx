@@ -20,6 +20,7 @@ import { WorkoutLogDialog } from '../components/workout/WorkoutLogDialog';
 import { FreeSessionDialog } from '../components/workout/FreeSessionDialog';
 import { getUser, getTemplatesForPosition, getTrainingTypes } from '../services/mock';
 import { getActiveAssignmentsForPlayer } from '../services/trainingBuilder';
+import { saveWorkoutLog, saveWorkoutEntry } from '../services/workoutLog';
 import type { TrainingTypeKey, PositionTemplate } from '../types/template';
 import type { Exercise } from '../types/exercise';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
@@ -67,10 +68,12 @@ export const MyTraining: React.FC = () => {
   }, [user, activeTab]);
 
   const handleSaveFreeSession = (payload: WorkoutPayload) => {
-    console.log('Saving free session:', payload);
-    setShowFreeSession(false);
-    setSuccessMessage(t('workout.sessionSaved'));
-    setTimeout(() => setSuccessMessage(''), 3000);
+    if (user) {
+      saveWorkoutLog(user.id, payload);
+      setShowFreeSession(false);
+      setSuccessMessage(t('workout.sessionSaved'));
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
   };
 
   const handleLogWorkout = (exercise: Exercise) => {
@@ -79,13 +82,13 @@ export const MyTraining: React.FC = () => {
   };
 
   const handleSaveWorkoutLog = (entry: WorkoutEntry) => {
-    console.log('Logging workout entry:', entry);
-    // In a real app, this would save to backend
-    // For now, just show success message
-    setShowLogDialog(false);
-    setSelectedExercise(null);
-    setSuccessMessage(t('workout.workoutLogged'));
-    setTimeout(() => setSuccessMessage(''), 3000);
+    if (user) {
+      saveWorkoutEntry(user.id, entry);
+      setShowLogDialog(false);
+      setSelectedExercise(null);
+      setSuccessMessage(t('workout.workoutLogged'));
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
   };
 
   const handleVideoClick = (url: string) => {
@@ -129,125 +132,134 @@ export const MyTraining: React.FC = () => {
       {/* MY SESSIONS VIEW */}
       {sessionView === 'my' && (
         <Box>
-          {/* Assigned Programs Section */}
-          {activeAssignments.length > 0 && (
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                {t('training.yourAssignedPrograms')}
-              </Typography>
+          <Alert severity="info" sx={{ mb: 3 }}>
+            {t('training.mySessionsInfo')}
+          </Alert>
 
-              {activeAssignments.map((assignment) => {
-                const { currentWeek, totalWeeks, progressPercent } = calculateProgress(
-                  assignment.startDate,
-                  assignment.endDate
-                );
-
-                return (
-                  <Card key={assignment.id} sx={{ mb: 2 }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Box>
-                          <Typography variant="h6" sx={{ mb: 0.5 }}>
-                            {assignment.template.trainingTypeName}
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <Chip
-                              label={`Week ${currentWeek} of ${totalWeeks}`}
-                              size="small"
-                              color="primary"
-                            />
-                            <Chip
-                              label={`${assignment.template.frequencyPerWeek}x per week`}
-                              size="small"
-                              variant="outlined"
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                              {assignment.startDate} → {assignment.endDate}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ mb: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {t('training.programProgress')}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {Math.round(progressPercent)}%
-                          </Typography>
-                        </Box>
-                        <LinearProgress
-                          variant="determinate"
-                          value={progressPercent}
-                          sx={{ height: 8, borderRadius: 1 }}
-                        />
-                      </Box>
-
-                      <Alert severity="info" sx={{ mt: 2 }}>
-                        {t('training.completeTraining', { frequency: assignment.template.frequencyPerWeek })}
-                      </Alert>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </Box>
-          )}
-
-          {/* Training Type Tabs for My Sessions */}
-          <Tabs
-            value={activeTab}
-            onChange={(_, value) => setActiveTab(value)}
-            sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            {trainingTypes
-              .filter((tt) => tt.active)
-              .map((tt) => (
-                <Tab
-                  key={tt.key}
-                  value={tt.key}
-                  label={t(`training.${tt.key === 'strength_conditioning' ? 'strength' : 'sprints'}` as any)}
-                />
-              ))}
-          </Tabs>
-
-          {/* My Plan Exercises */}
-          {template ? (
-            <Box>
-              <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
-                {t('training.myPlan')}
-              </Typography>
-
-              {template.blocks
-                .sort((a, b) => a.order - b.order)
-                .map((block) => (
-                  <WorkoutBlock
-                    key={block.order}
-                    block={block}
-                    showLogButtons={true}
-                    onLogWorkout={handleLogWorkout}
-                    onVideoClick={handleVideoClick}
-                  />
-                ))}
-            </Box>
-          ) : (
-            <Alert severity="info">
-              {activeAssignments.length === 0
-                ? t('training.noProgramAssigned')
-                : 'No training plan available for this type'}
-            </Alert>
-          )}
+          {/* TODO: Add History tab here */}
+          <Typography variant="body1" color="text.secondary">
+            History tab coming soon - you'll see all your logged workouts here.
+          </Typography>
         </Box>
       )}
 
       {/* TEAM SESSIONS VIEW */}
       {sessionView === 'team' && (
         <Box>
-          <Alert severity="info">
-            {t('training.teamSessionsComingSoon')}
-          </Alert>
+          {/* Assigned Programs Section */}
+          {activeAssignments.length > 0 ? (
+            <>
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                  {t('training.yourAssignedPrograms')}
+                </Typography>
+
+                {activeAssignments.map((assignment) => {
+                  const { currentWeek, totalWeeks, progressPercent } = calculateProgress(
+                    assignment.startDate,
+                    assignment.endDate
+                  );
+
+                  return (
+                    <Card key={assignment.id} sx={{ mb: 2 }}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                          <Box>
+                            <Typography variant="h6" sx={{ mb: 0.5 }}>
+                              {assignment.template.trainingTypeName}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <Chip
+                                label={`Week ${currentWeek} of ${totalWeeks}`}
+                                size="small"
+                                color="primary"
+                              />
+                              <Chip
+                                label={`${assignment.template.frequencyPerWeek}x per week`}
+                                size="small"
+                                variant="outlined"
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {assignment.startDate} → {assignment.endDate}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ mb: 1 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {t('training.programProgress')}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {Math.round(progressPercent)}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={progressPercent}
+                            sx={{ height: 8, borderRadius: 1 }}
+                          />
+                        </Box>
+
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                          {t('training.completeTraining', { frequency: assignment.template.frequencyPerWeek })}
+                        </Alert>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Box>
+
+              {/* Training Type Tabs */}
+              <Tabs
+                value={activeTab}
+                onChange={(_, value) => setActiveTab(value)}
+                sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+                variant="scrollable"
+                scrollButtons="auto"
+              >
+                {trainingTypes
+                  .filter((tt) => tt.active)
+                  .map((tt) => (
+                    <Tab
+                      key={tt.key}
+                      value={tt.key}
+                      label={t(`training.${tt.key === 'strength_conditioning' ? 'strength' : 'sprints'}` as any)}
+                    />
+                  ))}
+              </Tabs>
+
+              {/* Coach Plan Exercises */}
+              {template ? (
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
+                    {t('training.coachPlan')}
+                  </Typography>
+
+                  {template.blocks
+                    .sort((a, b) => a.order - b.order)
+                    .map((block) => (
+                      <WorkoutBlock
+                        key={block.order}
+                        block={block}
+                        showLogButtons={true}
+                        onLogWorkout={handleLogWorkout}
+                        onVideoClick={handleVideoClick}
+                      />
+                    ))}
+                </Box>
+              ) : (
+                <Alert severity="info">
+                  No training plan available for this type
+                </Alert>
+              )}
+            </>
+          ) : (
+            <Alert severity="warning">
+              {t('training.noProgramAssigned')}
+            </Alert>
+          )}
         </Box>
       )}
 

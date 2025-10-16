@@ -253,5 +253,6 @@ export const messagesDE = {
   // MyTraining session tabs
   'training.mySessions': 'Meine Sitzungen',
   'training.teamSessions': 'Team-Sitzungen',
-  'training.teamSessionsComingSoon': 'Team-Sitzungsfunktion kommt bald. Ihr Trainer kann hier Team-Trainingseinheiten planen.',
+  'training.mySessionsInfo': 'Hier verfolgen Sie Ihre persönlichen freien Einheiten. Fügen Sie benutzerdefinierte Trainingseinheiten hinzu und sehen Sie Ihren Trainingsverlauf.',
+  'training.coachPlan': 'Trainerplan',
 };
