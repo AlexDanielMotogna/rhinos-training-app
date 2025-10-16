@@ -18,9 +18,10 @@ import { useI18n } from '../i18n/I18nProvider';
 import { WorkoutBlock } from '../components/workout/WorkoutBlock';
 import { WorkoutLogDialog } from '../components/workout/WorkoutLogDialog';
 import { FreeSessionDialog } from '../components/workout/FreeSessionDialog';
+import { WorkoutHistory } from '../components/workout/WorkoutHistory';
 import { getUser, getTemplatesForPosition, getTrainingTypes } from '../services/mock';
 import { getActiveAssignmentsForPlayer } from '../services/trainingBuilder';
-import { saveWorkoutLog, saveWorkoutEntry } from '../services/workoutLog';
+import { saveWorkoutLog, saveWorkoutEntry, getWorkoutLogsByUser, deleteWorkoutLog } from '../services/workoutLog';
 import type { TrainingTypeKey, PositionTemplate } from '../types/template';
 import type { Exercise } from '../types/exercise';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
@@ -42,6 +43,9 @@ export const MyTraining: React.FC = () => {
   const user = getUser();
   const trainingTypes = getTrainingTypes();
   const activeAssignments = user ? getActiveAssignmentsForPlayer(user.id) : [];
+  const [workoutHistory, setWorkoutHistory] = useState(() =>
+    user ? getWorkoutLogsByUser(user.id) : []
+  );
 
   // Calculate program progress
   const calculateProgress = (startDate: string, endDate: string) => {
@@ -67,9 +71,16 @@ export const MyTraining: React.FC = () => {
     }
   }, [user, activeTab]);
 
+  const refreshWorkoutHistory = () => {
+    if (user) {
+      setWorkoutHistory(getWorkoutLogsByUser(user.id));
+    }
+  };
+
   const handleSaveFreeSession = (payload: WorkoutPayload) => {
     if (user) {
       saveWorkoutLog(user.id, payload);
+      refreshWorkoutHistory();
       setShowFreeSession(false);
       setSuccessMessage(t('workout.sessionSaved'));
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -84,9 +95,19 @@ export const MyTraining: React.FC = () => {
   const handleSaveWorkoutLog = (entry: WorkoutEntry) => {
     if (user) {
       saveWorkoutEntry(user.id, entry);
+      refreshWorkoutHistory();
       setShowLogDialog(false);
       setSelectedExercise(null);
       setSuccessMessage(t('workout.workoutLogged'));
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
+  const handleDeleteWorkout = (logId: string) => {
+    if (window.confirm(t('workout.confirmDelete'))) {
+      deleteWorkoutLog(logId);
+      refreshWorkoutHistory();
+      setSuccessMessage(t('workout.workoutDeleted'));
       setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
@@ -136,10 +157,10 @@ export const MyTraining: React.FC = () => {
             {t('training.mySessionsInfo')}
           </Alert>
 
-          {/* TODO: Add History tab here */}
-          <Typography variant="body1" color="text.secondary">
-            History tab coming soon - you'll see all your logged workouts here.
-          </Typography>
+          <WorkoutHistory
+            workouts={workoutHistory}
+            onDelete={handleDeleteWorkout}
+          />
         </Box>
       )}
 

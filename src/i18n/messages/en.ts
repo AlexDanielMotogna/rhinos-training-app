@@ -91,6 +91,13 @@ export const messagesEN = {
   'workout.sessionSaved': 'Session saved successfully',
   'workout.date': 'Date',
   'workout.complete': 'Complete Session',
+  'workout.noWorkoutsYet': 'No workouts logged yet. Start by logging your first workout!',
+  'workout.today': 'Today',
+  'workout.yesterday': 'Yesterday',
+  'workout.coachPlan': 'Coach Plan',
+  'workout.freeSession': 'Free Session',
+  'workout.confirmDelete': 'Are you sure you want to delete this workout?',
+  'workout.workoutDeleted': 'Workout deleted successfully!',
 
   // Categories
   'category.Strength': 'Strength',

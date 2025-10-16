@@ -91,6 +91,13 @@ export const messagesDE = {
   'workout.sessionSaved': 'Einheit erfolgreich gespeichert',
   'workout.date': 'Datum',
   'workout.complete': 'Einheit abschließen',
+  'workout.noWorkoutsYet': 'Noch keine Trainings protokolliert. Beginnen Sie mit Ihrem ersten Training!',
+  'workout.today': 'Heute',
+  'workout.yesterday': 'Gestern',
+  'workout.coachPlan': 'Trainerplan',
+  'workout.freeSession': 'Freie Einheit',
+  'workout.confirmDelete': 'Möchten Sie dieses Training wirklich löschen?',
+  'workout.workoutDeleted': 'Training erfolgreich gelöscht!',
 
   // Categories
   'category.Strength': 'Kraft',
