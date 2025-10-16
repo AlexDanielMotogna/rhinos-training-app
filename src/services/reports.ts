@@ -235,26 +235,19 @@ export function getStatusColor(status: PlayerStatus): 'success' | 'warning' | 'e
 }
 
 /**
- * Get status icon for player
+ * Get status icon component name for player
  */
-export function getStatusIcon(status: PlayerStatus): string {
-  switch (status) {
-    case 'active':
-      return '✅';
-    case 'partial':
-      return '⚠️';
-    case 'absent':
-      return '❌';
-  }
+export function getStatusIcon(status: PlayerStatus): 'active' | 'partial' | 'absent' {
+  return status;
 }
 
 /**
- * Get trend icon based on percentage change
+ * Get trend direction based on percentage change
  */
-export function getTrendIcon(trend: number): string {
-  if (trend > 2) return '↗️';
-  if (trend < -2) return '↘️';
-  return '→';
+export function getTrendDirection(trend: number): 'up' | 'down' | 'flat' {
+  if (trend > 2) return 'up';
+  if (trend < -2) return 'down';
+  return 'flat';
 }
 
 /**

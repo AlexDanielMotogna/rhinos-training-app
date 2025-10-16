@@ -19,8 +19,12 @@ import {
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { useI18n } from '../i18n/I18nProvider';
-import { generateDailyReport, generateWeeklyReport, generateMonthlyReport, getStatusColor, getStatusIcon, getTrendIcon, getTrendColor } from '../services/reports';
+import { generateDailyReport, generateWeeklyReport, generateMonthlyReport, getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from '../services/reports';
 import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod } from '../types/report';
 
 export const Reports: React.FC = () => {
@@ -132,19 +136,31 @@ export const Reports: React.FC = () => {
           <Grid container spacing={2}>
             <Grid item xs={12} sm={4}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip label={`✅ ${summary.activePlayers}`} color="success" />
+                <Chip
+                  icon={<CheckCircleIcon />}
+                  label={summary.activePlayers}
+                  color="success"
+                />
                 <Typography variant="body2">{t('reports.status.active')}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={4}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip label={`⚠️ ${summary.partialPlayers}`} color="warning" />
+                <Chip
+                  icon={<WarningIcon />}
+                  label={summary.partialPlayers}
+                  color="warning"
+                />
                 <Typography variant="body2">{t('reports.status.partial')}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={4}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip label={`❌ ${summary.absentPlayers}`} color="error" />
+                <Chip
+                  icon={<CancelIcon />}
+                  label={summary.absentPlayers}
+                  color="error"
+                />
                 <Typography variant="body2">{t('reports.status.absent')}</Typography>
               </Box>
             </Grid>
@@ -199,7 +215,12 @@ export const Reports: React.FC = () => {
                 <TableCell>{player.position}</TableCell>
                 <TableCell align="center">
                   <Chip
-                    label={getStatusIcon(player.status)}
+                    icon={
+                      getStatusIcon(player.status) === 'active' ? <CheckCircleIcon /> :
+                      getStatusIcon(player.status) === 'partial' ? <WarningIcon /> :
+                      <CancelIcon />
+                    }
+                    label=""
                     color={getStatusColor(player.status)}
                     size="small"
                   />
@@ -213,11 +234,20 @@ export const Reports: React.FC = () => {
                 </TableCell>
                 <TableCell align="right">
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                    {getTrendDirection(player.scoreTrend) === 'up' && (
+                      <TrendingUpIcon fontSize="small" color="success" />
+                    )}
+                    {getTrendDirection(player.scoreTrend) === 'down' && (
+                      <TrendingDownIcon fontSize="small" color="error" />
+                    )}
+                    {getTrendDirection(player.scoreTrend) === 'flat' && (
+                      <TrendingFlatIcon fontSize="small" color="warning" />
+                    )}
                     <Typography
                       variant="body2"
                       sx={{ color: `${getTrendColor(player.scoreTrend)}.main` }}
                     >
-                      {getTrendIcon(player.scoreTrend)} {player.scoreTrend > 0 ? '+' : ''}
+                      {player.scoreTrend > 0 ? '+' : ''}
                       {player.scoreTrend.toFixed(1)}%
                     </Typography>
                   </Box>
