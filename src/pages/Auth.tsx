@@ -15,7 +15,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { saveUser } from '../services/mock';
+import { saveUser, type MockUser } from '../services/mock';
 import type { Position } from '../types/exercise';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 
@@ -42,26 +42,49 @@ export const Auth: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate coach code if signing up as coach
-    if (isSignup && role === 'coach' && coachCode !== COACH_CODE) {
-      alert('Invalid coach code. Please contact the administrator for the correct code.');
-      return;
+    if (isSignup) {
+      // SIGNUP: Validate coach code if signing up as coach
+      if (role === 'coach' && coachCode !== COACH_CODE) {
+        alert('Invalid coach code. Please contact the administrator for the correct code.');
+        return;
+      }
+
+      // Create new user
+      const user: MockUser = {
+        id: Date.now().toString(),
+        name: name,
+        email: email,
+        // Only set player-specific fields if role is player
+        jerseyNumber: role === 'player' ? Number(jerseyNumber) : 0,
+        age: role === 'player' ? Number(age) : 0,
+        weightKg: role === 'player' ? Number(weightKg) : 0,
+        heightCm: role === 'player' ? Number(heightCm) : 0,
+        position: role === 'player' ? position : 'RB', // Default for coaches (not used)
+        role,
+      };
+
+      saveUser(user);
+    } else {
+      // LOGIN: Find existing user by email
+      const usersKey = 'rhinos_users';
+      const stored = localStorage.getItem(usersKey);
+
+      if (!stored) {
+        alert('No users found. Please sign up first.');
+        return;
+      }
+
+      const allUsers: MockUser[] = JSON.parse(stored);
+      const existingUser = allUsers.find(u => u.email === email);
+
+      if (!existingUser) {
+        alert('User not found. Please check your email or sign up.');
+        return;
+      }
+
+      // Set as current user
+      localStorage.setItem('currentUser', JSON.stringify(existingUser));
     }
-
-    const user = {
-      id: Date.now().toString(),
-      name: name || 'John Doe',
-      email: email || 'john@example.com',
-      // Only set player-specific fields if role is player
-      jerseyNumber: role === 'player' ? (jerseyNumber || 99) : 0,
-      age: role === 'player' ? (age || 25) : 0,
-      weightKg: role === 'player' ? (weightKg || 100) : 0,
-      heightCm: role === 'player' ? (heightCm || 186) : 0,
-      position: role === 'player' ? position : 'RB', // Default for coaches (not used)
-      role,
-    };
-
-    saveUser(user);
 
     // Navigate to training page
     navigate('/training');
