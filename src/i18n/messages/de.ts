@@ -376,4 +376,82 @@ export const messagesDE = {
   'profile.strength.noData': 'Noch keine Krafttestdaten. Absolvieren Sie einen Test, um Ihre Metriken zu sehen.',
   'profile.strength.coachNote': 'KI-Trainer-Notiz',
   'profile.strength.aiTip': 'Ihr Kraftprofil zeigt eine ausgewogene Entwicklung. Konzentrieren Sie sich weiterhin auf progressive Überlastung in Ihren schwachen Segmenten.',
+
+  // Tests - Main page
+  'tests.subtitle': 'Messen Sie Ihre sportliche Leistung über Schlüsselmetriken hinweg',
+  'tests.start': 'Test starten',
+  'tests.retake': 'Test wiederholen',
+  'tests.compareTo': 'Vergleichen mit',
+  'tests.result': 'Ergebnis',
+  'tests.timeSeconds': 'Zeit (Sekunden)',
+  'tests.heightCm': 'Höhe (cm)',
+  'tests.distanceCm': 'Entfernung (cm)',
+  'tests.strength.title': 'Krafttest',
+  'tests.strength.description': 'Messen Sie Ihre maximale Kraft bei Hauptübungen',
+
+  // Tests - Speed
+  'tests.speed.title': 'Geschwindigkeitstest',
+  'tests.speed.description': 'Messen Sie Ihre Lineargeschwindigkeit und Beschleunigung',
+  'tests.speed.summary': 'Geschwindigkeitstest-Zusammenfassung',
+  'tests.speed.scoreLabel': 'Geschwindigkeitswert',
+  'tests.speed.testName': 'Test',
+  'tests.speed.dash40': '40-Yard Sprint',
+  'tests.speed.split10': '10-Yard Split',
+  'tests.speed.dash40.instructions': 'Sprinten Sie 40 Yards (36,6m) mit maximaler Geschwindigkeit. Lassen Sie jemanden Ihre Zeit von Start bis Ziel stoppen.',
+  'tests.speed.split10.instructions': 'Sprinten Sie 10 Yards (9,1m) aus dem Stand. Dies misst Ihre anfängliche Beschleunigung.',
+  'tests.speed.dash40.helper': 'Notieren Sie Ihre beste Zeit für 40 Yards (typischer Bereich: 4,4-5,5 Sekunden)',
+  'tests.speed.split10.helper': 'Notieren Sie Ihre beste Zeit für 10 Yards (typischer Bereich: 1,5-2,0 Sekunden)',
+  'tests.speed.label.elite': 'ELITE',
+  'tests.speed.label.fast': 'SCHNELL',
+  'tests.speed.label.average': 'DURCHSCHNITT',
+  'tests.speed.label.slow': 'LANGSAM',
+
+  // Tests - Power
+  'tests.power.title': 'Krafttest',
+  'tests.power.description': 'Messen Sie Ihre explosive Kraft und Sprungfähigkeit',
+  'tests.power.summary': 'Krafttest-Zusammenfassung',
+  'tests.power.scoreLabel': 'Kraftwert',
+  'tests.power.testName': 'Test',
+  'tests.power.verticalJump': 'Vertikalsprung',
+  'tests.power.broadJump': 'Weitsprung',
+  'tests.power.verticalJump.instructions': 'Springen Sie so hoch wie möglich und berühren Sie den höchsten Punkt. Messen Sie den Unterschied zur Standreichweite.',
+  'tests.power.broadJump.instructions': 'Springen Sie aus dem Stand so weit wie möglich nach vorne. Messen Sie von Ihrer Start-Zehenlinie bis zum Landen Ihrer Fersen.',
+  'tests.power.verticalJump.helper': 'Messen Sie erreichte Höhe minus Standreichweite (typischer Bereich: 50-100 cm)',
+  'tests.power.broadJump.helper': 'Messen Sie Gesamtsprungweite (typischer Bereich: 200-300 cm)',
+  'tests.power.label.explosive': 'EXPLOSIV',
+  'tests.power.label.strong': 'STARK',
+  'tests.power.label.average': 'DURCHSCHNITT',
+  'tests.power.label.weak': 'SCHWACH',
+
+  // Tests - Agility
+  'tests.agility.title': 'Agilitätstest',
+  'tests.agility.description': 'Messen Sie Ihre Richtungswechselgeschwindigkeit und Körperkontrolle',
+  'tests.agility.summary': 'Agilitätstest-Zusammenfassung',
+  'tests.agility.scoreLabel': 'Agilitätswert',
+  'tests.agility.testName': 'Test',
+  'tests.agility.proAgility': 'Pro Agility (5-10-5)',
+  'tests.agility.threeCone': '3-Hütchen-Drill',
+  'tests.agility.proAgility.instructions': 'Starten Sie über der Linie. Sprinten Sie 5 Yards nach rechts, berühren Sie die Linie. Sprinten Sie 10 Yards nach links, berühren Sie die Linie. Sprinten Sie 5 Yards nach rechts durch den Start.',
+  'tests.agility.threeCone.instructions': 'Stellen Sie 3 Hütchen im L-Muster auf (5 Yards auseinander). Sprinten Sie vorwärts, herum und zurück im Muster. Konzentrieren Sie sich auf enge Kurven.',
+  'tests.agility.proAgility.helper': 'Notieren Sie Ihre Zeit (typischer Bereich: 4,0-5,5 Sekunden)',
+  'tests.agility.threeCone.helper': 'Notieren Sie Ihre Zeit (typischer Bereich: 6,8-8,5 Sekunden)',
+  'tests.agility.label.elite': 'ELITE',
+  'tests.agility.label.quick': 'SCHNELL',
+  'tests.agility.label.average': 'DURCHSCHNITT',
+  'tests.agility.label.slow': 'LANGSAM',
+
+  // Profile - Speed
+  'profile.speed.title': 'Geschwindigkeitsleistung',
+  'profile.speed.scoreLabel': 'Geschwindigkeitswert',
+  'profile.speed.noData': 'Noch keine Geschwindigkeitstestdaten. Absolvieren Sie einen Test, um Ihre Metriken zu sehen.',
+
+  // Profile - Power
+  'profile.power.title': 'Kraftleistung',
+  'profile.power.scoreLabel': 'Kraftwert',
+  'profile.power.noData': 'Noch keine Krafttestdaten. Absolvieren Sie einen Test, um Ihre Metriken zu sehen.',
+
+  // Profile - Agility
+  'profile.agility.title': 'Agilitätsleistung',
+  'profile.agility.scoreLabel': 'Agilitätswert',
+  'profile.agility.noData': 'Noch keine Agilitätstestdaten. Absolvieren Sie einen Test, um Ihre Metriken zu sehen.',
 };

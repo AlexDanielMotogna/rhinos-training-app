@@ -376,6 +376,84 @@ export const messagesEN = {
   'profile.strength.noData': 'No strength test data yet. Complete a test to see your metrics.',
   'profile.strength.coachNote': 'AI Coach Note',
   'profile.strength.aiTip': 'Your strength profile shows balanced development. Keep focusing on progressive overload in your weak segments.',
+
+  // Tests - Main page
+  'tests.subtitle': 'Measure your athletic performance across key metrics',
+  'tests.start': 'Start Test',
+  'tests.retake': 'Retake Test',
+  'tests.compareTo': 'Compare To',
+  'tests.result': 'Result',
+  'tests.timeSeconds': 'Time (seconds)',
+  'tests.heightCm': 'Height (cm)',
+  'tests.distanceCm': 'Distance (cm)',
+  'tests.strength.title': 'Strength Test',
+  'tests.strength.description': 'Measure your maximum strength across key lifts',
+
+  // Tests - Speed
+  'tests.speed.title': 'Speed Test',
+  'tests.speed.description': 'Measure your straight-line speed and acceleration',
+  'tests.speed.summary': 'Speed Test Summary',
+  'tests.speed.scoreLabel': 'Speed Score',
+  'tests.speed.testName': 'Test',
+  'tests.speed.dash40': '40-Yard Dash',
+  'tests.speed.split10': '10-Yard Split',
+  'tests.speed.dash40.instructions': 'Sprint 40 yards (36.6m) at maximum speed. Have someone time you from start to finish.',
+  'tests.speed.split10.instructions': 'Sprint 10 yards (9.1m) from a standing start. This measures your initial acceleration.',
+  'tests.speed.dash40.helper': 'Record your best time for 40 yards (typical range: 4.4-5.5 seconds)',
+  'tests.speed.split10.helper': 'Record your best time for 10 yards (typical range: 1.5-2.0 seconds)',
+  'tests.speed.label.elite': 'ELITE',
+  'tests.speed.label.fast': 'FAST',
+  'tests.speed.label.average': 'AVERAGE',
+  'tests.speed.label.slow': 'SLOW',
+
+  // Tests - Power
+  'tests.power.title': 'Power Test',
+  'tests.power.description': 'Measure your explosive power and jumping ability',
+  'tests.power.summary': 'Power Test Summary',
+  'tests.power.scoreLabel': 'Power Score',
+  'tests.power.testName': 'Test',
+  'tests.power.verticalJump': 'Vertical Jump',
+  'tests.power.broadJump': 'Broad Jump',
+  'tests.power.verticalJump.instructions': 'Jump as high as you can and touch the highest point. Measure the difference from your standing reach.',
+  'tests.power.broadJump.instructions': 'Jump forward as far as you can from a standing position. Measure from your starting toe line to where your heels land.',
+  'tests.power.verticalJump.helper': 'Measure height reached minus standing reach (typical range: 50-100 cm)',
+  'tests.power.broadJump.helper': 'Measure total distance jumped (typical range: 200-300 cm)',
+  'tests.power.label.explosive': 'EXPLOSIVE',
+  'tests.power.label.strong': 'STRONG',
+  'tests.power.label.average': 'AVERAGE',
+  'tests.power.label.weak': 'WEAK',
+
+  // Tests - Agility
+  'tests.agility.title': 'Agility Test',
+  'tests.agility.description': 'Measure your change of direction speed and body control',
+  'tests.agility.summary': 'Agility Test Summary',
+  'tests.agility.scoreLabel': 'Agility Score',
+  'tests.agility.testName': 'Test',
+  'tests.agility.proAgility': 'Pro Agility (5-10-5)',
+  'tests.agility.threeCone': '3-Cone Drill',
+  'tests.agility.proAgility.instructions': 'Start straddling line. Sprint 5 yards right, touch line. Sprint 10 yards left, touch line. Sprint 5 yards right through start.',
+  'tests.agility.threeCone.instructions': 'Set up 3 cones in L-shape (5 yards apart). Sprint forward, around, and back in pattern. Focus on tight turns.',
+  'tests.agility.proAgility.helper': 'Record your time (typical range: 4.0-5.5 seconds)',
+  'tests.agility.threeCone.helper': 'Record your time (typical range: 6.8-8.5 seconds)',
+  'tests.agility.label.elite': 'ELITE',
+  'tests.agility.label.quick': 'QUICK',
+  'tests.agility.label.average': 'AVERAGE',
+  'tests.agility.label.slow': 'SLOW',
+
+  // Profile - Speed
+  'profile.speed.title': 'Speed Performance',
+  'profile.speed.scoreLabel': 'Speed Score',
+  'profile.speed.noData': 'No speed test data yet. Complete a test to see your metrics.',
+
+  // Profile - Power
+  'profile.power.title': 'Power Performance',
+  'profile.power.scoreLabel': 'Power Score',
+  'profile.power.noData': 'No power test data yet. Complete a test to see your metrics.',
+
+  // Profile - Agility
+  'profile.agility.title': 'Agility Performance',
+  'profile.agility.scoreLabel': 'Agility Score',
+  'profile.agility.noData': 'No agility test data yet. Complete a test to see your metrics.',
 };
 
 export type MessageKey = keyof typeof messagesEN;

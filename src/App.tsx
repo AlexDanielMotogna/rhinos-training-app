@@ -13,7 +13,11 @@ import { Attendance } from './pages/Attendance';
 import { Leaderboard } from './pages/Leaderboard';
 import { Coach } from './pages/Coach';
 import { Admin } from './pages/Admin';
+import { Tests } from './pages/Tests';
 import { TestsStrength } from './pages/TestsStrength';
+import { TestsSpeed } from './pages/TestsSpeed';
+import { TestsPower } from './pages/TestsPower';
+import { TestsAgility } from './pages/TestsAgility';
 import { getUser, initializeDemoProfiles } from './services/mock';
 import type { HardNotification as HardNotificationType } from './types/notification';
 
@@ -84,7 +88,11 @@ function App() {
               <Route element={<AppShell><Outlet /></AppShell>}>
                 <Route path="/training" element={<MyTraining />} />
                 <Route path="/stats" element={<MyStats />} />
-                <Route path="/tests" element={<TestsStrength />} />
+                <Route path="/tests" element={<Tests />} />
+                <Route path="/tests/strength" element={<TestsStrength />} />
+                <Route path="/tests/speed" element={<TestsSpeed />} />
+                <Route path="/tests/power" element={<TestsPower />} />
+                <Route path="/tests/agility" element={<TestsAgility />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
