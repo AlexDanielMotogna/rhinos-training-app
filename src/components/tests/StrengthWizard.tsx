@@ -10,7 +10,10 @@ import {
   Step,
   StepLabel,
   Slider,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { TestKey, StrengthInput, StrengthResult } from '../../types/testing';
 import { epley1RM, relative, testToSegment } from '../../services/strengthCalc';
@@ -129,7 +132,15 @@ export const StrengthWizard: React.FC<StrengthWizardProps> = ({ bodyWeightKg, on
         </Typography>
 
         <Alert severity="info" sx={{ mb: 2 }}>
-          {t('tests.warmup.tip')}
+          <Typography variant="body2" gutterBottom fontWeight={600}>
+            {t('tests.howItWorks')}
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            {t('tests.warmup.tip')}
+          </Typography>
+          <Typography variant="body2">
+            {t('tests.instructions')}
+          </Typography>
         </Alert>
 
         {isPlank ? (
@@ -197,9 +208,26 @@ export const StrengthWizard: React.FC<StrengthWizardProps> = ({ bodyWeightKg, on
 
             {estimated1RM !== null && (
               <Alert severity="success" sx={{ mb: 2 }}>
-                {t('tests.estimated1RM')}: <strong>{estimated1RM.toFixed(1)} kg</strong>
-                <br />
-                {t('tests.relativeToBW')}: <strong>{relativeValue?.toFixed(2)}× BW</strong>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                  <Typography variant="body2">
+                    {t('tests.estimated1RM')}: <strong>{estimated1RM.toFixed(1)} kg</strong>
+                  </Typography>
+                  <Tooltip title={t('tests.oneRmExplained')} arrow>
+                    <IconButton size="small">
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="body2">
+                    {t('tests.relativeToBW')}: <strong>{relativeValue?.toFixed(2)}× BW</strong>
+                  </Typography>
+                  <Tooltip title={t('tests.relativeExplained')} arrow>
+                    <IconButton size="small">
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </Alert>
             )}
           </>
