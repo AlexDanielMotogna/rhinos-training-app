@@ -258,14 +258,14 @@ export const Admin: React.FC = () => {
       setEditingTemplate(template);
       setNewTemplateData({
         trainingTypeId: template.trainingTypeId,
-        positions: template.positions,
-        durationWeeks: template.durationWeeks,
-        frequencyPerWeek: template.frequencyPerWeek,
-        blocks: template.blocks.map(b => ({
+        positions: template.positions || ['RB'],
+        durationWeeks: template.durationWeeks || 8,
+        frequencyPerWeek: template.frequencyPerWeek || '2-3',
+        blocks: template.blocks?.map(b => ({
           title: b.title,
           order: b.order,
           exerciseIds: b.exercises.map(ex => ex.id),
-        })),
+        })) || [],
       });
     } else {
       setEditingTemplate(null);
@@ -392,9 +392,11 @@ export const Admin: React.FC = () => {
                           />
                         </Box>
 
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                          {template.durationWeeks} weeks • {template.frequencyPerWeek}x/week
-                        </Typography>
+                        {template.durationWeeks && template.frequencyPerWeek && (
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                            {template.durationWeeks} weeks • {template.frequencyPerWeek}x/week
+                          </Typography>
+                        )}
 
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                           {template.blocks.length} block(s)
@@ -1099,7 +1101,7 @@ export const Admin: React.FC = () => {
           <Button
             onClick={handleSaveTemplate}
             variant="contained"
-            disabled={!newTemplateData.trainingTypeId || newTemplateData.positions.length === 0 || newTemplateData.blocks.length === 0}
+            disabled={!newTemplateData.trainingTypeId || !newTemplateData.positions || newTemplateData.positions.length === 0 || newTemplateData.blocks.length === 0}
           >
             {t('common.save')}
           </Button>
