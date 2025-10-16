@@ -16,18 +16,32 @@ import {
 } from '@mui/material';
 import { useI18n } from '../i18n/I18nProvider';
 import { getUser, getMockKPIs, getMockProjection } from '../services/mock';
+import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
+import { StrengthBars } from '../components/profile/StrengthBars';
 import type { KPISnapshot, ProjectionRow } from '../types/kpi';
+import type { StrengthSummary } from '../types/testing';
 
 export const Profile: React.FC = () => {
   const { t } = useI18n();
   const [kpis, setKpis] = useState<KPISnapshot | null>(null);
   const [projection, setProjection] = useState<ProjectionRow[]>([]);
+  const [strengthSummary, setStrengthSummary] = useState<StrengthSummary | null>(null);
 
   const user = getUser();
 
   useEffect(() => {
     setKpis(getMockKPIs());
     setProjection(getMockProjection());
+
+    // Load last strength test from localStorage
+    const lastTest = localStorage.getItem('lastStrengthTest');
+    if (lastTest) {
+      try {
+        setStrengthSummary(JSON.parse(lastTest));
+      } catch (e) {
+        console.error('Failed to parse strength test data', e);
+      }
+    }
   }, []);
 
   if (!user || !kpis) {
@@ -147,6 +161,37 @@ export const Profile: React.FC = () => {
           </Box>
         </CardContent>
       </Card>
+
+      {/* Strength Testing Results */}
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        {t('profile.strength.title')}
+      </Typography>
+
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={6}>
+          <StrengthProfileCard summary={strengthSummary} />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          {strengthSummary && (
+            <StrengthBars
+              segments={{
+                legs: strengthSummary.bySegment.legs.score,
+                arms: strengthSummary.bySegment.arms.score,
+                back: strengthSummary.bySegment.back.score,
+                shoulders: strengthSummary.bySegment.shoulders.score,
+                core: strengthSummary.bySegment.core.score,
+              }}
+              meta={{
+                legs: strengthSummary.bySegment.legs.detail,
+                arms: strengthSummary.bySegment.arms.detail,
+                back: strengthSummary.bySegment.back.detail,
+                shoulders: strengthSummary.bySegment.shoulders.detail,
+                core: strengthSummary.bySegment.core.detail,
+              }}
+            />
+          )}
+        </Grid>
+      </Grid>
 
       <Typography variant="h5" sx={{ mb: 2 }}>
         {t('profile.projection')}

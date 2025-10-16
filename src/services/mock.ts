@@ -18,6 +18,7 @@ export interface MockUser {
   heightCm: number;
   position: Position;
   role: 'player' | 'coach';
+  sex?: 'male' | 'female'; // Added for strength testing benchmarks
 }
 
 export function saveUser(user: MockUser): void {
