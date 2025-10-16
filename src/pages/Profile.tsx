@@ -18,14 +18,20 @@ import { useI18n } from '../i18n/I18nProvider';
 import { getUser, getMockKPIs, getMockProjection } from '../services/mock';
 import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
 import { StrengthBars } from '../components/profile/StrengthBars';
+import { SpeedProfileCard } from '../components/profile/SpeedProfileCard';
+import { PowerProfileCard } from '../components/profile/PowerProfileCard';
+import { AgilityProfileCard } from '../components/profile/AgilityProfileCard';
 import type { KPISnapshot, ProjectionRow } from '../types/kpi';
-import type { StrengthSummary } from '../types/testing';
+import type { StrengthSummary, SpeedSummary, PowerSummary, AgilitySummary } from '../types/testing';
 
 export const Profile: React.FC = () => {
   const { t } = useI18n();
   const [kpis, setKpis] = useState<KPISnapshot | null>(null);
   const [projection, setProjection] = useState<ProjectionRow[]>([]);
   const [strengthSummary, setStrengthSummary] = useState<StrengthSummary | null>(null);
+  const [speedSummary, setSpeedSummary] = useState<SpeedSummary | null>(null);
+  const [powerSummary, setPowerSummary] = useState<PowerSummary | null>(null);
+  const [agilitySummary, setAgilitySummary] = useState<AgilitySummary | null>(null);
 
   const user = getUser();
 
@@ -34,12 +40,42 @@ export const Profile: React.FC = () => {
     setProjection(getMockProjection());
 
     // Load last strength test from localStorage
-    const lastTest = localStorage.getItem('lastStrengthTest');
-    if (lastTest) {
+    const lastStrengthTest = localStorage.getItem('lastStrengthTest');
+    if (lastStrengthTest) {
       try {
-        setStrengthSummary(JSON.parse(lastTest));
+        setStrengthSummary(JSON.parse(lastStrengthTest));
       } catch (e) {
         console.error('Failed to parse strength test data', e);
+      }
+    }
+
+    // Load last speed test from localStorage
+    const lastSpeedTest = localStorage.getItem('lastSpeedTest');
+    if (lastSpeedTest) {
+      try {
+        setSpeedSummary(JSON.parse(lastSpeedTest));
+      } catch (e) {
+        console.error('Failed to parse speed test data', e);
+      }
+    }
+
+    // Load last power test from localStorage
+    const lastPowerTest = localStorage.getItem('lastPowerTest');
+    if (lastPowerTest) {
+      try {
+        setPowerSummary(JSON.parse(lastPowerTest));
+      } catch (e) {
+        console.error('Failed to parse power test data', e);
+      }
+    }
+
+    // Load last agility test from localStorage
+    const lastAgilityTest = localStorage.getItem('lastAgilityTest');
+    if (lastAgilityTest) {
+      try {
+        setAgilitySummary(JSON.parse(lastAgilityTest));
+      } catch (e) {
+        console.error('Failed to parse agility test data', e);
       }
     }
   }, []);
@@ -162,11 +198,12 @@ export const Profile: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Strength Testing Results */}
+      {/* Performance Testing Results */}
       <Typography variant="h5" sx={{ mb: 2 }}>
-        {t('profile.strength.title')}
+        {t('profile.performanceTests')}
       </Typography>
 
+      {/* Strength */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
           <StrengthProfileCard summary={strengthSummary} />
@@ -190,6 +227,19 @@ export const Profile: React.FC = () => {
               }}
             />
           )}
+        </Grid>
+      </Grid>
+
+      {/* Speed, Power, Agility */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <SpeedProfileCard summary={speedSummary} />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <PowerProfileCard summary={powerSummary} />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <AgilityProfileCard summary={agilitySummary} />
         </Grid>
       </Grid>
 

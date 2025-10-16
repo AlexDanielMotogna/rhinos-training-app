@@ -133,6 +133,7 @@ export const messagesDE = {
   // Profile
   'profile.metrics': 'Meine Metriken',
   'profile.weekly': 'Diese Woche',
+  'profile.performanceTests': 'Leistungstests',
   'profile.projection': '12-Wochen-Projektion',
   'profile.level': 'Level',
   'profile.labels': 'Etiketten',
