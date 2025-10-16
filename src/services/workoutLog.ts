@@ -8,7 +8,10 @@ export interface WorkoutLog {
   date: string; // ISO date string
   entries: WorkoutEntry[];
   notes?: string;
-  source: 'player' | 'coach'; // player = free session, coach = plan workout
+  source: 'player' | 'coach'; // player = free session/user plan, coach = team plan workout
+  planTemplateId?: string; // Link to UserPlanTemplate if workout was from a user plan
+  planName?: string; // Name of the plan used (for history display)
+  duration?: number; // Workout duration in minutes
   createdAt: string;
 }
 
