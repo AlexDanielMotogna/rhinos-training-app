@@ -98,6 +98,8 @@ export const messagesDE = {
   'workout.freeSession': 'Freie Einheit',
   'workout.confirmDelete': 'Möchten Sie dieses Training wirklich löschen?',
   'workout.workoutDeleted': 'Training erfolgreich gelöscht!',
+  'workout.editWorkout': 'Training bearbeiten',
+  'workout.workoutUpdated': 'Training erfolgreich aktualisiert!',
 
   // Categories
   'category.Strength': 'Kraft',

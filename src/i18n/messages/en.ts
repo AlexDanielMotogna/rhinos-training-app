@@ -98,6 +98,8 @@ export const messagesEN = {
   'workout.freeSession': 'Free Session',
   'workout.confirmDelete': 'Are you sure you want to delete this workout?',
   'workout.workoutDeleted': 'Workout deleted successfully!',
+  'workout.editWorkout': 'Edit Workout',
+  'workout.workoutUpdated': 'Workout updated successfully!',
 
   // Categories
   'category.Strength': 'Strength',

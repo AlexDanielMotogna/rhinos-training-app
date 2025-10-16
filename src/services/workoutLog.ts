@@ -90,6 +90,28 @@ export function saveWorkoutEntry(userId: string, entry: WorkoutEntry): WorkoutLo
 }
 
 /**
+ * Update a workout log
+ */
+export function updateWorkoutLog(logId: string, updates: Partial<Omit<WorkoutLog, 'id' | 'userId' | 'createdAt'>>): WorkoutLog | null {
+  const allLogs = getWorkoutLogs();
+  const index = allLogs.findIndex(log => log.id === logId);
+
+  if (index === -1) {
+    return null;
+  }
+
+  const updatedLog = {
+    ...allLogs[index],
+    ...updates,
+  };
+
+  allLogs[index] = updatedLog;
+  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
+
+  return updatedLog;
+}
+
+/**
  * Delete a workout log
  */
 export function deleteWorkoutLog(logId: string): void {

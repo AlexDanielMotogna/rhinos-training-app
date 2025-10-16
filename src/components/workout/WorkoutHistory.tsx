@@ -10,6 +10,7 @@ import {
   Divider,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { WorkoutLog } from '../../services/workoutLog';
@@ -17,11 +18,13 @@ import type { WorkoutLog } from '../../services/workoutLog';
 interface WorkoutHistoryProps {
   workouts: WorkoutLog[];
   onDelete?: (logId: string) => void;
+  onEdit?: (workout: WorkoutLog) => void;
 }
 
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   workouts,
   onDelete,
+  onEdit,
 }) => {
   const { t } = useI18n();
 
@@ -163,17 +166,27 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                     )}
                   </Box>
 
-                  {/* Delete button */}
-                  {onDelete && (
-                    <IconButton
-                      size="small"
-                      onClick={() => onDelete(workout.id)}
-                      color="error"
-                      sx={{ ml: 1 }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  )}
+                  {/* Action buttons */}
+                  <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
+                    {onEdit && (
+                      <IconButton
+                        size="small"
+                        onClick={() => onEdit(workout)}
+                        color="primary"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                    {onDelete && (
+                      <IconButton
+                        size="small"
+                        onClick={() => onDelete(workout.id)}
+                        color="error"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Box>
                 </Box>
               </CardContent>
             </Card>

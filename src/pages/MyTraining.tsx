@@ -19,9 +19,10 @@ import { WorkoutBlock } from '../components/workout/WorkoutBlock';
 import { WorkoutLogDialog } from '../components/workout/WorkoutLogDialog';
 import { FreeSessionDialog } from '../components/workout/FreeSessionDialog';
 import { WorkoutHistory } from '../components/workout/WorkoutHistory';
+import { EditWorkoutDialog } from '../components/workout/EditWorkoutDialog';
 import { getUser, getTemplatesForPosition, getTrainingTypes } from '../services/mock';
 import { getActiveAssignmentsForPlayer } from '../services/trainingBuilder';
-import { saveWorkoutLog, saveWorkoutEntry, getWorkoutLogsByUser, deleteWorkoutLog } from '../services/workoutLog';
+import { saveWorkoutLog, saveWorkoutEntry, getWorkoutLogsByUser, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
 import type { TrainingTypeKey, PositionTemplate } from '../types/template';
 import type { Exercise } from '../types/exercise';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
@@ -39,6 +40,7 @@ export const MyTraining: React.FC = () => {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [editWorkout, setEditWorkout] = useState<WorkoutLog | null>(null);
 
   const user = getUser();
   const trainingTypes = getTrainingTypes();
@@ -112,6 +114,18 @@ export const MyTraining: React.FC = () => {
     }
   };
 
+  const handleEditWorkout = (workout: WorkoutLog) => {
+    setEditWorkout(workout);
+  };
+
+  const handleSaveEditedWorkout = (workoutId: string, entries: WorkoutEntry[], notes?: string) => {
+    updateWorkoutLog(workoutId, { entries, notes });
+    refreshWorkoutHistory();
+    setEditWorkout(null);
+    setSuccessMessage(t('workout.workoutUpdated'));
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
   const handleVideoClick = (url: string) => {
     const sanitized = sanitizeYouTubeUrl(url);
     if (sanitized) {
@@ -160,6 +174,7 @@ export const MyTraining: React.FC = () => {
           <WorkoutHistory
             workouts={workoutHistory}
             onDelete={handleDeleteWorkout}
+            onEdit={handleEditWorkout}
           />
         </Box>
       )}
@@ -298,6 +313,13 @@ export const MyTraining: React.FC = () => {
         open={showFreeSession}
         onClose={() => setShowFreeSession(false)}
         onSave={handleSaveFreeSession}
+      />
+
+      <EditWorkoutDialog
+        open={Boolean(editWorkout)}
+        workout={editWorkout}
+        onClose={() => setEditWorkout(null)}
+        onSave={handleSaveEditedWorkout}
       />
 
       <Dialog

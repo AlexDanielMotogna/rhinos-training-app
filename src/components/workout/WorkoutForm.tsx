@@ -22,6 +22,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 
 interface WorkoutFormProps {
   exercise?: Exercise;
+  initialData?: WorkoutEntry;
   onSave: (entry: WorkoutEntry) => void;
   onCancel: () => void;
 }
@@ -39,18 +40,19 @@ const categories: ExerciseCategory[] = [
 
 export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   exercise,
+  initialData,
   onSave,
   onCancel,
 }) => {
   const { t } = useI18n();
-  const [name, setName] = useState(exercise?.name || '');
-  const [category, setCategory] = useState<ExerciseCategory>(exercise?.category || 'Strength');
-  const [setData, setSetData] = useState<SetData[]>([
-    { setNumber: 1, reps: undefined, kg: undefined, durationMin: undefined }
-  ]);
-  const [rpe, setRpe] = useState<number>(5);
-  const [youtubeUrl, setYoutubeUrl] = useState(exercise?.youtubeUrl || '');
-  const [notes, setNotes] = useState('');
+  const [name, setName] = useState(initialData?.name || exercise?.name || '');
+  const [category, setCategory] = useState<ExerciseCategory>(initialData?.category || exercise?.category || 'Strength');
+  const [setData, setSetData] = useState<SetData[]>(
+    initialData?.setData || [{ setNumber: 1, reps: undefined, kg: undefined, durationMin: undefined }]
+  );
+  const [rpe, setRpe] = useState<number>(initialData?.rpe || 5);
+  const [youtubeUrl, setYoutubeUrl] = useState(initialData?.youtubeUrl || exercise?.youtubeUrl || '');
+  const [notes, setNotes] = useState(initialData?.notes || '');
 
   const handleAddSet = () => {
     const newSetNumber = setData.length + 1;
