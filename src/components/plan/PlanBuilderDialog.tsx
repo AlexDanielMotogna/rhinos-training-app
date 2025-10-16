@@ -59,7 +59,6 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
       youtubeUrl: exercise.youtubeUrl,
       targetSets: 3,
       targetReps: 10,
-      targetKg: undefined,
       targetDurationMin: undefined,
       notes: '',
       order: exercises.length,
@@ -188,26 +187,15 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
                             inputProps={{ min: 1, max: 10 }}
                           />
                           {exercise.category !== 'Mobility' && exercise.category !== 'Conditioning' && (
-                            <>
-                              <TextField
-                                label="Reps"
-                                type="number"
-                                value={exercise.targetReps || ''}
-                                onChange={(e) => handleUpdateExercise(index, { targetReps: Number(e.target.value) || undefined })}
-                                size="small"
-                                sx={{ width: 80 }}
-                                inputProps={{ min: 1, max: 100 }}
-                              />
-                              <TextField
-                                label="Weight (kg)"
-                                type="number"
-                                value={exercise.targetKg || ''}
-                                onChange={(e) => handleUpdateExercise(index, { targetKg: Number(e.target.value) || undefined })}
-                                size="small"
-                                sx={{ width: 100 }}
-                                inputProps={{ min: 0, step: 2.5 }}
-                              />
-                            </>
+                            <TextField
+                              label="Reps"
+                              type="number"
+                              value={exercise.targetReps || ''}
+                              onChange={(e) => handleUpdateExercise(index, { targetReps: Number(e.target.value) || undefined })}
+                              size="small"
+                              sx={{ width: 80 }}
+                              inputProps={{ min: 1, max: 100 }}
+                            />
                           )}
                           {(exercise.category === 'Conditioning' || exercise.category === 'Mobility') && (
                             <TextField

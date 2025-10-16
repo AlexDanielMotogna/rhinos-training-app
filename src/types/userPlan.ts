@@ -8,6 +8,7 @@ import type { ExerciseCategory } from './exercise';
 /**
  * Exercise within a plan template
  * Defines target/goal values for the exercise
+ * Note: Weight (kg) is NOT stored in template - it's logged during workout
  */
 export interface PlanExercise {
   id: string; // Unique ID for this exercise in the plan
@@ -19,8 +20,7 @@ export interface PlanExercise {
   // Target values (goals for this exercise)
   targetSets: number;
   targetReps?: number;
-  targetKg?: number;
-  targetDurationMin?: number;
+  targetDurationMin?: number; // For Conditioning/Mobility exercises
 
   notes?: string;
   order: number; // Display order in the plan

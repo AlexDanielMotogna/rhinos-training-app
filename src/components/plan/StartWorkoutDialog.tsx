@@ -141,7 +141,6 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
                   <Typography variant="body2">
                     <strong>Target:</strong> {currentExercise.targetSets} sets
                     {currentExercise.targetReps && ` × ${currentExercise.targetReps} reps`}
-                    {currentExercise.targetKg && ` @ ${currentExercise.targetKg}kg`}
                     {currentExercise.targetDurationMin && ` for ${currentExercise.targetDurationMin} min`}
                   </Typography>
                   {currentExercise.notes && (

@@ -84,7 +84,6 @@ export const PlanCard: React.FC<PlanCardProps> = ({
               {exercise.targetSets && exercise.targetReps && (
                 <Typography component="span" variant="caption" sx={{ ml: 0.5, color: 'text.disabled' }}>
                   {exercise.targetSets}×{exercise.targetReps}
-                  {exercise.targetKg && ` @ ${exercise.targetKg}kg`}
                 </Typography>
               )}
             </Typography>
