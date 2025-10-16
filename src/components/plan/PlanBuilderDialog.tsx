@@ -223,15 +223,16 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
                         </Box>
 
                         {/* Exercise Notes */}
-                        <TextField
-                          label="Notes (optional)"
-                          value={exercise.notes || ''}
-                          onChange={(e) => handleUpdateExercise(index, { notes: e.target.value })}
-                          size="small"
-                          fullWidth
-                          sx={{ mt: 1, pl: 4 }}
-                          placeholder="e.g., Focus on form, pause at top"
-                        />
+                        <Box sx={{ pl: 4, width: '100%', mt: 1 }}>
+                          <TextField
+                            label="Notes (optional)"
+                            value={exercise.notes || ''}
+                            onChange={(e) => handleUpdateExercise(index, { notes: e.target.value })}
+                            size="small"
+                            fullWidth
+                            placeholder="e.g., Focus on form, pause at top"
+                          />
+                        </Box>
                       </ListItem>
                     </React.Fragment>
                   ))}
