@@ -12,7 +12,6 @@ import {
   Chip,
   Card,
   CardContent,
-  Grid,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useI18n } from '../i18n/I18nProvider';
@@ -277,41 +276,43 @@ export const MyTraining: React.FC = () => {
           {/* My Plans Tab */}
           {mySessionTab === 'plans' && (
             <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6">My Workout Plans</Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => {
-                    setEditingPlan(null);
-                    setShowPlanBuilder(true);
-                  }}
-                >
-                  Create New Plan
-                </Button>
-              </Box>
+              {/* Create Button - Full width on mobile */}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  setEditingPlan(null);
+                  setShowPlanBuilder(true);
+                }}
+                fullWidth
+                sx={{
+                  mb: 3,
+                  py: 1.5,
+                }}
+              >
+                Create New Plan
+              </Button>
 
               {userPlans.length === 0 ? (
                 <Alert severity="info">
                   No workout plans yet. Click "Create New Plan" to build your first workout template!
                 </Alert>
               ) : (
-                <Grid container spacing={2}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {userPlans.map(plan => (
-                    <Grid item xs={12} sm={6} md={4} key={plan.id}>
-                      <PlanCard
-                        plan={plan}
-                        onStart={handleStartPlan}
-                        onEdit={(plan) => {
-                          setEditingPlan(plan);
-                          setShowPlanBuilder(true);
-                        }}
-                        onDelete={handleDeletePlan}
-                        onDuplicate={handleDuplicatePlan}
-                      />
-                    </Grid>
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      onStart={handleStartPlan}
+                      onEdit={(plan) => {
+                        setEditingPlan(plan);
+                        setShowPlanBuilder(true);
+                      }}
+                      onDelete={handleDeletePlan}
+                      onDuplicate={handleDuplicatePlan}
+                    />
                   ))}
-                </Grid>
+                </Box>
               )}
             </Box>
           )}

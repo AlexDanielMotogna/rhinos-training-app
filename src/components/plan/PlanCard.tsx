@@ -6,7 +6,7 @@ import {
   Box,
   IconButton,
   Chip,
-  Tooltip,
+  Button,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import EditIcon from '@mui/icons-material/Edit';
@@ -49,96 +49,111 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   };
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <CardContent sx={{ flex: 1 }}>
+    <Card sx={{ width: '100%' }}>
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" sx={{ mb: 0.5 }}>
-              {plan.name}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ mb: 1.5 }}>
+          <Typography variant="h6" sx={{ mb: 0.5, fontSize: '1.1rem' }}>
+            {plan.name}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Chip
+              icon={<FitnessCenterIcon sx={{ fontSize: '0.9rem' }} />}
+              label={`${plan.exercises.length} ${plan.exercises.length === 1 ? 'exercise' : 'exercises'}`}
+              size="small"
+              variant="outlined"
+              sx={{ height: 24, fontSize: '0.75rem' }}
+            />
+            {plan.timesCompleted > 0 && (
               <Chip
-                icon={<FitnessCenterIcon />}
-                label={`${plan.exercises.length} ${plan.exercises.length === 1 ? 'exercise' : 'exercises'}`}
+                label={`${plan.timesCompleted}x`}
                 size="small"
+                color="success"
                 variant="outlined"
+                sx={{ height: 24, fontSize: '0.75rem' }}
               />
-              {plan.timesCompleted > 0 && (
-                <Chip
-                  label={`Completed ${plan.timesCompleted}x`}
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                />
-              )}
-            </Box>
+            )}
           </Box>
         </Box>
 
-        {/* Exercise Preview */}
-        <Box sx={{ mb: 2 }}>
-          {plan.exercises.slice(0, 3).map((exercise) => (
-            <Typography key={exercise.id} variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+        {/* Exercise Preview - Compact */}
+        <Box sx={{ mb: 1.5 }}>
+          {plan.exercises.slice(0, 2).map((exercise) => (
+            <Typography key={exercise.id} variant="body2" color="text.secondary" sx={{ mb: 0.3, fontSize: '0.85rem' }}>
               • {exercise.name}
               {exercise.targetSets && exercise.targetReps && (
-                <span style={{ marginLeft: '8px', color: '#999' }}>
+                <Typography component="span" variant="caption" sx={{ ml: 0.5, color: 'text.disabled' }}>
                   {exercise.targetSets}×{exercise.targetReps}
                   {exercise.targetKg && ` @ ${exercise.targetKg}kg`}
-                </span>
+                </Typography>
               )}
             </Typography>
           ))}
-          {plan.exercises.length > 3 && (
-            <Typography variant="caption" color="text.secondary">
-              +{plan.exercises.length - 3} more...
+          {plan.exercises.length > 2 && (
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              +{plan.exercises.length - 2} more
             </Typography>
           )}
         </Box>
 
-        {/* Last Used */}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+        {/* Last Used - Compact */}
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5, fontSize: '0.75rem' }}>
           Last: {formatLastUsed(plan.lastUsed)}
         </Typography>
 
-        {/* Action Buttons */}
-        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-          <Tooltip title="Start Workout">
-            <IconButton
-              color="primary"
-              onClick={() => onStart(plan)}
-              sx={{ bgcolor: 'primary.light', '&:hover': { bgcolor: 'primary.main' } }}
-            >
-              <PlayArrowIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit Plan">
+        {/* Action Buttons - Mobile Optimized */}
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          {/* Start Button - Primary, Full Width */}
+          <Button
+            variant="contained"
+            startIcon={<PlayArrowIcon />}
+            onClick={() => onStart(plan)}
+            fullWidth
+            sx={{
+              py: 1,
+              fontWeight: 600,
+            }}
+          >
+            Start
+          </Button>
+
+          {/* Compact Action Icons */}
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
             <IconButton
               size="small"
               onClick={() => onEdit(plan)}
-              color="default"
+              sx={{
+                border: 1,
+                borderColor: 'divider',
+                '&:hover': { bgcolor: 'action.hover' }
+              }}
             >
-              <EditIcon fontSize="small" />
+              <EditIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>
-          </Tooltip>
-          <Tooltip title="Duplicate Plan">
             <IconButton
               size="small"
               onClick={() => onDuplicate(plan.id)}
-              color="default"
+              sx={{
+                border: 1,
+                borderColor: 'divider',
+                '&:hover': { bgcolor: 'action.hover' }
+              }}
             >
-              <ContentCopyIcon fontSize="small" />
+              <ContentCopyIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete Plan">
             <IconButton
               size="small"
               onClick={() => onDelete(plan.id)}
               color="error"
+              sx={{
+                border: 1,
+                borderColor: 'divider',
+                '&:hover': { bgcolor: 'error.lighter' }
+              }}
             >
-              <DeleteIcon fontSize="small" />
+              <DeleteIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>
-          </Tooltip>
+          </Box>
         </Box>
       </CardContent>
     </Card>
