@@ -102,6 +102,7 @@ export const messagesDE = {
   'workout.workoutUpdated': 'Training erfolgreich aktualisiert!',
   'workout.start': 'Starten',
   'workout.continue': 'Fortsetzen',
+  'workout.finishWorkout': 'Training beenden',
 
   // Categories
   'category.Strength': 'Kraft',

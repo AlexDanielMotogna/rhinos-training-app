@@ -283,13 +283,13 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
 
       <DialogActions>
         <Button onClick={onClose}>{t('common.cancel')}</Button>
-        {completedEntries.length === totalExercises && (
+        {completedEntries.length > 0 && (
           <Button
             onClick={handleFinishWorkout}
             variant="contained"
             color="success"
           >
-            Finish Workout
+            {t('workout.finishWorkout')}
           </Button>
         )}
       </DialogActions>

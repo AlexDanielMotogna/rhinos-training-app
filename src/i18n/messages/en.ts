@@ -102,6 +102,7 @@ export const messagesEN = {
   'workout.workoutUpdated': 'Workout updated successfully!',
   'workout.start': 'Start',
   'workout.continue': 'Continue',
+  'workout.finishWorkout': 'Finish Workout',
 
   // Categories
   'category.Strength': 'Strength',
