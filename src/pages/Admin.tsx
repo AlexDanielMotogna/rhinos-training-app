@@ -382,7 +382,7 @@ export const Admin: React.FC = () => {
                           <Typography variant="h6">
                             {template.trainingTypeName}
                           </Typography>
-                          {template.positions.map((pos) => (
+                          {template.positions?.map((pos) => (
                             <Chip key={pos} label={pos} size="small" color="primary" />
                           ))}
                           <Chip
