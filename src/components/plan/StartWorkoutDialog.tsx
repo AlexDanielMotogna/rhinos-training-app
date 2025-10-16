@@ -146,6 +146,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
 
   // Get the logged entry for a specific exercise (if any)
   const getExerciseEntry = (index: number): WorkoutEntry | undefined => {
+    if (!plan || !plan.exercises[index]) return undefined;
     const exerciseName = plan.exercises[index].name;
     return completedEntries.find(entry => entry.name === exerciseName);
   };
