@@ -23,6 +23,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 interface WorkoutFormProps {
   exercise?: Exercise;
   initialData?: WorkoutEntry;
+  targetSets?: number; // Target sets for this exercise
   onSave: (entry: WorkoutEntry) => void;
   onCancel: () => void;
 }
@@ -41,6 +42,7 @@ const categories: ExerciseCategory[] = [
 export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   exercise,
   initialData,
+  targetSets,
   onSave,
   onCancel,
 }) => {
@@ -185,9 +187,16 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
         {/* Sets with individual tracking */}
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="subtitle1" fontWeight={600}>
-              {t('workout.sets')}
-            </Typography>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600}>
+                {t('workout.sets')}
+              </Typography>
+              {targetSets && (
+                <Typography variant="caption" color="text.secondary">
+                  Target: {targetSets} sets • Completed: {previousSets.length} • New: {setData.length}
+                </Typography>
+              )}
+            </Box>
             <Button
               size="small"
               startIcon={<AddIcon />}

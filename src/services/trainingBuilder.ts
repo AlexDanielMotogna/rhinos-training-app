@@ -114,7 +114,9 @@ export function createTrainingTemplate(dto: TrainingTemplateDTO): TrainingTempla
       exercises: blockDto.exerciseIds
         .map(id => globalCatalog.find(ex => ex.id === id))
         .filter((ex): ex is Exercise => ex !== undefined),
-    })),
+      globalSets: blockDto.globalSets,
+      exerciseConfigs: blockDto.exerciseConfigs,
+    } as any)),
     active: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -158,7 +160,9 @@ export function updateTrainingTemplate(id: string, dto: TrainingTemplateDTO): Tr
       exercises: blockDto.exerciseIds
         .map(id => globalCatalog.find(ex => ex.id === id))
         .filter((ex): ex is Exercise => ex !== undefined),
-    })),
+      globalSets: blockDto.globalSets,
+      exerciseConfigs: blockDto.exerciseConfigs,
+    } as any)),
     updatedAt: new Date().toISOString(),
   };
 

@@ -159,6 +159,14 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
     return entry?.setData?.length || 0;
   };
 
+  // Get target sets for a specific exercise
+  const getTargetSets = (index: number): number | undefined => {
+    if (!block) return undefined;
+    const exercise = block.items[index];
+    const exerciseConfig = block.exerciseConfigs?.find(c => c.exerciseId === exercise.id);
+    return exerciseConfig?.sets || block.globalSets;
+  };
+
   // Convert Exercise to format for WorkoutForm
   const exerciseForForm = selectedExercise ? {
     id: selectedExercise.id,
@@ -198,7 +206,9 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
             <List>
               {block.items.map((exercise, index) => {
                 const completedSets = getCompletedSetsCount(index);
+                const targetSets = getTargetSets(index);
                 const hasAnySets = completedSets > 0;
+                const isComplete = targetSets && completedSets >= targetSets;
 
                 return (
                   <ListItem
@@ -210,9 +220,9 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
                       onClick={() => handleSelectExercise(index)}
                       sx={{
                         border: 1,
-                        borderColor: hasAnySets ? 'success.main' : 'divider',
+                        borderColor: isComplete ? 'success.main' : hasAnySets ? 'info.main' : 'divider',
                         borderRadius: 1,
-                        bgcolor: hasAnySets ? 'success.lighter' : 'transparent',
+                        bgcolor: isComplete ? 'success.lighter' : hasAnySets ? 'info.lighter' : 'transparent',
                         '&:hover': {
                           borderColor: 'primary.main',
                         },
@@ -229,7 +239,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
                               alignItems: 'center',
                               justifyContent: 'center',
                               borderRadius: '50%',
-                              bgcolor: 'success.main',
+                              bgcolor: isComplete ? 'success.main' : 'info.main',
                               color: 'white',
                               fontSize: '0.7rem',
                               fontWeight: 600,
@@ -244,9 +254,11 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
                       <ListItemText
                         primary={exercise.name}
                         secondary={
-                          completedSets > 0
-                            ? `${completedSets} sets logged`
-                            : 'Not started'
+                          targetSets
+                            ? `${completedSets}/${targetSets} sets ${isComplete ? '✓' : ''}`
+                            : completedSets > 0
+                              ? `${completedSets} sets logged`
+                              : 'Not started'
                         }
                       />
                     </ListItemButton>
@@ -272,6 +284,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
           <WorkoutForm
             exercise={exerciseForForm}
             initialData={existingEntryForForm}
+            targetSets={selectedExerciseIndex !== null ? getTargetSets(selectedExerciseIndex) : undefined}
             onSave={handleSaveExercise}
             onCancel={() => setSelectedExerciseIndex(null)}
           />

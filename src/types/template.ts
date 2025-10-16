@@ -12,10 +12,16 @@ export interface TrainingTypeMeta {
   active: boolean;
 }
 
+export interface ExerciseWithSets extends Exercise {
+  targetSets?: number; // Target sets for this exercise
+}
+
 export interface TemplateBlock {
   order: number;
   title: string;
   items: Exercise[];
+  globalSets?: number; // Global sets that apply to all exercises in the block
+  exerciseConfigs?: { exerciseId: string; sets?: number }[]; // Individual sets per exercise
 }
 
 export interface PositionTemplate {

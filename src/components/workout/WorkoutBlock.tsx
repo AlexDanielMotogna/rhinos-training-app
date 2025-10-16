@@ -95,19 +95,26 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {block.items.map((exercise) => (
-          <ExerciseRow
-            key={exercise.id}
-            exercise={exercise}
-            showLogButton={showLogButtons}
-            onLogWorkout={onLogWorkout ? () => onLogWorkout(exercise) : undefined}
-            onVideoClick={
-              exercise.youtubeUrl && onVideoClick
-                ? () => onVideoClick(exercise.youtubeUrl!)
-                : undefined
-            }
-          />
-        ))}
+        {block.items.map((exercise) => {
+          // Get target sets for this exercise
+          const exerciseConfig = block.exerciseConfigs?.find(c => c.exerciseId === exercise.id);
+          const targetSets = exerciseConfig?.sets || block.globalSets;
+
+          return (
+            <ExerciseRow
+              key={exercise.id}
+              exercise={exercise}
+              showLogButton={showLogButtons}
+              targetSets={targetSets}
+              onLogWorkout={onLogWorkout ? () => onLogWorkout(exercise) : undefined}
+              onVideoClick={
+                exercise.youtubeUrl && onVideoClick
+                  ? () => onVideoClick(exercise.youtubeUrl!)
+                  : undefined
+              }
+            />
+          );
+        })}
       </Box>
     </Paper>
   );

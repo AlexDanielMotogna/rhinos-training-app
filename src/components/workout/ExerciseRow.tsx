@@ -10,13 +10,15 @@ interface ExerciseRowProps {
   onVideoClick?: () => void;
   onLogWorkout?: () => void;
   showLogButton?: boolean;
+  targetSets?: number; // Target sets for this exercise
 }
 
 export const ExerciseRow: React.FC<ExerciseRowProps> = ({
   exercise,
   onVideoClick,
   onLogWorkout,
-  showLogButton = false
+  showLogButton = false,
+  targetSets
 }) => {
   const { t } = useI18n();
 
@@ -57,6 +59,14 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
               size="small"
               color={intensityColors[exercise.intensity]}
               sx={{ height: 24 }}
+            />
+          )}
+          {targetSets && (
+            <Chip
+              label={`${targetSets} sets`}
+              size="small"
+              color="info"
+              sx={{ height: 24, fontWeight: 600 }}
             />
           )}
           {exercise.isGlobal && (
