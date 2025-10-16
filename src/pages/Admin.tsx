@@ -140,6 +140,7 @@ export const Admin: React.FC = () => {
     blocks: [],
   });
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
   const [currentBlock, setCurrentBlock] = useState<{ title: string; exerciseIds: string[] }>({
     title: '',
     exerciseIds: [],
@@ -319,21 +320,45 @@ export const Admin: React.FC = () => {
   };
 
   const handleAddBlock = () => {
+    setEditingBlockIndex(null);
     setCurrentBlock({ title: '', exerciseIds: [] });
     setBlockDialogOpen(true);
   };
 
+  const handleEditBlock = (index: number) => {
+    setEditingBlockIndex(index);
+    const block = newTemplateData.blocks[index];
+    setCurrentBlock({ title: block.title, exerciseIds: block.exerciseIds });
+    setBlockDialogOpen(true);
+  };
+
   const handleSaveBlock = () => {
-    const newBlock = {
-      title: currentBlock.title,
-      order: newTemplateData.blocks.length + 1,
-      exerciseIds: currentBlock.exerciseIds,
-    };
-    setNewTemplateData({
-      ...newTemplateData,
-      blocks: [...newTemplateData.blocks, newBlock],
-    });
+    if (editingBlockIndex !== null) {
+      // Update existing block
+      const updatedBlocks = [...newTemplateData.blocks];
+      updatedBlocks[editingBlockIndex] = {
+        ...updatedBlocks[editingBlockIndex],
+        title: currentBlock.title,
+        exerciseIds: currentBlock.exerciseIds,
+      };
+      setNewTemplateData({
+        ...newTemplateData,
+        blocks: updatedBlocks,
+      });
+    } else {
+      // Add new block
+      const newBlock = {
+        title: currentBlock.title,
+        order: newTemplateData.blocks.length + 1,
+        exerciseIds: currentBlock.exerciseIds,
+      };
+      setNewTemplateData({
+        ...newTemplateData,
+        blocks: [...newTemplateData.blocks, newBlock],
+      });
+    }
     setBlockDialogOpen(false);
+    setEditingBlockIndex(null);
   };
 
   const handleRemoveBlock = (index: number) => {
@@ -1207,13 +1232,22 @@ export const Admin: React.FC = () => {
                           {block.exerciseIds.length} exercise(s)
                         </Typography>
                       </Box>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleRemoveBlock(index)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      <Box>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleEditBlock(index)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleRemoveBlock(index)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
                     </Box>
                   </CardContent>
                 </Card>
@@ -1238,11 +1272,16 @@ export const Admin: React.FC = () => {
       {/* Block Dialog */}
       <Dialog
         open={blockDialogOpen}
-        onClose={() => setBlockDialogOpen(false)}
+        onClose={() => {
+          setBlockDialogOpen(false);
+          setEditingBlockIndex(null);
+        }}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>{t('admin.addBlock')}</DialogTitle>
+        <DialogTitle>
+          {editingBlockIndex !== null ? 'Edit Block' : t('admin.addBlock')}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
@@ -1287,7 +1326,10 @@ export const Admin: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setBlockDialogOpen(false)}>
+          <Button onClick={() => {
+            setBlockDialogOpen(false);
+            setEditingBlockIndex(null);
+          }}>
             {t('common.cancel')}
           </Button>
           <Button
@@ -1295,7 +1337,7 @@ export const Admin: React.FC = () => {
             variant="contained"
             disabled={!currentBlock.title || currentBlock.exerciseIds.length === 0}
           >
-            {t('admin.addBlock')}
+            {editingBlockIndex !== null ? t('common.save') : t('admin.addBlock')}
           </Button>
         </DialogActions>
       </Dialog>
