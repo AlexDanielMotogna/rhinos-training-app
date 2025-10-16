@@ -139,7 +139,7 @@ export const StrengthWizard: React.FC<StrengthWizardProps> = ({ bodyWeightKg, on
             {t('tests.warmup.tip')}
           </Typography>
           <Typography variant="body2">
-            {t('tests.instructions')}
+            {isPlank ? t('tests.plankInstructions') : t('tests.instructions')}
           </Typography>
         </Alert>
 

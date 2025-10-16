@@ -322,6 +322,7 @@ export const messagesEN = {
   'tests.howItWorks': 'How it works:',
   'tests.warmup.tip': '1. Warm up properly first (light sets, dynamic stretching)',
   'tests.instructions': '2. Do ONE heavy set with 3-5 reps at your maximum effort. We\'ll calculate your max strength from this.',
+  'tests.plankInstructions': '2. Hold the plank position as long as you can with perfect form. Stop when your form breaks down.',
   'tests.oneRmExplained': 'This is your estimated maximum weight for 1 rep. We calculate it from your heavy set so you don\'t risk injury testing your actual max.',
   'tests.relativeExplained': 'Your strength relative to your bodyweight. Higher is better! This lets us compare athletes of different sizes fairly. Your results are compared to benchmarks for your position and gender.',
   'tests.bench': 'Bench Press',

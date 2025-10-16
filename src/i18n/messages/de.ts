@@ -322,6 +322,7 @@ export const messagesDE = {
   'tests.howItWorks': 'So funktioniert es:',
   'tests.warmup.tip': '1. Wärmen Sie sich richtig auf (leichte Sätze, dynamisches Dehnen)',
   'tests.instructions': '2. Machen Sie EINEN schweren Satz mit 3-5 Wiederholungen bei maximaler Anstrengung. Wir berechnen daraus Ihre maximale Kraft.',
+  'tests.plankInstructions': '2. Halten Sie die Plank-Position so lange wie möglich mit perfekter Form. Stoppen Sie, wenn Ihre Form zusammenbricht.',
   'tests.oneRmExplained': 'Dies ist Ihr geschätztes Maximalgewicht für 1 Wiederholung. Wir berechnen es aus Ihrem schweren Satz, damit Sie kein Verletzungsrisiko eingehen.',
   'tests.relativeExplained': 'Ihre Kraft relativ zu Ihrem Körpergewicht. Höher ist besser! So können wir Athleten unterschiedlicher Größe fair vergleichen. Ihre Ergebnisse werden mit Benchmarks für Ihre Position und Ihr Geschlecht verglichen.',
   'tests.bench': 'Bankdrücken',
