@@ -24,10 +24,13 @@ export const LanguageSwitcher: React.FC = () => {
     <>
       <IconButton
         onClick={handleClick}
-        sx={{ color: 'inherit' }}
+        sx={{
+          color: 'inherit',
+          p: { xs: 1, sm: 1.5 }
+        }}
         aria-label={t('common.language')}
       >
-        <LanguageIcon />
+        <LanguageIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }} />
       </IconButton>
       <Menu
         anchorEl={anchorEl}

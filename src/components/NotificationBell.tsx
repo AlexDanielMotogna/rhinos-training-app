@@ -98,9 +98,14 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 
   return (
     <>
-      <IconButton color="inherit" onClick={handleClick} aria-label="notifications">
+      <IconButton
+        color="inherit"
+        onClick={handleClick}
+        aria-label="notifications"
+        sx={{ p: { xs: 1, sm: 1.5 } }}
+      >
         <Badge badgeContent={unreadCount} color="secondary">
-          <NotificationsIcon />
+          <NotificationsIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }} />
         </Badge>
       </IconButton>
 

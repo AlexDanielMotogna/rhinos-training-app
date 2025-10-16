@@ -101,18 +101,29 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="sticky" elevation={2}>
-        <Toolbar>
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 2 } }}>
           <IconButton
             edge="start"
             color="inherit"
             aria-label="menu"
             onClick={() => setDrawerOpen(true)}
-            sx={{ mr: 2 }}
+            sx={{
+              mr: { xs: 0.5, sm: 2 },
+              p: { xs: 1, sm: 1.5 }
+            }}
           >
-            <MenuIcon />
+            <MenuIcon sx={{ fontSize: { xs: '1.3rem', sm: '1.5rem' } }} />
           </IconButton>
 
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
+              flexGrow: 1,
+              fontSize: { xs: '0.95rem', sm: '1.25rem' },
+              fontWeight: 600,
+            }}
+          >
             {t('app.title')}
           </Typography>
 
@@ -128,10 +139,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <IconButton
             color="inherit"
             onClick={handleLogout}
-            sx={{ ml: 1 }}
+            sx={{
+              ml: { xs: 0.5, sm: 1 },
+              p: { xs: 1, sm: 1.5 }
+            }}
             title={t('nav.logout')}
           >
-            <LogoutIcon />
+            <LogoutIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }} />
           </IconButton>
         </Toolbar>
       </AppBar>
