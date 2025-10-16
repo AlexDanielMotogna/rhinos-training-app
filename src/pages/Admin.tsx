@@ -398,6 +398,31 @@ export const Admin: React.FC = () => {
 
   const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
 
+  // Filter exercises based on training type
+  const getFilteredExercises = (trainingTypeId: string): Exercise[] => {
+    const trainingType = trainingTypes.find(tt => tt.id === trainingTypeId);
+    if (!trainingType) return globalCatalog;
+
+    const key = trainingType.key.toLowerCase();
+
+    // Strength & Conditioning: Strength, Plyometrics, Conditioning, Mobility, Recovery
+    if (key.includes('strength') || key.includes('conditioning')) {
+      return globalCatalog.filter(ex =>
+        ['Strength', 'Plyometrics', 'Conditioning', 'Mobility', 'Recovery'].includes(ex.category)
+      );
+    }
+
+    // Sprints / Speed: Speed, COD, Technique, Conditioning, Mobility, Recovery
+    if (key.includes('sprint') || key.includes('speed')) {
+      return globalCatalog.filter(ex =>
+        ['Speed', 'COD', 'Technique', 'Conditioning', 'Mobility', 'Recovery'].includes(ex.category)
+      );
+    }
+
+    // Default: show all exercises
+    return globalCatalog;
+  };
+
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 3 }}>
@@ -1309,7 +1334,7 @@ export const Admin: React.FC = () => {
                   },
                 }}
               >
-                {globalCatalog.map((exercise) => (
+                {getFilteredExercises(newTemplateData.trainingTypeId).map((exercise) => (
                   <MenuItem key={exercise.id} value={exercise.id}>
                     {exercise.name} ({exercise.category})
                   </MenuItem>
