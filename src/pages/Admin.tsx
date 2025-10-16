@@ -51,6 +51,7 @@ import {
 } from '../services/trainingBuilder';
 import { getUser } from '../services/mock';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
+import { getAllBlockInfo } from '../services/blockInfo';
 
 interface TeamSession {
   id: string;
@@ -1387,55 +1388,14 @@ export const Admin: React.FC = () => {
           setBlockDialogOpen(false);
           setEditingBlockIndex(null);
         }}
-        maxWidth="lg"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>
           {editingBlockIndex !== null ? 'Edit Block' : t('admin.addBlock')}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', gap: 3, mt: 2 }}>
-            {/* Left Side: Existing Blocks List */}
-            <Box sx={{ flex: '0 0 250px', borderRight: 1, borderColor: 'divider', pr: 2 }}>
-              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                Blocks in Template ({newTemplateData.blocks.length})
-              </Typography>
-
-              {newTemplateData.blocks.length === 0 ? (
-                <Typography variant="caption" color="text.secondary">
-                  No blocks yet
-                </Typography>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
-                  {newTemplateData.blocks.map((block, idx) => (
-                    <Paper
-                      key={idx}
-                      sx={{
-                        p: 1.5,
-                        backgroundColor: idx === editingBlockIndex ? 'primary.lighter' : 'background.default',
-                        border: 1,
-                        borderColor: idx === editingBlockIndex ? 'primary.main' : 'divider',
-                      }}
-                    >
-                      <Typography variant="body2" fontWeight={600}>
-                        {idx + 1}. {block.title}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {block.exerciseIds.length} exercises
-                      </Typography>
-                      {block.globalSets && (
-                        <Typography variant="caption" color="primary.main" display="block">
-                          {block.globalSets} sets (global)
-                        </Typography>
-                      )}
-                    </Paper>
-                  ))}
-                </Box>
-              )}
-            </Box>
-
-            {/* Right Side: Block Form */}
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <FormControl fullWidth required>
               <InputLabel>{t('admin.blockTitle')}</InputLabel>
               <Select
@@ -1458,31 +1418,34 @@ export const Admin: React.FC = () => {
                   </MenuItem>
                 ]}
 
-                {/* Common block name suggestions */}
-                <MenuItem key="header-suggestions" disabled sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary' }}>
-                  ── SUGGESTED NAMES ──
-                </MenuItem>
-                <MenuItem value="Compound Lifts">Compound Lifts</MenuItem>
-                <MenuItem value="Accessory Work">Accessory Work</MenuItem>
-                <MenuItem value="Speed Drills">Speed Drills</MenuItem>
-                <MenuItem value="Agility Training">Agility Training</MenuItem>
-                <MenuItem value="Power Development">Power Development</MenuItem>
-                <MenuItem value="Conditioning">Conditioning</MenuItem>
-                <MenuItem value="Core Work">Core Work</MenuItem>
-                <MenuItem value="Mobility & Recovery">Mobility & Recovery</MenuItem>
-                <MenuItem value="Plyometrics">Plyometrics</MenuItem>
-                <MenuItem value="Olympic Lifts">Olympic Lifts</MenuItem>
-              </Select>
-            </FormControl>
+                {/* Block Info - blocks with configured descriptions */}
+                {(() => {
+                  const trainingType = trainingTypes.find(tt => tt.id === newTemplateData.trainingTypeId);
+                  const trainingTypeKey = trainingType?.key as 'strength_conditioning' | 'sprints_speed' | undefined;
+                  const allBlockInfo = getAllBlockInfo();
+                  const relevantBlocks = trainingTypeKey
+                    ? allBlockInfo.filter(bi => bi.trainingType === trainingTypeKey)
+                    : [];
 
-            <TextField
-              label="Custom Block Title (optional)"
-              value={currentBlock.title}
-              onChange={(e) => setCurrentBlock({ ...currentBlock, title: e.target.value })}
-              fullWidth
-              placeholder="Or type your own custom block name..."
-              helperText="Select from dropdown above or type custom name here"
-            />
+                  if (relevantBlocks.length > 0) {
+                    return [
+                      <MenuItem key="header-blockinfo" disabled sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'info.main' }}>
+                        ── CONFIGURED BLOCKS ──
+                      </MenuItem>,
+                      ...relevantBlocks.map((blockInfo) => (
+                        <MenuItem key={`blockinfo-${blockInfo.id}`} value={blockInfo.blockName}>
+                          {blockInfo.blockName}
+                        </MenuItem>
+                      ))
+                    ];
+                  }
+                  return null;
+                })()}
+              </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Need a new block? Create it in the "Block Info" tab first
+              </Typography>
+            </FormControl>
 
             <FormControl fullWidth>
               <InputLabel>{t('admin.selectExercises')}</InputLabel>
@@ -1585,7 +1548,6 @@ export const Admin: React.FC = () => {
             <Alert severity="info">
               Select exercises that belong to this block. You can set a global number of sets or configure each exercise individually.
             </Alert>
-            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
