@@ -18,6 +18,7 @@ import { TestsStrength } from './pages/TestsStrength';
 import { TestsSpeed } from './pages/TestsSpeed';
 import { TestsPower } from './pages/TestsPower';
 import { TestsAgility } from './pages/TestsAgility';
+import { Reports } from './pages/Reports';
 import { getUser, initializeDemoProfiles } from './services/mock';
 import type { HardNotification as HardNotificationType } from './types/notification';
 
@@ -97,6 +98,14 @@ function App() {
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
                 <Route path="/coach" element={<Coach />} />
+                <Route
+                  path="/reports"
+                  element={
+                    currentUser.role === 'coach'
+                      ? <Reports />
+                      : <Navigate to="/training" replace />
+                  }
+                />
                 <Route
                   path="/admin"
                   element={

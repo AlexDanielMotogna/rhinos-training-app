@@ -461,6 +461,33 @@ export const messagesEN = {
   'profile.agility.title': 'Agility Performance',
   'profile.agility.scoreLabel': 'Agility Score',
   'profile.agility.noData': 'No agility test data yet. Complete a test to see your metrics.',
+
+  // Reports
+  'nav.reports': 'Reports',
+  'reports.title': 'Daily Team Reports',
+  'reports.subtitle': 'Automated team performance report',
+  'reports.day': 'Day',
+  'reports.week': 'Week',
+  'reports.month': 'Month',
+  'reports.activePlayers': 'Active Players',
+  'reports.avgScore': 'Avg Score',
+  'reports.avgCompliance': 'Avg Compliance',
+  'reports.totalMinutes': 'Total Minutes',
+  'reports.statusBreakdown': 'Status Breakdown',
+  'reports.status.active': 'Completed all workouts',
+  'reports.status.partial': 'Trained but incomplete',
+  'reports.status.absent': 'Did not train',
+  'reports.playerActivity': 'Player Activity',
+  'reports.player': 'Player',
+  'reports.position': 'Position',
+  'reports.status': 'Status',
+  'reports.workouts': 'Workouts',
+  'reports.minutes': 'Minutes',
+  'reports.score': 'Score',
+  'reports.trend': 'Trend',
+  'reports.compliance': 'Compliance',
+  'reports.topImprovements': 'Top Improvements',
+  'reports.needsAttention': 'Needs Attention',
 };
 
 export type MessageKey = keyof typeof messagesEN;

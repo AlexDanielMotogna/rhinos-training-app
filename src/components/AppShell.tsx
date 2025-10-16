@@ -22,6 +22,7 @@ import EventIcon from '@mui/icons-material/Event';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import SportsIcon from '@mui/icons-material/Sports';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import DescriptionIcon from '@mui/icons-material/Description';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
@@ -69,6 +70,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { key: 'attendance', label: t('nav.attendance'), icon: <EventIcon />, path: '/attendance', showForAll: true },
     { key: 'leaderboard', label: t('nav.leaderboard'), icon: <LeaderboardIcon />, path: '/leaderboard', showForAll: true },
     { key: 'coach', label: t('nav.coach'), icon: <SportsIcon />, path: '/coach', showForAll: true },
+    { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports', showForAll: false, coachOnly: true },
     { key: 'admin', label: t('nav.admin'), icon: <AdminPanelSettingsIcon />, path: '/admin', showForAll: false, coachOnly: true },
   ];
 
