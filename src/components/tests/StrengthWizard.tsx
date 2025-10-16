@@ -9,6 +9,7 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Slider,
 } from '@mui/material';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { TestKey, StrengthInput, StrengthResult } from '../../types/testing';
@@ -171,17 +172,28 @@ export const StrengthWizard: React.FC<StrengthWizardProps> = ({ bodyWeightKg, on
               helperText={!repsValid ? 'Reps should be 1-10 for accurate 1RM estimation' : ''}
             />
 
-            <TextField
-              label={t('tests.rpe')}
-              type="number"
-              value={currentInput.rpe || ''}
-              onChange={e =>
-                handleInputChange('rpe', e.target.value ? Number(e.target.value) : undefined)
-              }
-              fullWidth
-              sx={{ mb: 2 }}
-              inputProps={{ min: 1, max: 10, step: 0.5 }}
-            />
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" gutterBottom>
+                {t('tests.rpe')} {currentInput.rpe ? `(${currentInput.rpe}/10)` : ''}
+              </Typography>
+              <Slider
+                value={currentInput.rpe || 5}
+                onChange={(_e, value) => handleInputChange('rpe', value as number)}
+                min={1}
+                max={10}
+                step={0.5}
+                marks
+                valueLabelDisplay="auto"
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('workout.rpeEasy')}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t('workout.rpeMaxEffort')}
+                </Typography>
+              </Box>
+            </Box>
 
             {estimated1RM !== null && (
               <Alert severity="success" sx={{ mb: 2 }}>

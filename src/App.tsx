@@ -13,6 +13,7 @@ import { Attendance } from './pages/Attendance';
 import { Leaderboard } from './pages/Leaderboard';
 import { Coach } from './pages/Coach';
 import { Admin } from './pages/Admin';
+import { TestsStrength } from './pages/TestsStrength';
 import { getUser, initializeDemoProfiles } from './services/mock';
 import type { HardNotification as HardNotificationType } from './types/notification';
 
@@ -83,6 +84,7 @@ function App() {
               <Route element={<AppShell><Outlet /></AppShell>}>
                 <Route path="/training" element={<MyTraining />} />
                 <Route path="/stats" element={<MyStats />} />
+                <Route path="/tests" element={<TestsStrength />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />

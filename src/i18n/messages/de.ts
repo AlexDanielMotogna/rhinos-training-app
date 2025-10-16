@@ -5,6 +5,7 @@ export const messagesDE = {
   // Navigation
   'nav.myTraining': 'Mein Training',
   'nav.myStats': 'Meine Statistiken',
+  'nav.tests': 'Tests',
   'nav.profile': 'Profil',
   'nav.attendance': 'Anwesenheit',
   'nav.coach': 'Trainer',
