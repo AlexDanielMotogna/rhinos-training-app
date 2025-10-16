@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Typography, Paper, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, Paper, IconButton, Tooltip, Button } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import type { TemplateBlock } from '../../types/template';
 import type { Exercise } from '../../types/exercise';
 import { ExerciseRow } from './ExerciseRow';
@@ -11,6 +12,7 @@ interface WorkoutBlockProps {
   block: TemplateBlock;
   onVideoClick?: (youtubeUrl: string) => void;
   onLogWorkout?: (exercise: Exercise) => void;
+  onStartBlock?: (block: TemplateBlock) => void;
   showLogButtons?: boolean;
   trainingType?: 'strength_conditioning' | 'sprints_speed';
 }
@@ -19,10 +21,25 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
   block,
   onVideoClick,
   onLogWorkout,
+  onStartBlock,
   showLogButtons = false,
   trainingType = 'strength_conditioning'
 }) => {
   const { t, locale } = useI18n();
+
+  // Check if there's progress for this block
+  const hasBlockProgress = () => {
+    const persistenceKey = `coach_workout_progress_${trainingType}_${block.title}`;
+    const stored = localStorage.getItem(persistenceKey);
+    if (!stored) return false;
+
+    try {
+      const data = JSON.parse(stored);
+      return data.completedEntries && data.completedEntries.length > 0;
+    } catch {
+      return false;
+    }
+  };
 
   // Get custom block info from coach configuration
   const blockInfo = getBlockInfo(block.title, trainingType);
@@ -45,7 +62,7 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
         <Typography variant="h6" sx={{ color: 'primary.main', flex: 1 }}>
           {block.title}
         </Typography>
@@ -63,6 +80,17 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
               <InfoOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+        )}
+        {onStartBlock && (
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<PlayArrowIcon />}
+            onClick={() => onStartBlock(block)}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            {hasBlockProgress() ? t('workout.continue') : t('workout.start')}
+          </Button>
         )}
       </Box>
 
