@@ -33,6 +33,7 @@ import {
   markAllNotificationsAsRead,
 } from '../services/mock';
 import type { Notification } from '../types/notification';
+import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -147,7 +148,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           >
             <Box
               component="img"
-              src="/src/assets/imgs/USR_Allgemein_Quard_Transparent.png"
+              src={RhinosLogo}
               alt="Rhinos Logo"
               sx={{
                 width: 40,

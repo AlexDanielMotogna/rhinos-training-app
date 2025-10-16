@@ -16,6 +16,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { saveUser } from '../services/mock';
 import type { Position } from '../types/exercise';
+import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
 
@@ -79,7 +80,7 @@ export const Auth: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
             <Box
               component="img"
-              src="/src/assets/imgs/USR_Allgemein_Quard_Transparent.png"
+              src={RhinosLogo}
               alt="Rhinos Logo"
               sx={{
                 width: 120,
