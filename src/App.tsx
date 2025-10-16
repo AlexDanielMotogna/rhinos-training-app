@@ -12,10 +12,15 @@ import { Attendance } from './pages/Attendance';
 import { Leaderboard } from './pages/Leaderboard';
 import { Coach } from './pages/Coach';
 import { Admin } from './pages/Admin';
-import { getUser } from './services/mock';
+import { getUser, initializeDemoProfiles } from './services/mock';
 import type { HardNotification as HardNotificationType } from './types/notification';
 
 function App() {
+  // Initialize demo profiles on app startup
+  useEffect(() => {
+    initializeDemoProfiles();
+  }, []);
+
   const [currentUser, setCurrentUser] = useState(() => getUser());
   const [hardNotification, setHardNotification] = useState<HardNotificationType | null>(null);
 

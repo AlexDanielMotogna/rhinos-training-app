@@ -265,3 +265,82 @@ export function addNotification(notification: Omit<Notification, 'id'>): void {
   };
   saveNotifications([newNotification, ...notifications]);
 }
+
+/**
+ * Initialize demo profiles for development/testing
+ * These profiles will be available across all browsers
+ */
+export function initializeDemoProfiles(): void {
+  const usersKey = 'rhinos_users';
+  const stored = localStorage.getItem(usersKey);
+
+  // Only initialize if no users exist yet
+  if (stored) {
+    const existingUsers = JSON.parse(stored);
+    if (existingUsers.length > 0) {
+      return; // Users already exist, don't overwrite
+    }
+  }
+
+  // Create demo profiles
+  const demoUsers: MockUser[] = [
+    {
+      id: 'demo-coach-1',
+      name: 'Coach Mike',
+      email: 'coach@rhinos.com',
+      role: 'coach',
+      jerseyNumber: 0,
+      age: 0,
+      weightKg: 0,
+      heightCm: 0,
+      position: 'RB',
+    },
+    {
+      id: 'demo-player-1',
+      name: 'John Doe',
+      email: 'player1@rhinos.com',
+      role: 'player',
+      jerseyNumber: 23,
+      age: 22,
+      weightKg: 95,
+      heightCm: 180,
+      position: 'RB',
+    },
+    {
+      id: 'demo-player-2',
+      name: 'Mike Johnson',
+      email: 'player2@rhinos.com',
+      role: 'player',
+      jerseyNumber: 84,
+      age: 24,
+      weightKg: 88,
+      heightCm: 185,
+      position: 'WR',
+    },
+    {
+      id: 'demo-player-3',
+      name: 'David Smith',
+      email: 'player3@rhinos.com',
+      role: 'player',
+      jerseyNumber: 87,
+      age: 23,
+      weightKg: 102,
+      heightCm: 193,
+      position: 'TE',
+    },
+    {
+      id: 'demo-player-4',
+      name: 'Chris Brown',
+      email: 'player4@rhinos.com',
+      role: 'player',
+      jerseyNumber: 54,
+      age: 25,
+      weightKg: 110,
+      heightCm: 188,
+      position: 'LB',
+    },
+  ];
+
+  localStorage.setItem(usersKey, JSON.stringify(demoUsers));
+  console.log('✅ Demo profiles initialized:', demoUsers.length, 'users');
+}
