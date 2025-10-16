@@ -51,7 +51,6 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
     initialData?.setData || [{ setNumber: 1, reps: undefined, kg: undefined, durationMin: undefined }]
   );
   const [rpe, setRpe] = useState<number>(initialData?.rpe || 5);
-  const [youtubeUrl, setYoutubeUrl] = useState(initialData?.youtubeUrl || exercise?.youtubeUrl || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
 
   const handleAddSet = () => {
@@ -77,8 +76,6 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   };
 
   const handleSubmit = () => {
-    const sanitizedUrl = youtubeUrl ? sanitizeYouTubeUrl(youtubeUrl) : undefined;
-
     // Filter out empty sets
     const validSets = setData.filter(set =>
       set.reps !== undefined || set.kg !== undefined || set.durationMin !== undefined
@@ -93,7 +90,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
       rpe: rpe,
       source: 'player',
       specific: false,
-      youtubeUrl: sanitizedUrl,
+      youtubeUrl: exercise?.youtubeUrl, // Always use video from exercise catalog
       notes: notes || undefined,
     };
 
@@ -118,7 +115,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
     return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
   };
 
-  const embedUrl = getEmbedUrl(youtubeUrl || exercise?.youtubeUrl);
+  const embedUrl = getEmbedUrl(exercise?.youtubeUrl);
 
   return (
     <Paper sx={{ p: 3 }}>
@@ -305,15 +302,6 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
             </Typography>
           </Box>
         </Box>
-
-        <TextField
-          label={t('workout.video')}
-          value={youtubeUrl}
-          onChange={(e) => setYoutubeUrl(e.target.value)}
-          placeholder="https://www.youtube.com/watch?v=..."
-          helperText="YouTube URL (optional)"
-          fullWidth
-        />
 
         <TextField
           label={t('workout.notes')}
