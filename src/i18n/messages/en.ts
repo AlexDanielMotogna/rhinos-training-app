@@ -4,6 +4,7 @@ export const messagesEN = {
 
   // Navigation
   'nav.myTraining': 'My Training',
+  'nav.myStats': 'My Stats',
   'nav.profile': 'Profile',
   'nav.attendance': 'Attendance',
   'nav.coach': 'Coach',
@@ -103,6 +104,12 @@ export const messagesEN = {
   'workout.start': 'Start',
   'workout.continue': 'Continue',
   'workout.finishWorkout': 'Finish Workout',
+  'workout.videoInstruction': 'Watch the video above to check proper form and technique',
+  'workout.exercisesCompleted': '{{completed}} / {{total}} exercises completed',
+  'workout.targetSetsInfo': 'Target: {{target}} sets • Completed: {{completed}} • New: {{new}}',
+  'workout.alreadyLogged': 'Already logged',
+  'workout.rpeEasy': 'Easy',
+  'workout.rpeMaxEffort': 'Max Effort',
 
   // Categories
   'category.Strength': 'Strength',
@@ -278,6 +285,31 @@ export const messagesEN = {
   'training.teamSessions': 'Team Sessions',
   'training.mySessionsInfo': 'This is where you track your personal free sessions. Add custom workouts and view your training history.',
   'training.coachPlan': 'Coach Plan',
+
+  // MyStats
+  'stats.title': 'My Stats',
+  'stats.calendar': 'Training Calendar',
+  'stats.statistics': 'Statistics',
+  'stats.filterPeriod': 'Time Period',
+  'stats.filter.currentMonth': 'Current Month (Calendar)',
+  'stats.filter.last30days': 'Last 30 Days',
+  'stats.filter.last90days': 'Last 90 Days',
+  'stats.filter.last6months': 'Last 6 Months',
+  'stats.filter.lastYear': 'Last Year',
+  'stats.filter.all': 'All Time',
+  'stats.totalWorkouts': 'Total Workouts',
+  'stats.teamWorkouts': 'Team Workouts',
+  'stats.freeWorkouts': 'Free Workouts',
+  'stats.thisMonth': 'This Month',
+  'stats.avgCompletion': 'Avg Completion',
+  'stats.noWorkouts': 'No workouts',
+  'stats.legend.complete90': '90-100%',
+  'stats.legend.complete70': '70-89%',
+  'stats.legend.complete50': '50-69%',
+  'stats.legend.complete30': '30-49%',
+  'stats.legend.complete0': '0-29%',
+  'stats.workout': 'workout',
+  'stats.workouts': 'workouts',
 };
 
 export type MessageKey = keyof typeof messagesEN;

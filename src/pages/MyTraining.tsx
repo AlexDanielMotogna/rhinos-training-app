@@ -132,6 +132,7 @@ export const MyTraining: React.FC = () => {
 
   const handleDeleteWorkout = (logId: string) => {
     if (window.confirm(t('workout.confirmDelete'))) {
+      // Soft delete - hides from history but keeps for stats
       deleteWorkoutLog(logId);
       refreshWorkoutHistory();
       setSuccessMessage(t('workout.workoutDeleted'));
@@ -210,6 +211,20 @@ export const MyTraining: React.FC = () => {
     if (user && startingPlan) {
       const today = new Date().toISOString().split('T')[0];
 
+      // Calculate plan metadata for completion tracking
+      const totalExercises = startingPlan.exercises.length;
+      const totalTargetSets = entries.reduce((sum, entry) => sum + (entry.sets || 0), 0);
+
+      // Calculate completion percentage based on completed sets vs target sets
+      let completedSets = 0;
+      entries.forEach(entry => {
+        completedSets += entry.setData?.length || 0;
+      });
+
+      const completionPercentage = totalTargetSets > 0
+        ? Math.round((completedSets / totalTargetSets) * 100)
+        : 0;
+
       const workoutLog = {
         id: crypto.randomUUID(),
         userId: user.id,
@@ -221,6 +236,11 @@ export const MyTraining: React.FC = () => {
         planName: startingPlan.name,
         duration,
         createdAt: new Date().toISOString(),
+        planMetadata: {
+          totalExercises,
+          totalTargetSets,
+        },
+        completionPercentage,
       };
 
       const allLogs = getWorkoutLogs();
@@ -246,6 +266,20 @@ export const MyTraining: React.FC = () => {
     if (user && selectedBlock) {
       const today = new Date().toISOString().split('T')[0];
 
+      // Calculate plan metadata for completion tracking
+      const totalExercises = selectedBlock.items.length;
+      const totalTargetSets = entries.reduce((sum, entry) => sum + (entry.sets || 0), 0);
+
+      // Calculate completion percentage based on completed sets vs target sets
+      let completedSets = 0;
+      entries.forEach(entry => {
+        completedSets += entry.setData?.length || 0;
+      });
+
+      const completionPercentage = totalTargetSets > 0
+        ? Math.round((completedSets / totalTargetSets) * 100)
+        : 0;
+
       const workoutLog = {
         id: crypto.randomUUID(),
         userId: user.id,
@@ -253,10 +287,14 @@ export const MyTraining: React.FC = () => {
         entries,
         notes,
         source: 'coach' as const,
-        blockName: selectedBlock.title,
-        trainingType: activeTab,
+        planName: selectedBlock.title,
         duration,
         createdAt: new Date().toISOString(),
+        planMetadata: {
+          totalExercises,
+          totalTargetSets,
+        },
+        completionPercentage,
       };
 
       const allLogs = getWorkoutLogs();

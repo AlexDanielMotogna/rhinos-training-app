@@ -13,6 +13,16 @@ export interface WorkoutLog {
   planName?: string; // Name of the plan used (for history display)
   duration?: number; // Workout duration in minutes
   createdAt: string;
+  // Plan metadata for accurate completion calculation
+  planMetadata?: {
+    totalExercises: number;  // Total number of exercises in the original plan
+    totalTargetSets: number; // Total target sets across all exercises
+  };
+  // Completion percentage (calculated at finish time)
+  completionPercentage?: number; // 0-100 percentage of sets completed
+  // Soft delete flag - hidden from history UI but kept for stats
+  deletedAt?: string; // ISO timestamp when user deleted from history
+  isDeleted?: boolean; // Quick flag to check if deleted
 }
 
 /**
@@ -24,11 +34,25 @@ export function getWorkoutLogs(): WorkoutLog[] {
 }
 
 /**
- * Get workout logs for a specific user
+ * Clear all workout logs (for development/testing)
  */
-export function getWorkoutLogsByUser(userId: string): WorkoutLog[] {
+export function clearAllWorkoutLogs(): void {
+  localStorage.removeItem(WORKOUTS_KEY);
+}
+
+/**
+ * Get workout logs for a specific user
+ * @param includeDeleted - If true, includes soft-deleted workouts (for stats). Default: false (for history UI)
+ */
+export function getWorkoutLogsByUser(userId: string, includeDeleted: boolean = false): WorkoutLog[] {
   const allLogs = getWorkoutLogs();
-  return allLogs.filter(log => log.userId === userId);
+  const userLogs = allLogs.filter(log => log.userId === userId);
+
+  if (includeDeleted) {
+    return userLogs; // Return all logs including deleted ones
+  }
+
+  return userLogs.filter(log => !log.isDeleted); // Only non-deleted logs for UI
 }
 
 /**
@@ -115,12 +139,45 @@ export function updateWorkoutLog(logId: string, updates: Partial<Omit<WorkoutLog
 }
 
 /**
- * Delete a workout log
+ * Soft delete a workout log (marks as deleted but keeps in database for stats)
  */
 export function deleteWorkoutLog(logId: string): void {
   const allLogs = getWorkoutLogs();
+  const index = allLogs.findIndex(log => log.id === logId);
+
+  if (index === -1) return;
+
+  // Mark as deleted instead of removing
+  allLogs[index].isDeleted = true;
+  allLogs[index].deletedAt = new Date().toISOString();
+
+  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
+}
+
+/**
+ * Hard delete a workout log (permanently removes from database)
+ * This should only be used by admins or for data cleanup
+ */
+export function hardDeleteWorkoutLog(logId: string): void {
+  const allLogs = getWorkoutLogs();
   const filtered = allLogs.filter(log => log.id !== logId);
   localStorage.setItem(WORKOUTS_KEY, JSON.stringify(filtered));
+}
+
+/**
+ * Restore a soft-deleted workout log
+ */
+export function restoreWorkoutLog(logId: string): void {
+  const allLogs = getWorkoutLogs();
+  const index = allLogs.findIndex(log => log.id === logId);
+
+  if (index === -1) return;
+
+  // Remove delete flags
+  delete allLogs[index].isDeleted;
+  delete allLogs[index].deletedAt;
+
+  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
 }
 
 /**

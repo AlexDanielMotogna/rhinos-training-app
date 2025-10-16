@@ -167,6 +167,17 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                       color={workout.source === 'coach' ? 'primary' : 'secondary'}
                       sx={{ height: 22, fontSize: '0.7rem' }}
                     />
+                    {workout.completionPercentage !== undefined && (
+                      <Chip
+                        label={`${workout.completionPercentage}% completed`}
+                        size="small"
+                        color={
+                          workout.completionPercentage >= 70 ? 'success' :
+                          workout.completionPercentage >= 40 ? 'warning' : 'error'
+                        }
+                        sx={{ height: 22, fontSize: '0.7rem' }}
+                      />
+                    )}
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                       {new Date(workout.createdAt).toLocaleTimeString('en-US', {
                         hour: '2-digit',

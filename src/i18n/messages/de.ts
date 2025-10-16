@@ -4,6 +4,7 @@ export const messagesDE = {
 
   // Navigation
   'nav.myTraining': 'Mein Training',
+  'nav.myStats': 'Meine Statistiken',
   'nav.profile': 'Profil',
   'nav.attendance': 'Anwesenheit',
   'nav.coach': 'Trainer',
@@ -103,6 +104,12 @@ export const messagesDE = {
   'workout.start': 'Starten',
   'workout.continue': 'Fortsetzen',
   'workout.finishWorkout': 'Training beenden',
+  'workout.videoInstruction': 'Sehen Sie sich das obige Video an, um die richtige Form und Technik zu überprüfen',
+  'workout.exercisesCompleted': '{{completed}} / {{total}} Übungen abgeschlossen',
+  'workout.targetSetsInfo': 'Ziel: {{target}} Sätze • Abgeschlossen: {{completed}} • Neu: {{new}}',
+  'workout.alreadyLogged': 'Bereits protokolliert',
+  'workout.rpeEasy': 'Leicht',
+  'workout.rpeMaxEffort': 'Maximale Anstrengung',
 
   // Categories
   'category.Strength': 'Kraft',
@@ -278,4 +285,29 @@ export const messagesDE = {
   'training.teamSessions': 'Team-Sitzungen',
   'training.mySessionsInfo': 'Hier verfolgen Sie Ihre persönlichen freien Einheiten. Fügen Sie benutzerdefinierte Trainingseinheiten hinzu und sehen Sie Ihren Trainingsverlauf.',
   'training.coachPlan': 'Trainerplan',
+
+  // MyStats
+  'stats.title': 'Meine Statistiken',
+  'stats.calendar': 'Trainingskalender',
+  'stats.statistics': 'Statistiken',
+  'stats.filterPeriod': 'Zeitraum',
+  'stats.filter.currentMonth': 'Aktueller Monat (Kalender)',
+  'stats.filter.last30days': 'Letzte 30 Tage',
+  'stats.filter.last90days': 'Letzte 90 Tage',
+  'stats.filter.last6months': 'Letzte 6 Monate',
+  'stats.filter.lastYear': 'Letztes Jahr',
+  'stats.filter.all': 'Gesamte Zeit',
+  'stats.totalWorkouts': 'Gesamttrainings',
+  'stats.teamWorkouts': 'Team-Trainings',
+  'stats.freeWorkouts': 'Freie Trainings',
+  'stats.thisMonth': 'Diesen Monat',
+  'stats.avgCompletion': 'Durchschn. Abschluss',
+  'stats.noWorkouts': 'Keine Trainings',
+  'stats.legend.complete90': '90-100%',
+  'stats.legend.complete70': '70-89%',
+  'stats.legend.complete50': '50-69%',
+  'stats.legend.complete30': '30-49%',
+  'stats.legend.complete0': '0-29%',
+  'stats.workout': 'Training',
+  'stats.workouts': 'Trainings',
 };

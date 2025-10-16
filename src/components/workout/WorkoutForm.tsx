@@ -128,33 +128,42 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const embedUrl = getEmbedUrl(exercise?.youtubeUrl);
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 3 }}>
+    <Paper sx={{ p: '10px', maxHeight: '90vh', overflow: 'auto' }}>
+      <Typography variant="h6" sx={{ mb: { xs: 2, sm: 3 }, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
         {exercise ? exercise.name : t('workout.createCustom')}
       </Typography>
 
+      {/* Sets completion info */}
+      {targetSets && (
+        <Box sx={{ mb: 2, p: 1.5, bgcolor: 'info.lighter', borderRadius: 1 }}>
+          <Typography variant="body2" color="text.primary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+            {previousSets.length} / {targetSets} sets completed
+          </Typography>
+        </Box>
+      )}
+
       {/* YouTube Video Embed */}
       {embedUrl && (
-        <Box sx={{ mb: 3, borderRadius: 1, overflow: 'hidden' }}>
+        <Box sx={{ mb: { xs: 2, sm: 3 }, borderRadius: 1, overflow: 'hidden' }}>
           <Box
             component="iframe"
             src={embedUrl}
             sx={{
               width: '100%',
-              height: { xs: 200, sm: 300 },
+              height: { xs: 180, sm: 300 },
               border: 'none',
               borderRadius: 1,
             }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-            Watch the video above to check proper form and technique
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+            {t('workout.videoInstruction')}
           </Typography>
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
         {!exercise && (
           <>
             <TextField
@@ -163,9 +172,10 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
               onChange={(e) => setName(e.target.value)}
               required
               fullWidth
+              size="small"
             />
 
-            <FormControl fullWidth required>
+            <FormControl fullWidth required size="small">
               <InputLabel>{t('workout.category')}</InputLabel>
               <Select
                 value={category}
@@ -182,17 +192,17 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
           </>
         )}
 
-        <Divider sx={{ my: 1 }} />
+        <Divider sx={{ my: { xs: 0.5, sm: 1 } }} />
 
         {/* Sets with individual tracking */}
         <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={600}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                 {t('workout.sets')}
               </Typography>
               {targetSets && (
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, display: 'block' }}>
                   Target: {targetSets} sets • Completed: {previousSets.length} • New: {setData.length}
                 </Typography>
               )}
@@ -203,21 +213,22 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
               onClick={handleAddSet}
               variant="outlined"
               color="secondary"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 } }}
             >
-              {t('workout.addSet')}
+              Add Set
             </Button>
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
             {/* Previous sets (read-only) */}
             {previousSets.map((set, index) => (
-              <Paper key={`prev-${index}`} sx={{ p: 2, backgroundColor: 'success.lighter', opacity: 0.7 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                  <Typography variant="subtitle2" color="success.dark" fontWeight={600}>
+              <Paper key={`prev-${index}`} sx={{ p: { xs: 1.5, sm: 2 }, backgroundColor: 'success.lighter', opacity: 0.7 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1, sm: 1.5 } }}>
+                  <Typography variant="subtitle2" color="success.dark" fontWeight={600} sx={{ fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
                     {t('workout.setNumber', { number: set.setNumber })} ✓
                   </Typography>
-                  <Typography variant="caption" color="success.dark">
-                    Already logged
+                  <Typography variant="caption" color="success.dark" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                    {t('workout.alreadyLogged')}
                   </Typography>
                 </Box>
 
@@ -278,16 +289,17 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
 
             {/* New sets (editable) */}
             {setData.map((set, index) => (
-              <Paper key={`new-${index}`} sx={{ p: 2, backgroundColor: 'background.default' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                  <Typography variant="subtitle2" color="primary.main" fontWeight={600}>
-                    {t('workout.setNumber', { number: set.setNumber })}
+              <Paper key={`new-${index}`} sx={{ p: { xs: 1.5, sm: 2 }, backgroundColor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1, sm: 1.5 } }}>
+                  <Typography variant="subtitle2" color="primary.main" fontWeight={600} sx={{ fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
+                    Set ({set.setNumber})
                   </Typography>
                   {setData.length > 1 && (
                     <IconButton
                       size="small"
                       onClick={() => handleRemoveSet(index)}
                       color="error"
+                      sx={{ p: { xs: 0.5, sm: 1 } }}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -361,11 +373,11 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
           </Box>
         </Box>
 
-        <Divider />
+        <Divider sx={{ my: { xs: 1, sm: 2 } }} />
 
         {/* RPE Slider */}
         <Box>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             {t('workout.rpe')} (Rate of Perceived Exertion): {rpe}
           </Typography>
           <Slider
@@ -377,13 +389,14 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
             marks
             valueLabelDisplay="auto"
             color="secondary"
+            sx={{ mt: 1 }}
           />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-            <Typography variant="caption" color="text.secondary">
-              1 (Easy)
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+              1 ({t('workout.rpeEasy')})
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              10 (Max Effort)
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+              10 ({t('workout.rpeMaxEffort')})
             </Typography>
           </Box>
         </Box>
@@ -395,16 +408,18 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
           multiline
           rows={2}
           fullWidth
+          size="small"
         />
 
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button onClick={onCancel}>
-            {t('common.cancel')}
+        <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, justifyContent: 'flex-end', mt: 1 }}>
+          <Button onClick={onCancel} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+            Cancel
           </Button>
           <Button
             variant="contained"
             onClick={handleSubmit}
             disabled={!isValid()}
+            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
           >
             {t('common.save')}
           </Button>

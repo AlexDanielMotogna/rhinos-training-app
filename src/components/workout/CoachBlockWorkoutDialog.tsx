@@ -207,25 +207,40 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
     : undefined;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {blockTitle}
-        <Typography variant="caption" display="block" color="text.secondary">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          m: { xs: 0, sm: 2 },
+          maxHeight: { xs: '100vh', sm: 'calc(100vh - 64px)' },
+          width: { xs: '100%', sm: 'auto' },
+          borderRadius: { xs: 0, sm: 1 },
+        }
+      }}
+    >
+      <DialogTitle sx={{ pb: 1 }}>
+        <Typography variant="h6" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+          {blockTitle}
+        </Typography>
+        <Typography variant="caption" display="block" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
           {completedEntries.length} / {totalExercises} exercises completed
         </Typography>
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent sx={{ p: '10px' }}>
         {/* Progress Bar */}
-        <Box sx={{ mb: 3 }}>
-          <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 1 }} />
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+          <LinearProgress variant="determinate" value={progress} sx={{ height: { xs: 6, sm: 8 }, borderRadius: 1 }} />
         </Box>
 
         {/* Show form if exercise selected, otherwise show list */}
         {selectedExerciseIndex === null ? (
           <>
             {/* Exercise List - Always Visible */}
-            <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ mb: 2, fontSize: { xs: '0.9rem', sm: '0.875rem' } }}>
               Select an exercise to log:
             </Typography>
             <List>
@@ -239,7 +254,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
                   <ListItem
                     key={index}
                     disablePadding
-                    sx={{ mb: 1 }}
+                    sx={{ mb: { xs: 0.75, sm: 1 } }}
                   >
                     <ListItemButton
                       onClick={() => handleSelectExercise(index)}
@@ -248,6 +263,8 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
                         borderColor: isComplete ? 'success.main' : hasAnySets ? 'info.main' : 'divider',
                         borderRadius: 1,
                         bgcolor: isComplete ? 'success.lighter' : hasAnySets ? 'info.lighter' : 'transparent',
+                        py: { xs: 1, sm: 1.5 },
+                        px: { xs: 1.5, sm: 2 },
                         '&:hover': {
                           borderColor: 'primary.main',
                         },
@@ -285,6 +302,12 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
                               ? `${completedSets} sets logged`
                               : 'Not started'
                         }
+                        primaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.9rem', sm: '1rem' } }
+                        }}
+                        secondaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.75rem', sm: '0.875rem' } }
+                        }}
                       />
                     </ListItemButton>
                   </ListItem>
@@ -292,7 +315,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
               })}
             </List>
 
-            <Divider sx={{ my: 3 }} />
+            <Divider sx={{ my: { xs: 2, sm: 3 } }} />
 
             {/* Workout Notes */}
             <TextField
@@ -302,6 +325,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
               multiline
               rows={3}
               fullWidth
+              size="small"
               placeholder="How did the workout feel? Any observations?"
             />
           </>
@@ -316,13 +340,16 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
         )}
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={onClose}>{t('common.cancel')}</Button>
+      <DialogActions sx={{ p: '10px' }}>
+        <Button onClick={onClose} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+          {t('common.cancel')}
+        </Button>
         {completedEntries.length > 0 && (
           <Button
             onClick={handleFinishWorkout}
             variant="contained"
             color="success"
+            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
           >
             {t('workout.finishWorkout')}
           </Button>

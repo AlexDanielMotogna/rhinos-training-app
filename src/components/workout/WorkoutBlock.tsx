@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Paper, IconButton, Tooltip, Button } from '@mui/material';
+import { Box, Typography, Paper, IconButton, Tooltip, Button, CircularProgress } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import type { TemplateBlock } from '../../types/template';
@@ -27,19 +27,51 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
 }) => {
   const { t, locale } = useI18n();
 
-  // Check if there's progress for this block
-  const hasBlockProgress = () => {
+  // Get active session progress from temporary storage
+  const getActiveSessionProgress = (): { hasProgress: boolean; completionPercentage: number | null } => {
     const persistenceKey = `coach_workout_progress_${trainingType}_${block.title}`;
     const stored = localStorage.getItem(persistenceKey);
-    if (!stored) return false;
+
+    if (!stored) return { hasProgress: false, completionPercentage: null };
 
     try {
       const data = JSON.parse(stored);
-      return data.completedEntries && data.completedEntries.length > 0;
+      const completedEntries = data.completedEntries || [];
+
+      if (completedEntries.length === 0) {
+        return { hasProgress: false, completionPercentage: null };
+      }
+
+      // Calculate completion percentage from active session
+      let totalTargetSets = 0;
+      let completedSets = 0;
+
+      // Calculate total target sets for ALL exercises in the block
+      block.items.forEach((exercise) => {
+        const exerciseConfig = block.exerciseConfigs?.find(c => c.exerciseId === exercise.id);
+        const targetSets = exerciseConfig?.sets || block.globalSets || 0;
+        totalTargetSets += targetSets;
+      });
+
+      // Count completed sets from the active session
+      completedEntries.forEach((entry: any) => {
+        completedSets += entry.setData?.length || 0;
+      });
+
+      const percentage = totalTargetSets > 0
+        ? Math.round((completedSets / totalTargetSets) * 100)
+        : null;
+
+      return {
+        hasProgress: true,
+        completionPercentage: percentage
+      };
     } catch {
-      return false;
+      return { hasProgress: false, completionPercentage: null };
     }
   };
+
+  const { hasProgress, completionPercentage } = getActiveSessionProgress();
 
   // Get custom block info from coach configuration
   const blockInfo = getBlockInfo(block.title, trainingType);
@@ -66,6 +98,38 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
         <Typography variant="h6" sx={{ color: 'primary.main', flex: 1 }}>
           {block.title}
         </Typography>
+
+        {/* Completion Chart - Only show if there's a last workout */}
+        {completionPercentage !== null && (
+          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+            <CircularProgress
+              variant="determinate"
+              value={completionPercentage}
+              size={50}
+              thickness={5}
+              sx={{
+                color: completionPercentage >= 70 ? 'success.main' : completionPercentage >= 40 ? 'warning.main' : 'error.main',
+              }}
+            />
+            <Box
+              sx={{
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0,
+                position: 'absolute',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography variant="caption" component="div" color="text.secondary" fontWeight={600}>
+                {completionPercentage}%
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
         {infoMessage && (
           <Tooltip
             title={
@@ -89,7 +153,7 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
             onClick={() => onStartBlock(block)}
             sx={{ whiteSpace: 'nowrap' }}
           >
-            {hasBlockProgress() ? t('workout.continue') : t('workout.start')}
+            {hasProgress ? t('workout.continue') : t('workout.start')}
           </Button>
         )}
       </Box>
