@@ -178,34 +178,67 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                   )}
                 </Box>
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 1.5 }}>
-                  <TextField
-                    label={t('workout.reps')}
-                    type="number"
-                    size="small"
-                    value={set.reps ?? ''}
-                    onChange={(e) => handleSetChange(index, 'reps', e.target.value ? Number(e.target.value) : undefined)}
-                    inputProps={{ min: 0, max: 100 }}
-                    fullWidth
-                  />
-                  <TextField
-                    label={t('workout.kg')}
-                    type="number"
-                    size="small"
-                    value={set.kg ?? ''}
-                    onChange={(e) => handleSetChange(index, 'kg', e.target.value ? Number(e.target.value) : undefined)}
-                    inputProps={{ min: 0, max: 500, step: 0.5 }}
-                    fullWidth
-                  />
-                  <TextField
-                    label={t('workout.durationMin')}
-                    type="number"
-                    size="small"
-                    value={set.durationMin ?? ''}
-                    onChange={(e) => handleSetChange(index, 'durationMin', e.target.value ? Number(e.target.value) : undefined)}
-                    inputProps={{ min: 0, max: 60, step: 0.5 }}
-                    fullWidth
-                  />
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+                  {/* Strength/Plyometrics: Reps + Weight */}
+                  {(category === 'Strength' || category === 'Plyometrics') && (
+                    <>
+                      <TextField
+                        label={t('workout.reps')}
+                        type="number"
+                        size="small"
+                        value={set.reps ?? ''}
+                        onChange={(e) => handleSetChange(index, 'reps', e.target.value ? Number(e.target.value) : undefined)}
+                        inputProps={{ min: 0, max: 100 }}
+                        fullWidth
+                      />
+                      <TextField
+                        label={t('workout.kg')}
+                        type="number"
+                        size="small"
+                        value={set.kg ?? ''}
+                        onChange={(e) => handleSetChange(index, 'kg', e.target.value ? Number(e.target.value) : undefined)}
+                        inputProps={{ min: 0, max: 500, step: 0.5 }}
+                        fullWidth
+                      />
+                    </>
+                  )}
+
+                  {/* Speed/COD/Conditioning/Technique: Reps + Duration */}
+                  {(category === 'Speed' || category === 'COD' || category === 'Conditioning' || category === 'Technique') && (
+                    <>
+                      <TextField
+                        label={t('workout.reps')}
+                        type="number"
+                        size="small"
+                        value={set.reps ?? ''}
+                        onChange={(e) => handleSetChange(index, 'reps', e.target.value ? Number(e.target.value) : undefined)}
+                        inputProps={{ min: 0, max: 100 }}
+                        fullWidth
+                      />
+                      <TextField
+                        label={t('workout.durationMin')}
+                        type="number"
+                        size="small"
+                        value={set.durationMin ?? ''}
+                        onChange={(e) => handleSetChange(index, 'durationMin', e.target.value ? Number(e.target.value) : undefined)}
+                        inputProps={{ min: 0, max: 60, step: 0.5 }}
+                        fullWidth
+                      />
+                    </>
+                  )}
+
+                  {/* Mobility/Recovery: Only Duration */}
+                  {(category === 'Mobility' || category === 'Recovery') && (
+                    <TextField
+                      label={t('workout.durationMin')}
+                      type="number"
+                      size="small"
+                      value={set.durationMin ?? ''}
+                      onChange={(e) => handleSetChange(index, 'durationMin', e.target.value ? Number(e.target.value) : undefined)}
+                      inputProps={{ min: 0, max: 60, step: 0.5 }}
+                      fullWidth
+                    />
+                  )}
                 </Box>
               </Paper>
             ))}
