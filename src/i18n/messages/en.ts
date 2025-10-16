@@ -100,6 +100,8 @@ export const messagesEN = {
   'workout.workoutDeleted': 'Workout deleted successfully!',
   'workout.editWorkout': 'Edit Workout',
   'workout.workoutUpdated': 'Workout updated successfully!',
+  'workout.start': 'Start',
+  'workout.continue': 'Continue',
 
   // Categories
   'category.Strength': 'Strength',

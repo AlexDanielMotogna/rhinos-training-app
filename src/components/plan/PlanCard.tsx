@@ -31,7 +31,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   onDelete,
   onDuplicate,
 }) => {
-  const { } = useI18n();
+  const { t } = useI18n();
 
   const formatLastUsed = (dateStr?: string) => {
     if (!dateStr) return 'Never used';
@@ -46,6 +46,20 @@ export const PlanCard: React.FC<PlanCardProps> = ({
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     return date.toLocaleDateString();
+  };
+
+  // Check if there's progress saved for this workout
+  const hasProgress = () => {
+    const persistenceKey = `workout_progress_${plan.id}`;
+    const stored = localStorage.getItem(persistenceKey);
+    if (!stored) return false;
+
+    try {
+      const data = JSON.parse(stored);
+      return data.completedEntries && data.completedEntries.length > 0;
+    } catch {
+      return false;
+    }
   };
 
   return (
@@ -102,7 +116,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
         {/* Action Buttons - Mobile Optimized */}
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          {/* Start Button - Primary, Full Width */}
+          {/* Start/Continue Button - Primary, Full Width */}
           <Button
             variant="contained"
             startIcon={<PlayArrowIcon />}
@@ -113,7 +127,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
               fontWeight: 600,
             }}
           >
-            Start
+            {hasProgress() ? t('workout.continue') : t('workout.start')}
           </Button>
 
           {/* Compact Action Icons */}
