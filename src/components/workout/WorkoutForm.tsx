@@ -107,11 +107,45 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
     );
   };
 
+  // Get embedded YouTube URL if available
+  const getEmbedUrl = (url: string | undefined): string | null => {
+    if (!url) return null;
+    const sanitized = sanitizeYouTubeUrl(url);
+    if (!sanitized) return null;
+
+    // Convert watch URL to embed URL
+    const videoId = sanitized.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?]+)/)?.[1];
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+  };
+
+  const embedUrl = getEmbedUrl(youtubeUrl || exercise?.youtubeUrl);
+
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h6" sx={{ mb: 3 }}>
         {exercise ? exercise.name : t('workout.createCustom')}
       </Typography>
+
+      {/* YouTube Video Embed */}
+      {embedUrl && (
+        <Box sx={{ mb: 3, borderRadius: 1, overflow: 'hidden' }}>
+          <Box
+            component="iframe"
+            src={embedUrl}
+            sx={{
+              width: '100%',
+              height: { xs: 200, sm: 300 },
+              border: 'none',
+              borderRadius: 1,
+            }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+            Watch the video above to check proper form and technique
+          </Typography>
+        </Box>
+      )}
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {!exercise && (
