@@ -379,14 +379,52 @@ export function deleteAssignment(id: string): void {
 }
 
 /**
- * Get mock players for assignment (in real app, would fetch from backend)
+ * Player info for assignment
  */
-export function getMockPlayers() {
+export interface PlayerInfo {
+  id: string;
+  name: string;
+  position: Position;
+  jerseyNumber: number;
+}
+
+/**
+ * Get all players (users with role='player') from localStorage
+ * In production, this would fetch from backend API
+ */
+export function getMockPlayers(): PlayerInfo[] {
+  // Try to get real users from localStorage
+  const usersKey = 'rhinos_users';
+  const stored = localStorage.getItem(usersKey);
+
+  if (stored) {
+    try {
+      const allUsers = JSON.parse(stored);
+      // Filter only players (not coaches)
+      const players = allUsers
+        .filter((user: any) => user.role === 'player')
+        .map((user: any) => ({
+          id: user.id,
+          name: user.name,
+          position: user.position,
+          jerseyNumber: user.jerseyNumber,
+        }));
+
+      // If we have real players, return them
+      if (players.length > 0) {
+        return players;
+      }
+    } catch (e) {
+      console.error('Error parsing users from localStorage', e);
+    }
+  }
+
+  // Fallback to mock players if no real users exist
   return [
-    { id: '1', name: 'John Doe', position: 'RB', jerseyNumber: 23 },
-    { id: '2', name: 'Mike Smith', position: 'WR', jerseyNumber: 12 },
-    { id: '3', name: 'James Brown', position: 'LB', jerseyNumber: 55 },
-    { id: '4', name: 'David Wilson', position: 'QB', jerseyNumber: 7 },
-    { id: '5', name: 'Chris Lee', position: 'TE', jerseyNumber: 88 },
+    { id: 'mock-1', name: 'John Doe (Demo)', position: 'RB' as const, jerseyNumber: 23 },
+    { id: 'mock-2', name: 'Mike Smith (Demo)', position: 'WR' as const, jerseyNumber: 12 },
+    { id: 'mock-3', name: 'James Brown (Demo)', position: 'LB' as const, jerseyNumber: 55 },
+    { id: 'mock-4', name: 'David Wilson (Demo)', position: 'QB' as const, jerseyNumber: 7 },
+    { id: 'mock-5', name: 'Chris Lee (Demo)', position: 'TE' as const, jerseyNumber: 88 },
   ];
 }

@@ -21,7 +21,25 @@ export interface MockUser {
 }
 
 export function saveUser(user: MockUser): void {
+  // Save as current user
   localStorage.setItem('currentUser', JSON.stringify(user));
+
+  // Also save to list of all users for coach assignment feature
+  const usersKey = 'rhinos_users';
+  const stored = localStorage.getItem(usersKey);
+  let allUsers: MockUser[] = stored ? JSON.parse(stored) : [];
+
+  // Check if user already exists (by email)
+  const existingIndex = allUsers.findIndex(u => u.email === user.email);
+  if (existingIndex >= 0) {
+    // Update existing user
+    allUsers[existingIndex] = user;
+  } else {
+    // Add new user
+    allUsers.push(user);
+  }
+
+  localStorage.setItem(usersKey, JSON.stringify(allUsers));
 }
 
 export function getUser(): MockUser | null {
