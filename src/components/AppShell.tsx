@@ -124,6 +124,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           />
 
           <LanguageSwitcher />
+
+          <IconButton
+            color="inherit"
+            onClick={handleLogout}
+            sx={{ ml: 1 }}
+            title={t('nav.logout')}
+          >
+            <LogoutIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -141,22 +150,31 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               p: 2,
               backgroundColor: 'primary.main',
               color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
             }}
           >
-            <Box
-              component="img"
-              src={RhinosLogo}
-              alt="Rhinos Logo"
-              sx={{
-                width: 40,
-                height: 40,
-                objectFit: 'contain',
-              }}
-            />
-            <Typography variant="h6">{t('app.title')}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Box
+                component="img"
+                src={RhinosLogo}
+                alt="Rhinos Logo"
+                sx={{
+                  width: 40,
+                  height: 40,
+                  objectFit: 'contain',
+                }}
+              />
+              <Typography variant="h6">{t('app.title')}</Typography>
+            </Box>
+            {user && (
+              <Box sx={{ pl: 0.5 }}>
+                <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
+                  {user.name}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                  {user.role === 'coach' ? t('auth.roleCoach') : `#${user.jerseyNumber} ${user.position}`}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           <List>

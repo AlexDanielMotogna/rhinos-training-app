@@ -25,7 +25,8 @@ function App() {
   const [hardNotification, setHardNotification] = useState<HardNotificationType | null>(null);
 
   useEffect(() => {
-    // Check for user changes periodically (for same-tab updates)
+    // Check for user changes periodically (for same-tab updates only)
+    // Note: We don't sync between tabs to allow multiple users in different tabs for testing
     const checkUser = () => {
       const user = getUser();
       if (JSON.stringify(user) !== JSON.stringify(currentUser)) {
@@ -35,16 +36,8 @@ function App() {
 
     const interval = setInterval(checkUser, 100);
 
-    // Listen for storage changes from other tabs
-    const handleStorageChange = () => {
-      setCurrentUser(getUser());
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
     return () => {
       clearInterval(interval);
-      window.removeEventListener('storage', handleStorageChange);
     };
   }, [currentUser]);
 
