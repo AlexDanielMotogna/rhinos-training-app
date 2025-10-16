@@ -165,6 +165,11 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
     isGlobal: false,
   } : undefined;
 
+  // Get existing entry to pre-populate form with previous sets
+  const existingEntryForForm = selectedExerciseIndex !== null
+    ? getExerciseEntry(selectedExerciseIndex)
+    : undefined;
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
@@ -268,6 +273,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
         ) : (
           <WorkoutForm
             exercise={exerciseForForm}
+            initialData={existingEntryForForm}
             onSave={handleSaveExercise}
             onCancel={() => setSelectedExerciseIndex(null)}
           />

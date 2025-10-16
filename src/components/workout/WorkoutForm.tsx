@@ -47,23 +47,31 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const { t } = useI18n();
   const [name, setName] = useState(initialData?.name || exercise?.name || '');
   const [category, setCategory] = useState<ExerciseCategory>(initialData?.category || exercise?.category || 'Strength');
-  const [setData, setSetData] = useState<SetData[]>(
-    initialData?.setData || [{ setNumber: 1, reps: undefined, kg: undefined, durationSec: undefined }]
-  );
+
+  // Separate previous sets (read-only) from new sets (editable)
+  const previousSets = initialData?.setData || [];
+  const nextSetNumber = previousSets.length > 0
+    ? Math.max(...previousSets.map(s => s.setNumber)) + 1
+    : 1;
+
+  const [setData, setSetData] = useState<SetData[]>([
+    { setNumber: nextSetNumber, reps: undefined, kg: undefined, durationSec: undefined }
+  ]);
   const [rpe, setRpe] = useState<number>(initialData?.rpe || 5);
   const [notes, setNotes] = useState(initialData?.notes || '');
 
   const handleAddSet = () => {
-    const newSetNumber = setData.length + 1;
+    const currentMaxSetNumber = setData.length > 0
+      ? Math.max(...setData.map(s => s.setNumber))
+      : nextSetNumber - 1;
+    const newSetNumber = currentMaxSetNumber + 1;
     setSetData([...setData, { setNumber: newSetNumber, reps: undefined, kg: undefined, durationSec: undefined }]);
   };
 
   const handleRemoveSet = (index: number) => {
     if (setData.length > 1) {
       const newSets = setData.filter((_, i) => i !== index);
-      // Renumber remaining sets
-      const renumbered = newSets.map((set, idx) => ({ ...set, setNumber: idx + 1 }));
-      setSetData(renumbered);
+      setSetData(newSets);
     }
   };
 
@@ -192,8 +200,76 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* Previous sets (read-only) */}
+            {previousSets.map((set, index) => (
+              <Paper key={`prev-${index}`} sx={{ p: 2, backgroundColor: 'success.lighter', opacity: 0.7 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                  <Typography variant="subtitle2" color="success.dark" fontWeight={600}>
+                    {t('workout.setNumber', { number: set.setNumber })} ✓
+                  </Typography>
+                  <Typography variant="caption" color="success.dark">
+                    Already logged
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+                  {/* Strength/Plyometrics: Reps + Weight */}
+                  {(category === 'Strength' || category === 'Plyometrics') && (
+                    <>
+                      <TextField
+                        label={t('workout.reps')}
+                        size="small"
+                        value={set.reps ?? ''}
+                        disabled
+                        fullWidth
+                      />
+                      <TextField
+                        label={t('workout.kg')}
+                        size="small"
+                        value={set.kg ?? ''}
+                        disabled
+                        fullWidth
+                      />
+                    </>
+                  )}
+
+                  {/* Speed/COD/Conditioning/Technique: Reps + Duration */}
+                  {(category === 'Speed' || category === 'COD' || category === 'Conditioning' || category === 'Technique') && (
+                    <>
+                      <TextField
+                        label={t('workout.reps')}
+                        size="small"
+                        value={set.reps ?? ''}
+                        disabled
+                        fullWidth
+                      />
+                      <TextField
+                        label="Duration (sec)"
+                        size="small"
+                        value={set.durationSec ?? ''}
+                        disabled
+                        fullWidth
+                      />
+                    </>
+                  )}
+
+                  {/* Mobility/Recovery: Only Duration */}
+                  {(category === 'Mobility' || category === 'Recovery') && (
+                    <TextField
+                      label="Duration (sec)"
+                      size="small"
+                      value={set.durationSec ?? ''}
+                      disabled
+                      fullWidth
+                    />
+                  )}
+                </Box>
+              </Paper>
+            ))}
+
+            {/* New sets (editable) */}
             {setData.map((set, index) => (
-              <Paper key={index} sx={{ p: 2, backgroundColor: 'background.default' }}>
+              <Paper key={`new-${index}`} sx={{ p: 2, backgroundColor: 'background.default' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" color="primary.main" fontWeight={600}>
                     {t('workout.setNumber', { number: set.setNumber })}
