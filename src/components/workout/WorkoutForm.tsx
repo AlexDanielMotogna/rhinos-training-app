@@ -48,14 +48,14 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const [name, setName] = useState(initialData?.name || exercise?.name || '');
   const [category, setCategory] = useState<ExerciseCategory>(initialData?.category || exercise?.category || 'Strength');
   const [setData, setSetData] = useState<SetData[]>(
-    initialData?.setData || [{ setNumber: 1, reps: undefined, kg: undefined, durationMin: undefined }]
+    initialData?.setData || [{ setNumber: 1, reps: undefined, kg: undefined, durationSec: undefined }]
   );
   const [rpe, setRpe] = useState<number>(initialData?.rpe || 5);
   const [notes, setNotes] = useState(initialData?.notes || '');
 
   const handleAddSet = () => {
     const newSetNumber = setData.length + 1;
-    setSetData([...setData, { setNumber: newSetNumber, reps: undefined, kg: undefined, durationMin: undefined }]);
+    setSetData([...setData, { setNumber: newSetNumber, reps: undefined, kg: undefined, durationSec: undefined }]);
   };
 
   const handleRemoveSet = (index: number) => {
@@ -78,7 +78,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const handleSubmit = () => {
     // Filter out empty sets
     const validSets = setData.filter(set =>
-      set.reps !== undefined || set.kg !== undefined || set.durationMin !== undefined
+      set.reps !== undefined || set.kg !== undefined || set.durationSec !== undefined
     );
 
     const entry: WorkoutEntry = {
@@ -100,7 +100,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const isValid = () => {
     // Name must be filled and at least one set should have data
     return name.trim().length > 0 && setData.some(set =>
-      set.reps !== undefined || set.kg !== undefined || set.durationMin !== undefined
+      set.reps !== undefined || set.kg !== undefined || set.durationSec !== undefined
     );
   };
 
@@ -247,12 +247,12 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                         fullWidth
                       />
                       <TextField
-                        label={t('workout.durationMin')}
+                        label="Duration (sec)"
                         type="number"
                         size="small"
-                        value={set.durationMin ?? ''}
-                        onChange={(e) => handleSetChange(index, 'durationMin', e.target.value ? Number(e.target.value) : undefined)}
-                        inputProps={{ min: 0, max: 60, step: 0.5 }}
+                        value={set.durationSec ?? ''}
+                        onChange={(e) => handleSetChange(index, 'durationSec', e.target.value ? Number(e.target.value) : undefined)}
+                        inputProps={{ min: 0, max: 300, step: 0.1 }}
                         fullWidth
                       />
                     </>
@@ -261,12 +261,12 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                   {/* Mobility/Recovery: Only Duration */}
                   {(category === 'Mobility' || category === 'Recovery') && (
                     <TextField
-                      label={t('workout.durationMin')}
+                      label="Duration (sec)"
                       type="number"
                       size="small"
-                      value={set.durationMin ?? ''}
-                      onChange={(e) => handleSetChange(index, 'durationMin', e.target.value ? Number(e.target.value) : undefined)}
-                      inputProps={{ min: 0, max: 60, step: 0.5 }}
+                      value={set.durationSec ?? ''}
+                      onChange={(e) => handleSetChange(index, 'durationSec', e.target.value ? Number(e.target.value) : undefined)}
+                      inputProps={{ min: 0, max: 600, step: 0.1 }}
                       fullWidth
                     />
                   )}

@@ -59,7 +59,7 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
       youtubeUrl: exercise.youtubeUrl,
       targetSets: 3,
       targetReps: 10,
-      targetDurationMin: undefined,
+      targetDurationSec: undefined,
       notes: '',
       order: exercises.length,
     };
@@ -201,8 +201,8 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
                             <TextField
                               label="Duration (min)"
                               type="number"
-                              value={exercise.targetDurationMin || ''}
-                              onChange={(e) => handleUpdateExercise(index, { targetDurationMin: Number(e.target.value) || undefined })}
+                              value={exercise.targetDurationSec || ''}
+                              onChange={(e) => handleUpdateExercise(index, { targetDurationSec: Number(e.target.value) || undefined })}
                               size="small"
                               sx={{ width: 120 }}
                               inputProps={{ min: 1, max: 120 }}

@@ -136,7 +136,7 @@ export const FreeSessionDialog: React.FC<FreeSessionDialogProps> = ({
                         <Typography variant="body2" color="text.secondary">
                           {entry.sets && entry.reps && `${entry.sets} × ${entry.reps}`}
                           {entry.kg && ` @ ${entry.kg}kg`}
-                          {entry.durationMin && ` ${entry.durationMin}min`}
+                          {entry.durationSec && ` ${entry.durationSec}sec`}
                         </Typography>
                       </Box>
                     </ListItem>

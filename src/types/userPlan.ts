@@ -20,7 +20,7 @@ export interface PlanExercise {
   // Target values (goals for this exercise)
   targetSets: number;
   targetReps?: number;
-  targetDurationMin?: number; // For Conditioning/Mobility exercises
+  targetDurationSec?: number; // For Speed/Conditioning/Mobility exercises (in seconds)
 
   notes?: string;
   order: number; // Display order in the plan

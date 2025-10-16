@@ -7,7 +7,7 @@ export interface SetData {
   setNumber: number;
   reps?: number;
   kg?: number;
-  durationMin?: number;
+  durationSec?: number; // Changed from durationMin to durationSec
 }
 
 export interface WorkoutEntry {
@@ -18,7 +18,7 @@ export interface WorkoutEntry {
   sets?: number;
   reps?: number;
   kg?: number;
-  durationMin?: number;
+  durationSec?: number; // Changed from durationMin to durationSec
   setData?: SetData[]; // Individual set tracking
   rpe?: number;
   source: WorkoutSource;

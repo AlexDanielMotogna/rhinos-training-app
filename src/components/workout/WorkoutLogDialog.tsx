@@ -35,14 +35,14 @@ export const WorkoutLogDialog: React.FC<WorkoutLogDialogProps> = ({
 }) => {
   const { t } = useI18n();
   const [sets, setSets] = useState<SetData[]>([
-    { setNumber: 1, reps: undefined, kg: undefined, durationMin: undefined }
+    { setNumber: 1, reps: undefined, kg: undefined, durationSec: undefined }
   ]);
   const [rpe, setRpe] = useState<number>(5);
   const [notes, setNotes] = useState('');
 
   const handleClose = () => {
     // Reset form
-    setSets([{ setNumber: 1, reps: undefined, kg: undefined, durationMin: undefined }]);
+    setSets([{ setNumber: 1, reps: undefined, kg: undefined, durationSec: undefined }]);
     setRpe(5);
     setNotes('');
     onClose();
@@ -50,7 +50,7 @@ export const WorkoutLogDialog: React.FC<WorkoutLogDialogProps> = ({
 
   const handleAddSet = () => {
     const newSetNumber = sets.length + 1;
-    setSets([...sets, { setNumber: newSetNumber, reps: undefined, kg: undefined, durationMin: undefined }]);
+    setSets([...sets, { setNumber: newSetNumber, reps: undefined, kg: undefined, durationSec: undefined }]);
   };
 
   const handleRemoveSet = (index: number) => {
@@ -75,7 +75,7 @@ export const WorkoutLogDialog: React.FC<WorkoutLogDialogProps> = ({
 
     // Filter out empty sets
     const validSets = sets.filter(set =>
-      set.reps !== undefined || set.kg !== undefined || set.durationMin !== undefined
+      set.reps !== undefined || set.kg !== undefined || set.durationSec !== undefined
     );
 
     if (validSets.length === 0) return;
@@ -99,7 +99,7 @@ export const WorkoutLogDialog: React.FC<WorkoutLogDialogProps> = ({
   const isValid = () => {
     // At least one set should have at least one metric filled
     return sets.some(set =>
-      set.reps !== undefined || set.kg !== undefined || set.durationMin !== undefined
+      set.reps !== undefined || set.kg !== undefined || set.durationSec !== undefined
     );
   };
 
@@ -178,11 +178,11 @@ export const WorkoutLogDialog: React.FC<WorkoutLogDialogProps> = ({
                       fullWidth
                     />
                     <TextField
-                      label={t('workout.durationMin')}
+                      label={t('workout.durationSec')}
                       type="number"
                       size="small"
-                      value={set.durationMin ?? ''}
-                      onChange={(e) => handleSetChange(index, 'durationMin', e.target.value ? Number(e.target.value) : undefined)}
+                      value={set.durationSec ?? ''}
+                      onChange={(e) => handleSetChange(index, 'durationSec', e.target.value ? Number(e.target.value) : undefined)}
                       inputProps={{ min: 0, max: 60, step: 0.5 }}
                       fullWidth
                     />

@@ -178,7 +178,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
                       secondary={
                         <>
                           {exercise.targetSets} sets × {exercise.targetReps || '-'} reps
-                          {exercise.targetDurationMin && ` • ${exercise.targetDurationMin} min`}
+                          {exercise.targetDurationSec && ` • ${exercise.targetDurationSec} min`}
                         </>
                       }
                     />

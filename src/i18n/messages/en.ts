@@ -73,7 +73,7 @@ export const messagesEN = {
   'workout.setNumber': 'Set {{number}}',
   'workout.reps': 'Reps',
   'workout.kg': 'Weight (kg)',
-  'workout.durationMin': 'Duration (min)',
+  'workout.durationSec': 'Duration (sec)',
   'workout.rpe': 'RPE',
   'workout.notes': 'Notes',
   'workout.notesPlaceholder': 'Add notes about this exercise...',

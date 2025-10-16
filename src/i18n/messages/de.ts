@@ -73,7 +73,7 @@ export const messagesDE = {
   'workout.setNumber': 'Satz {{number}}',
   'workout.reps': 'Wiederholungen',
   'workout.kg': 'Gewicht (kg)',
-  'workout.durationMin': 'Dauer (Min)',
+  'workout.durationSec': 'Dauer (Min)',
   'workout.rpe': 'RPE',
   'workout.notes': 'Notizen',
   'workout.notesPlaceholder': 'Notizen zu dieser Übung hinzufügen...',

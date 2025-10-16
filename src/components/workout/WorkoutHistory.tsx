@@ -219,7 +219,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                                 (set.reps ? `${set.reps}r` : '') +
                                 (set.reps && set.kg ? ' @ ' : '') +
                                 (set.kg ? `${set.kg}kg` : '') +
-                                (set.durationMin ? `${set.durationMin}m` : '')
+                                (set.durationSec ? `${set.durationSec}s` : '')
                               }
                               size="small"
                               variant="outlined"
@@ -236,7 +236,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                         <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                           {entry.sets && entry.reps && `${entry.sets} × ${entry.reps}`}
                           {entry.kg && ` @ ${entry.kg}kg`}
-                          {entry.durationMin && ` ${entry.durationMin}min`}
+                          {entry.durationSec && ` ${entry.durationSec}sec`}
                         </Typography>
                       )}
 
