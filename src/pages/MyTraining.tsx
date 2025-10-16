@@ -12,6 +12,7 @@ import {
   Chip,
   Card,
   CardContent,
+  Grid,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useI18n } from '../i18n/I18nProvider';
@@ -20,19 +21,28 @@ import { WorkoutLogDialog } from '../components/workout/WorkoutLogDialog';
 import { FreeSessionDialog } from '../components/workout/FreeSessionDialog';
 import { WorkoutHistory } from '../components/workout/WorkoutHistory';
 import { EditWorkoutDialog } from '../components/workout/EditWorkoutDialog';
+import { PlanCard } from '../components/plan/PlanCard';
+import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
+import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
 import { getUser, getTemplatesForPosition, getTrainingTypes } from '../services/mock';
 import { getActiveAssignmentsForPlayer } from '../services/trainingBuilder';
-import { saveWorkoutLog, saveWorkoutEntry, getWorkoutLogsByUser, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
+import { saveWorkoutLog, saveWorkoutEntry, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
+import { getUserPlans, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, PositionTemplate } from '../types/template';
 import type { Exercise } from '../types/exercise';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
+import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
 import { sanitizeYouTubeUrl } from '../services/yt';
 
 type SessionView = 'my' | 'team';
+type MySessionTab = 'plans' | 'history';
+type TeamSessionTab = 'plan' | 'history';
 
 export const MyTraining: React.FC = () => {
   const { t } = useI18n();
   const [sessionView, setSessionView] = useState<SessionView>('my');
+  const [mySessionTab, setMySessionTab] = useState<MySessionTab>('plans');
+  const [teamSessionTab, setTeamSessionTab] = useState<TeamSessionTab>('plan');
   const [activeTab, setActiveTab] = useState<TrainingTypeKey>('strength_conditioning');
   const [template, setTemplate] = useState<PositionTemplate | null>(null);
   const [showFreeSession, setShowFreeSession] = useState(false);
@@ -41,6 +51,11 @@ export const MyTraining: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [editWorkout, setEditWorkout] = useState<WorkoutLog | null>(null);
+  const [userPlans, setUserPlans] = useState<UserPlanTemplate[]>([]);
+  const [showPlanBuilder, setShowPlanBuilder] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<UserPlanTemplate | null>(null);
+  const [startingPlan, setStartingPlan] = useState<UserPlanTemplate | null>(null);
+  const [showStartWorkout, setShowStartWorkout] = useState(false);
 
   const user = getUser();
   const trainingTypes = getTrainingTypes();
@@ -48,6 +63,19 @@ export const MyTraining: React.FC = () => {
   const [workoutHistory, setWorkoutHistory] = useState(() =>
     user ? getWorkoutLogsByUser(user.id) : []
   );
+
+  // Load user plans
+  useEffect(() => {
+    if (user) {
+      setUserPlans(getUserPlans(user.id));
+    }
+  }, [user]);
+
+  const refreshUserPlans = () => {
+    if (user) {
+      setUserPlans(getUserPlans(user.id));
+    }
+  };
 
   // Calculate program progress
   const calculateProgress = (startDate: string, endDate: string) => {
@@ -133,19 +161,88 @@ export const MyTraining: React.FC = () => {
     }
   };
 
+  // Plan handlers
+  const handleCreatePlan = (planName: string, exercises: PlanExercise[]) => {
+    if (user) {
+      createUserPlan({
+        userId: user.id,
+        name: planName,
+        exercises,
+      });
+      refreshUserPlans();
+      setSuccessMessage('Plan created successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
+  const handleUpdatePlan = (planName: string, exercises: PlanExercise[]) => {
+    if (editingPlan) {
+      updateUserPlan(editingPlan.id, {
+        name: planName,
+        exercises,
+      });
+      refreshUserPlans();
+      setEditingPlan(null);
+      setSuccessMessage('Plan updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
+  const handleDeletePlan = (planId: string) => {
+    if (window.confirm('Are you sure you want to delete this plan?')) {
+      deleteUserPlan(planId);
+      refreshUserPlans();
+      setSuccessMessage('Plan deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
+  const handleDuplicatePlan = (planId: string) => {
+    duplicateUserPlan(planId);
+    refreshUserPlans();
+    setSuccessMessage('Plan duplicated successfully!');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const handleStartPlan = (plan: UserPlanTemplate) => {
+    setStartingPlan(plan);
+    setShowStartWorkout(true);
+  };
+
+  const handleFinishWorkout = (entries: WorkoutEntry[], notes: string, duration: number) => {
+    if (user && startingPlan) {
+      const today = new Date().toISOString().split('T')[0];
+
+      const workoutLog = {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        date: today,
+        entries,
+        notes,
+        source: 'player' as const,
+        planTemplateId: startingPlan.id,
+        planName: startingPlan.name,
+        duration,
+        createdAt: new Date().toISOString(),
+      };
+
+      const allLogs = getWorkoutLogs();
+      allLogs.push(workoutLog);
+      localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
+
+      markPlanAsUsed(startingPlan.id);
+      refreshUserPlans();
+      refreshWorkoutHistory();
+      setStartingPlan(null);
+      setSuccessMessage(`Workout completed! Duration: ${duration} min`);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">{t('nav.myTraining')}</Typography>
-        {sessionView === 'my' && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setShowFreeSession(true)}
-          >
-            {t('workout.addFreeSession')}
-          </Button>
-        )}
       </Box>
 
       {successMessage && (
@@ -167,15 +264,68 @@ export const MyTraining: React.FC = () => {
       {/* MY SESSIONS VIEW */}
       {sessionView === 'my' && (
         <Box>
-          <Alert severity="info" sx={{ mb: 3 }}>
-            {t('training.mySessionsInfo')}
-          </Alert>
+          {/* Sub-tabs: My Plans / History */}
+          <Tabs
+            value={mySessionTab}
+            onChange={(_, value) => setMySessionTab(value as MySessionTab)}
+            sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab value="plans" label="My Plans" />
+            <Tab value="history" label="History" />
+          </Tabs>
 
-          <WorkoutHistory
-            workouts={workoutHistory.filter(w => w.source === 'player')}
-            onDelete={handleDeleteWorkout}
-            onEdit={handleEditWorkout}
-          />
+          {/* My Plans Tab */}
+          {mySessionTab === 'plans' && (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6">My Workout Plans</Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditingPlan(null);
+                    setShowPlanBuilder(true);
+                  }}
+                >
+                  Create New Plan
+                </Button>
+              </Box>
+
+              {userPlans.length === 0 ? (
+                <Alert severity="info">
+                  No workout plans yet. Click "Create New Plan" to build your first workout template!
+                </Alert>
+              ) : (
+                <Grid container spacing={2}>
+                  {userPlans.map(plan => (
+                    <Grid item xs={12} sm={6} md={4} key={plan.id}>
+                      <PlanCard
+                        plan={plan}
+                        onStart={handleStartPlan}
+                        onEdit={(plan) => {
+                          setEditingPlan(plan);
+                          setShowPlanBuilder(true);
+                        }}
+                        onDelete={handleDeletePlan}
+                        onDuplicate={handleDuplicatePlan}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Box>
+          )}
+
+          {/* History Tab */}
+          {mySessionTab === 'history' && (
+            <Box>
+              <WorkoutHistory
+                workouts={workoutHistory.filter(w => w.source === 'player')}
+                onDelete={handleDeleteWorkout}
+                onEdit={handleEditWorkout}
+              />
+            </Box>
+          )}
         </Box>
       )}
 
@@ -247,62 +397,74 @@ export const MyTraining: React.FC = () => {
                 })}
               </Box>
 
-              {/* Training Type Tabs */}
+              {/* Team Session Tabs: Training Plan / History */}
               <Tabs
-                value={activeTab}
-                onChange={(_, value) => setActiveTab(value)}
+                value={teamSessionTab}
+                onChange={(_, value) => setTeamSessionTab(value as TeamSessionTab)}
                 sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
-                variant="scrollable"
-                scrollButtons="auto"
               >
-                {trainingTypes
-                  .filter((tt) => tt.active)
-                  .map((tt) => (
-                    <Tab
-                      key={tt.key}
-                      value={tt.key}
-                      label={t(`training.${tt.key === 'strength_conditioning' ? 'strength' : 'sprints'}` as any)}
-                    />
-                  ))}
+                <Tab value="plan" label="Training Plan" />
+                <Tab value="history" label="History" />
               </Tabs>
 
-              {/* Coach Plan Exercises */}
-              {template ? (
-                <Box>
-                  <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
-                    {t('training.coachPlan')}
-                  </Typography>
+              {/* Training Plan Tab */}
+              {teamSessionTab === 'plan' && (
+                <>
+                  {/* Training Type Tabs */}
+                  <Tabs
+                    value={activeTab}
+                    onChange={(_, value) => setActiveTab(value)}
+                    sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+                    variant="scrollable"
+                    scrollButtons="auto"
+                  >
+                    {trainingTypes
+                      .filter((tt) => tt.active)
+                      .map((tt) => (
+                        <Tab
+                          key={tt.key}
+                          value={tt.key}
+                          label={t(`training.${tt.key === 'strength_conditioning' ? 'strength' : 'sprints'}` as any)}
+                        />
+                      ))}
+                  </Tabs>
 
-                  {template.blocks
-                    .sort((a, b) => a.order - b.order)
-                    .map((block) => (
-                      <WorkoutBlock
-                        key={block.order}
-                        block={block}
-                        showLogButtons={true}
-                        onLogWorkout={handleLogWorkout}
-                        onVideoClick={handleVideoClick}
-                        trainingType={activeTab}
-                      />
-                    ))}
-                </Box>
-              ) : (
-                <Alert severity="info">
-                  No training plan available for this type
-                </Alert>
+                  {/* Coach Plan Exercises */}
+                  {template ? (
+                    <Box>
+                      <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
+                        {t('training.coachPlan')}
+                      </Typography>
+
+                      {template.blocks
+                        .sort((a, b) => a.order - b.order)
+                        .map((block) => (
+                          <WorkoutBlock
+                            key={block.order}
+                            block={block}
+                            showLogButtons={true}
+                            onLogWorkout={handleLogWorkout}
+                            onVideoClick={handleVideoClick}
+                            trainingType={activeTab}
+                          />
+                        ))}
+                    </Box>
+                  ) : (
+                    <Alert severity="info">
+                      No training plan available for this type
+                    </Alert>
+                  )}
+                </>
               )}
 
-              {/* Workout History for Team Sessions */}
-              <Box sx={{ mt: 6 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
-                  Training History
-                </Typography>
+              {/* History Tab */}
+              {teamSessionTab === 'history' && (
                 <WorkoutHistory
                   workouts={workoutHistory.filter(w => w.source === 'coach')}
                   onDelete={handleDeleteWorkout}
                   onEdit={handleEditWorkout}
                 />
-              </Box>
+              )}
             </>
           ) : (
             <Alert severity="warning">
@@ -333,6 +495,26 @@ export const MyTraining: React.FC = () => {
         workout={editWorkout}
         onClose={() => setEditWorkout(null)}
         onSave={handleSaveEditedWorkout}
+      />
+
+      <PlanBuilderDialog
+        open={showPlanBuilder}
+        editingPlan={editingPlan}
+        onClose={() => {
+          setShowPlanBuilder(false);
+          setEditingPlan(null);
+        }}
+        onSave={editingPlan ? handleUpdatePlan : handleCreatePlan}
+      />
+
+      <StartWorkoutDialog
+        open={showStartWorkout}
+        plan={startingPlan}
+        onClose={() => {
+          setShowStartWorkout(false);
+          setStartingPlan(null);
+        }}
+        onFinish={handleFinishWorkout}
       />
 
       <Dialog
