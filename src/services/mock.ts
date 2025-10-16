@@ -272,18 +272,9 @@ export function addNotification(notification: Omit<Notification, 'id'>): void {
  */
 export function initializeDemoProfiles(): void {
   const usersKey = 'rhinos_users';
-  const stored = localStorage.getItem(usersKey);
 
-  // Only initialize if no users exist yet
-  if (stored) {
-    const existingUsers = JSON.parse(stored);
-    if (existingUsers.length > 0) {
-      return; // Users already exist, don't overwrite
-    }
-  }
-
-  // Create demo profiles
-  const demoUsers: MockUser[] = [
+  // Define demo profiles
+  const demoProfiles: MockUser[] = [
     {
       id: 'demo-coach-1',
       name: 'Coach Mike',
@@ -341,6 +332,17 @@ export function initializeDemoProfiles(): void {
     },
   ];
 
-  localStorage.setItem(usersKey, JSON.stringify(demoUsers));
-  console.log('✅ Demo profiles initialized:', demoUsers.length, 'users');
+  const stored = localStorage.getItem(usersKey);
+  let existingUsers: MockUser[] = stored ? JSON.parse(stored) : [];
+
+  // Add demo profiles if they don't already exist
+  demoProfiles.forEach(demoUser => {
+    const exists = existingUsers.find(u => u.email === demoUser.email);
+    if (!exists) {
+      existingUsers.push(demoUser);
+    }
+  });
+
+  localStorage.setItem(usersKey, JSON.stringify(existingUsers));
+  console.log('✅ Demo profiles ensured:', demoProfiles.length, 'profiles available');
 }
