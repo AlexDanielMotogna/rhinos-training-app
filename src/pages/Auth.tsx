@@ -35,19 +35,29 @@ export const Auth: React.FC = () => {
   const [heightCm, setHeightCm] = useState<number | ''>('');
   const [position, setPosition] = useState<Position>('RB');
   const [role, setRole] = useState<'player' | 'coach'>('player');
+  const [coachCode, setCoachCode] = useState('');
+
+  const COACH_CODE = 'RHINOS2025'; // Code provided by you to coaches
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate coach code if signing up as coach
+    if (isSignup && role === 'coach' && coachCode !== COACH_CODE) {
+      alert('Invalid coach code. Please contact the administrator for the correct code.');
+      return;
+    }
 
     const user = {
       id: Date.now().toString(),
       name: name || 'John Doe',
       email: email || 'john@example.com',
-      jerseyNumber: jerseyNumber || 99,
-      age: age || 25,
-      weightKg: weightKg || 100,
-      heightCm: heightCm || 186,
-      position,
+      // Only set player-specific fields if role is player
+      jerseyNumber: role === 'player' ? (jerseyNumber || 99) : 0,
+      age: role === 'player' ? (age || 25) : 0,
+      weightKg: role === 'player' ? (weightKg || 100) : 0,
+      heightCm: role === 'player' ? (heightCm || 186) : 0,
+      position: role === 'player' ? position : 'RB', // Default for coaches (not used)
       role,
     };
 
@@ -60,7 +70,9 @@ export const Auth: React.FC = () => {
   };
 
   const isValid = isSignup
-    ? name && email && password && jerseyNumber && age && weightKg && heightCm
+    ? role === 'coach'
+      ? name && email && password && coachCode === COACH_CODE
+      : name && email && password && jerseyNumber && age && weightKg && heightCm
     : email && password;
 
   return (
@@ -113,76 +125,86 @@ export const Auth: React.FC = () => {
                   fullWidth
                 />
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                <FormControl required fullWidth>
+                  <InputLabel>{t('auth.role')}</InputLabel>
+                  <Select
+                    value={role}
+                    label={t('auth.role')}
+                    onChange={(e) => setRole(e.target.value as 'player' | 'coach')}
+                  >
+                    <MenuItem value="player">{t('auth.rolePlayer')}</MenuItem>
+                    <MenuItem value="coach">{t('auth.roleCoach')}</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {role === 'coach' ? (
                   <TextField
-                    label={t('auth.jerseyNumber')}
-                    type="number"
-                    value={jerseyNumber}
-                    onChange={(e) => setJerseyNumber(e.target.value ? Number(e.target.value) : '')}
+                    label="Coach Code"
+                    value={coachCode}
+                    onChange={(e) => setCoachCode(e.target.value)}
                     required
-                    inputProps={{ min: 0, max: 99 }}
+                    fullWidth
+                    placeholder="Enter the code provided by administrator"
+                    helperText="Contact administrator if you don't have the coach code"
                   />
+                ) : (
+                  <>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                      <TextField
+                        label={t('auth.jerseyNumber')}
+                        type="number"
+                        value={jerseyNumber}
+                        onChange={(e) => setJerseyNumber(e.target.value ? Number(e.target.value) : '')}
+                        required
+                        inputProps={{ min: 0, max: 99 }}
+                      />
 
-                  <TextField
-                    label={t('auth.age')}
-                    type="number"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
-                    required
-                    inputProps={{ min: 10, max: 100 }}
-                  />
-                </Box>
+                      <TextField
+                        label={t('auth.age')}
+                        type="number"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
+                        required
+                        inputProps={{ min: 10, max: 100 }}
+                      />
+                    </Box>
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                  <FormControl required>
-                    <InputLabel>{t('auth.role')}</InputLabel>
-                    <Select
-                      value={role}
-                      label={t('auth.role')}
-                      onChange={(e) => setRole(e.target.value as 'player' | 'coach')}
-                    >
-                      <MenuItem value="player">{t('auth.rolePlayer')}</MenuItem>
-                      <MenuItem value="coach">{t('auth.roleCoach')}</MenuItem>
-                    </Select>
-                  </FormControl>
+                    <FormControl required fullWidth>
+                      <InputLabel>{t('auth.position')}</InputLabel>
+                      <Select
+                        value={position}
+                        label={t('auth.position')}
+                        onChange={(e) => setPosition(e.target.value as Position)}
+                      >
+                        {positions.map((pos) => (
+                          <MenuItem key={pos} value={pos}>
+                            {t(`position.${pos}` as any)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
 
-                  <FormControl required>
-                    <InputLabel>{t('auth.position')}</InputLabel>
-                    <Select
-                      value={position}
-                      label={t('auth.position')}
-                      onChange={(e) => setPosition(e.target.value as Position)}
-                    >
-                      {positions.map((pos) => (
-                        <MenuItem key={pos} value={pos}>
-                          {t(`position.${pos}` as any)}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                      <TextField
+                        label={t('auth.weightKg')}
+                        type="number"
+                        value={weightKg}
+                        onChange={(e) => setWeightKg(e.target.value ? Number(e.target.value) : '')}
+                        required
+                        inputProps={{ min: 50, max: 200 }}
+                      />
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-                  <TextField
-                    label={t('auth.weightKg')}
-                    type="number"
-                    value={weightKg}
-                    onChange={(e) => setWeightKg(e.target.value ? Number(e.target.value) : '')}
-                    required
-                    inputProps={{ min: 50, max: 200 }}
-                  />
-                </Box>
-
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-                  <TextField
-                    label={t('auth.heightCm')}
-                    type="number"
-                    value={heightCm}
-                    onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
-                    required
-                    inputProps={{ min: 150, max: 220 }}
-                  />
-                </Box>
+                      <TextField
+                        label={t('auth.heightCm')}
+                        type="number"
+                        value={heightCm}
+                        onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
+                        required
+                        inputProps={{ min: 150, max: 220 }}
+                      />
+                    </Box>
+                  </>
+                )}
               </>
             )}
 
