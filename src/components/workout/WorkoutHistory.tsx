@@ -26,7 +26,7 @@ interface WorkoutHistoryProps {
   onEdit?: (workout: WorkoutLog) => void;
 }
 
-type DateFilter = 'all' | '7days' | '30days' | '90days';
+type DateFilter = 'today' | '7days' | '30days' | '90days' | 'all';
 
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   workouts,
@@ -41,15 +41,24 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
     if (dateFilter === 'all') return workouts;
 
     const now = new Date();
-    const daysMap: Record<DateFilter, number> = {
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (dateFilter === 'today') {
+      return workouts.filter(workout => {
+        const workoutDate = new Date(workout.date);
+        const workoutDay = new Date(workoutDate.getFullYear(), workoutDate.getMonth(), workoutDate.getDate());
+        return workoutDay.getTime() === today.getTime();
+      });
+    }
+
+    const daysMap: Record<Exclude<DateFilter, 'today' | 'all'>, number> = {
       '7days': 7,
       '30days': 30,
       '90days': 90,
-      'all': 0,
     };
 
     const cutoffDate = new Date(now);
-    cutoffDate.setDate(cutoffDate.getDate() - daysMap[dateFilter]);
+    cutoffDate.setDate(cutoffDate.getDate() - daysMap[dateFilter as keyof typeof daysMap]);
 
     return workouts.filter(workout => {
       const workoutDate = new Date(workout.date);
@@ -114,6 +123,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
             label="Time Period"
             onChange={(e) => setDateFilter(e.target.value as DateFilter)}
           >
+            <MenuItem value="today">Today</MenuItem>
             <MenuItem value="7days">Last 7 Days</MenuItem>
             <MenuItem value="30days">Last 30 Days</MenuItem>
             <MenuItem value="90days">Last 90 Days</MenuItem>
