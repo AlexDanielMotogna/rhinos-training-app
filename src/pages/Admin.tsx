@@ -34,7 +34,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useI18n } from '../i18n/I18nProvider';
 import { globalCatalog } from '../services/catalog';
 import type { Exercise, ExerciseCategory, Position } from '../types/exercise';
-import type { TrainingTemplate } from '../types/trainingBuilder';
+import type { TrainingTemplate, TrainingAssignment } from '../types/trainingBuilder';
 import {
   getTrainingTemplates,
   getTrainingTypes as getTrainingTypesFromService,
@@ -42,7 +42,12 @@ import {
   updateTrainingTemplate,
   deleteTrainingTemplate,
   saveTrainingTypes,
+  getTrainingAssignments,
+  createTrainingAssignment,
+  deleteAssignment,
+  getMockPlayers,
 } from '../services/trainingBuilder';
+import { getUser } from '../services/mock';
 
 interface TeamSession {
   id: string;
@@ -138,6 +143,20 @@ export const Admin: React.FC = () => {
     title: '',
     exerciseIds: [],
   });
+
+  // Assignment State
+  const [assignments, setAssignments] = useState<TrainingAssignment[]>(() => getTrainingAssignments());
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [newAssignment, setNewAssignment] = useState<{
+    templateId: string;
+    playerIds: string[];
+    startDate: string;
+  }>({
+    templateId: '',
+    playerIds: [],
+    startDate: new Date().toISOString().split('T')[0],
+  });
+  const mockPlayers = getMockPlayers();
 
   // Exercise Management Handlers
   const handleOpenExerciseDialog = (exercise?: Exercise) => {
@@ -324,6 +343,28 @@ export const Admin: React.FC = () => {
     });
   };
 
+  // Assignment Handlers
+  const handleSaveAssignment = () => {
+    const currentUser = getUser();
+    if (currentUser) {
+      createTrainingAssignment(newAssignment, currentUser.id);
+      setAssignments(getTrainingAssignments());
+      setAssignDialogOpen(false);
+      setNewAssignment({
+        templateId: '',
+        playerIds: [],
+        startDate: new Date().toISOString().split('T')[0],
+      });
+    }
+  };
+
+  const handleDeleteAssignment = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this assignment?')) {
+      deleteAssignment(id);
+      setAssignments(getTrainingAssignments());
+    }
+  };
+
   const categories: ExerciseCategory[] = [
     'Strength', 'Speed', 'COD', 'Plyometrics',
     'Mobility', 'Technique', 'Conditioning', 'Recovery'
@@ -349,6 +390,7 @@ export const Admin: React.FC = () => {
         scrollButtons="auto"
       >
         <Tab label={t('admin.trainingBuilderTab')} />
+        <Tab label="Assign Programs" />
         <Tab label={t('admin.exercisesTab')} />
         <Tab label={t('admin.sessionsTab')} />
         <Tab label={t('admin.trainingTypesTab')} />
@@ -438,8 +480,88 @@ export const Admin: React.FC = () => {
         </Box>
       )}
 
-      {/* Exercises Management Tab */}
+      {/* Assign Programs Tab */}
       {activeTab === 1 && (
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6">
+              Assign Programs ({assignments.length})
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setAssignDialogOpen(true)}
+            >
+              Assign Program
+            </Button>
+          </Box>
+
+          <Grid container spacing={2}>
+            {assignments.map((assignment) => {
+              const template = templates.find(t => t.id === assignment.templateId);
+              const assignedPlayers = mockPlayers.filter(p => assignment.playerIds.includes(p.id));
+
+              return (
+                <Grid item xs={12} md={6} key={assignment.id}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6" sx={{ mb: 1 }}>
+                            {template?.trainingTypeName || 'Unknown Template'}
+                          </Typography>
+
+                          {template && template.durationWeeks && template.frequencyPerWeek && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                              {template.durationWeeks} weeks • {template.frequencyPerWeek}x/week
+                            </Typography>
+                          )}
+
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {assignment.startDate} → {assignment.endDate}
+                          </Typography>
+
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Players ({assignedPlayers.length}):
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                              {assignedPlayers.map((player) => (
+                                <Chip
+                                  key={player.id}
+                                  label={`#${player.jerseyNumber} ${player.name}`}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+
+                          <Chip
+                            label={assignment.active ? 'Active' : 'Inactive'}
+                            size="small"
+                            color={assignment.active ? 'success' : 'default'}
+                          />
+                        </Box>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteAssignment(assignment.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Box>
+      )}
+
+      {/* Exercises Management Tab */}
+      {activeTab === 2 && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
@@ -527,7 +649,7 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Sessions Management Tab */}
-      {activeTab === 2 && (
+      {activeTab === 3 && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
@@ -586,7 +708,7 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Training Types Management Tab */}
-      {activeTab === 3 && (
+      {activeTab === 4 && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
@@ -653,7 +775,7 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Policies Management Tab */}
-      {activeTab === 4 && (
+      {activeTab === 5 && (
         <Box>
           <Typography variant="h6" sx={{ mb: 3 }}>
             {t('admin.trainingPolicies')}
@@ -1169,6 +1291,89 @@ export const Admin: React.FC = () => {
             disabled={!currentBlock.title || currentBlock.exerciseIds.length === 0}
           >
             {t('admin.addBlock')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Assignment Dialog */}
+      <Dialog
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Assign Program to Players</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <FormControl fullWidth required>
+              <InputLabel>Select Template</InputLabel>
+              <Select
+                value={newAssignment.templateId}
+                label="Select Template"
+                onChange={(e) => setNewAssignment({ ...newAssignment, templateId: e.target.value })}
+              >
+                {templates.filter(t => t.active).map((template) => (
+                  <MenuItem key={template.id} value={template.id}>
+                    {template.trainingTypeName} ({template.positions?.join(', ')}) - {template.durationWeeks}w
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth required>
+              <InputLabel>Select Players</InputLabel>
+              <Select
+                multiple
+                value={newAssignment.playerIds}
+                label="Select Players"
+                onChange={(e) => setNewAssignment({ ...newAssignment, playerIds: e.target.value as string[] })}
+                renderValue={(selected) => `${selected.length} player(s) selected`}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                    },
+                  },
+                }}
+              >
+                {mockPlayers.map((player) => (
+                  <MenuItem key={player.id} value={player.id}>
+                    #{player.jerseyNumber} {player.name} ({player.position})
+                  </MenuItem>
+                ))}
+              </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Click outside or press ESC to close
+              </Typography>
+            </FormControl>
+
+            <TextField
+              label="Start Date"
+              type="date"
+              value={newAssignment.startDate}
+              onChange={(e) => setNewAssignment({ ...newAssignment, startDate: e.target.value })}
+              fullWidth
+              required
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ min: new Date().toISOString().split('T')[0] }}
+              helperText="The end date will be calculated automatically based on program duration"
+            />
+
+            <Alert severity="info">
+              Players will see this program in their "My Training" page starting from the start date.
+            </Alert>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAssignDialogOpen(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={handleSaveAssignment}
+            variant="contained"
+            disabled={!newAssignment.templateId || newAssignment.playerIds.length === 0}
+          >
+            Assign Program
           </Button>
         </DialogActions>
       </Dialog>
