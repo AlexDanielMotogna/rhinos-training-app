@@ -27,6 +27,8 @@ import {
   Card,
   CardContent,
   Grid,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -149,6 +151,7 @@ export const Admin: React.FC = () => {
   // Assignment State
   const [assignments, setAssignments] = useState<TrainingAssignment[]>(() => getTrainingAssignments());
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [assignToAllPlayers, setAssignToAllPlayers] = useState(false);
   const [newAssignment, setNewAssignment] = useState<{
     templateId: string;
     playerIds: string[];
@@ -370,12 +373,27 @@ export const Admin: React.FC = () => {
   };
 
   // Assignment Handlers
+  const getPlayersForTemplate = (templateId: string): string[] => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template || !template.positions) return [];
+
+    return mockPlayers
+      .filter(player => template.positions?.includes(player.position))
+      .map(player => player.id);
+  };
+
   const handleSaveAssignment = () => {
     const currentUser = getUser();
     if (currentUser) {
-      createTrainingAssignment(newAssignment, currentUser.id);
+      const assignmentData = {
+        ...newAssignment,
+        playerIds: assignToAllPlayers ? getPlayersForTemplate(newAssignment.templateId) : newAssignment.playerIds
+      };
+
+      createTrainingAssignment(assignmentData, currentUser.id);
       setAssignments(getTrainingAssignments());
       setAssignDialogOpen(false);
+      setAssignToAllPlayers(false);
       setNewAssignment({
         templateId: '',
         playerIds: [],
@@ -1392,14 +1410,33 @@ export const Admin: React.FC = () => {
               </Select>
             </FormControl>
 
-            <FormControl fullWidth required>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={assignToAllPlayers}
+                  onChange={(e) => setAssignToAllPlayers(e.target.checked)}
+                  disabled={!newAssignment.templateId}
+                />
+              }
+              label={`Assign to all players from template positions${
+                newAssignment.templateId
+                  ? ` (${templates.find(t => t.id === newAssignment.templateId)?.positions?.join(', ')})`
+                  : ''
+              }`}
+            />
+
+            <FormControl fullWidth required disabled={assignToAllPlayers}>
               <InputLabel>Select Players</InputLabel>
               <Select
                 multiple
-                value={newAssignment.playerIds}
+                value={assignToAllPlayers ? [] : newAssignment.playerIds}
                 label="Select Players"
                 onChange={(e) => setNewAssignment({ ...newAssignment, playerIds: e.target.value as string[] })}
-                renderValue={(selected) => `${selected.length} player(s) selected`}
+                renderValue={(selected) =>
+                  assignToAllPlayers
+                    ? `All ${getPlayersForTemplate(newAssignment.templateId).length} players from template positions`
+                    : `${selected.length} player(s) selected`
+                }
                 MenuProps={{
                   PaperProps: {
                     style: {
@@ -1408,14 +1445,21 @@ export const Admin: React.FC = () => {
                   },
                 }}
               >
-                {mockPlayers.map((player) => (
-                  <MenuItem key={player.id} value={player.id}>
-                    #{player.jerseyNumber} {player.name} ({player.position})
-                  </MenuItem>
-                ))}
+                {mockPlayers
+                  .filter(player => {
+                    const template = templates.find(t => t.id === newAssignment.templateId);
+                    return template?.positions?.includes(player.position);
+                  })
+                  .map((player) => (
+                    <MenuItem key={player.id} value={player.id}>
+                      #{player.jerseyNumber} {player.name} ({player.position})
+                    </MenuItem>
+                  ))}
               </Select>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                Click outside or press ESC to close
+                {assignToAllPlayers
+                  ? 'Checkbox is enabled - all matching players will be assigned'
+                  : 'Click outside or press ESC to close'}
               </Typography>
             </FormControl>
 
@@ -1443,7 +1487,10 @@ export const Admin: React.FC = () => {
           <Button
             onClick={handleSaveAssignment}
             variant="contained"
-            disabled={!newAssignment.templateId || newAssignment.playerIds.length === 0}
+            disabled={
+              !newAssignment.templateId ||
+              (!assignToAllPlayers && newAssignment.playerIds.length === 0)
+            }
           >
             Assign Program
           </Button>
