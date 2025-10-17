@@ -30,6 +30,8 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import CancelIcon from '@mui/icons-material/Cancel';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useI18n } from '../i18n/I18nProvider';
 import { generateDailyReport, generateWeeklyReport, generateMonthlyReport, getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from '../services/reports';
 import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod, PlayerStatus } from '../types/report';
@@ -51,6 +53,7 @@ export const Reports: React.FC = () => {
   const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
+  const [sessionCarouselIndex, setSessionCarouselIndex] = useState(0);
 
   useEffect(() => {
     // Load reports
@@ -63,6 +66,11 @@ export const Reports: React.FC = () => {
   useEffect(() => {
     setPositionFilter('all');
   }, [unitFilter]);
+
+  // Reset carousel when period changes
+  useEffect(() => {
+    setSessionCarouselIndex(0);
+  }, [period]);
 
   const currentReport = period === 'day' ? dailyReport : period === 'week' ? weeklyReport : monthlyReport;
 
@@ -307,16 +315,37 @@ export const Reports: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Team Training Sessions */}
+      {/* Team Training Sessions Carousel */}
       {summary.teamSessions && summary.teamSessions.length > 0 && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              {t('reports.teamSessionsTitle')}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h6">
+                {t('reports.teamSessionsTitle')}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <IconButton
+                  size="small"
+                  onClick={() => setSessionCarouselIndex(Math.max(0, sessionCarouselIndex - 3))}
+                  disabled={sessionCarouselIndex === 0}
+                >
+                  <ArrowBackIosNewIcon fontSize="small" />
+                </IconButton>
+                <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 60, textAlign: 'center' }}>
+                  {sessionCarouselIndex + 1}-{Math.min(sessionCarouselIndex + 3, summary.teamSessions.length)} / {summary.teamSessions.length}
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => setSessionCarouselIndex(Math.min(summary.teamSessions!.length - 3, sessionCarouselIndex + 3))}
+                  disabled={sessionCarouselIndex >= summary.teamSessions.length - 3}
+                >
+                  <ArrowForwardIosIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box>
             <Grid container spacing={2}>
-              {summary.teamSessions.map((session, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
+              {summary.teamSessions.slice(sessionCarouselIndex, sessionCarouselIndex + 3).map((session, index) => (
+                <Grid item xs={12} sm={4} key={sessionCarouselIndex + index}>
                   <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                     <Typography variant="body2" color="text.secondary">
                       {new Date(session.date).toLocaleDateString()}
