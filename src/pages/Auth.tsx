@@ -15,7 +15,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { saveUser, type MockUser } from '../services/mock';
+import { saveUser, calculateAge, type MockUser } from '../services/mock';
 import type { Position } from '../types/exercise';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 
@@ -29,8 +29,9 @@ export const Auth: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [jerseyNumber, setJerseyNumber] = useState<number | ''>('');
-  const [age, setAge] = useState<number | ''>('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [jerseyNumber, setJerseyNumber] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [weightKg, setWeightKg] = useState<number | ''>('');
   const [heightCm, setHeightCm] = useState<number | ''>('');
   const [position, setPosition] = useState<Position>('RB');
@@ -43,11 +44,20 @@ export const Auth: React.FC = () => {
     e.preventDefault();
 
     if (isSignup) {
+      // Validate password confirmation
+      if (password !== confirmPassword) {
+        alert(t('auth.passwordMismatch'));
+        return;
+      }
+
       // SIGNUP: Validate coach code if signing up as coach
       if (role === 'coach' && coachCode !== COACH_CODE) {
         alert('Invalid coach code. Please contact the administrator for the correct code.');
         return;
       }
+
+      // Calculate age from birth date for players
+      const calculatedAge = role === 'player' && birthDate ? calculateAge(birthDate) : 0;
 
       // Create new user
       const user: MockUser = {
@@ -55,8 +65,9 @@ export const Auth: React.FC = () => {
         name: name,
         email: email,
         // Only set player-specific fields if role is player
-        jerseyNumber: role === 'player' ? Number(jerseyNumber) : 0,
-        age: role === 'player' ? Number(age) : 0,
+        jerseyNumber: role === 'player' && jerseyNumber && jerseyNumber !== '--' ? Number(jerseyNumber) : undefined,
+        birthDate: role === 'player' ? birthDate : undefined,
+        age: calculatedAge,
         weightKg: role === 'player' ? Number(weightKg) : 0,
         heightCm: role === 'player' ? Number(heightCm) : 0,
         position: role === 'player' ? position : 'RB', // Default for coaches (not used)
@@ -94,8 +105,8 @@ export const Auth: React.FC = () => {
 
   const isValid = isSignup
     ? role === 'coach'
-      ? name && email && password && coachCode === COACH_CODE
-      : name && email && password && jerseyNumber && age && weightKg && heightCm
+      ? name && email && password && confirmPassword && password === confirmPassword && coachCode === COACH_CODE
+      : name && email && password && confirmPassword && password === confirmPassword && birthDate && weightKg && heightCm
     : email && password;
 
   return (
@@ -175,20 +186,23 @@ export const Auth: React.FC = () => {
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                       <TextField
                         label={t('auth.jerseyNumber')}
-                        type="number"
                         value={jerseyNumber}
-                        onChange={(e) => setJerseyNumber(e.target.value ? Number(e.target.value) : '')}
-                        required
-                        inputProps={{ min: 0, max: 99 }}
+                        onChange={(e) => setJerseyNumber(e.target.value)}
+                        placeholder="--"
+                        helperText={t('auth.jerseyNumberOptional')}
                       />
 
                       <TextField
-                        label={t('auth.age')}
-                        type="number"
-                        value={age}
-                        onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
+                        label={t('auth.birthDate')}
+                        type="date"
+                        value={birthDate}
+                        onChange={(e) => setBirthDate(e.target.value)}
                         required
-                        inputProps={{ min: 10, max: 100 }}
+                        InputLabelProps={{ shrink: true }}
+                        inputProps={{
+                          max: new Date().toISOString().split('T')[0],
+                          min: new Date(new Date().setFullYear(new Date().getFullYear() - 100)).toISOString().split('T')[0]
+                        }}
                       />
                     </Box>
 
@@ -248,6 +262,19 @@ export const Auth: React.FC = () => {
               required
               fullWidth
             />
+
+            {isSignup && (
+              <TextField
+                label={t('auth.confirmPassword')}
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                fullWidth
+                error={confirmPassword !== '' && password !== confirmPassword}
+                helperText={confirmPassword !== '' && password !== confirmPassword ? t('auth.passwordMismatch') : ''}
+              />
+            )}
 
             <Button
               type="submit"

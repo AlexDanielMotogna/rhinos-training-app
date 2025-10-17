@@ -13,27 +13,30 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  IconButton,
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 import { useI18n } from '../i18n/I18nProvider';
-import { getUser, getMockKPIs, getMockProjection } from '../services/mock';
+import { getUser, getMockKPIs, getMockProjection, type MockUser } from '../services/mock';
 import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
 import { StrengthBars } from '../components/profile/StrengthBars';
 import { SpeedProfileCard } from '../components/profile/SpeedProfileCard';
 import { PowerProfileCard } from '../components/profile/PowerProfileCard';
 import { AgilityProfileCard } from '../components/profile/AgilityProfileCard';
+import { EditProfileDialog } from '../components/profile/EditProfileDialog';
 import type { KPISnapshot, ProjectionRow } from '../types/kpi';
 import type { StrengthSummary, SpeedSummary, PowerSummary, AgilitySummary } from '../types/testing';
 
 export const Profile: React.FC = () => {
   const { t } = useI18n();
+  const [user, setUser] = useState<MockUser | null>(getUser());
   const [kpis, setKpis] = useState<KPISnapshot | null>(null);
   const [projection, setProjection] = useState<ProjectionRow[]>([]);
   const [strengthSummary, setStrengthSummary] = useState<StrengthSummary | null>(null);
   const [speedSummary, setSpeedSummary] = useState<SpeedSummary | null>(null);
   const [powerSummary, setPowerSummary] = useState<PowerSummary | null>(null);
   const [agilitySummary, setAgilitySummary] = useState<AgilitySummary | null>(null);
-
-  const user = getUser();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
     setKpis(getMockKPIs());
@@ -111,38 +114,55 @@ export const Profile: React.FC = () => {
       <Box sx={{ mb: 3 }}>
         <Card>
           <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-              <Box
-                sx={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: '50%',
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                }}
-              >
-                #{user.jerseyNumber}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.5rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  {user.jerseyNumber ? `#${user.jerseyNumber}` : '?'}
+                </Box>
+                <Box>
+                  <Typography variant="h6">{user.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t(`position.${user.position}` as any)}
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="h6">{user.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t(`position.${user.position}` as any)}
-                </Typography>
-              </Box>
+              <IconButton onClick={() => setEditDialogOpen(true)} color="primary">
+                <EditIcon />
+              </IconButton>
             </Box>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
               <Chip label={`${user.age} years`} size="small" />
               <Chip label={`${user.weightKg} kg`} size="small" />
               <Chip label={`${user.heightCm} cm`} size="small" />
+              {user.phone && <Chip label={user.phone} size="small" color="secondary" />}
+              {user.instagram && <Chip label={user.instagram} size="small" color="secondary" />}
             </Box>
           </CardContent>
         </Card>
       </Box>
+
+      {/* Edit Profile Dialog */}
+      {user && (
+        <EditProfileDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          user={user}
+          onSave={(updatedUser) => setUser(updatedUser)}
+        />
+      )}
 
       <Typography variant="h5" sx={{ mb: 2 }}>
         {t('profile.metrics')}

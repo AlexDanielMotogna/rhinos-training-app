@@ -12,13 +12,32 @@ export interface MockUser {
   id: string;
   name: string;
   email: string;
-  jerseyNumber: number;
-  age: number;
+  jerseyNumber?: number; // Optional for new players
+  birthDate?: string; // ISO date string (YYYY-MM-DD)
+  age: number; // Calculated from birthDate
   weightKg: number;
   heightCm: number;
   position: Position;
   role: 'player' | 'coach';
   sex?: 'male' | 'female'; // Added for strength testing benchmarks
+  phone?: string; // Optional phone number
+  instagram?: string; // Optional Instagram handle
+}
+
+/**
+ * Calculate age from birth date
+ */
+export function calculateAge(birthDate: string): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+
+  return age;
 }
 
 export function saveUser(user: MockUser): void {
