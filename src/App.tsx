@@ -11,7 +11,6 @@ import { MyStats } from './pages/MyStats';
 import { Profile } from './pages/Profile';
 import { Attendance } from './pages/Attendance';
 import { Leaderboard } from './pages/Leaderboard';
-import { Coach } from './pages/Coach';
 import { Admin } from './pages/Admin';
 import { Tests } from './pages/Tests';
 import { TestsStrength } from './pages/TestsStrength';
@@ -97,7 +96,6 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
-                <Route path="/coach" element={<Coach />} />
                 <Route
                   path="/reports"
                   element={

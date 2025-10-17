@@ -52,6 +52,7 @@ import {
 import { getUser } from '../services/mock';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 import { getAllBlockInfo } from '../services/blockInfo';
+import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 
 interface TeamSession {
   id: string;
@@ -520,9 +521,21 @@ export const Admin: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        {t('admin.title')}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        <Box
+          component="img"
+          src={RhinosLogo}
+          alt="Rhinos Logo"
+          sx={{
+            width: 50,
+            height: 50,
+            objectFit: 'contain',
+          }}
+        />
+        <Typography variant="h4">
+          {t('admin.title')}
+        </Typography>
+      </Box>
 
       <Alert severity="info" sx={{ mb: 3 }}>
         {t('admin.coachOnlyAccess')}
