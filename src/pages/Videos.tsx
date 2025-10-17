@@ -107,7 +107,8 @@ export const Videos: React.FC = () => {
   const renderVideoCard = (video: Video) => {
     const status = getVideoStatus(video.id);
     const prog = progress[video.id];
-    const thumbnailUrl = getYouTubeEmbedUrl(video.youtubeUrl).replace('/embed/', '/vi/') + '/mqdefault.jpg';
+    const videoId = getYouTubeVideoId(video.youtubeUrl);
+    const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
 
     return (
       <Grid item xs={12} sm={6} md={4} key={video.id}>
