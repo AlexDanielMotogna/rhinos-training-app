@@ -96,7 +96,18 @@ export async function sendServiceWorkerNotification(
       return sendLocalNotification(title, options);
     }
 
-    const registration = await navigator.serviceWorker.ready;
+    // Check if there's an active service worker
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('Service worker timeout')), 2000)
+      )
+    ]) as ServiceWorkerRegistration | null;
+
+    if (!registration) {
+      console.log('No service worker registered, using local notification');
+      return sendLocalNotification(title, options);
+    }
 
     await registration.showNotification(title, {
       body: options?.body,
@@ -111,6 +122,7 @@ export async function sendServiceWorkerNotification(
     return true;
   } catch (error) {
     console.error('Error sending service worker notification:', error);
+    console.log('Falling back to local notification');
     // Fallback to local notification
     return sendLocalNotification(title, options);
   }
