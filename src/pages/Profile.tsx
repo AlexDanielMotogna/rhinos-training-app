@@ -14,10 +14,18 @@ import {
   TableHead,
   TableRow,
   IconButton,
+  Button,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PhoneIcon from '@mui/icons-material/Phone';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
-import { getUser, getMockKPIs, getMockProjection, type MockUser } from '../services/mock';
+import { getUser, getMockKPIs, getMockProjection, getAllUsers, type MockUser } from '../services/mock';
 import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
 import { StrengthBars } from '../components/profile/StrengthBars';
 import { SpeedProfileCard } from '../components/profile/SpeedProfileCard';
@@ -29,7 +37,20 @@ import type { StrengthSummary, SpeedSummary, PowerSummary, AgilitySummary } from
 
 export const Profile: React.FC = () => {
   const { t } = useI18n();
-  const [user, setUser] = useState<MockUser | null>(getUser());
+  const { playerId } = useParams<{ playerId?: string }>();
+  const navigate = useNavigate();
+  const currentUser = getUser();
+
+  // If playerId is provided, show that player's profile, otherwise show current user
+  const [user, setUser] = useState<MockUser | null>(() => {
+    if (playerId) {
+      const allUsers = getAllUsers();
+      return allUsers.find(u => u.id === playerId) || null;
+    }
+    return currentUser;
+  });
+
+  const isViewingOtherPlayer = playerId && playerId !== currentUser?.id;
   const [kpis, setKpis] = useState<KPISnapshot | null>(null);
   const [projection, setProjection] = useState<ProjectionRow[]>([]);
   const [strengthSummary, setStrengthSummary] = useState<StrengthSummary | null>(null);
@@ -107,8 +128,18 @@ export const Profile: React.FC = () => {
 
   return (
     <Box>
+      {isViewingOtherPlayer && (
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/team')}
+          sx={{ mb: 2 }}
+        >
+          {t('common.back')}
+        </Button>
+      )}
+
       <Typography variant="h4" sx={{ mb: 3 }}>
-        {t('nav.profile')}
+        {isViewingOtherPlayer ? user.name : t('nav.profile')}
       </Typography>
 
       <Box sx={{ mb: 3 }}>
@@ -139,17 +170,136 @@ export const Profile: React.FC = () => {
                   </Typography>
                 </Box>
               </Box>
-              <IconButton onClick={() => setEditDialogOpen(true)} color="primary">
-                <EditIcon />
-              </IconButton>
+              {!isViewingOtherPlayer && (
+                <IconButton onClick={() => setEditDialogOpen(true)} color="primary">
+                  <EditIcon />
+                </IconButton>
+              )}
             </Box>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
               <Chip label={`${user.age} years`} size="small" />
               <Chip label={`${user.weightKg} kg`} size="small" />
               <Chip label={`${user.heightCm} cm`} size="small" />
-              {user.phone && <Chip label={user.phone} size="small" color="secondary" />}
-              {user.instagram && <Chip label={user.instagram} size="small" color="secondary" />}
             </Box>
+            {(user.phone || user.instagram || user.snapchat || user.tiktok || user.hudl) && (
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 2, alignItems: 'center' }}>
+                {user.phone && (
+                  <Box
+                    onClick={() => window.open(`tel:${user.phone}`, '_self')}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s',
+                      '&:hover': { transform: 'scale(1.1)' },
+                      borderRadius: '8px',
+                      backgroundColor: 'background.paper',
+                      boxShadow: 1,
+                      p: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <PhoneIcon sx={{ fontSize: 24, color: 'secondary.main' }} />
+                  </Box>
+                )}
+                {user.instagram && (
+                  <Box
+                    onClick={() => window.open(`https://instagram.com/${user.instagram.replace('@', '')}`, '_blank')}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s',
+                      '&:hover': { transform: 'scale(1.1)' },
+                      borderRadius: '8px',
+                      backgroundColor: 'background.paper',
+                      boxShadow: 1,
+                      p: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
+                      alt="Instagram"
+                      sx={{ width: 24, height: 24, objectFit: 'contain' }}
+                    />
+                  </Box>
+                )}
+                {user.snapchat && (
+                  <Box
+                    onClick={() => window.open(`https://snapchat.com/add/${user.snapchat}`, '_blank')}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s',
+                      '&:hover': { transform: 'scale(1.1)' },
+                      borderRadius: '8px',
+                      backgroundColor: 'background.paper',
+                      boxShadow: 1,
+                      p: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="https://upload.wikimedia.org/wikipedia/en/c/c4/Snapchat_logo.svg"
+                      alt="Snapchat"
+                      sx={{ width: 24, height: 24, objectFit: 'contain' }}
+                    />
+                  </Box>
+                )}
+                {user.tiktok && (
+                  <Box
+                    onClick={() => window.open(`https://tiktok.com/@${user.tiktok.replace('@', '')}`, '_blank')}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s',
+                      '&:hover': { transform: 'scale(1.1)' },
+                      borderRadius: '8px',
+                      backgroundColor: 'background.paper',
+                      boxShadow: 1,
+                      p: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="https://sf-tb-sg.ibytedtos.com/obj/eden-sg/uhtyvueh7nulogpoguhm/tiktok-icon2.png"
+                      alt="TikTok"
+                      sx={{ width: 24, height: 24, objectFit: 'contain' }}
+                    />
+                  </Box>
+                )}
+                {user.hudl && (
+                  <Box
+                    onClick={() => window.open(user.hudl, '_blank')}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s',
+                      '&:hover': { transform: 'scale(1.1)' },
+                      borderRadius: '8px',
+                      backgroundColor: 'background.paper',
+                      boxShadow: 1,
+                      p: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="https://www.freelogovectors.net/wp-content/uploads/2018/10/Hudl_logo.png"
+                      alt="Hudl"
+                      sx={{ width: 24, height: 24, objectFit: 'contain' }}
+                    />
+                  </Box>
+                )}
+              </Box>
+            )}
           </CardContent>
         </Card>
       </Box>

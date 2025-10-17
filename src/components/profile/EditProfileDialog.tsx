@@ -30,10 +30,45 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   const [birthDate, setBirthDate] = useState(user.birthDate || '');
   const [weightKg, setWeightKg] = useState(user.weightKg);
   const [heightCm, setHeightCm] = useState(user.heightCm);
-  const [phone, setPhone] = useState(user.phone || '');
+  const [phone, setPhone] = useState(user.phone || '+43');
   const [instagram, setInstagram] = useState(user.instagram || '');
+  const [snapchat, setSnapchat] = useState(user.snapchat || '');
+  const [tiktok, setTiktok] = useState(user.tiktok || '');
+  const [hudl, setHudl] = useState(user.hudl || '');
+  const [phoneError, setPhoneError] = useState('');
+
+  const validatePhone = (value: string) => {
+    if (!value || value === '+43') {
+      setPhoneError('');
+      return true;
+    }
+
+    // Must start with +43 and have at least 10 digits after
+    const phoneRegex = /^\+43\d{10,}$/;
+    if (!phoneRegex.test(value.replace(/\s/g, ''))) {
+      setPhoneError(t('auth.phoneError'));
+      return false;
+    }
+
+    setPhoneError('');
+    return true;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Ensure it always starts with +43
+    if (!value.startsWith('+43')) {
+      value = '+43' + value.replace(/^\+43/, '');
+    }
+    setPhone(value);
+    validatePhone(value);
+  };
 
   const handleSave = () => {
+    // Validate phone before saving
+    if (!validatePhone(phone)) {
+      return;
+    }
+
     const updatedUser: MockUser = {
       ...user,
       name,
@@ -42,8 +77,11 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
       age: birthDate ? calculateAge(birthDate) : user.age,
       weightKg: Number(weightKg),
       heightCm: Number(heightCm),
-      phone: phone || undefined,
+      phone: phone && phone !== '+43' ? phone : undefined,
       instagram: instagram || undefined,
+      snapchat: snapchat || undefined,
+      tiktok: tiktok || undefined,
+      hudl: hudl || undefined,
     };
 
     saveUser(updatedUser);
@@ -107,9 +145,11 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
           <TextField
             label={t('auth.phone')}
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => handlePhoneChange(e.target.value)}
             fullWidth
-            placeholder="+49 123 456789"
+            placeholder="+43 123 456789"
+            error={!!phoneError}
+            helperText={phoneError || t('auth.phoneHelper')}
           />
 
           <TextField
@@ -118,6 +158,34 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             onChange={(e) => setInstagram(e.target.value)}
             fullWidth
             placeholder="@username"
+            helperText={t('auth.instagramHelper')}
+          />
+
+          <TextField
+            label={t('auth.snapchat')}
+            value={snapchat}
+            onChange={(e) => setSnapchat(e.target.value)}
+            fullWidth
+            placeholder="username"
+            helperText={t('auth.snapchatHelper')}
+          />
+
+          <TextField
+            label={t('auth.tiktok')}
+            value={tiktok}
+            onChange={(e) => setTiktok(e.target.value)}
+            fullWidth
+            placeholder="@username"
+            helperText={t('auth.tiktokHelper')}
+          />
+
+          <TextField
+            label={t('auth.hudl')}
+            value={hudl}
+            onChange={(e) => setHudl(e.target.value)}
+            fullWidth
+            placeholder="https://hudl.com/profile/..."
+            helperText={t('auth.hudlHelper')}
           />
         </Box>
       </DialogContent>

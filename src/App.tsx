@@ -25,6 +25,7 @@ const TestsAgility = lazy(() => import('./pages/TestsAgility').then(m => ({ defa
 const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
 const Videos = lazy(() => import('./pages/Videos').then(m => ({ default: m.Videos })));
 const VideosAdmin = lazy(() => import('./pages/VideosAdmin').then(m => ({ default: m.VideosAdmin })));
+const Team = lazy(() => import('./pages/Team').then(m => ({ default: m.Team })));
 
 function App() {
   // Initialize demo profiles on app startup
@@ -100,6 +101,8 @@ function App() {
                   <Route path="/tests/power" element={<TestsPower />} />
                   <Route path="/tests/agility" element={<TestsAgility />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/:playerId" element={<Profile />} />
+                  <Route path="/team" element={<Team />} />
                   <Route path="/attendance" element={<Attendance />} />
                   <Route path="/leaderboard" element={<Leaderboard />} />
                   <Route path="/videos" element={<Videos />} />

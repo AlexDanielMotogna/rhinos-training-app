@@ -7,6 +7,7 @@ export const messagesEN = {
   'nav.myStats': 'My Stats',
   'nav.tests': 'Tests',
   'nav.profile': 'Profile',
+  'nav.team': 'Team',
   'nav.attendance': 'Attendance',
   'nav.coach': 'Coach',
   'nav.admin': 'Admin',
@@ -28,6 +29,7 @@ export const messagesEN = {
   'common.loading': 'Loading...',
   'common.error': 'Error',
   'common.success': 'Success',
+  'common.back': 'Back to Team',
 
   // Auth
   'auth.login': 'Login',
@@ -45,7 +47,16 @@ export const messagesEN = {
   'auth.heightCm': 'Height (cm)',
   'auth.position': 'Position',
   'auth.phone': 'Phone Number',
+  'auth.phoneHelper': 'Format: +43 followed by 10+ digits',
+  'auth.phoneError': 'Invalid phone format. Must be +43 followed by at least 10 digits',
   'auth.instagram': 'Instagram',
+  'auth.instagramHelper': 'Your Instagram handle (optional)',
+  'auth.snapchat': 'Snapchat',
+  'auth.snapchatHelper': 'Your Snapchat username (optional)',
+  'auth.tiktok': 'TikTok',
+  'auth.tiktokHelper': 'Your TikTok handle (optional)',
+  'auth.hudl': 'Hudl Profile',
+  'auth.hudlHelper': 'Your Hudl profile URL (optional)',
   'auth.welcomeBack': 'Welcome Back',
   'auth.createAccount': 'Create Account',
   'auth.haveAccount': 'Already have an account?',
@@ -541,6 +552,10 @@ export const messagesEN = {
   'reports.sessionDate': 'Date',
   'reports.sessionTime': 'Time',
   'reports.sessionAttendance': 'Attendance',
+
+  // Team
+  'team.title': 'Team Directory',
+  'team.search': 'Search players by name, position, or jersey number...',
 };
 
 export type MessageKey = keyof typeof messagesEN;

@@ -25,6 +25,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import LogoutIcon from '@mui/icons-material/Logout';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import GroupIcon from '@mui/icons-material/Group';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -68,6 +69,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { key: 'myStats', label: t('nav.myStats'), icon: <CalendarMonthIcon />, path: '/stats', showForAll: true },
     { key: 'tests', label: t('nav.tests'), icon: <AssessmentIcon />, path: '/tests', showForAll: true },
     { key: 'profile', label: t('nav.profile'), icon: <PersonIcon />, path: '/profile', showForAll: true },
+    { key: 'team', label: t('nav.team'), icon: <GroupIcon />, path: '/team', showForAll: true },
     { key: 'attendance', label: t('nav.attendance'), icon: <EventIcon />, path: '/attendance', showForAll: true },
     { key: 'leaderboard', label: t('nav.leaderboard'), icon: <LeaderboardIcon />, path: '/leaderboard', showForAll: true },
     { key: 'videos', label: t('nav.videos'), icon: <OndemandVideoIcon />, path: '/videos', showForAll: true },

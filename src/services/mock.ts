@@ -20,8 +20,11 @@ export interface MockUser {
   position: Position;
   role: 'player' | 'coach';
   sex?: 'male' | 'female'; // Added for strength testing benchmarks
-  phone?: string; // Optional phone number
+  phone?: string; // Optional phone number (format: +43...)
   instagram?: string; // Optional Instagram handle
+  snapchat?: string; // Optional Snapchat username
+  tiktok?: string; // Optional TikTok handle
+  hudl?: string; // Optional Hudl profile URL
 }
 
 /**
@@ -69,6 +72,15 @@ export function getUser(): MockUser | null {
 
 export function logout(): void {
   localStorage.removeItem('currentUser');
+}
+
+/**
+ * Get all registered users (for team directory feature)
+ */
+export function getAllUsers(): MockUser[] {
+  const usersKey = 'rhinos_users';
+  const stored = localStorage.getItem(usersKey);
+  return stored ? JSON.parse(stored) : [];
 }
 
 /**

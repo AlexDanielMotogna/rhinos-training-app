@@ -7,6 +7,7 @@ export const messagesDE = {
   'nav.myStats': 'Meine Statistiken',
   'nav.tests': 'Tests',
   'nav.profile': 'Profil',
+  'nav.team': 'Team',
   'nav.attendance': 'Anwesenheit',
   'nav.coach': 'Trainer',
   'nav.admin': 'Admin',
@@ -541,4 +542,8 @@ export const messagesDE = {
   'reports.sessionDate': 'Datum',
   'reports.sessionTime': 'Zeit',
   'reports.sessionAttendance': 'Anwesenheit',
+
+  // Team
+  'team.title': 'Team-Verzeichnis',
+  'team.search': 'Suche Spieler nach Name, Position oder Trikotnummer...',
 };
