@@ -59,6 +59,8 @@ interface TeamSession {
   startTime: string;
   endTime: string;
   type: string;
+  location?: string; // Venue/facility name (e.g., "Sporthalle Nord")
+  address?: string; // City/address (e.g., "Frankfurt am Main, Sportplatz 1")
 }
 
 interface Policy {
@@ -104,6 +106,8 @@ export const Admin: React.FC = () => {
     startTime: '19:00',
     endTime: '21:00',
     type: 'Team Training',
+    location: '',
+    address: '',
   });
 
   // Policies Management State
@@ -231,6 +235,8 @@ export const Admin: React.FC = () => {
       startTime: newSession.startTime!,
       endTime: newSession.endTime!,
       type: newSession.type!,
+      location: newSession.location,
+      address: newSession.address,
     };
     setSessions([...sessions, session].sort((a, b) => a.date.localeCompare(b.date)));
     setSessionDialogOpen(false);
@@ -239,6 +245,8 @@ export const Admin: React.FC = () => {
       startTime: '19:00',
       endTime: '21:00',
       type: 'Team Training',
+      location: '',
+      address: '',
     });
   };
 
@@ -818,7 +826,7 @@ export const Admin: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Box>
+                        <Box sx={{ flex: 1 }}>
                           <Typography variant="h6">
                             {dayName}
                           </Typography>
@@ -828,6 +836,16 @@ export const Admin: React.FC = () => {
                           <Typography variant="body1" color="text.secondary">
                             {session.startTime} - {session.endTime}
                           </Typography>
+                          {session.location && (
+                            <Typography variant="body2" sx={{ fontWeight: 500, mt: 1 }}>
+                              {session.location}
+                            </Typography>
+                          )}
+                          {session.address && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                              {session.address}
+                            </Typography>
+                          )}
                           <Chip label={session.type} size="small" sx={{ mt: 1 }} />
                         </Box>
                         <IconButton
@@ -1160,6 +1178,24 @@ export const Admin: React.FC = () => {
               fullWidth
               required
               placeholder="Team Training, Practice, Game, etc."
+            />
+
+            <TextField
+              label={t('admin.location')}
+              value={newSession.location || ''}
+              onChange={(e) => setNewSession({ ...newSession, location: e.target.value })}
+              fullWidth
+              placeholder="Sporthalle Nord, Main Stadium, etc."
+              helperText={t('admin.locationHelper')}
+            />
+
+            <TextField
+              label={t('admin.address')}
+              value={newSession.address || ''}
+              onChange={(e) => setNewSession({ ...newSession, address: e.target.value })}
+              fullWidth
+              placeholder="Frankfurt am Main, Sportplatz 1"
+              helperText={t('admin.addressHelper')}
             />
           </Box>
         </DialogContent>

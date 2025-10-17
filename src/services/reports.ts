@@ -165,6 +165,8 @@ export function generateDailyReport(): DailyReport {
       endTime: '21:00',
       playersAttended: 6, // 6 out of 8 players attended
       totalPlayers: players.length,
+      location: 'Sporthalle Nord',
+      address: 'Frankfurt am Main, Sportplatz 1',
     },
   ];
 
@@ -245,6 +247,8 @@ export function generateWeeklyReport(): WeeklyReport {
       endTime: '20:00',
       playersAttended: 7,
       totalPlayers: dailyReport.players.length,
+      location: 'Main Stadium',
+      address: 'Frankfurt am Main',
     },
     {
       date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0], // 3 days ago
@@ -252,6 +256,8 @@ export function generateWeeklyReport(): WeeklyReport {
       endTime: '21:00',
       playersAttended: 6,
       totalPlayers: dailyReport.players.length,
+      location: 'Sporthalle Nord',
+      address: 'Frankfurt am Main, Sportplatz 1',
     },
     {
       date: new Date().toISOString().split('T')[0], // Today
@@ -259,6 +265,8 @@ export function generateWeeklyReport(): WeeklyReport {
       endTime: '21:00',
       playersAttended: 6,
       totalPlayers: dailyReport.players.length,
+      location: 'Sporthalle Nord',
+      address: 'Frankfurt am Main, Sportplatz 1',
     },
   ];
 
@@ -314,14 +322,24 @@ export function generateMonthlyReport(): MonthlyReport {
   }));
 
   // Mock team sessions for the month (12 sessions, ~3 per week)
+  const locations = [
+    { location: 'Sporthalle Nord', address: 'Frankfurt am Main, Sportplatz 1' },
+    { location: 'Main Stadium', address: 'Frankfurt am Main' },
+    { location: 'Indoor Training Center', address: 'Offenbach' },
+    { location: 'Fitness Arena West', address: 'Frankfurt am Main, Westend' },
+  ];
+
   const monthTeamSessions = Array.from({ length: 12 }, (_, i) => {
     const daysAgo = (11 - i) * 2.5; // Spread across ~30 days
+    const locationData = locations[i % locations.length]; // Rotate through locations
     return {
       date: new Date(Date.now() - daysAgo * 86400000).toISOString().split('T')[0],
       startTime: i % 2 === 0 ? '18:00' : '19:00',
       endTime: i % 2 === 0 ? '20:00' : '21:00',
       playersAttended: Math.floor(Math.random() * 3) + 5, // 5-7 players
       totalPlayers: dailyReport.players.length,
+      location: locationData.location,
+      address: locationData.address,
     };
   });
 

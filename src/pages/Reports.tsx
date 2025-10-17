@@ -353,7 +353,17 @@ export const Reports: React.FC = () => {
                     <Typography variant="body1" sx={{ fontWeight: 600, my: 0.5 }}>
                       {session.startTime} - {session.endTime}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {session.location && (
+                      <Typography variant="body2" sx={{ fontWeight: 500, mt: 1 }}>
+                        {session.location}
+                      </Typography>
+                    )}
+                    {session.address && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        {session.address}
+                      </Typography>
+                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                       <Typography variant="h5" color="primary.main" sx={{ fontWeight: 700 }}>
                         {session.playersAttended}/{session.totalPlayers}
                       </Typography>

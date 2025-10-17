@@ -31,6 +31,8 @@ export interface TeamSession {
   endTime: string; // HH:mm format
   playersAttended: number;
   totalPlayers: number;
+  location?: string; // Venue/facility name
+  address?: string; // City/address
 }
 
 export interface ReportSummary {
