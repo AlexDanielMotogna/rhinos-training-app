@@ -57,6 +57,23 @@ export async function sendLocalNotification(
   }
 
   try {
+    // Try service worker first (required for Android PWA)
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(title, {
+        body: options?.body,
+        icon: options?.icon || '/vite.svg',
+        badge: options?.badge || '/vite.svg',
+        vibrate: options?.vibrate || [200, 100, 200],
+        tag: options?.tag || 'rhinos-notification',
+        requireInteraction: options?.requireInteraction || false,
+        data: options?.data,
+      } as NotificationOptions);
+      console.log('Notification sent via service worker (from local function)');
+      return true;
+    }
+
+    // Fallback to new Notification (desktop browsers only)
     new Notification(title, {
       body: options?.body,
       icon: options?.icon || '/vite.svg',
@@ -72,7 +89,7 @@ export async function sendLocalNotification(
   } catch (error) {
     console.error('Error sending local notification:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    alert(`Error creating notification: ${errorMessage}`);
+    console.log(`Error details: ${errorMessage}`);
     return false;
   }
 }
