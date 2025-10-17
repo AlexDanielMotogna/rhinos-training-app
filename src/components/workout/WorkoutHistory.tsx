@@ -245,33 +245,36 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                       {/* Set-by-set data - User-friendly format */}
                       {entry.setData && entry.setData.length > 0 ? (
                         <Box sx={{ pl: 1 }}>
-                          {/* Summary line */}
-                          <Typography variant="body2" sx={{ fontSize: '0.85rem', mb: 0.5, color: 'text.primary' }}>
-                            {entry.setData.length} {entry.setData.length === 1 ? 'set' : 'sets'}
-                            {entry.setData[0]?.reps && ` × ${entry.setData[0].reps} reps`}
-                            {entry.setData[0]?.kg && ` with ${entry.setData[0].kg}kg`}
-                          </Typography>
-
-                          {/* Individual sets in readable format */}
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                            {entry.setData.map((set, setIdx) => (
-                              <Typography
-                                key={setIdx}
-                                variant="caption"
-                                sx={{
-                                  fontSize: '0.75rem',
-                                  color: 'text.secondary',
-                                  fontFamily: 'monospace'
-                                }}
-                              >
-                                Set {set.setNumber}:{' '}
-                                {set.reps && `${set.reps} reps`}
-                                {set.reps && set.kg && ' × '}
-                                {set.kg && `${set.kg}kg`}
-                                {set.durationSec && `${set.durationSec} seconds`}
-                              </Typography>
-                            ))}
-                          </Box>
+                          {/* Show details directly - no redundant summary */}
+                          {entry.setData.length === 1 ? (
+                            // Single set - just show the data
+                            <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'text.primary' }}>
+                              {entry.setData[0].reps && `${entry.setData[0].reps} reps`}
+                              {entry.setData[0].reps && entry.setData[0].kg && ' × '}
+                              {entry.setData[0].kg && `${entry.setData[0].kg}kg`}
+                              {entry.setData[0].durationSec && `${entry.setData[0].durationSec} seconds`}
+                            </Typography>
+                          ) : (
+                            // Multiple sets - show each set
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                              {entry.setData.map((set, setIdx) => (
+                                <Typography
+                                  key={setIdx}
+                                  variant="body2"
+                                  sx={{
+                                    fontSize: '0.8rem',
+                                    color: 'text.primary',
+                                  }}
+                                >
+                                  Set {set.setNumber}:{' '}
+                                  {set.reps && `${set.reps} reps`}
+                                  {set.reps && set.kg && ' × '}
+                                  {set.kg && `${set.kg}kg`}
+                                  {set.durationSec && `${set.durationSec} seconds`}
+                                </Typography>
+                              ))}
+                            </Box>
+                          )}
                         </Box>
                       ) : (
                         // Fallback for old format
