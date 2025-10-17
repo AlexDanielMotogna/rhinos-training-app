@@ -15,18 +15,16 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Badge,
+  Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useI18n } from '../i18n/I18nProvider';
 import { getPublishedVideos, getPlayerProgressForAllVideos, isYouTubeShort, getYouTubeVideoId } from '../services/videos';
 import { getUser } from '../services/mock';
 import type { Video, VideoType, PositionTag, RouteTag, CoverageTag, VideoLevel, WatchStatus } from '../types/video';
 
 export const Videos: React.FC = () => {
-  const { t } = useI18n();
   const user = getUser();
   const [activeTab, setActiveTab] = useState<VideoType>('position');
   const [searchQuery, setSearchQuery] = useState('');

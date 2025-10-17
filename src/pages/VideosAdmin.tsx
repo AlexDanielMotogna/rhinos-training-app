@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -29,7 +29,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PublishIcon from '@mui/icons-material/Publish';
 import DraftIcon from '@mui/icons-material/Drafts';
-import { useI18n } from '../i18n/I18nProvider';
 import {
   getAllVideos,
   createVideo,
@@ -49,7 +48,6 @@ import type {
 } from '../types/video';
 
 export const VideosAdmin: React.FC = () => {
-  const { t } = useI18n();
   const user = getUser();
   const [videos, setVideos] = useState<Video[]>(getAllVideos());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -154,11 +152,6 @@ export const VideosAdmin: React.FC = () => {
   const handleToggleStatus = (video: Video) => {
     const newStatus: VideoStatus = video.status === 'draft' ? 'published' : 'draft';
     updateVideo(video.id, { status: newStatus });
-    setVideos(getAllVideos());
-  };
-
-  const handleTogglePin = (video: Video) => {
-    updateVideo(video.id, { isPinned: !video.isPinned });
     setVideos(getAllVideos());
   };
 
