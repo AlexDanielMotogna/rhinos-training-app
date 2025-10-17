@@ -28,7 +28,6 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useI18n } from '../i18n/I18nProvider';
 import { getUser } from '../services/mock';
 import {
-  getAllSessions,
   getUpcomingSessions,
   createSession,
   updateRSVP,

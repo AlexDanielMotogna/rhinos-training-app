@@ -86,11 +86,13 @@ function notifyNewSession(session: TrainingSession): void {
 
   users.forEach((user: any) => {
     if (user.id !== session.creatorId && user.role === 'player') {
-      addNotification(user.id, {
+      addNotification({
+        type: 'new_plan',
+        title: 'New Training Session',
         message: `${session.creatorName} created a training session: ${session.title} at ${session.location} on ${formatDate(session.date)} at ${session.time}`,
-        type: 'info',
-        ctaLabel: 'View Sessions',
-        ctaLink: '/training-sessions',
+        timestamp: new Date(),
+        read: false,
+        actionUrl: '/training-sessions',
       });
     }
   });
