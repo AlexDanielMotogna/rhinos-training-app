@@ -11,6 +11,8 @@ export const messagesEN = {
   'nav.coach': 'Coach',
   'nav.admin': 'Admin',
   'nav.leaderboard': 'Leaderboard',
+  'nav.videos': 'Videos',
+  'nav.videosAdmin': 'Videos Admin',
   'nav.logout': 'Logout',
 
   // Common
