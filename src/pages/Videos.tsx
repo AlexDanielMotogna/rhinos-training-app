@@ -36,6 +36,9 @@ export const Videos: React.FC = () => {
   const [selectedLevel, setSelectedLevel] = useState<VideoLevel | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<WatchStatus | 'all'>('all');
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [videosToShow, setVideosToShow] = useState(30); // Start with 30 videos
+
+  const VIDEOS_PER_PAGE = 30;
 
   const videos = useMemo(() => getPublishedVideos(), []);
   const progress = useMemo(
@@ -96,6 +99,22 @@ export const Videos: React.FC = () => {
       return true;
     });
   }, [videos, activeTab, searchQuery, selectedPosition, selectedRoute, selectedCoverage, selectedLevel, selectedStatus]);
+
+  // Reset videosToShow when filters change
+  React.useEffect(() => {
+    setVideosToShow(VIDEOS_PER_PAGE);
+  }, [activeTab, searchQuery, selectedPosition, selectedRoute, selectedCoverage, selectedLevel, selectedStatus]);
+
+  // Visible videos (paginated)
+  const visibleVideos = useMemo(() => {
+    return filteredVideos.slice(0, videosToShow);
+  }, [filteredVideos, videosToShow]);
+
+  const hasMore = filteredVideos.length > videosToShow;
+
+  const handleLoadMore = () => {
+    setVideosToShow(prev => prev + VIDEOS_PER_PAGE);
+  };
 
   const selectedVideo = selectedVideoId ? videos.find(v => v.id === selectedVideoId) : null;
 
@@ -357,7 +376,7 @@ export const Videos: React.FC = () => {
 
       {/* Video Grid */}
       <Grid container spacing={2}>
-        {filteredVideos.map(renderVideoCard)}
+        {visibleVideos.map(renderVideoCard)}
       </Grid>
 
       {filteredVideos.length === 0 && (
@@ -367,6 +386,29 @@ export const Videos: React.FC = () => {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Try adjusting your filters or search query
+          </Typography>
+        </Box>
+      )}
+
+      {/* Load More Button */}
+      {hasMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+          <Button
+            variant="outlined"
+            size="large"
+            onClick={handleLoadMore}
+            sx={{ minWidth: 200 }}
+          >
+            Load More ({filteredVideos.length - videosToShow} remaining)
+          </Button>
+        </Box>
+      )}
+
+      {/* Showing count */}
+      {filteredVideos.length > 0 && (
+        <Box sx={{ textAlign: 'center', mt: 2, mb: 4 }}>
+          <Typography variant="body2" color="text.secondary">
+            Showing {visibleVideos.length} of {filteredVideos.length} videos
           </Typography>
         </Box>
       )}
