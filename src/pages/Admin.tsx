@@ -53,6 +53,8 @@ import { getUser } from '../services/mock';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 import { getAllBlockInfo } from '../services/blockInfo';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
+import { NotificationTemplates, getNotificationStatus, requestNotificationPermission } from '../services/notifications';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 
 interface TeamSession {
   id: string;
@@ -229,7 +231,7 @@ export const Admin: React.FC = () => {
   };
 
   // Sessions Management Handlers
-  const handleSaveSession = () => {
+  const handleSaveSession = async () => {
     const session: TeamSession = {
       id: Date.now().toString(),
       date: newSession.date!,
@@ -240,6 +242,22 @@ export const Admin: React.FC = () => {
       address: newSession.address,
     };
     setSessions([...sessions, session].sort((a, b) => a.date.localeCompare(b.date)));
+
+    // Send notification about new session
+    const sessionDate = new Date(session.date);
+    const formattedDate = sessionDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+
+    await NotificationTemplates.newTeamSession(
+      formattedDate,
+      session.startTime,
+      session.location
+    );
+
     setSessionDialogOpen(false);
     setNewSession({
       date: new Date().toISOString().split('T')[0],
@@ -811,17 +829,43 @@ export const Admin: React.FC = () => {
       {/* Sessions Management Tab */}
       {activeTab === 3 && (
         <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
             <Typography variant="h6">
               {t('admin.teamSessions')} ({sessions.length})
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setSessionDialogOpen(true)}
-            >
-              {t('admin.addSession')}
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<NotificationsIcon />}
+                onClick={async () => {
+                  const status = getNotificationStatus();
+                  if (!status.supported) {
+                    alert('❌ Tu navegador no soporta notificaciones');
+                    return;
+                  }
+                  if (status.permission === 'denied') {
+                    alert('❌ Notificaciones bloqueadas. Habilítalas en la configuración del navegador.');
+                    return;
+                  }
+
+                  const granted = await requestNotificationPermission();
+                  if (granted) {
+                    await NotificationTemplates.testNotification();
+                  } else {
+                    alert('❌ Permiso de notificaciones denegado');
+                  }
+                }}
+              >
+                Test Notification
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setSessionDialogOpen(true)}
+              >
+                {t('admin.addSession')}
+              </Button>
+            </Box>
           </Box>
 
           <Grid container spacing={2}>
