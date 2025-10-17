@@ -90,6 +90,8 @@ export const StrengthWizard: React.FC<StrengthWizardProps> = ({ bodyWeightKg, on
           segment: testToSegment(key),
           oneRmEstKg,
           oneRmRel,
+          weightKg: input.weightKg,
+          reps: input.reps,
         };
       });
 

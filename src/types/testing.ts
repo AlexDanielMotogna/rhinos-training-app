@@ -29,6 +29,9 @@ export interface StrengthResult {
   oneRmRel?: number;
   seconds?: number;
   skipped?: boolean;
+  // Original test data (for displaying in results)
+  weightKg?: number;
+  reps?: number;
 }
 
 export interface StrengthSummary {

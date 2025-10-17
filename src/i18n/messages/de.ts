@@ -468,6 +468,23 @@ export const messagesDE = {
   'profile.agility.scoreLabel': 'Agilitätswert',
   'profile.agility.noData': 'Noch keine Agilitätstestdaten. Absolvieren Sie einen Test, um Ihre Metriken zu sehen.',
 
+  // Profile - Test Actions
+  'profile.testNow': 'Jetzt testen',
+  'profile.testAgain': 'Erneut testen',
+  'profile.seeResults': 'Ergebnisse anzeigen',
+  'profile.testInfo': 'Testinformationen',
+  'profile.testDate': 'Testdatum',
+  'profile.testResults': 'Testergebnisse',
+  'profile.exerciseDetails': 'Übungsdetails',
+  'profile.segmentScores': 'Segment-Werte',
+  'profile.strength.detailedResults': 'Detaillierte Kraftergebnisse',
+  'profile.speed.detailedResults': 'Detaillierte Geschwindigkeitsergebnisse',
+  'profile.speed.tier': 'Stufe',
+  'profile.power.detailedResults': 'Detaillierte Kraftergebnisse',
+  'profile.power.tier': 'Stufe',
+  'profile.agility.detailedResults': 'Detaillierte Agilitätsergebnisse',
+  'profile.agility.tier': 'Stufe',
+
   // Reports
   'nav.reports': 'Berichte',
   'reports.title': 'Tägliche Teamberichte',
