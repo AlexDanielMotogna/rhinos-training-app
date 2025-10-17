@@ -19,10 +19,6 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhoneIcon from '@mui/icons-material/Phone';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { getUser, getMockKPIs, getMockProjection, getAllUsers, type MockUser } from '../services/mock';
@@ -204,7 +200,7 @@ export const Profile: React.FC = () => {
                 )}
                 {user.instagram && (
                   <Box
-                    onClick={() => window.open(`https://instagram.com/${user.instagram.replace('@', '')}`, '_blank')}
+                    onClick={() => window.open(`https://instagram.com/${user.instagram?.replace('@', '')}`, '_blank')}
                     sx={{
                       cursor: 'pointer',
                       transition: 'transform 0.2s',
@@ -252,7 +248,7 @@ export const Profile: React.FC = () => {
                 )}
                 {user.tiktok && (
                   <Box
-                    onClick={() => window.open(`https://tiktok.com/@${user.tiktok.replace('@', '')}`, '_blank')}
+                    onClick={() => window.open(`https://tiktok.com/@${user.tiktok?.replace('@', '')}`, '_blank')}
                     sx={{
                       cursor: 'pointer',
                       transition: 'transform 0.2s',

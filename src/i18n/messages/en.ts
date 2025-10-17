@@ -556,6 +556,35 @@ export const messagesEN = {
   // Team
   'team.title': 'Team Directory',
   'team.search': 'Search players by name, position, or jersey number...',
+
+  // Training Sessions
+  'nav.trainingSessions': 'Training Sessions',
+  'trainingSessions.title': 'Training Sessions',
+  'trainingSessions.subtitle': 'Create group training sessions and invite your teammates',
+  'trainingSessions.createSession': 'Create Session',
+  'trainingSessions.noSessions': 'No upcoming training sessions',
+  'trainingSessions.createFirst': 'Create your first session and invite your teammates!',
+  'trainingSessions.sessionType': 'Session Type',
+  'trainingSessions.sessionTitle': 'Session Title',
+  'trainingSessions.titlePlaceholder': 'e.g., Chest Day at Clever Fit',
+  'trainingSessions.location': 'Location',
+  'trainingSessions.address': 'Address / City',
+  'trainingSessions.addressPlaceholder': 'Optional - e.g., Bruck an der Leitha',
+  'trainingSessions.date': 'Date',
+  'trainingSessions.time': 'Time',
+  'trainingSessions.description': 'Description',
+  'trainingSessions.descriptionPlaceholder': 'Optional - Add details about the workout...',
+  'trainingSessions.create': 'Create Session',
+  'trainingSessions.type.gym': 'Gym',
+  'trainingSessions.type.outdoor': 'Outdoor',
+  'trainingSessions.type.coach-plan': 'Coach Plan',
+  'trainingSessions.type.free-training': 'Free Training',
+  'trainingSessions.createdBy': 'Created by',
+  'trainingSessions.yourSession': 'Your Session',
+  'trainingSessions.going': 'Going',
+  'trainingSessions.notGoing': 'Not Going',
+  'trainingSessions.today': 'Today',
+  'trainingSessions.tomorrow': 'Tomorrow',
 };
 
 export type MessageKey = keyof typeof messagesEN;
