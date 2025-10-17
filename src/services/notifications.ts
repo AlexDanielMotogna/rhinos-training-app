@@ -4,15 +4,10 @@
  * Works on Android PWA and iOS 16.4+ (when installed)
  */
 
-export interface NotificationOptions {
-  body?: string;
-  icon?: string;
-  badge?: string;
-  vibrate?: number[];
-  tag?: string;
-  data?: any;
-  requireInteraction?: boolean;
-}
+// Use extended type to include vibrate property
+type RhinosNotificationOptions = NotificationOptions & {
+  vibrate?: VibratePattern;
+};
 
 /**
  * Request permission for notifications
@@ -52,7 +47,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
  */
 export async function sendLocalNotification(
   title: string,
-  options?: NotificationOptions
+  options?: RhinosNotificationOptions
 ): Promise<boolean> {
   const hasPermission = await requestNotificationPermission();
 
@@ -70,7 +65,7 @@ export async function sendLocalNotification(
       tag: options?.tag || 'rhinos-notification',
       requireInteraction: options?.requireInteraction || false,
       data: options?.data,
-    });
+    } as NotificationOptions);
 
     return true;
   } catch (error) {
@@ -85,7 +80,7 @@ export async function sendLocalNotification(
  */
 export async function sendServiceWorkerNotification(
   title: string,
-  options?: NotificationOptions
+  options?: RhinosNotificationOptions
 ): Promise<boolean> {
   const hasPermission = await requestNotificationPermission();
 
@@ -111,7 +106,7 @@ export async function sendServiceWorkerNotification(
       tag: options?.tag || 'rhinos-notification',
       requireInteraction: options?.requireInteraction || false,
       data: options?.data,
-    });
+    } as NotificationOptions);
 
     return true;
   } catch (error) {
