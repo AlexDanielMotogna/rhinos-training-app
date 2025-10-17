@@ -838,7 +838,11 @@ export const Admin: React.FC = () => {
                 variant="outlined"
                 startIcon={<NotificationsIcon />}
                 onClick={async () => {
+                  console.log('=== NOTIFICATION TEST START ===');
+
                   const status = getNotificationStatus();
+                  console.log('Notification status:', status);
+
                   if (!status.supported) {
                     alert('❌ Tu navegador no soporta notificaciones');
                     return;
@@ -848,12 +852,25 @@ export const Admin: React.FC = () => {
                     return;
                   }
 
+                  console.log('Requesting permission...');
                   const granted = await requestNotificationPermission();
+                  console.log('Permission granted:', granted);
+
                   if (granted) {
-                    await NotificationTemplates.testNotification();
+                    console.log('Sending test notification...');
+                    const sent = await NotificationTemplates.testNotification();
+                    console.log('Notification sent:', sent);
+
+                    if (sent) {
+                      alert('✅ Notificación enviada! Revisa la barra de notificaciones');
+                    } else {
+                      alert('❌ Error al enviar notificación. Revisa la consola.');
+                    }
                   } else {
                     alert('❌ Permiso de notificaciones denegado');
                   }
+
+                  console.log('=== NOTIFICATION TEST END ===');
                 }}
               >
                 Test Notification
