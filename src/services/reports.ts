@@ -157,6 +157,17 @@ export function generateDailyReport(): DailyReport {
   const avgCompliance = Math.round(players.reduce((sum, p) => sum + p.compliance, 0) / players.length);
   const totalMinutes = players.reduce((sum, p) => sum + p.minutesTrained, 0);
 
+  // Mock team sessions for today
+  const teamSessions = [
+    {
+      date: new Date().toISOString().split('T')[0],
+      startTime: '19:00',
+      endTime: '21:00',
+      playersAttended: 6, // 6 out of 8 players attended
+      totalPlayers: players.length,
+    },
+  ];
+
   return {
     summary: {
       period: 'day',
@@ -171,6 +182,7 @@ export function generateDailyReport(): DailyReport {
       avgMinutesPerPlayer: Math.round(totalMinutes / players.length),
       topPerformers: ['1', '2', '5'], // Top 3 by score trend
       needsAttention: ['4'], // Declining significantly
+      teamSessions,
     },
     players,
     generatedAt: today,
@@ -225,10 +237,36 @@ export function generateWeeklyReport(): WeeklyReport {
     };
   });
 
+  // Mock team sessions for the week (3 sessions)
+  const weekTeamSessions = [
+    {
+      date: new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0], // 6 days ago
+      startTime: '18:00',
+      endTime: '20:00',
+      playersAttended: 7,
+      totalPlayers: dailyReport.players.length,
+    },
+    {
+      date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0], // 3 days ago
+      startTime: '19:00',
+      endTime: '21:00',
+      playersAttended: 6,
+      totalPlayers: dailyReport.players.length,
+    },
+    {
+      date: new Date().toISOString().split('T')[0], // Today
+      startTime: '19:00',
+      endTime: '21:00',
+      playersAttended: 6,
+      totalPlayers: dailyReport.players.length,
+    },
+  ];
+
   return {
     summary: {
       ...dailyReport.summary,
       period: 'week',
+      teamSessions: weekTeamSessions,
     },
     players: playersWithWeeklyData,
     dailyBreakdown,
@@ -275,10 +313,23 @@ export function generateMonthlyReport(): MonthlyReport {
     totalMinutes: Math.floor(Math.random() * 500) + 2000, // 2000-2500
   }));
 
+  // Mock team sessions for the month (12 sessions, ~3 per week)
+  const monthTeamSessions = Array.from({ length: 12 }, (_, i) => {
+    const daysAgo = (11 - i) * 2.5; // Spread across ~30 days
+    return {
+      date: new Date(Date.now() - daysAgo * 86400000).toISOString().split('T')[0],
+      startTime: i % 2 === 0 ? '18:00' : '19:00',
+      endTime: i % 2 === 0 ? '20:00' : '21:00',
+      playersAttended: Math.floor(Math.random() * 3) + 5, // 5-7 players
+      totalPlayers: dailyReport.players.length,
+    };
+  });
+
   return {
     summary: {
       ...dailyReport.summary,
       period: 'month',
+      teamSessions: monthTeamSessions,
     },
     players: playersWithMonthlyData,
     weeklyBreakdown,

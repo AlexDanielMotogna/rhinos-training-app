@@ -507,4 +507,8 @@ export const messagesDE = {
   'reports.tooltips.score': 'Aktueller Leistungswert (0-100)',
   'reports.tooltips.trend': 'Leistungstrend im Vergleich zum vorherigen Zeitraum (prozentuale Änderung)',
   'reports.tooltips.compliance': 'Prozentsatz der absolvierten zugewiesenen Trainings',
+  'reports.teamSessionsTitle': 'Team-Trainingseinheiten',
+  'reports.sessionDate': 'Datum',
+  'reports.sessionTime': 'Zeit',
+  'reports.sessionAttendance': 'Anwesenheit',
 };

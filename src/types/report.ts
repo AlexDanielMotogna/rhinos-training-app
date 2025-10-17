@@ -25,6 +25,14 @@ export interface PlayerDailyReport {
   frequencyPerWeek?: string; // From training plan (e.g., "2-3", "3", "4-5")
 }
 
+export interface TeamSession {
+  date: string; // ISO date
+  startTime: string; // HH:mm format
+  endTime: string; // HH:mm format
+  playersAttended: number;
+  totalPlayers: number;
+}
+
 export interface ReportSummary {
   period: ReportPeriod;
   dateISO: string;
@@ -38,6 +46,7 @@ export interface ReportSummary {
   avgMinutesPerPlayer: number;
   topPerformers: string[]; // player IDs
   needsAttention: string[]; // player IDs with declining performance
+  teamSessions?: TeamSession[]; // Team training sessions (for daily/weekly/monthly)
 }
 
 export interface DailyReport {

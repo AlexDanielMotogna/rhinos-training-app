@@ -507,6 +507,10 @@ export const messagesEN = {
   'reports.tooltips.score': 'Current performance score (0-100)',
   'reports.tooltips.trend': 'Performance trend compared to previous period (percentage change)',
   'reports.tooltips.compliance': 'Percentage of assigned workouts completed',
+  'reports.teamSessionsTitle': 'Team Training Sessions',
+  'reports.sessionDate': 'Date',
+  'reports.sessionTime': 'Time',
+  'reports.sessionAttendance': 'Attendance',
 };
 
 export type MessageKey = keyof typeof messagesEN;

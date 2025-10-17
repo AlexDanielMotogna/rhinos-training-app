@@ -307,6 +307,39 @@ export const Reports: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Team Training Sessions */}
+      {summary.teamSessions && summary.teamSessions.length > 0 && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              {t('reports.teamSessionsTitle')}
+            </Typography>
+            <Grid container spacing={2}>
+              {summary.teamSessions.map((session, index) => (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {new Date(session.date).toLocaleDateString()}
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 600, my: 0.5 }}>
+                      {session.startTime} - {session.endTime}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant="h5" color="primary.main" sx={{ fontWeight: 700 }}>
+                        {session.playersAttended}/{session.totalPlayers}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {t('reports.sessionAttendance')}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Player Activity Table */}
       <Typography variant="h6" sx={{ mb: 2 }}>
         {t('reports.playerActivity')}
