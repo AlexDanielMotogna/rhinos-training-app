@@ -4,6 +4,22 @@ import { sanitizeYouTubeUrl } from './yt';
 const VIDEOS_STORAGE_KEY = 'rhinos_videos';
 const VIDEO_PROGRESS_STORAGE_KEY = 'rhinos_video_progress';
 
+// Check if URL is a YouTube Short
+export function isYouTubeShort(url: string): boolean {
+  return url.includes('/shorts/') || url.includes('youtube.com/shorts');
+}
+
+// Extract video ID from YouTube URL (works for regular videos and Shorts)
+export function getYouTubeVideoId(url: string): string | null {
+  // Handle Shorts URLs
+  const shortsMatch = url.match(/youtube\.com\/shorts\/([^?&\/]+)/);
+  if (shortsMatch) return shortsMatch[1];
+
+  // Handle regular YouTube URLs
+  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  return match ? match[1] : null;
+}
+
 // Get all videos
 export function getAllVideos(): Video[] {
   const stored = localStorage.getItem(VIDEOS_STORAGE_KEY);

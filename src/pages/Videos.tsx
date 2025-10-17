@@ -21,7 +21,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useI18n } from '../i18n/I18nProvider';
-import { getPublishedVideos, getPlayerProgressForAllVideos } from '../services/videos';
+import { getPublishedVideos, getPlayerProgressForAllVideos, isYouTubeShort, getYouTubeVideoId } from '../services/videos';
 import { getUser } from '../services/mock';
 import type { Video, VideoType, PositionTag, RouteTag, CoverageTag, VideoLevel, WatchStatus } from '../types/video';
 
@@ -100,7 +100,7 @@ export const Videos: React.FC = () => {
   const selectedVideo = selectedVideoId ? videos.find(v => v.id === selectedVideoId) : null;
 
   const getYouTubeEmbedUrl = (url: string): string => {
-    const videoId = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1];
+    const videoId = getYouTubeVideoId(url);
     return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
   };
 
@@ -140,6 +140,9 @@ export const Videos: React.FC = () => {
                 gap: 0.5,
               }}
             >
+              {isYouTubeShort(video.youtubeUrl) && (
+                <Chip label="Short" size="small" sx={{ backgroundColor: '#FF0000', color: 'white', fontWeight: 600 }} />
+              )}
               {video.isPinned && (
                 <Chip label="Featured" size="small" color="primary" sx={{ fontWeight: 600 }} />
               )}
@@ -367,7 +370,7 @@ export const Videos: React.FC = () => {
         </Box>
       )}
 
-      {/* Video Detail Dialog - To be implemented */}
+      {/* Video Detail Dialog */}
       {selectedVideo && (
         <Box
           sx={{
@@ -387,7 +390,7 @@ export const Videos: React.FC = () => {
         >
           <Box
             sx={{
-              maxWidth: 1000,
+              maxWidth: isYouTubeShort(selectedVideo.youtubeUrl) ? 500 : 1000,
               width: '100%',
               backgroundColor: 'background.paper',
               borderRadius: 1,
@@ -395,7 +398,12 @@ export const Videos: React.FC = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
+            <Box
+              sx={{
+                position: 'relative',
+                paddingTop: isYouTubeShort(selectedVideo.youtubeUrl) ? '177.78%' : '56.25%' // 9:16 for Shorts, 16:9 for regular
+              }}
+            >
               <iframe
                 src={getYouTubeEmbedUrl(selectedVideo.youtubeUrl)}
                 title={selectedVideo.title}
