@@ -539,19 +539,24 @@ export const Admin: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Box
-          component="img"
-          src={RhinosLogo}
-          alt="Rhinos Logo"
-          sx={{
-            width: 50,
-            height: 50,
-            objectFit: 'contain',
-          }}
-        />
-        <Typography variant="h4">
-          {t('admin.title')}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            component="img"
+            src={RhinosLogo}
+            alt="Rhinos Logo"
+            sx={{
+              width: 50,
+              height: 50,
+              objectFit: 'contain',
+            }}
+          />
+          <Typography variant="h4">
+            {t('admin.title')}
+          </Typography>
+        </Box>
+        <Typography variant="caption" color="text.secondary">
+          v1.0.3-notifications
         </Typography>
       </Box>
 
