@@ -85,11 +85,16 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   );
 
   const handleNavigation = (path: string) => {
-    navigate(path);
+    // Close drawer immediately for better UX
     setDrawerOpen(false);
+    // Small delay to allow drawer animation to start before navigation
+    setTimeout(() => {
+      navigate(path);
+    }, 100);
   };
 
   const handleLogout = () => {
+    setDrawerOpen(false);
     logout();
     navigate('/');
   };
@@ -170,6 +175,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <Box
           sx={{ width: 250 }}
           role="presentation"
+          onClick={() => setDrawerOpen(false)}
+          onKeyDown={() => setDrawerOpen(false)}
         >
           <Box
             sx={{

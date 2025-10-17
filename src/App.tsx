@@ -83,62 +83,60 @@ function App() {
       <CssBaseline />
       <I18nProvider defaultLocale="en">
         <BrowserRouter>
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  currentUser ? <Navigate to="/training" replace /> : <Auth />
-                }
-              />
+          <Routes>
+            <Route
+              path="/"
+              element={
+                currentUser ? <Navigate to="/training" replace /> : <Suspense fallback={<LoadingSpinner />}><Auth /></Suspense>
+              }
+            />
 
-              {currentUser ? (
-                <Route element={<AppShell><Outlet /></AppShell>}>
-                  <Route path="/training" element={<MyTraining />} />
-                  <Route path="/stats" element={<MyStats />} />
-                  <Route path="/tests" element={<Tests />} />
-                  <Route path="/tests/strength" element={<TestsStrength />} />
-                  <Route path="/tests/speed" element={<TestsSpeed />} />
-                  <Route path="/tests/power" element={<TestsPower />} />
-                  <Route path="/tests/agility" element={<TestsAgility />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/profile/:playerId" element={<Profile />} />
-                  <Route path="/team" element={<Team />} />
-                  <Route path="/training-sessions" element={<TrainingSessions />} />
-                  <Route path="/attendance" element={<Attendance />} />
-                  <Route path="/leaderboard" element={<Leaderboard />} />
-                  <Route path="/videos" element={<Videos />} />
-                  <Route
-                    path="/videos-admin"
-                    element={
-                      currentUser.role === 'coach'
-                        ? <VideosAdmin />
-                        : <Navigate to="/training" replace />
-                    }
-                  />
-                  <Route
-                    path="/reports"
-                    element={
-                      currentUser.role === 'coach'
-                        ? <Reports />
-                        : <Navigate to="/training" replace />
-                    }
-                  />
-                  <Route
-                    path="/admin"
-                    element={
-                      currentUser.role === 'coach'
-                        ? <Admin />
-                        : <Navigate to="/training" replace />
-                    }
-                  />
-                  <Route path="*" element={<Navigate to="/training" replace />} />
-                </Route>
-              ) : (
-                <Route path="*" element={<Navigate to="/" replace />} />
-              )}
-            </Routes>
-          </Suspense>
+            {currentUser ? (
+              <Route element={<AppShell><Suspense fallback={<LoadingSpinner />}><Outlet /></Suspense></AppShell>}>
+                <Route path="/training" element={<MyTraining />} />
+                <Route path="/stats" element={<MyStats />} />
+                <Route path="/tests" element={<Tests />} />
+                <Route path="/tests/strength" element={<TestsStrength />} />
+                <Route path="/tests/speed" element={<TestsSpeed />} />
+                <Route path="/tests/power" element={<TestsPower />} />
+                <Route path="/tests/agility" element={<TestsAgility />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/:playerId" element={<Profile />} />
+                <Route path="/team" element={<Team />} />
+                <Route path="/training-sessions" element={<TrainingSessions />} />
+                <Route path="/attendance" element={<Attendance />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/videos" element={<Videos />} />
+                <Route
+                  path="/videos-admin"
+                  element={
+                    currentUser.role === 'coach'
+                      ? <VideosAdmin />
+                      : <Navigate to="/training" replace />
+                  }
+                />
+                <Route
+                  path="/reports"
+                  element={
+                    currentUser.role === 'coach'
+                      ? <Reports />
+                      : <Navigate to="/training" replace />
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    currentUser.role === 'coach'
+                      ? <Admin />
+                      : <Navigate to="/training" replace />
+                  }
+                />
+                <Route path="*" element={<Navigate to="/training" replace />} />
+              </Route>
+            ) : (
+              <Route path="*" element={<Navigate to="/" replace />} />
+            )}
+          </Routes>
 
           <HardNotification
             notification={hardNotification}
