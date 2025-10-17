@@ -175,41 +175,6 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
                           </IconButton>
                         </Box>
 
-                        {/* Target Values */}
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pl: 4 }}>
-                          <TextField
-                            label="Sets"
-                            type="number"
-                            value={exercise.targetSets}
-                            onChange={(e) => handleUpdateExercise(index, { targetSets: Number(e.target.value) })}
-                            size="small"
-                            sx={{ width: 80 }}
-                            inputProps={{ min: 1, max: 10 }}
-                          />
-                          {exercise.category !== 'Mobility' && exercise.category !== 'Conditioning' && (
-                            <TextField
-                              label="Reps"
-                              type="number"
-                              value={exercise.targetReps || ''}
-                              onChange={(e) => handleUpdateExercise(index, { targetReps: Number(e.target.value) || undefined })}
-                              size="small"
-                              sx={{ width: 80 }}
-                              inputProps={{ min: 1, max: 100 }}
-                            />
-                          )}
-                          {(exercise.category === 'Conditioning' || exercise.category === 'Mobility') && (
-                            <TextField
-                              label="Duration (min)"
-                              type="number"
-                              value={exercise.targetDurationSec || ''}
-                              onChange={(e) => handleUpdateExercise(index, { targetDurationSec: Number(e.target.value) || undefined })}
-                              size="small"
-                              sx={{ width: 120 }}
-                              inputProps={{ min: 1, max: 120 }}
-                            />
-                          )}
-                        </Box>
-
                         {/* Exercise Notes */}
                         <Box sx={{ pl: 4, width: '100%', mt: 1 }}>
                           <TextField

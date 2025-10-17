@@ -12,17 +12,15 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  ToggleButtonGroup,
-  ToggleButton,
-  Badge,
+  Button,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import ViewListIcon from '@mui/icons-material/ViewList';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { useI18n } from '../../i18n/I18nProvider';
+import { useNavigate } from 'react-router-dom';
 import type { WorkoutLog } from '../../services/workoutLog';
 
 interface WorkoutHistoryProps {
@@ -32,7 +30,6 @@ interface WorkoutHistoryProps {
 }
 
 type DateFilter = 'today' | '7days' | '30days' | '90days' | 'all';
-type ViewMode = 'list' | 'calendar';
 
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   workouts,
@@ -40,8 +37,8 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   onEdit,
 }) => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [dateFilter, setDateFilter] = useState<DateFilter>('30days');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   // Filter workouts by date range
   const filterWorkoutsByDate = (workouts: WorkoutLog[]): WorkoutLog[] => {
@@ -118,185 +115,10 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
     }
   };
 
-  // Generate calendar view
-  const generateCalendarView = () => {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    // Get first day of month and total days
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    const lastDay = new Date(currentYear, currentMonth + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
-
-    // Create workout map by date
-    const workoutsByDate: Record<string, WorkoutLog[]> = {};
-    filteredWorkouts.forEach(workout => {
-      const dateKey = workout.date;
-      if (!workoutsByDate[dateKey]) {
-        workoutsByDate[dateKey] = [];
-      }
-      workoutsByDate[dateKey].push(workout);
-    });
-
-    // Generate calendar grid
-    const weeks: JSX.Element[] = [];
-    let days: JSX.Element[] = [];
-
-    // Add empty cells for days before month starts
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(
-        <Box key={`empty-${i}`} sx={{ aspectRatio: '1', border: '1px solid', borderColor: 'divider' }} />
-      );
-    }
-
-    // Add days of month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      const dateStr = date.toISOString().split('T')[0];
-      const dayWorkouts = workoutsByDate[dateStr] || [];
-      const isToday = date.toDateString() === today.toDateString();
-
-      days.push(
-        <Box
-          key={day}
-          sx={{
-            aspectRatio: '1',
-            border: '1px solid',
-            borderColor: isToday ? 'primary.main' : 'divider',
-            borderWidth: isToday ? 2 : 1,
-            p: 0.5,
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: isToday ? 'primary.50' : 'background.paper',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              fontSize: '0.7rem',
-              fontWeight: isToday ? 700 : 400,
-              color: isToday ? 'primary.main' : 'text.primary',
-            }}
-          >
-            {day}
-          </Typography>
-
-          {dayWorkouts.length > 0 && (
-            <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-              {dayWorkouts.slice(0, 2).map((workout, idx) => (
-                <Box
-                  key={idx}
-                  sx={{
-                    width: '100%',
-                    height: 4,
-                    backgroundColor: workout.source === 'coach' ? 'primary.main' : 'secondary.main',
-                    borderRadius: 0.5,
-                  }}
-                />
-              ))}
-              {dayWorkouts.length > 2 && (
-                <Typography variant="caption" sx={{ fontSize: '0.6rem', textAlign: 'center' }}>
-                  +{dayWorkouts.length - 2}
-                </Typography>
-              )}
-            </Box>
-          )}
-        </Box>
-      );
-
-      // Start new week
-      if ((startingDayOfWeek + day) % 7 === 0) {
-        weeks.push(
-          <Box key={`week-${weeks.length}`} sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0 }}>
-            {days}
-          </Box>
-        );
-        days = [];
-      }
-    }
-
-    // Add remaining days
-    if (days.length > 0) {
-      while (days.length < 7) {
-        days.push(
-          <Box key={`empty-end-${days.length}`} sx={{ aspectRatio: '1', border: '1px solid', borderColor: 'divider' }} />
-        );
-      }
-      weeks.push(
-        <Box key={`week-${weeks.length}`} sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0 }}>
-          {days}
-        </Box>
-      );
-    }
-
-    return (
-      <Box>
-        <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
-          {today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-        </Typography>
-
-        {/* Day headers */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0, mb: 1 }}>
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <Typography
-              key={day}
-              variant="caption"
-              sx={{
-                textAlign: 'center',
-                fontWeight: 600,
-                fontSize: '0.7rem',
-                color: 'text.secondary',
-              }}
-            >
-              {day}
-            </Typography>
-          ))}
-        </Box>
-
-        {/* Calendar grid */}
-        <Box sx={{ mb: 2 }}>
-          {weeks}
-        </Box>
-
-        {/* Legend */}
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 16, height: 4, backgroundColor: 'primary.main', borderRadius: 0.5 }} />
-            <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>Coach Plan</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 16, height: 4, backgroundColor: 'secondary.main', borderRadius: 0.5 }} />
-            <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>Free Session</Typography>
-          </Box>
-        </Box>
-      </Box>
-    );
-  };
-
   return (
     <Box>
       {/* Filter Controls - Mobile Optimized */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-        {/* View Mode Toggle */}
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(_, newMode) => newMode && setViewMode(newMode)}
-          size="small"
-          sx={{ height: 40 }}
-        >
-          <ToggleButton value="list" aria-label="list view">
-            <ViewListIcon sx={{ fontSize: '1.1rem' }} />
-          </ToggleButton>
-          <ToggleButton value="calendar" aria-label="calendar view">
-            <CalendarMonthIcon sx={{ fontSize: '1.1rem' }} />
-          </ToggleButton>
-        </ToggleButtonGroup>
-
         <FilterListIcon color="action" sx={{ fontSize: '1.2rem' }} />
         <FormControl size="small" sx={{ minWidth: 150, flex: 1, maxWidth: 200 }}>
           <InputLabel sx={{ fontSize: '0.85rem' }}>Time Period</InputLabel>
@@ -316,14 +138,21 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
         <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
           {filteredWorkouts.length} workout{filteredWorkouts.length !== 1 ? 's' : ''} found
         </Typography>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<CalendarMonthIcon />}
+          onClick={() => navigate('/stats')}
+          sx={{ ml: 'auto', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+        >
+          See Calendar
+        </Button>
       </Box>
 
       {filteredWorkouts.length === 0 ? (
         <Alert severity="info">
           No workouts found in this time period. Try selecting a different filter.
         </Alert>
-      ) : viewMode === 'calendar' ? (
-        generateCalendarView()
       ) : (
         sortedDates.map((date) => (
         <Box key={date} sx={{ mb: 3 }}>
