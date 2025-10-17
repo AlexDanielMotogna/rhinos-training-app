@@ -211,61 +211,69 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                   </Box>
                 </Box>
 
-                {/* Exercise entries - Compact layout */}
+                {/* Exercise entries - User-friendly layout */}
                 <Box>
                   {workout.entries.map((entry, idx) => (
-                    <Box key={idx} sx={{ mb: 1 }}>
-                      <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.85rem', mb: 0.25 }}>
+                    <Box key={idx} sx={{ mb: 1.5 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.9rem', mb: 0.5 }}>
                         {entry.name}
                       </Typography>
 
-                      {/* Set-by-set data - Compact chips */}
+                      {/* Set-by-set data - User-friendly format */}
                       {entry.setData && entry.setData.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.25 }}>
-                          {entry.setData.map((set, setIdx) => (
-                            <Chip
-                              key={setIdx}
-                              label={
-                                `S${set.setNumber}: ` +
-                                (set.reps ? `${set.reps}r` : '') +
-                                (set.reps && set.kg ? ' @ ' : '') +
-                                (set.kg ? `${set.kg}kg` : '') +
-                                (set.durationSec ? `${set.durationSec}s` : '')
-                              }
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.7rem',
-                                '& .MuiChip-label': { px: 0.75, py: 0 }
-                              }}
-                            />
-                          ))}
+                        <Box sx={{ pl: 1 }}>
+                          {/* Summary line */}
+                          <Typography variant="body2" sx={{ fontSize: '0.85rem', mb: 0.5, color: 'text.primary' }}>
+                            {entry.setData.length} {entry.setData.length === 1 ? 'set' : 'sets'}
+                            {entry.setData[0]?.reps && ` × ${entry.setData[0].reps} reps`}
+                            {entry.setData[0]?.kg && ` with ${entry.setData[0].kg}kg`}
+                          </Typography>
+
+                          {/* Individual sets in readable format */}
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                            {entry.setData.map((set, setIdx) => (
+                              <Typography
+                                key={setIdx}
+                                variant="caption"
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  color: 'text.secondary',
+                                  fontFamily: 'monospace'
+                                }}
+                              >
+                                Set {set.setNumber}:{' '}
+                                {set.reps && `${set.reps} reps`}
+                                {set.reps && set.kg && ' × '}
+                                {set.kg && `${set.kg}kg`}
+                                {set.durationSec && `${set.durationSec} seconds`}
+                              </Typography>
+                            ))}
+                          </Box>
                         </Box>
                       ) : (
                         // Fallback for old format
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                          {entry.sets && entry.reps && `${entry.sets} × ${entry.reps}`}
-                          {entry.kg && ` @ ${entry.kg}kg`}
-                          {entry.durationSec && ` ${entry.durationSec}sec`}
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', pl: 1 }}>
+                          {entry.sets && entry.reps && `${entry.sets} sets × ${entry.reps} reps`}
+                          {entry.kg && ` with ${entry.kg}kg`}
+                          {entry.durationSec && ` for ${entry.durationSec} seconds`}
                         </Typography>
                       )}
 
-                      {/* RPE - Compact */}
+                      {/* RPE - User-friendly */}
                       {entry.rpe && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontSize: '0.7rem' }}>
-                          RPE: {entry.rpe}/10
+                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.75rem', pl: 1, color: 'text.secondary' }}>
+                          Effort: {entry.rpe}/10 {entry.rpe >= 8 ? '(Hard)' : entry.rpe >= 6 ? '(Moderate)' : '(Easy)'}
                         </Typography>
                       )}
 
-                      {/* Exercise notes - Compact */}
+                      {/* Exercise notes */}
                       {entry.notes && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontSize: '0.7rem', fontStyle: 'italic' }}>
-                          "{entry.notes}"
+                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.75rem', pl: 1, color: 'text.secondary', fontStyle: 'italic' }}>
+                          Note: {entry.notes}
                         </Typography>
                       )}
 
-                      {idx < workout.entries.length - 1 && <Divider sx={{ mt: 0.75, mb: 0.5 }} />}
+                      {idx < workout.entries.length - 1 && <Divider sx={{ mt: 1, mb: 0.5 }} />}
                     </Box>
                   ))}
                 </Box>
