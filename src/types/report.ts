@@ -10,7 +10,7 @@ export interface PlayerDailyReport {
   position: Position;
   status: PlayerStatus;
   workoutsCompleted: number;
-  workoutsAssigned: number;
+  workoutsAssigned: number; // Based on frequencyPerWeek from assigned training plan
   minutesTrained: number;
   currentScore: number;
   previousScore: number;
@@ -22,6 +22,7 @@ export interface PlayerDailyReport {
   totalDaysInPeriod?: number; // For weekly/monthly reports (7 for week, ~30 for month)
   teamSessionsAttended?: number; // For weekly/monthly reports
   totalTeamSessions?: number; // For weekly/monthly reports
+  frequencyPerWeek?: string; // From training plan (e.g., "2-3", "3", "4-5")
 }
 
 export interface ReportSummary {

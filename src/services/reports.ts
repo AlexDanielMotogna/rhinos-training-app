@@ -7,6 +7,18 @@ import type { DailyReport, WeeklyReport, MonthlyReport, PlayerDailyReport, Playe
 export function generateDailyReport(): DailyReport {
   const today = new Date().toISOString();
 
+  // Mock training plans with frequencies
+  const playerPlans: Record<string, string> = {
+    '1': '3', // John: 3x per week
+    '2': '2-3', // Mike: 2-3x per week
+    '3': '3', // Chris: 3x per week
+    '4': '3', // David: 3x per week
+    '5': '2-3', // James: 2-3x per week
+    '6': '3', // Robert: 3x per week
+    '7': '4', // Tom: 4x per week
+    '8': '2-3', // Alex: 2-3x per week
+  };
+
   const players: PlayerDailyReport[] = [
     {
       playerId: '1',
@@ -22,6 +34,7 @@ export function generateDailyReport(): DailyReport {
       compliance: 100,
       attendance: true,
       lastActive: today,
+      frequencyPerWeek: playerPlans['1'],
     },
     {
       playerId: '2',
@@ -37,6 +50,7 @@ export function generateDailyReport(): DailyReport {
       compliance: 100,
       attendance: true,
       lastActive: today,
+      frequencyPerWeek: playerPlans['2'],
     },
     {
       playerId: '3',
@@ -52,6 +66,7 @@ export function generateDailyReport(): DailyReport {
       compliance: 0,
       attendance: true,
       lastActive: today,
+      frequencyPerWeek: playerPlans['3'],
     },
     {
       playerId: '4',
@@ -67,6 +82,7 @@ export function generateDailyReport(): DailyReport {
       compliance: 0,
       attendance: false,
       lastActive: new Date(Date.now() - 86400000).toISOString(), // yesterday
+      frequencyPerWeek: playerPlans['4'],
     },
     {
       playerId: '5',
@@ -82,6 +98,7 @@ export function generateDailyReport(): DailyReport {
       compliance: 100,
       attendance: true,
       lastActive: today,
+      frequencyPerWeek: playerPlans['5'],
     },
     {
       playerId: '6',
@@ -97,6 +114,7 @@ export function generateDailyReport(): DailyReport {
       compliance: 100,
       attendance: true,
       lastActive: today,
+      frequencyPerWeek: playerPlans['6'],
     },
     {
       playerId: '7',
@@ -112,6 +130,7 @@ export function generateDailyReport(): DailyReport {
       compliance: 0,
       attendance: true,
       lastActive: today,
+      frequencyPerWeek: playerPlans['7'],
     },
     {
       playerId: '8',
@@ -127,6 +146,7 @@ export function generateDailyReport(): DailyReport {
       compliance: 100,
       attendance: true,
       lastActive: today,
+      frequencyPerWeek: playerPlans['8'],
     },
   ];
 
@@ -158,6 +178,18 @@ export function generateDailyReport(): DailyReport {
 }
 
 /**
+ * Calculate workouts assigned for a week based on frequency
+ */
+function getWeeklyWorkoutsAssigned(frequencyPerWeek: string): number {
+  // Parse frequency (e.g., "2-3" -> use max 3, "3" -> use 3)
+  if (frequencyPerWeek.includes('-')) {
+    const parts = frequencyPerWeek.split('-');
+    return parseInt(parts[1], 10); // Use the max value
+  }
+  return parseInt(frequencyPerWeek, 10);
+}
+
+/**
  * Generate mock weekly report
  */
 export function generateWeeklyReport(): WeeklyReport {
@@ -166,8 +198,14 @@ export function generateWeeklyReport(): WeeklyReport {
   // Add weekly-specific data to players (days trained in the week)
   const playersWithWeeklyData = dailyReport.players.map(player => {
     const totalTeamSessions = 3; // 3 team sessions per week
+    const weeklyWorkouts = getWeeklyWorkoutsAssigned(player.frequencyPerWeek || '3');
+    const workoutsCompleted = Math.floor(Math.random() * (weeklyWorkouts + 1)); // 0 to assigned
+
     return {
       ...player,
+      workoutsAssigned: weeklyWorkouts,
+      workoutsCompleted,
+      compliance: weeklyWorkouts > 0 ? Math.round((workoutsCompleted / weeklyWorkouts) * 100) : 0,
       daysTrainedInPeriod: Math.floor(Math.random() * 4) + 3, // 3-6 days trained
       totalDaysInPeriod: 7,
       teamSessionsAttended: Math.floor(Math.random() * (totalTeamSessions + 1)), // 0-3 sessions
@@ -199,6 +237,13 @@ export function generateWeeklyReport(): WeeklyReport {
 }
 
 /**
+ * Calculate workouts assigned for a month based on frequency (4 weeks)
+ */
+function getMonthlyWorkoutsAssigned(frequencyPerWeek: string): number {
+  return getWeeklyWorkoutsAssigned(frequencyPerWeek) * 4; // 4 weeks in a month
+}
+
+/**
  * Generate mock monthly report
  */
 export function generateMonthlyReport(): MonthlyReport {
@@ -207,8 +252,14 @@ export function generateMonthlyReport(): MonthlyReport {
   // Add monthly-specific data to players (days trained in the month)
   const playersWithMonthlyData = dailyReport.players.map(player => {
     const totalTeamSessions = 12; // 12 team sessions per month (~3 per week)
+    const monthlyWorkouts = getMonthlyWorkoutsAssigned(player.frequencyPerWeek || '3');
+    const workoutsCompleted = Math.floor(Math.random() * (monthlyWorkouts + 1)); // 0 to assigned
+
     return {
       ...player,
+      workoutsAssigned: monthlyWorkouts,
+      workoutsCompleted,
+      compliance: monthlyWorkouts > 0 ? Math.round((workoutsCompleted / monthlyWorkouts) * 100) : 0,
       daysTrainedInPeriod: Math.floor(Math.random() * 10) + 15, // 15-24 days trained
       totalDaysInPeriod: 30,
       teamSessionsAttended: Math.floor(Math.random() * (totalTeamSessions + 1)), // 0-12 sessions
