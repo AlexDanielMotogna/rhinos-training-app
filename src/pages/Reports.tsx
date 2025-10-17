@@ -20,7 +20,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
@@ -29,7 +32,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useI18n } from '../i18n/I18nProvider';
 import { generateDailyReport, generateWeeklyReport, generateMonthlyReport, getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from '../services/reports';
-import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod } from '../types/report';
+import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod, PlayerStatus } from '../types/report';
 import type { Position } from '../types/exercise';
 
 type UnitFilter = 'all' | 'offense' | 'defense';
@@ -44,6 +47,7 @@ export const Reports: React.FC = () => {
   const [period, setPeriod] = useState<ReportPeriod>('day');
   const [unitFilter, setUnitFilter] = useState<UnitFilter>('all');
   const [positionFilter, setPositionFilter] = useState<Position | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<PlayerStatus | 'all'>('all');
   const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
@@ -69,7 +73,7 @@ export const Reports: React.FC = () => {
     return ALL_POSITIONS;
   }, [unitFilter]);
 
-  // Filter players based on unit and position
+  // Filter players based on unit, position, and status
   const filteredPlayers = useMemo(() => {
     if (!currentReport) return [];
 
@@ -87,8 +91,13 @@ export const Reports: React.FC = () => {
       filtered = filtered.filter(p => p.position === positionFilter);
     }
 
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(p => p.status === statusFilter);
+    }
+
     return filtered;
-  }, [currentReport, unitFilter, positionFilter]);
+  }, [currentReport, unitFilter, positionFilter, statusFilter]);
 
   // Recalculate summary for filtered players
   const filteredSummary = useMemo(() => {
@@ -146,14 +155,14 @@ export const Reports: React.FC = () => {
 
       {/* Filters */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <Tabs value={unitFilter} onChange={(_, val) => setUnitFilter(val)} variant="fullWidth">
             <Tab label={t('reports.filters.all')} value="all" />
             <Tab label={t('reports.filters.offense')} value="offense" />
             <Tab label={t('reports.filters.defense')} value="defense" />
           </Tabs>
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <FormControl fullWidth>
             <InputLabel>{t('reports.filters.position')}</InputLabel>
             <Select
@@ -167,6 +176,36 @@ export const Reports: React.FC = () => {
                   {pos}
                 </MenuItem>
               ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FormControl fullWidth>
+            <InputLabel>{t('reports.filters.status')}</InputLabel>
+            <Select
+              value={statusFilter}
+              label={t('reports.filters.status')}
+              onChange={(e) => setStatusFilter(e.target.value as PlayerStatus | 'all')}
+            >
+              <MenuItem value="all">{t('reports.filters.allStatuses')}</MenuItem>
+              <MenuItem value="active">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckCircleIcon fontSize="small" color="success" />
+                  {t('reports.status.active')}
+                </Box>
+              </MenuItem>
+              <MenuItem value="partial">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningIcon fontSize="small" color="warning" />
+                  {t('reports.status.partial')}
+                </Box>
+              </MenuItem>
+              <MenuItem value="absent">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CancelIcon fontSize="small" color="error" />
+                  {t('reports.status.absent')}
+                </Box>
+              </MenuItem>
             </Select>
           </FormControl>
         </Grid>
@@ -278,33 +317,108 @@ export const Reports: React.FC = () => {
           <TableHead>
             <TableRow sx={{ backgroundColor: 'primary.main' }}>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                {t('reports.player')}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {t('reports.player')}
+                  <Tooltip title={t('reports.tooltips.player')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                {t('reports.position')}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {t('reports.position')}
+                  <Tooltip title={t('reports.tooltips.position')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="center" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('reports.status')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                  {t('reports.status')}
+                  <Tooltip title={t('reports.tooltips.status')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('reports.workouts')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('reports.workouts')}
+                  <Tooltip title={t('reports.tooltips.workouts')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               {(period === 'week' || period === 'month') && (
-                <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                  {t('reports.daysTrained')}
-                </TableCell>
+                <>
+                  <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                      {t('reports.daysTrained')}
+                      <Tooltip title={t('reports.tooltips.daysTrained')} arrow>
+                        <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                          <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                      {t('reports.teamAttendance')}
+                      <Tooltip title={t('reports.tooltips.teamAttendance')} arrow>
+                        <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                          <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </>
               )}
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('reports.minutes')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('reports.minutes')}
+                  <Tooltip title={t('reports.tooltips.minutes')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('reports.score')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('reports.score')}
+                  <Tooltip title={t('reports.tooltips.score')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('reports.trend')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('reports.trend')}
+                  <Tooltip title={t('reports.tooltips.trend')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
-                {t('reports.compliance')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                  {t('reports.compliance')}
+                  <Tooltip title={t('reports.tooltips.compliance')} arrow>
+                    <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </TableCell>
             </TableRow>
           </TableHead>
@@ -334,11 +448,18 @@ export const Reports: React.FC = () => {
                   {player.workoutsCompleted}/{player.workoutsAssigned}
                 </TableCell>
                 {(period === 'week' || period === 'month') && player.daysTrainedInPeriod !== undefined && (
-                  <TableCell align="right">
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {player.daysTrainedInPeriod}/{player.totalDaysInPeriod}
-                    </Typography>
-                  </TableCell>
+                  <>
+                    <TableCell align="right">
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {player.daysTrainedInPeriod}/{player.totalDaysInPeriod}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {player.teamSessionsAttended || 0}/{player.totalTeamSessions || 0}
+                      </Typography>
+                    </TableCell>
+                  </>
                 )}
                 <TableCell align="right">{player.minutesTrained}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>

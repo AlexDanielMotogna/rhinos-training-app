@@ -164,11 +164,16 @@ export function generateWeeklyReport(): WeeklyReport {
   const dailyReport = generateDailyReport();
 
   // Add weekly-specific data to players (days trained in the week)
-  const playersWithWeeklyData = dailyReport.players.map(player => ({
-    ...player,
-    daysTrainedInPeriod: Math.floor(Math.random() * 4) + 3, // 3-6 days trained
-    totalDaysInPeriod: 7,
-  }));
+  const playersWithWeeklyData = dailyReport.players.map(player => {
+    const totalTeamSessions = 3; // 3 team sessions per week
+    return {
+      ...player,
+      daysTrainedInPeriod: Math.floor(Math.random() * 4) + 3, // 3-6 days trained
+      totalDaysInPeriod: 7,
+      teamSessionsAttended: Math.floor(Math.random() * (totalTeamSessions + 1)), // 0-3 sessions
+      totalTeamSessions,
+    };
+  });
 
   // Simulate 7 days of data
   const dailyBreakdown = Array.from({ length: 7 }, (_, i) => {
@@ -200,11 +205,16 @@ export function generateMonthlyReport(): MonthlyReport {
   const dailyReport = generateDailyReport();
 
   // Add monthly-specific data to players (days trained in the month)
-  const playersWithMonthlyData = dailyReport.players.map(player => ({
-    ...player,
-    daysTrainedInPeriod: Math.floor(Math.random() * 10) + 15, // 15-24 days trained
-    totalDaysInPeriod: 30,
-  }));
+  const playersWithMonthlyData = dailyReport.players.map(player => {
+    const totalTeamSessions = 12; // 12 team sessions per month (~3 per week)
+    return {
+      ...player,
+      daysTrainedInPeriod: Math.floor(Math.random() * 10) + 15, // 15-24 days trained
+      totalDaysInPeriod: 30,
+      teamSessionsAttended: Math.floor(Math.random() * (totalTeamSessions + 1)), // 0-12 sessions
+      totalTeamSessions,
+    };
+  });
 
   // Simulate 4 weeks of data
   const weeklyBreakdown = Array.from({ length: 4 }, (_, i) => ({

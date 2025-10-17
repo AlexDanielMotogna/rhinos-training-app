@@ -493,7 +493,20 @@ export const messagesEN = {
   'reports.filters.defense': 'Defense',
   'reports.filters.position': 'Position',
   'reports.filters.allPositions': 'All Positions',
+  'reports.filters.status': 'Status',
+  'reports.filters.allStatuses': 'All Statuses',
   'reports.daysTrained': 'Days Trained',
+  'reports.teamAttendance': 'Team Sessions',
+  'reports.tooltips.player': 'Player name and identification',
+  'reports.tooltips.position': 'Player\'s position on the field',
+  'reports.tooltips.status': 'Active: completed all workouts | Partial: trained but incomplete | Absent: did not train',
+  'reports.tooltips.workouts': 'Number of workouts completed vs assigned',
+  'reports.tooltips.daysTrained': 'Total days player trained during this period (includes both team and self training)',
+  'reports.tooltips.teamAttendance': 'Team training sessions attended out of total sessions scheduled',
+  'reports.tooltips.minutes': 'Total minutes of training logged',
+  'reports.tooltips.score': 'Current performance score (0-100)',
+  'reports.tooltips.trend': 'Performance trend compared to previous period (percentage change)',
+  'reports.tooltips.compliance': 'Percentage of assigned workouts completed',
 };
 
 export type MessageKey = keyof typeof messagesEN;

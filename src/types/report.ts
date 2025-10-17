@@ -20,6 +20,8 @@ export interface PlayerDailyReport {
   lastActive: string; // ISO date
   daysTrainedInPeriod?: number; // For weekly/monthly reports
   totalDaysInPeriod?: number; // For weekly/monthly reports (7 for week, ~30 for month)
+  teamSessionsAttended?: number; // For weekly/monthly reports
+  totalTeamSessions?: number; // For weekly/monthly reports
 }
 
 export interface ReportSummary {
