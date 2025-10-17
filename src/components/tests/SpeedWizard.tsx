@@ -80,13 +80,21 @@ export const SpeedWizard: React.FC<SpeedWizardProps> = ({ onFinish }) => {
 
   return (
     <Box>
-      <Stepper activeStep={currentStep} sx={{ mb: 3 }}>
-        {testOrder.map(key => (
-          <Step key={key}>
-            <StepLabel>{t(`tests.speed.${key}`)}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+      <Box sx={{ overflowX: 'auto', mb: 3 }}>
+        <Stepper
+          activeStep={currentStep}
+          sx={{
+            minWidth: 'max-content',
+            pb: 1
+          }}
+        >
+          {testOrder.map(key => (
+            <Step key={key}>
+              <StepLabel>{t(`tests.speed.${key}`)}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+      </Box>
 
       <Paper sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
