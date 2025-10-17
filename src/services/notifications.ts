@@ -67,9 +67,12 @@ export async function sendLocalNotification(
       data: options?.data,
     } as NotificationOptions);
 
+    console.log('Local notification created successfully');
     return true;
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('Error sending local notification:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    alert(`Error creating notification: ${errorMessage}`);
     return false;
   }
 }
