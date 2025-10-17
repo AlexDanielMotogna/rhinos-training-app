@@ -13,14 +13,19 @@ import {
   Select,
   MenuItem,
   Button,
+  CardMedia,
+  Dialog,
+  DialogContent,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { useI18n } from '../../i18n/I18nProvider';
 import { useNavigate } from 'react-router-dom';
+import { getYouTubeThumbnail, sanitizeYouTubeUrl } from '../../services/yt';
 import type { WorkoutLog } from '../../services/workoutLog';
 
 interface WorkoutHistoryProps {
@@ -39,6 +44,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   const { t } = useI18n();
   const navigate = useNavigate();
   const [dateFilter, setDateFilter] = useState<DateFilter>('30days');
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   // Filter workouts by date range
   const filterWorkoutsByDate = (workouts: WorkoutLog[]): WorkoutLog[] => {
@@ -115,35 +121,48 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
     }
   };
 
+  const handleVideoClick = (url: string) => {
+    const sanitized = sanitizeYouTubeUrl(url);
+    if (sanitized) {
+      setVideoUrl(sanitized);
+    }
+  };
+
   return (
     <Box>
       {/* Filter Controls - Mobile Optimized */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-        <FilterListIcon color="action" sx={{ fontSize: '1.2rem' }} />
-        <FormControl size="small" sx={{ minWidth: 150, flex: 1, maxWidth: 200 }}>
-          <InputLabel sx={{ fontSize: '0.85rem' }}>Time Period</InputLabel>
-          <Select
-            value={dateFilter}
-            label="Time Period"
-            onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-            sx={{ fontSize: '0.85rem' }}
-          >
-            <MenuItem value="today" sx={{ fontSize: '0.85rem' }}>Today</MenuItem>
-            <MenuItem value="7days" sx={{ fontSize: '0.85rem' }}>Last 7 Days</MenuItem>
-            <MenuItem value="30days" sx={{ fontSize: '0.85rem' }}>Last 30 Days</MenuItem>
-            <MenuItem value="90days" sx={{ fontSize: '0.85rem' }}>Last 90 Days</MenuItem>
-            <MenuItem value="all" sx={{ fontSize: '0.85rem' }}>All Time</MenuItem>
-          </Select>
-        </FormControl>
-        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-          {filteredWorkouts.length} workout{filteredWorkouts.length !== 1 ? 's' : ''} found
-        </Typography>
+      <Box sx={{ mb: 2 }}>
+        {/* First Row: Filter and Count */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+          <FilterListIcon color="action" sx={{ fontSize: '1.2rem' }} />
+          <FormControl size="small" sx={{ minWidth: 150, flex: 1, maxWidth: 200 }}>
+            <InputLabel sx={{ fontSize: '0.85rem' }}>Time Period</InputLabel>
+            <Select
+              value={dateFilter}
+              label="Time Period"
+              onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+              sx={{ fontSize: '0.85rem' }}
+            >
+              <MenuItem value="today" sx={{ fontSize: '0.85rem' }}>Today</MenuItem>
+              <MenuItem value="7days" sx={{ fontSize: '0.85rem' }}>Last 7 Days</MenuItem>
+              <MenuItem value="30days" sx={{ fontSize: '0.85rem' }}>Last 30 Days</MenuItem>
+              <MenuItem value="90days" sx={{ fontSize: '0.85rem' }}>Last 90 Days</MenuItem>
+              <MenuItem value="all" sx={{ fontSize: '0.85rem' }}>All Time</MenuItem>
+            </Select>
+          </FormControl>
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+            {filteredWorkouts.length} workout{filteredWorkouts.length !== 1 ? 's' : ''} found
+          </Typography>
+        </Box>
+
+        {/* Second Row: See Calendar Button */}
         <Button
           variant="outlined"
           size="small"
           startIcon={<CalendarMonthIcon />}
           onClick={() => navigate('/stats')}
-          sx={{ ml: 'auto', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+          fullWidth
+          sx={{ fontSize: '0.8rem' }}
         >
           See Calendar
         </Button>
@@ -186,6 +205,13 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                         minute: '2-digit'
                       })}
                     </Typography>
+
+                    {/* Plan Name */}
+                    {workout.planName && (
+                      <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 500, color: 'primary.main' }}>
+                        {workout.planName}
+                      </Typography>
+                    )}
 
                     {/* Chips */}
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -236,72 +262,128 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
 
                 {/* Exercise entries - User-friendly layout */}
                 <Box>
-                  {workout.entries.map((entry, idx) => (
-                    <Box key={idx} sx={{ mb: 1.5 }}>
-                      <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.9rem', mb: 0.5 }}>
-                        {entry.name}
-                      </Typography>
+                  {workout.entries.map((entry, idx) => {
+                    const thumbnailUrl = entry.youtubeUrl
+                      ? getYouTubeThumbnail(entry.youtubeUrl)
+                      : undefined;
 
-                      {/* Set-by-set data - User-friendly format */}
-                      {entry.setData && entry.setData.length > 0 ? (
-                        <Box sx={{ pl: 1 }}>
-                          {/* Show details directly - no redundant summary */}
-                          {entry.setData.length === 1 ? (
-                            // Single set - just show the data
-                            <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'text.primary' }}>
-                              {entry.setData[0].reps && `${entry.setData[0].reps} reps`}
-                              {entry.setData[0].reps && entry.setData[0].kg && ' × '}
-                              {entry.setData[0].kg && `${entry.setData[0].kg}kg`}
-                              {entry.setData[0].durationSec && `${entry.setData[0].durationSec} seconds`}
+                    return (
+                      <Box key={idx} sx={{ mb: 1.5 }}>
+                        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+                          {/* Exercise Name and Data */}
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.9rem', mb: 0.5 }}>
+                              {entry.name}
                             </Typography>
-                          ) : (
-                            // Multiple sets - show each set
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                              {entry.setData.map((set, setIdx) => (
-                                <Typography
-                                  key={setIdx}
-                                  variant="body2"
-                                  sx={{
-                                    fontSize: '0.8rem',
-                                    color: 'text.primary',
-                                  }}
-                                >
-                                  Set {set.setNumber}:{' '}
-                                  {set.reps && `${set.reps} reps`}
-                                  {set.reps && set.kg && ' × '}
-                                  {set.kg && `${set.kg}kg`}
-                                  {set.durationSec && `${set.durationSec} seconds`}
-                                </Typography>
-                              ))}
+
+                            {/* Set-by-set data - User-friendly format */}
+                            {entry.setData && entry.setData.length > 0 ? (
+                              <Box sx={{ pl: 1 }}>
+                                {/* Show details directly - no redundant summary */}
+                                {entry.setData.length === 1 ? (
+                                  // Single set - just show the data
+                                  <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'text.primary' }}>
+                                    {entry.setData[0].reps && `${entry.setData[0].reps} reps`}
+                                    {entry.setData[0].reps && entry.setData[0].kg && ' × '}
+                                    {entry.setData[0].kg && `${entry.setData[0].kg}kg`}
+                                    {entry.setData[0].durationSec && `${entry.setData[0].durationSec} seconds`}
+                                  </Typography>
+                                ) : (
+                                  // Multiple sets - show each set
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                                    {entry.setData.map((set, setIdx) => (
+                                      <Typography
+                                        key={setIdx}
+                                        variant="body2"
+                                        sx={{
+                                          fontSize: '0.8rem',
+                                          color: 'text.primary',
+                                        }}
+                                      >
+                                        Set {set.setNumber}:{' '}
+                                        {set.reps && `${set.reps} reps`}
+                                        {set.reps && set.kg && ' × '}
+                                        {set.kg && `${set.kg}kg`}
+                                        {set.durationSec && `${set.durationSec} seconds`}
+                                      </Typography>
+                                    ))}
+                                  </Box>
+                                )}
+                              </Box>
+                            ) : (
+                              // Fallback for old format
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', pl: 1 }}>
+                                {entry.sets && entry.reps && `${entry.sets} sets × ${entry.reps} reps`}
+                                {entry.kg && ` with ${entry.kg}kg`}
+                                {entry.durationSec && ` for ${entry.durationSec} seconds`}
+                              </Typography>
+                            )}
+
+                            {/* RPE - User-friendly */}
+                            {entry.rpe && (
+                              <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.75rem', pl: 1, color: 'text.secondary' }}>
+                                Effort: {entry.rpe}/10 {entry.rpe >= 8 ? '(Hard)' : entry.rpe >= 6 ? '(Moderate)' : '(Easy)'}
+                              </Typography>
+                            )}
+
+                            {/* Exercise notes */}
+                            {entry.notes && (
+                              <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.75rem', pl: 1, color: 'text.secondary', fontStyle: 'italic' }}>
+                                Note: {entry.notes}
+                              </Typography>
+                            )}
+                          </Box>
+
+                          {/* YouTube Thumbnail on the right */}
+                          {thumbnailUrl && entry.youtubeUrl ? (
+                            <Box
+                              onClick={() => handleVideoClick(entry.youtubeUrl!)}
+                              sx={{
+                                position: 'relative',
+                                width: 60,
+                                height: 60,
+                                flexShrink: 0,
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                backgroundColor: 'grey.900',
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  opacity: 0.8,
+                                  transform: 'scale(1.05)',
+                                  transition: 'all 0.2s ease-in-out',
+                                },
+                              }}
+                            >
+                              <CardMedia
+                                component="img"
+                                image={thumbnailUrl}
+                                alt={entry.name}
+                                sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                }}
+                              />
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  top: '50%',
+                                  left: '50%',
+                                  transform: 'translate(-50%, -50%)',
+                                  color: 'white',
+                                  opacity: 0.9,
+                                }}
+                              >
+                                <PlayCircleOutlineIcon sx={{ fontSize: 24 }} />
+                              </Box>
                             </Box>
-                          )}
+                          ) : null}
                         </Box>
-                      ) : (
-                        // Fallback for old format
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', pl: 1 }}>
-                          {entry.sets && entry.reps && `${entry.sets} sets × ${entry.reps} reps`}
-                          {entry.kg && ` with ${entry.kg}kg`}
-                          {entry.durationSec && ` for ${entry.durationSec} seconds`}
-                        </Typography>
-                      )}
 
-                      {/* RPE - User-friendly */}
-                      {entry.rpe && (
-                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.75rem', pl: 1, color: 'text.secondary' }}>
-                          Effort: {entry.rpe}/10 {entry.rpe >= 8 ? '(Hard)' : entry.rpe >= 6 ? '(Moderate)' : '(Easy)'}
-                        </Typography>
-                      )}
-
-                      {/* Exercise notes */}
-                      {entry.notes && (
-                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.75rem', pl: 1, color: 'text.secondary', fontStyle: 'italic' }}>
-                          Note: {entry.notes}
-                        </Typography>
-                      )}
-
-                      {idx < workout.entries.length - 1 && <Divider sx={{ mt: 1, mb: 0.5 }} />}
-                    </Box>
-                  ))}
+                        {idx < workout.entries.length - 1 && <Divider sx={{ mt: 1, mb: 0.5 }} />}
+                      </Box>
+                    );
+                  })}
                 </Box>
 
                 {/* Workout notes - Compact */}
@@ -316,6 +398,31 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
         </Box>
       ))
       )}
+
+      {/* Video Dialog */}
+      <Dialog
+        open={Boolean(videoUrl)}
+        onClose={() => setVideoUrl(null)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogContent sx={{ p: 0 }}>
+          {videoUrl && (
+            <Box
+              component="iframe"
+              src={videoUrl}
+              sx={{
+                width: '100%',
+                height: { xs: 300, sm: 400, md: 500 },
+                border: 'none',
+              }}
+              title="Exercise Video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

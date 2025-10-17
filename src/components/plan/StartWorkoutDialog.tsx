@@ -41,6 +41,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
   const [completedEntries, setCompletedEntries] = useState<WorkoutEntry[]>([]);
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [startTime, setStartTime] = useState<number>(Date.now());
+  const [showConfirmFinish, setShowConfirmFinish] = useState(false);
 
   // Persistence key for this workout session
   const persistenceKey = plan ? `workout_progress_${plan.id}` : null;
@@ -129,7 +130,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
     setSelectedExerciseIndex(null); // Close form after saving
   };
 
-  const handleFinishWorkout = () => {
+  const handleConfirmFinish = () => {
     const duration = Math.round((Date.now() - startTime) / 1000 / 60); // minutes
     onFinish(completedEntries, workoutNotes, duration);
 
@@ -137,6 +138,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
     if (persistenceKey) {
       localStorage.removeItem(persistenceKey);
     }
+    setShowConfirmFinish(false);
     onClose();
   };
 
@@ -196,8 +198,8 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
             <List>
               {plan.exercises.map((exercise, index) => {
                 const completedSets = getCompletedSetsCount(index);
-                const targetSets = exercise.targetSets;
-                const isCompleted = completedSets >= targetSets;
+                const targetSets = exercise.targetSets || 0;
+                const isCompleted = targetSets > 0 && completedSets >= targetSets;
 
                 return (
                   <ListItem
@@ -246,9 +248,10 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
                         primary={exercise.name}
                         secondary={
                           <>
-                            {completedSets > 0 && `${completedSets}/${targetSets} sets • `}
-                            Target: {targetSets} × {exercise.targetReps || '-'} reps
+                            {completedSets > 0 && targetSets > 0 && `${completedSets}/${targetSets} sets • `}
+                            {targetSets > 0 && `Target: ${targetSets} × ${exercise.targetReps || '-'} reps`}
                             {exercise.targetDurationSec && ` • ${exercise.targetDurationSec}s`}
+                            {!targetSets && !exercise.targetDurationSec && 'Free workout - you decide!'}
                           </>
                         }
                       />
@@ -286,7 +289,7 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
         <Button onClick={onClose}>{t('common.cancel')}</Button>
         {completedEntries.length > 0 && (
           <Button
-            onClick={handleFinishWorkout}
+            onClick={() => setShowConfirmFinish(true)}
             variant="contained"
             color="success"
           >
@@ -294,6 +297,41 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
           </Button>
         )}
       </DialogActions>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={showConfirmFinish}
+        onClose={() => setShowConfirmFinish(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Finish Workout?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to finish this workout? This action cannot be undone.
+          </Typography>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Completed:</strong> {completedEntries.length} / {plan?.exercises.length || 0} exercises
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Duration:</strong> {Math.round((Date.now() - startTime) / 1000 / 60)} minutes
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowConfirmFinish(false)}>
+            Continue Training
+          </Button>
+          <Button
+            onClick={handleConfirmFinish}
+            variant="contained"
+            color="success"
+          >
+            Yes, Finish Workout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

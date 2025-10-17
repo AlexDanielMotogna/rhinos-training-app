@@ -18,7 +18,7 @@ export interface PlanExercise {
   youtubeUrl?: string;
 
   // Target values (goals for this exercise)
-  targetSets: number;
+  targetSets?: number;
   targetReps?: number;
   targetDurationSec?: number; // For Speed/Conditioning/Mobility exercises (in seconds)
 

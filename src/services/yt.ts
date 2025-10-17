@@ -1,9 +1,7 @@
 /**
- * YouTube URL sanitizer
- * Accepts only youtube.com or youtu.be URLs
- * Returns embed URL or undefined if invalid
+ * Extract video ID from YouTube URL
  */
-export function sanitizeYouTubeUrl(url: string): string | undefined {
+export function extractYouTubeVideoId(url: string): string | undefined {
   if (!url || typeof url !== 'string') {
     return undefined;
   }
@@ -35,11 +33,30 @@ export function sanitizeYouTubeUrl(url: string): string | undefined {
 
     // Validate video ID (should be alphanumeric, underscores, hyphens, 11 chars typically)
     if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
-      return `https://www.youtube.com/embed/${videoId}`;
+      return videoId;
     }
 
     return undefined;
   } catch {
     return undefined;
   }
+}
+
+/**
+ * YouTube URL sanitizer
+ * Accepts only youtube.com or youtu.be URLs
+ * Returns embed URL or undefined if invalid
+ */
+export function sanitizeYouTubeUrl(url: string): string | undefined {
+  const videoId = extractYouTubeVideoId(url);
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : undefined;
+}
+
+/**
+ * Get YouTube thumbnail URL from video URL
+ * Returns high quality thumbnail (hqdefault.jpg)
+ */
+export function getYouTubeThumbnail(url: string): string | undefined {
+  const videoId = extractYouTubeVideoId(url);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : undefined;
 }

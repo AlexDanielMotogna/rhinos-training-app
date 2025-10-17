@@ -44,6 +44,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
   const [completedEntries, setCompletedEntries] = useState<WorkoutEntry[]>([]);
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [startTime, setStartTime] = useState<number>(Date.now());
+  const [showConfirmFinish, setShowConfirmFinish] = useState(false);
 
   // Persistence key for this workout session
   const persistenceKey = block ? `coach_workout_progress_${trainingType}_${blockTitle}` : null;
@@ -131,7 +132,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
     setSelectedExerciseIndex(null);
   };
 
-  const handleFinishWorkout = () => {
+  const handleConfirmFinish = () => {
     const duration = Math.round((Date.now() - startTime) / 1000 / 60); // minutes
 
     // Create entries for ALL exercises in the block, not just completed ones
@@ -164,6 +165,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
     if (persistenceKey) {
       localStorage.removeItem(persistenceKey);
     }
+    setShowConfirmFinish(false);
     onClose();
   };
 
@@ -346,7 +348,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
         </Button>
         {completedEntries.length > 0 && (
           <Button
-            onClick={handleFinishWorkout}
+            onClick={() => setShowConfirmFinish(true)}
             variant="contained"
             color="success"
             sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
@@ -355,6 +357,44 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
           </Button>
         )}
       </DialogActions>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={showConfirmFinish}
+        onClose={() => setShowConfirmFinish(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Finish Workout?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to finish this workout? This action cannot be undone.
+          </Typography>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Block:</strong> {blockTitle}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Completed:</strong> {completedEntries.length} / {block?.items.length || 0} exercises
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Duration:</strong> {Math.round((Date.now() - startTime) / 1000 / 60)} minutes
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowConfirmFinish(false)}>
+            Continue Training
+          </Button>
+          <Button
+            onClick={handleConfirmFinish}
+            variant="contained"
+            color="success"
+          >
+            Yes, Finish Workout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

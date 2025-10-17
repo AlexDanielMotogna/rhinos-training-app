@@ -67,7 +67,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   const menuItems = [
     { key: 'myTraining', label: t('nav.myTraining'), icon: <FitnessCenterIcon />, path: '/training', showForAll: true },
-    { key: 'myStats', label: t('nav.myStats'), icon: <CalendarMonthIcon />, path: '/stats', showForAll: true },
+    { key: 'myCalendar', label: 'My Calendar', icon: <CalendarMonthIcon />, path: '/stats', showForAll: true },
     { key: 'tests', label: t('nav.tests'), icon: <AssessmentIcon />, path: '/tests', showForAll: true },
     { key: 'profile', label: t('nav.profile'), icon: <PersonIcon />, path: '/profile', showForAll: true },
     { key: 'team', label: t('nav.team'), icon: <GroupIcon />, path: '/team', showForAll: true },
