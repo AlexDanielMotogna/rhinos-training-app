@@ -289,6 +289,11 @@ export const Reports: React.FC = () => {
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
                 {t('reports.workouts')}
               </TableCell>
+              {(period === 'week' || period === 'month') && (
+                <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
+                  {t('reports.daysTrained')}
+                </TableCell>
+              )}
               <TableCell align="right" sx={{ color: 'white', fontWeight: 600 }}>
                 {t('reports.minutes')}
               </TableCell>
@@ -328,6 +333,13 @@ export const Reports: React.FC = () => {
                 <TableCell align="right">
                   {player.workoutsCompleted}/{player.workoutsAssigned}
                 </TableCell>
+                {(period === 'week' || period === 'month') && player.daysTrainedInPeriod !== undefined && (
+                  <TableCell align="right">
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {player.daysTrainedInPeriod}/{player.totalDaysInPeriod}
+                    </Typography>
+                  </TableCell>
+                )}
                 <TableCell align="right">{player.minutesTrained}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>
                   {player.currentScore}

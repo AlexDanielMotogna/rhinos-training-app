@@ -493,6 +493,7 @@ export const messagesEN = {
   'reports.filters.defense': 'Defense',
   'reports.filters.position': 'Position',
   'reports.filters.allPositions': 'All Positions',
+  'reports.daysTrained': 'Days Trained',
 };
 
 export type MessageKey = keyof typeof messagesEN;

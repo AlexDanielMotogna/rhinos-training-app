@@ -493,4 +493,5 @@ export const messagesDE = {
   'reports.filters.defense': 'Defense',
   'reports.filters.position': 'Position',
   'reports.filters.allPositions': 'Alle Positionen',
+  'reports.daysTrained': 'Trainingstage',
 };

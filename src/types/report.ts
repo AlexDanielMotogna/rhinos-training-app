@@ -18,6 +18,8 @@ export interface PlayerDailyReport {
   compliance: number; // 0-100
   attendance: boolean;
   lastActive: string; // ISO date
+  daysTrainedInPeriod?: number; // For weekly/monthly reports
+  totalDaysInPeriod?: number; // For weekly/monthly reports (7 for week, ~30 for month)
 }
 
 export interface ReportSummary {

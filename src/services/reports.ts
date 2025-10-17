@@ -163,6 +163,13 @@ export function generateDailyReport(): DailyReport {
 export function generateWeeklyReport(): WeeklyReport {
   const dailyReport = generateDailyReport();
 
+  // Add weekly-specific data to players (days trained in the week)
+  const playersWithWeeklyData = dailyReport.players.map(player => ({
+    ...player,
+    daysTrainedInPeriod: Math.floor(Math.random() * 4) + 3, // 3-6 days trained
+    totalDaysInPeriod: 7,
+  }));
+
   // Simulate 7 days of data
   const dailyBreakdown = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
@@ -180,7 +187,7 @@ export function generateWeeklyReport(): WeeklyReport {
       ...dailyReport.summary,
       period: 'week',
     },
-    players: dailyReport.players,
+    players: playersWithWeeklyData,
     dailyBreakdown,
     generatedAt: new Date().toISOString(),
   };
@@ -191,6 +198,13 @@ export function generateWeeklyReport(): WeeklyReport {
  */
 export function generateMonthlyReport(): MonthlyReport {
   const dailyReport = generateDailyReport();
+
+  // Add monthly-specific data to players (days trained in the month)
+  const playersWithMonthlyData = dailyReport.players.map(player => ({
+    ...player,
+    daysTrainedInPeriod: Math.floor(Math.random() * 10) + 15, // 15-24 days trained
+    totalDaysInPeriod: 30,
+  }));
 
   // Simulate 4 weeks of data
   const weeklyBreakdown = Array.from({ length: 4 }, (_, i) => ({
@@ -205,7 +219,7 @@ export function generateMonthlyReport(): MonthlyReport {
       ...dailyReport.summary,
       period: 'month',
     },
-    players: dailyReport.players,
+    players: playersWithMonthlyData,
     weeklyBreakdown,
     improvements: [
       { playerId: '1', playerName: 'John Smith', improvement: 12.5 },
