@@ -56,20 +56,20 @@ export const Auth: React.FC = () => {
         return;
       }
 
-      // Calculate age from birth date for players
-      const calculatedAge = role === 'player' && birthDate ? calculateAge(birthDate) : 0;
+      // Calculate age from birth date
+      const calculatedAge = birthDate ? calculateAge(birthDate) : 0;
 
       // Create new user
       const user: MockUser = {
         id: Date.now().toString(),
         name: name,
         email: email,
-        // Only set player-specific fields if role is player
+        // Only jersey number and position are player-specific
         jerseyNumber: role === 'player' && jerseyNumber && jerseyNumber !== '--' ? Number(jerseyNumber) : undefined,
-        birthDate: role === 'player' ? birthDate : undefined,
+        birthDate: birthDate || undefined,
         age: calculatedAge,
-        weightKg: role === 'player' ? Number(weightKg) : 0,
-        heightCm: role === 'player' ? Number(heightCm) : 0,
+        weightKg: Number(weightKg) || 0,
+        heightCm: Number(heightCm) || 0,
         position: role === 'player' ? position : 'RB', // Default for coaches (not used)
         role,
       };
@@ -105,7 +105,7 @@ export const Auth: React.FC = () => {
 
   const isValid = isSignup
     ? role === 'coach'
-      ? name && email && password && confirmPassword && password === confirmPassword && coachCode === COACH_CODE
+      ? name && email && password && confirmPassword && password === confirmPassword && coachCode === COACH_CODE && birthDate && weightKg && heightCm
       : name && email && password && confirmPassword && password === confirmPassword && birthDate && weightKg && heightCm
     : email && password;
 
@@ -171,7 +171,7 @@ export const Auth: React.FC = () => {
                   </Select>
                 </FormControl>
 
-                {role === 'coach' ? (
+                {role === 'coach' && (
                   <TextField
                     label="Coach Code"
                     value={coachCode}
@@ -181,30 +181,18 @@ export const Auth: React.FC = () => {
                     placeholder="Enter the code provided by administrator"
                     helperText="Contact administrator if you don't have the coach code"
                   />
-                ) : (
-                  <>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                      <TextField
-                        label={t('auth.jerseyNumber')}
-                        value={jerseyNumber}
-                        onChange={(e) => setJerseyNumber(e.target.value)}
-                        placeholder="--"
-                        helperText={t('auth.jerseyNumberOptional')}
-                      />
+                )}
 
-                      <TextField
-                        label={t('auth.birthDate')}
-                        type="date"
-                        value={birthDate}
-                        onChange={(e) => setBirthDate(e.target.value)}
-                        required
-                        InputLabelProps={{ shrink: true }}
-                        inputProps={{
-                          max: new Date().toISOString().split('T')[0],
-                          min: new Date(new Date().setFullYear(new Date().getFullYear() - 100)).toISOString().split('T')[0]
-                        }}
-                      />
-                    </Box>
+                {/* Player-specific fields */}
+                {role === 'player' && (
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                    <TextField
+                      label={t('auth.jerseyNumber')}
+                      value={jerseyNumber}
+                      onChange={(e) => setJerseyNumber(e.target.value)}
+                      placeholder="--"
+                      helperText={t('auth.jerseyNumberOptional')}
+                    />
 
                     <FormControl required fullWidth>
                       <InputLabel>{t('auth.position')}</InputLabel>
@@ -220,28 +208,42 @@ export const Auth: React.FC = () => {
                         ))}
                       </Select>
                     </FormControl>
-
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                      <TextField
-                        label={t('auth.weightKg')}
-                        type="number"
-                        value={weightKg}
-                        onChange={(e) => setWeightKg(e.target.value ? Number(e.target.value) : '')}
-                        required
-                        inputProps={{ min: 50, max: 200 }}
-                      />
-
-                      <TextField
-                        label={t('auth.heightCm')}
-                        type="number"
-                        value={heightCm}
-                        onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
-                        required
-                        inputProps={{ min: 150, max: 220 }}
-                      />
-                    </Box>
-                  </>
+                  </Box>
                 )}
+
+                {/* Common fields for both players and coaches */}
+                <TextField
+                  label={t('auth.birthDate')}
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  required
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{
+                    max: new Date().toISOString().split('T')[0],
+                    min: new Date(new Date().setFullYear(new Date().getFullYear() - 100)).toISOString().split('T')[0]
+                  }}
+                />
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <TextField
+                    label={t('auth.weightKg')}
+                    type="number"
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(e.target.value ? Number(e.target.value) : '')}
+                    required
+                    inputProps={{ min: 50, max: 200 }}
+                  />
+
+                  <TextField
+                    label={t('auth.heightCm')}
+                    type="number"
+                    value={heightCm}
+                    onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
+                    required
+                    inputProps={{ min: 150, max: 220 }}
+                  />
+                </Box>
               </>
             )}
 
