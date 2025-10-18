@@ -12,6 +12,8 @@ import {
   IconButton,
   Slider,
   Divider,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -61,6 +63,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   ]);
   const [rpe, setRpe] = useState<number>(initialData?.rpe || 5);
   const [notes, setNotes] = useState(initialData?.notes || '');
+  const [durationUnit, setDurationUnit] = useState<'sec' | 'min'>('sec');
 
   const handleAddSet = () => {
     const currentMaxSetNumber = setData.length > 0
@@ -350,15 +353,45 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                         inputProps={{ min: 0, max: 100 }}
                         fullWidth
                       />
-                      <TextField
-                        label="Duration (sec)"
-                        type="number"
-                        size="small"
-                        value={set.durationSec ?? ''}
-                        onChange={(e) => handleSetChange(index, 'durationSec', e.target.value ? Number(e.target.value) : undefined)}
-                        inputProps={{ min: 0, max: 300, step: 0.1 }}
-                        fullWidth
-                      />
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                        <TextField
+                          label={`Duration (${durationUnit})`}
+                          type="number"
+                          size="small"
+                          value={
+                            set.durationSec !== undefined
+                              ? durationUnit === 'min'
+                                ? set.durationSec / 60
+                                : set.durationSec
+                              : ''
+                          }
+                          onChange={(e) => {
+                            const inputValue = e.target.value ? Number(e.target.value) : undefined;
+                            const valueInSec = inputValue !== undefined
+                              ? durationUnit === 'min'
+                                ? inputValue * 60
+                                : inputValue
+                              : undefined;
+                            handleSetChange(index, 'durationSec', valueInSec);
+                          }}
+                          inputProps={{ min: 0, max: durationUnit === 'min' ? 60 : 3600, step: 0.1 }}
+                          sx={{ flex: 1 }}
+                        />
+                        <ToggleButtonGroup
+                          value={durationUnit}
+                          exclusive
+                          onChange={(_, newUnit) => newUnit && setDurationUnit(newUnit)}
+                          size="small"
+                          sx={{ height: 40 }}
+                        >
+                          <ToggleButton value="sec" sx={{ px: 1.5 }}>
+                            sec
+                          </ToggleButton>
+                          <ToggleButton value="min" sx={{ px: 1.5 }}>
+                            min
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                      </Box>
                       <TextField
                         label="Distance (km)"
                         type="number"
@@ -373,15 +406,45 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
 
                   {/* Mobility/Recovery: Only Duration */}
                   {(category === 'Mobility' || category === 'Recovery') && (
-                    <TextField
-                      label="Duration (sec)"
-                      type="number"
-                      size="small"
-                      value={set.durationSec ?? ''}
-                      onChange={(e) => handleSetChange(index, 'durationSec', e.target.value ? Number(e.target.value) : undefined)}
-                      inputProps={{ min: 0, max: 600, step: 0.1 }}
-                      fullWidth
-                    />
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                      <TextField
+                        label={`Duration (${durationUnit})`}
+                        type="number"
+                        size="small"
+                        value={
+                          set.durationSec !== undefined
+                            ? durationUnit === 'min'
+                              ? set.durationSec / 60
+                              : set.durationSec
+                            : ''
+                        }
+                        onChange={(e) => {
+                          const inputValue = e.target.value ? Number(e.target.value) : undefined;
+                          const valueInSec = inputValue !== undefined
+                            ? durationUnit === 'min'
+                              ? inputValue * 60
+                              : inputValue
+                            : undefined;
+                          handleSetChange(index, 'durationSec', valueInSec);
+                        }}
+                        inputProps={{ min: 0, max: durationUnit === 'min' ? 60 : 3600, step: 0.1 }}
+                        sx={{ flex: 1 }}
+                      />
+                      <ToggleButtonGroup
+                        value={durationUnit}
+                        exclusive
+                        onChange={(_, newUnit) => newUnit && setDurationUnit(newUnit)}
+                        size="small"
+                        sx={{ height: 40 }}
+                      >
+                        <ToggleButton value="sec" sx={{ px: 1.5 }}>
+                          sec
+                        </ToggleButton>
+                        <ToggleButton value="min" sx={{ px: 1.5 }}>
+                          min
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </Box>
                   )}
                 </Box>
               </Paper>
