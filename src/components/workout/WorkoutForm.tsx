@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import type { Exercise, ExerciseCategory } from '../../types/exercise';
 import type { WorkoutEntry, SetData } from '../../types/workout';
 import { sanitizeYouTubeUrl } from '../../services/yt';
@@ -110,6 +111,21 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
       newSets[index] = { ...newSets[index], [field]: value };
       setSetData(newSets);
     }
+  };
+
+  const handleCopyFirstSetToAll = () => {
+    if (setData.length === 0) return;
+
+    const firstSet = setData[0];
+    const newSets = setData.map((set) => ({
+      ...set,
+      reps: firstSet.reps,
+      kg: firstSet.kg,
+      durationSec: firstSet.durationSec,
+      distance: firstSet.distance,
+    }));
+
+    setSetData(newSets);
   };
 
   const handleSubmit = () => {
@@ -234,16 +250,29 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                 </Typography>
               )}
             </Box>
-            <Button
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={handleAddSet}
-              variant="outlined"
-              color="secondary"
-              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 } }}
-            >
-              Add Set
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                startIcon={<ContentCopyIcon />}
+                onClick={handleCopyFirstSetToAll}
+                variant="outlined"
+                color="primary"
+                disabled={setData.length <= 1}
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, px: { xs: 1, sm: 1.5 } }}
+              >
+                Copy to All
+              </Button>
+              <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={handleAddSet}
+                variant="outlined"
+                color="secondary"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 } }}
+              >
+                Add Set
+              </Button>
+            </Box>
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
