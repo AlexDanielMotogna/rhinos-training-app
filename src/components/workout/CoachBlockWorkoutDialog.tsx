@@ -42,6 +42,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
   const { t } = useI18n();
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number | null>(null);
   const [completedEntries, setCompletedEntries] = useState<WorkoutEntry[]>([]);
+  const [warmupMinutes, setWarmupMinutes] = useState<number | undefined>(undefined);
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [showConfirmFinish, setShowConfirmFinish] = useState(false);
@@ -58,6 +59,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
         try {
           const data = JSON.parse(stored);
           setCompletedEntries(data.completedEntries || []);
+          setWarmupMinutes(data.warmupMinutes);
           setWorkoutNotes(data.workoutNotes || '');
           setStartTime(data.startTime || Date.now());
           setSelectedExerciseIndex(null);
@@ -75,16 +77,18 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
     if (open && block && persistenceKey) {
       const data = {
         completedEntries,
+        warmupMinutes,
         workoutNotes,
         startTime,
       };
       localStorage.setItem(persistenceKey, JSON.stringify(data));
     }
-  }, [completedEntries, workoutNotes, open, block, persistenceKey]);
+  }, [completedEntries, warmupMinutes, workoutNotes, open, block, persistenceKey]);
 
   const resetWorkout = () => {
     setSelectedExerciseIndex(null);
     setCompletedEntries([]);
+    setWarmupMinutes(undefined);
     setWorkoutNotes('');
     setStartTime(Date.now());
   };
@@ -162,7 +166,15 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
       }
     });
 
-    onFinish(allEntries, workoutNotes, duration);
+    // Prepend warm-up info to notes so AI can see it
+    let finalNotes = workoutNotes;
+    if (warmupMinutes && warmupMinutes > 0) {
+      finalNotes = `[Warm-up: ${warmupMinutes} min]${workoutNotes ? '\n' + workoutNotes : ''}`;
+    } else {
+      finalNotes = `[No warm-up performed]${workoutNotes ? '\n' + workoutNotes : ''}`;
+    }
+
+    onFinish(allEntries, finalNotes, duration);
 
     // Clear persisted data after finishing
     if (persistenceKey) {
@@ -321,6 +333,19 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
             </List>
 
             <Divider sx={{ my: { xs: 2, sm: 3 } }} />
+
+            {/* Warm-up */}
+            <TextField
+              label="Warm-up (minutes)"
+              type="number"
+              value={warmupMinutes ?? ''}
+              onChange={(e) => setWarmupMinutes(e.target.value ? Number(e.target.value) : undefined)}
+              fullWidth
+              placeholder="Did you warm up? Enter minutes (e.g., 10)"
+              helperText="IMPORTANT: Always warm up before training! If left empty, AI will assume no warm-up."
+              inputProps={{ min: 0, max: 60, step: 1 }}
+              sx={{ mb: 2 }}
+            />
 
             {/* Workout Notes */}
             <TextField

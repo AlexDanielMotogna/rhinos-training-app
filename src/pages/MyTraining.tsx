@@ -137,7 +137,8 @@ export const MyTraining: React.FC = () => {
   const generateWorkoutReport = async (
     entries: WorkoutEntry[],
     duration: number,
-    workoutTitle: string
+    workoutTitle: string,
+    workoutNotes?: string
   ): Promise<WorkoutReport> => {
     if (!user) {
       // Shouldn't happen, but fallback to algorithm
@@ -158,7 +159,8 @@ export const MyTraining: React.FC = () => {
           workoutTitle,
           user.position,
           user.name,
-          apiKey
+          apiKey,
+          workoutNotes
         );
 
         if (aiResult.success && aiResult.report) {
@@ -328,7 +330,8 @@ export const MyTraining: React.FC = () => {
       const report = await generateWorkoutReport(
         entries,
         duration,
-        startingPlan.name
+        startingPlan.name,
+        notes
       );
       saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
 
@@ -390,7 +393,8 @@ export const MyTraining: React.FC = () => {
       const report = await generateWorkoutReport(
         entries,
         duration,
-        selectedBlock.title
+        selectedBlock.title,
+        notes
       );
       saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
 

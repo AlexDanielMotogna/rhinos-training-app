@@ -21,7 +21,8 @@ function buildReportGenerationPrompt(
   duration: number,
   workoutTitle: string,
   position: Position,
-  userName: string
+  userName: string,
+  workoutNotes?: string
 ): string {
   // Calculate basic metrics that AI will use
   const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
@@ -83,18 +84,23 @@ function buildReportGenerationPrompt(
 **Exercises Completed:**
 ${exerciseList}
 
+${workoutNotes ? `**Workout Notes:**\n${workoutNotes}\n` : ''}
+
 **YOUR TASK:**
 Analyze this workout INTELLIGENTLY. Look at the exercises, pace, distance, RPE, and notes to determine what type of training this actually was.
 
 **CRITICAL - WARM-UP VERIFICATION:**
 Check if the player did a proper warm-up:
-- Look for warm-up exercises (dynamic stretching, mobility work, light cardio)
-- Check exercise notes for warm-up mentions (e.g., "warmup", "light weight", "activation")
-- Look for recovery/mobility category exercises at the start
-- If NO warm-up detected AND workout includes heavy lifting or high-intensity work:
+- FIRST, check the workout notes for tags: "[Warm-up: X min]" or "[No warm-up performed]"
+- If "[No warm-up performed]" is present:
   * Add a WARNING: "No warm-up detected - always warm up before intense training to prevent injury"
   * Lower the athleticQualityScore by 10-15 points (injury risk from skipping warm-up)
-- If warm-up IS detected: mention it positively in strengths
+  * This is CRITICAL for injury prevention - be HARSH about this
+- If "[Warm-up: X min]" is present:
+  * Mention it positively in strengths (e.g., "Good warm-up routine (10 min)")
+  * Consider it when evaluating athleticQuality
+- Also check exercise notes for additional warm-up mentions (e.g., "warmup", "light weight", "activation")
+- Look for recovery/mobility category exercises that might indicate warm-up
 
 **IMPORTANT - ANALYZE THE WORKOUT TYPE:**
 For running/cardio workouts, calculate the pace (min/km) and determine the type:
@@ -172,7 +178,8 @@ export async function generateAIWorkoutReport(
   workoutTitle: string,
   position: Position,
   userName: string,
-  apiKey: string
+  apiKey: string,
+  workoutNotes?: string
 ): Promise<{ success: boolean; report?: AIWorkoutReport; error?: string }> {
   try {
     // Validate API key
@@ -183,7 +190,7 @@ export async function generateAIWorkoutReport(
       };
     }
 
-    const prompt = buildReportGenerationPrompt(entries, duration, workoutTitle, position, userName);
+    const prompt = buildReportGenerationPrompt(entries, duration, workoutTitle, position, userName, workoutNotes);
 
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
