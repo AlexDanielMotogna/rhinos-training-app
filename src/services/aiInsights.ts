@@ -84,10 +84,27 @@ function buildReportGenerationPrompt(
 ${exerciseList}
 
 **YOUR TASK:**
-Analyze this workout and generate a JSON report with the following structure. Be SMART about workout type:
-- If mostly SPEED/CARDIO exercises (sprints, agility, etc) → Don't penalize for 0kg volume, focus on duration, RPE, explosiveness
-- If mostly STRENGTH exercises (squats, bench, etc) → Focus on volume, intensity, progressive overload
-- If MIXED → Balance both approaches
+Analyze this workout INTELLIGENTLY. Look at the exercises, pace, distance, RPE, and notes to determine what type of training this actually was.
+
+**IMPORTANT - ANALYZE THE WORKOUT TYPE:**
+For running/cardio workouts, calculate the pace (min/km) and determine the type:
+- If pace ~3-4 min/km with high RPE → Sprint/Speed work
+- If pace ~4-5 min/km with RPE 7-9 → Tempo/Threshold run (this is RESISTANCE/ENDURANCE, not pure speed)
+- If pace ~5-6 min/km with moderate RPE → Easy/Aerobic run
+- If pace >6 min/km → Recovery run
+
+For this workout:
+- Distance: ${totalDistance.toFixed(2)} km in ${duration} min
+- Pace: ${totalDistance > 0 ? (duration / totalDistance).toFixed(2) : 'N/A'} min/km
+- Average RPE: ${avgRPE.toFixed(1)}/10
+
+**ATHLETIC FOCUS CLASSIFICATION:**
+- powerWork: Explosive movements (jumps, throws, Olympic lifts, short sprints <100m at max effort)
+- strengthWork: Heavy resistance training (squats, deadlifts, bench, weighted exercises)
+- speedWork: ALL cardio/running work INCLUDING tempo runs, resistance runs, sprints, conditioning
+  * For a 5 min/km pace tempo run → speedWork: 100% (but label it as endurance/resistance in strengths/insights)
+  * For a 3 min/km sprint session → speedWork: 100% (label as pure speed work)
+  * The AI should describe the TYPE in coachInsights based on pace analysis
 
 **SCORING GUIDELINES (0-100):**
 1. **intensityScore**: How hard did they push? (RPE, effort level, proximity to failure)
@@ -97,17 +114,18 @@ Analyze this workout and generate a JSON report with the following structure. Be
 
 2. **workCapacityScore**: Total work done relative to time
    - For STRENGTH: Volume (kg) + sets completed + duration
-   - For SPEED/CARDIO: Duration + sets/intervals + RPE
-   - 45min high RPE speed work = HIGH score (80-95)
-   - Don't penalize speed workouts for low kg!
+   - For CARDIO: Duration + distance + RPE
+   - 30min tempo run at 6km = SOLID score (80-90)
+   - Don't penalize cardio workouts for low kg!
 
 3. **athleticQualityScore**: How athletic/football-relevant is this?
    - Sprints, jumps, explosive lifts = HIGH (80-100)
+   - Tempo runs, resistance work = GOOD (70-85)
    - Isolation exercises only = LOWER (40-60)
    - Compound lifts = GOOD (70-85)
 
 4. **positionRelevanceScore**: Fit for ${position} position
-   - WR/CB needs speed, power, agility = speed work scores HIGH
+   - WR/CB needs speed, power, agility, endurance = all cardio/speed scores HIGH
    - OL/DL needs strength, power = heavy lifts score HIGH
 
 Generate ONLY valid JSON (no markdown, no extra text):
