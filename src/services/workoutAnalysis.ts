@@ -2,6 +2,25 @@ import type { WorkoutEntry } from '../types/workout';
 import type { Position } from '../types/exercise';
 import { getWorkoutLogsByUser } from './workoutLog';
 
+/**
+ * Estimate workout duration based on exercises and sets
+ * Used when user logs workout after the fact
+ */
+export function estimateWorkoutDuration(entries: WorkoutEntry[]): number {
+  if (entries.length === 0) return 0;
+
+  const totalSets = entries.reduce((sum, entry) => sum + (entry.setData?.length || 0), 0);
+  const uniqueExercises = entries.length;
+
+  // Formula:
+  // - Each set takes ~1.5 minutes (including rest)
+  // - Each exercise transition adds ~2 minutes (setup, transition)
+  // - Minimum 10 minutes for any workout
+  const estimatedMinutes = (totalSets * 1.5) + (uniqueExercises * 2);
+
+  return Math.max(10, Math.round(estimatedMinutes));
+}
+
 export interface WorkoutReport {
   // Scores principales (0-100)
   intensityScore: number;
