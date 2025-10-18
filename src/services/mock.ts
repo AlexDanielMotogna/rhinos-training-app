@@ -171,13 +171,24 @@ export function getTemplatesForPosition(position: Position): TemplatesByType {
  */
 export function getMockKPIs(): KPISnapshot {
   return {
-    levelScore: 78,
-    weeklyScore: 85,
-    weeklyMinutes: 240,
-    planMinutes: 180,
-    freeMinutes: 60,
-    freeSharePct: 25,
-    labels: ['STEADY'],
+    currentWeek: 1,
+    totalWeeks: 52,
+    trainingCompliance: 85,
+    coachPlansCompleted: 2,
+    coachPlansAssigned: 3,
+    teamSessionsAttended: 2,
+    teamSessionsTotal: 2,
+    freeWorkouts: 1,
+    freeWorkoutsMinutes: 60,
+    totalVolume: 240,
+    strengthScore: { score: 75, change: 5, lastTestDate: '2025-01-15' },
+    speedScore: { score: 68, change: null, lastTestDate: null },
+    powerScore: { score: 80, change: -2, lastTestDate: '2025-01-10' },
+    agilityScore: { score: 72, change: 3, lastTestDate: '2025-01-12' },
+    totalTeamSessionsAttended: 45,
+    totalTeamSessionsScheduled: 50,
+    attendanceRate: 90,
+    attendanceStatus: 'on_time',
   };
 }
 

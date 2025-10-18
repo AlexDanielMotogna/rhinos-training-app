@@ -1,4 +1,4 @@
-import type { TrainingSession, RSVPStatus } from '../types/trainingSession';
+import type { TrainingSession, RSVPStatus, CheckInStatus } from '../types/trainingSession';
 import { addNotification } from './mock';
 
 const SESSIONS_KEY = 'rhinos_training_sessions';
@@ -27,6 +27,20 @@ export function getUpcomingSessions(): TrainingSession[] {
 }
 
 /**
+ * Get team sessions only
+ */
+export function getTeamSessions(): TrainingSession[] {
+  return getUpcomingSessions().filter(s => s.sessionCategory === 'team');
+}
+
+/**
+ * Get private sessions only
+ */
+export function getPrivateSessions(): TrainingSession[] {
+  return getUpcomingSessions().filter(s => s.sessionCategory === 'private');
+}
+
+/**
  * Create a new training session
  */
 export function createSession(session: Omit<TrainingSession, 'id' | 'createdAt'>): TrainingSession {
@@ -35,6 +49,7 @@ export function createSession(session: Omit<TrainingSession, 'id' | 'createdAt'>
     ...session,
     id: `session-${Date.now()}`,
     createdAt: new Date().toISOString(),
+    checkIns: session.sessionCategory === 'team' ? [] : undefined,
   };
 
   sessions.push(newSession);
@@ -74,6 +89,72 @@ export function deleteSession(sessionId: string): void {
   const sessions = getAllSessions();
   const filtered = sessions.filter(s => s.id !== sessionId);
   localStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered));
+}
+
+/**
+ * Check if user can check in to a team session (15 min before to 15 min after start)
+ */
+export function canCheckIn(session: TrainingSession): boolean {
+  if (session.sessionCategory !== 'team') return false;
+
+  const now = new Date();
+  const sessionStart = new Date(`${session.date}T${session.time}`);
+  const fifteenMin = 15 * 60 * 1000;
+
+  return now.getTime() >= sessionStart.getTime() - fifteenMin &&
+         now.getTime() <= sessionStart.getTime() + fifteenMin;
+}
+
+/**
+ * Check in user to a team session
+ */
+export function checkInToSession(sessionId: string, userId: string, userName: string): void {
+  const sessions = getAllSessions();
+  const session = sessions.find(s => s.id === sessionId);
+
+  if (!session || session.sessionCategory !== 'team') return;
+
+  // Initialize checkIns array if not exists
+  if (!session.checkIns) {
+    session.checkIns = [];
+  }
+
+  // Check if already checked in
+  const existingCheckIn = session.checkIns.find(c => c.userId === userId);
+  if (existingCheckIn) return;
+
+  // Determine status based on time
+  const now = new Date();
+  const sessionStart = new Date(`${session.date}T${session.time}`);
+  const status: CheckInStatus = now <= sessionStart ? 'on_time' : 'late';
+
+  session.checkIns.push({
+    userId,
+    userName,
+    checkedInAt: now.toISOString(),
+    status,
+  });
+
+  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+}
+
+/**
+ * Get check-in status for a user in a session
+ */
+export function getCheckInStatus(session: TrainingSession, userId: string): CheckInStatus | null {
+  if (session.sessionCategory !== 'team') return null;
+
+  const checkIn = session.checkIns?.find(c => c.userId === userId);
+  if (checkIn) return checkIn.status;
+
+  // If session time has passed and user didn't check in, they're absent
+  const now = new Date();
+  const sessionEnd = new Date(`${session.date}T${session.time}`);
+  sessionEnd.setMinutes(sessionEnd.getMinutes() + 15); // 15 min after start
+
+  if (now > sessionEnd) return 'absent';
+
+  return null;
 }
 
 /**

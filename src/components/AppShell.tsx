@@ -18,7 +18,6 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import PersonIcon from '@mui/icons-material/Person';
-import EventIcon from '@mui/icons-material/Event';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -72,7 +71,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { key: 'profile', label: t('nav.profile'), icon: <PersonIcon />, path: '/profile', showForAll: true },
     { key: 'team', label: t('nav.team'), icon: <GroupIcon />, path: '/team', showForAll: true },
     { key: 'trainingSessions', label: t('nav.trainingSessions'), icon: <GroupsIcon />, path: '/training-sessions', showForAll: true },
-    { key: 'attendance', label: t('nav.attendance'), icon: <EventIcon />, path: '/attendance', showForAll: true },
     { key: 'leaderboard', label: t('nav.leaderboard'), icon: <LeaderboardIcon />, path: '/leaderboard', showForAll: true },
     { key: 'videos', label: t('nav.videos'), icon: <OndemandVideoIcon />, path: '/videos', showForAll: true },
     { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports', showForAll: false, coachOnly: true },

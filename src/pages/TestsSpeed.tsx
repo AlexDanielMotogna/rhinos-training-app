@@ -49,6 +49,12 @@ export const TestsSpeed: React.FC = () => {
 
     setSummary(newSummary);
 
+    // Save previous test before overwriting
+    const previousTest = localStorage.getItem('lastSpeedTest');
+    if (previousTest) {
+      localStorage.setItem('lastSpeedTest_previous', previousTest);
+    }
+
     // Save to localStorage
     localStorage.setItem('lastSpeedTest', JSON.stringify(newSummary));
   };

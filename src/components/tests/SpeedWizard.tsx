@@ -10,8 +10,10 @@ import {
   Step,
   StepLabel,
 } from '@mui/material';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { SpeedTestKey, SpeedInput, SpeedResult } from '../../types/testing';
+import { VideoModal } from './VideoModal';
 
 interface SpeedWizardProps {
   onFinish: (results: SpeedResult[]) => void;
@@ -19,9 +21,16 @@ interface SpeedWizardProps {
 
 const testOrder: SpeedTestKey[] = ['dash40', 'split10'];
 
+// Map speed tests to YouTube URLs
+const exerciseVideos: Record<SpeedTestKey, string> = {
+  dash40: 'https://www.youtube.com/watch?v=YN_vplKfKDY',
+  split10: 'https://www.youtube.com/watch?v=Fhwx41k7YYg',
+};
+
 export const SpeedWizard: React.FC<SpeedWizardProps> = ({ onFinish }) => {
   const { t } = useI18n();
   const [currentStep, setCurrentStep] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const [inputs, setInputs] = useState<Record<SpeedTestKey, SpeedInput>>({
     dash40: {},
     split10: {},
@@ -97,9 +106,19 @@ export const SpeedWizard: React.FC<SpeedWizardProps> = ({ onFinish }) => {
       </Box>
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          {t(`tests.speed.${currentTest}`)}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h5">
+            {t(`tests.speed.${currentTest}`)}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<PlayCircleOutlineIcon />}
+            onClick={() => setShowVideo(true)}
+            size="small"
+          >
+            {t('tests.watchExercise')}
+          </Button>
+        </Box>
 
         <Alert severity="info" sx={{ mb: 2 }}>
           <Typography variant="body2" gutterBottom fontWeight={600}>
@@ -145,6 +164,13 @@ export const SpeedWizard: React.FC<SpeedWizardProps> = ({ onFinish }) => {
           </Button>
         </Box>
       </Paper>
+
+      <VideoModal
+        open={showVideo}
+        onClose={() => setShowVideo(false)}
+        videoUrl={exerciseVideos[currentTest]}
+        title={t(`tests.speed.${currentTest}`)}
+      />
     </Box>
   );
 };

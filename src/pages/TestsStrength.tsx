@@ -102,6 +102,13 @@ export const TestsStrength: React.FC = () => {
 
   const handleSave = () => {
     if (summary) {
+      // Save previous test before overwriting
+      const previousTest = localStorage.getItem('lastStrengthTest');
+      if (previousTest) {
+        localStorage.setItem('lastStrengthTest_previous', previousTest);
+      }
+
+      // Save new test
       localStorage.setItem('lastStrengthTest', JSON.stringify(summary));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);

@@ -6,13 +6,6 @@ import {
   CardContent,
   Grid,
   Chip,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   IconButton,
   Button,
 } from '@mui/material';
@@ -21,14 +14,16 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhoneIcon from '@mui/icons-material/Phone';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
-import { getUser, getMockKPIs, getMockProjection, getAllUsers, type MockUser } from '../services/mock';
+import { getUser, getAllUsers, type MockUser } from '../services/mock';
+import { calculateKPIs } from '../services/kpi';
 import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
 import { StrengthBars } from '../components/profile/StrengthBars';
 import { SpeedProfileCard } from '../components/profile/SpeedProfileCard';
 import { PowerProfileCard } from '../components/profile/PowerProfileCard';
 import { AgilityProfileCard } from '../components/profile/AgilityProfileCard';
 import { EditProfileDialog } from '../components/profile/EditProfileDialog';
-import type { KPISnapshot, ProjectionRow } from '../types/kpi';
+import { AISettings } from '../components/profile/AISettings';
+import type { KPISnapshot } from '../types/kpi';
 import type { StrengthSummary, SpeedSummary, PowerSummary, AgilitySummary } from '../types/testing';
 
 export const Profile: React.FC = () => {
@@ -48,7 +43,6 @@ export const Profile: React.FC = () => {
 
   const isViewingOtherPlayer = playerId && playerId !== currentUser?.id;
   const [kpis, setKpis] = useState<KPISnapshot | null>(null);
-  const [projection, setProjection] = useState<ProjectionRow[]>([]);
   const [strengthSummary, setStrengthSummary] = useState<StrengthSummary | null>(null);
   const [speedSummary, setSpeedSummary] = useState<SpeedSummary | null>(null);
   const [powerSummary, setPowerSummary] = useState<PowerSummary | null>(null);
@@ -56,8 +50,9 @@ export const Profile: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
-    setKpis(getMockKPIs());
-    setProjection(getMockProjection());
+    if (user) {
+      setKpis(calculateKPIs(user.id));
+    }
 
     // Load last strength test from localStorage
     const lastStrengthTest = localStorage.getItem('lastStrengthTest');
@@ -98,7 +93,7 @@ export const Profile: React.FC = () => {
         console.error('Failed to parse agility test data', e);
       }
     }
-  }, []);
+  }, [user]);
 
   if (!user || !kpis) {
     return (
@@ -110,17 +105,11 @@ export const Profile: React.FC = () => {
     );
   }
 
-  const metricCards = [
-    { label: t('profile.level'), value: kpis.levelScore, color: 'primary.main' },
-    { label: t('profile.weeklyScore'), value: kpis.weeklyScore, color: 'secondary.main' },
-    { label: t('profile.weeklyMinutes'), value: kpis.weeklyMinutes, color: 'success.main' },
-  ];
-
-  const detailMetrics = [
-    { label: t('profile.planMinutes'), value: `${kpis.planMinutes} min` },
-    { label: t('profile.freeMinutes'), value: `${kpis.freeMinutes} min` },
-    { label: t('profile.freeShare'), value: `${kpis.freeSharePct}%` },
-  ];
+  const getComplianceColor = (percent: number) => {
+    if (percent >= 80) return 'success.main';
+    if (percent >= 60) return 'warning.main';
+    return 'error.main';
+  };
 
   return (
     <Box>
@@ -314,52 +303,120 @@ export const Profile: React.FC = () => {
         {t('profile.metrics')}
       </Typography>
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {metricCards.map((metric) => (
-          <Grid item xs={12} sm={4} key={metric.label}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ color: metric.color, fontWeight: 700 }}>
-                  {metric.value}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {metric.label}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {detailMetrics.map((metric) => (
-          <Grid item xs={12} sm={4} key={metric.label}>
-            <Card>
-              <CardContent>
-                <Typography variant="body2" color="text.secondary">
-                  {metric.label}
-                </Typography>
-                <Typography variant="h6">{metric.value}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
+      {/* This Week Section */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            {t('profile.labels')}
+            {t('profile.thisWeek')} (Week {kpis.currentWeek}/{kpis.totalWeeks})
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {kpis.labels.map((label) => (
-              <Chip
-                key={label}
-                label={t(`label.${label}` as any)}
-                color="secondary"
-                size="medium"
+
+          {/* Training Compliance */}
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                {t('profile.trainingCompliance')}
+              </Typography>
+              <Typography variant="h6" sx={{ color: getComplianceColor(kpis.trainingCompliance) }}>
+                {kpis.trainingCompliance}%
+              </Typography>
+            </Box>
+            <Box sx={{ width: '100%', height: 8, backgroundColor: 'grey.200', borderRadius: 1, overflow: 'hidden' }}>
+              <Box
+                sx={{
+                  width: `${kpis.trainingCompliance}%`,
+                  height: '100%',
+                  backgroundColor: getComplianceColor(kpis.trainingCompliance),
+                  transition: 'width 0.3s ease',
+                }}
               />
-            ))}
+            </Box>
+          </Box>
+
+          {/* Breakdown */}
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('profile.coachPlans')}
+                </Typography>
+                <Typography variant="h6">
+                  {kpis.coachPlansCompleted}/{kpis.coachPlansAssigned}
+                  {kpis.coachPlansAssigned > 0 && (
+                    <Typography component="span" variant="body2" color={kpis.coachPlansCompleted === kpis.coachPlansAssigned ? 'success.main' : 'text.secondary'} sx={{ ml: 1 }}>
+                      {kpis.coachPlansCompleted === kpis.coachPlansAssigned ? '✓ 100%' : `${Math.round((kpis.coachPlansCompleted / kpis.coachPlansAssigned) * 100)}%`}
+                    </Typography>
+                  )}
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('profile.teamSessions')}
+                </Typography>
+                <Typography variant="h6">
+                  {kpis.teamSessionsAttended}/{kpis.teamSessionsTotal}
+                  {kpis.teamSessionsTotal > 0 && (
+                    <Typography component="span" variant="body2" color={kpis.teamSessionsAttended === kpis.teamSessionsTotal ? 'success.main' : 'text.secondary'} sx={{ ml: 1 }}>
+                      {kpis.teamSessionsAttended === kpis.teamSessionsTotal ? '✓ 100%' : `${Math.round((kpis.teamSessionsAttended / kpis.teamSessionsTotal) * 100)}%`}
+                    </Typography>
+                  )}
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('profile.freeWorkouts')}
+                </Typography>
+                <Typography variant="h6">
+                  {kpis.freeWorkouts}
+                  <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                    +{kpis.freeWorkoutsMinutes} min
+                  </Typography>
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+
+          {/* Total Volume */}
+          <Box sx={{ textAlign: 'center', pt: 2, borderTop: '1px solid', borderColor: 'grey.200' }}>
+            <Typography variant="caption" color="text.secondary">
+              {t('profile.totalVolume')}
+            </Typography>
+            <Typography variant="h5" color="primary.main">
+              {kpis.totalVolume} {t('profile.minutes')}
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Attendance */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            {t('profile.attendance')}
+          </Typography>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                {t('profile.teamSessionsAttended')}
+              </Typography>
+              <Typography variant="h6">
+                {kpis.totalTeamSessionsAttended}/{kpis.totalTeamSessionsScheduled} ({kpis.attendanceRate}%)
+              </Typography>
+            </Box>
+            <Chip
+              label={t(`profile.attendanceStatus.${kpis.attendanceStatus}`)}
+              color={
+                kpis.attendanceStatus === 'on_time' ? 'success' :
+                kpis.attendanceStatus === 'late' ? 'warning' :
+                kpis.attendanceStatus === 'absent' ? 'error' : 'default'
+              }
+            />
           </Box>
         </CardContent>
       </Card>
@@ -372,7 +429,7 @@ export const Profile: React.FC = () => {
       {/* Strength */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
-          <StrengthProfileCard summary={strengthSummary} />
+          <StrengthProfileCard summary={strengthSummary} change={kpis.strengthScore.change} />
         </Grid>
         <Grid item xs={12} md={6}>
           {strengthSummary && (
@@ -399,42 +456,22 @@ export const Profile: React.FC = () => {
       {/* Speed, Power, Agility */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={4}>
-          <SpeedProfileCard summary={speedSummary} />
+          <SpeedProfileCard summary={speedSummary} change={kpis.speedScore.change} />
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
-          <PowerProfileCard summary={powerSummary} />
+          <PowerProfileCard summary={powerSummary} change={kpis.powerScore.change} />
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
-          <AgilityProfileCard summary={agilitySummary} />
+          <AgilityProfileCard summary={agilitySummary} change={kpis.agilityScore.change} />
         </Grid>
       </Grid>
 
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        {t('profile.projection')}
-      </Typography>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Week</TableCell>
-              <TableCell align="right">{t('profile.level')}</TableCell>
-              <TableCell align="right">{t('profile.compliance')} %</TableCell>
-              <TableCell align="right">{t('profile.totalMinutes')}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {projection.map((row) => (
-              <TableRow key={row.week}>
-                <TableCell>{row.week}</TableCell>
-                <TableCell align="right">{row.score}</TableCell>
-                <TableCell align="right">{row.compliance.toFixed(1)}</TableCell>
-                <TableCell align="right">{row.totalMin}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* AI Settings - Only show for own profile */}
+      {!isViewingOtherPlayer && (
+        <Box sx={{ mb: 3 }}>
+          <AISettings />
+        </Box>
+      )}
     </Box>
   );
 };

@@ -20,6 +20,8 @@ import { CoachBlockWorkoutDialog } from '../components/workout/CoachBlockWorkout
 import { FreeSessionDialog } from '../components/workout/FreeSessionDialog';
 import { WorkoutHistory } from '../components/workout/WorkoutHistory';
 import { EditWorkoutDialog } from '../components/workout/EditWorkoutDialog';
+import { WorkoutReportDialog } from '../components/workout/WorkoutReportDialog';
+import { ReportsHistory } from '../components/workout/ReportsHistory';
 import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
@@ -31,10 +33,12 @@ import type { TrainingTypeKey, PositionTemplate, TemplateBlock } from '../types/
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
 import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
 import { sanitizeYouTubeUrl } from '../services/yt';
+import { analyzeWorkout, type WorkoutReport } from '../services/workoutAnalysis';
+import { saveWorkoutReport } from '../services/workoutReports';
 
 type SessionView = 'my' | 'team';
-type MySessionTab = 'plans' | 'history';
-type TeamSessionTab = 'plan' | 'history';
+type MySessionTab = 'plans' | 'history' | 'reports';
+type TeamSessionTab = 'plan' | 'history' | 'reports';
 
 export const MyTraining: React.FC = () => {
   const { t } = useI18n();
@@ -54,6 +58,9 @@ export const MyTraining: React.FC = () => {
   const [showStartWorkout, setShowStartWorkout] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<TemplateBlock | null>(null);
   const [showBlockWorkout, setShowBlockWorkout] = useState(false);
+  const [workoutReport, setWorkoutReport] = useState<WorkoutReport | null>(null);
+  const [showWorkoutReport, setShowWorkoutReport] = useState(false);
+  const [lastWorkoutTitle, setLastWorkoutTitle] = useState('');
 
   const user = getUser();
   const trainingTypes = getTrainingTypes();
@@ -125,8 +132,20 @@ export const MyTraining: React.FC = () => {
       saveWorkoutLog(user.id, payload);
       refreshWorkoutHistory();
       setShowFreeSession(false);
-      setSuccessMessage(t('workout.sessionSaved'));
-      setTimeout(() => setSuccessMessage(''), 3000);
+
+      // Generate and save workout report for free sessions
+      // Note: Free sessions don't track duration, so we estimate 60 minutes
+      const report = analyzeWorkout(
+        payload.entries,
+        60, // Default duration for free sessions
+        user.id,
+        user.position
+      );
+      saveWorkoutReport(user.id, t('training.freeSessions'), report, 'player');
+
+      setWorkoutReport(report);
+      setLastWorkoutTitle(t('training.freeSessions'));
+      setShowWorkoutReport(true);
     }
   };
 
@@ -250,9 +269,20 @@ export const MyTraining: React.FC = () => {
       markPlanAsUsed(startingPlan.id);
       refreshUserPlans();
       refreshWorkoutHistory();
+
+      // Generate and save workout report
+      const report = analyzeWorkout(
+        entries,
+        duration,
+        user.id,
+        user.position
+      );
+      saveWorkoutReport(user.id, startingPlan.name, report, 'player');
+
+      setWorkoutReport(report);
+      setLastWorkoutTitle(startingPlan.name);
+      setShowWorkoutReport(true);
       setStartingPlan(null);
-      setSuccessMessage(`Workout completed! Duration: ${duration} min`);
-      setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
 
@@ -302,9 +332,20 @@ export const MyTraining: React.FC = () => {
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
 
       refreshWorkoutHistory();
+
+      // Generate and save workout report
+      const report = analyzeWorkout(
+        entries,
+        duration,
+        user.id,
+        user.position
+      );
+      saveWorkoutReport(user.id, selectedBlock.title, report, 'coach');
+
+      setWorkoutReport(report);
+      setLastWorkoutTitle(selectedBlock.title);
+      setShowWorkoutReport(true);
       setSelectedBlock(null);
-      setSuccessMessage(`Block completed! Duration: ${duration} min`);
-      setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
 
@@ -333,7 +374,7 @@ export const MyTraining: React.FC = () => {
       {/* MY SESSIONS VIEW */}
       {sessionView === 'my' && (
         <Box>
-          {/* Sub-tabs: My Plans / History */}
+          {/* Sub-tabs: My Plans / History / My Reports */}
           <Tabs
             value={mySessionTab}
             onChange={(_, value) => setMySessionTab(value as MySessionTab)}
@@ -341,6 +382,7 @@ export const MyTraining: React.FC = () => {
           >
             <Tab value="plans" label="My Plans" />
             <Tab value="history" label="History" />
+            <Tab value="reports" label="My Reports" />
           </Tabs>
 
           {/* My Plans Tab */}
@@ -395,6 +437,13 @@ export const MyTraining: React.FC = () => {
                 onDelete={handleDeleteWorkout}
                 onEdit={handleEditWorkout}
               />
+            </Box>
+          )}
+
+          {/* My Reports Tab */}
+          {mySessionTab === 'reports' && user && (
+            <Box>
+              <ReportsHistory userId={user.id} source="player" />
             </Box>
           )}
         </Box>
@@ -468,7 +517,7 @@ export const MyTraining: React.FC = () => {
                 })}
               </Box>
 
-              {/* Team Session Tabs: Training Plan / History */}
+              {/* Team Session Tabs: Training Plan / History / My Reports */}
               <Tabs
                 value={teamSessionTab}
                 onChange={(_, value) => setTeamSessionTab(value as TeamSessionTab)}
@@ -476,6 +525,7 @@ export const MyTraining: React.FC = () => {
               >
                 <Tab value="plan" label="Training Plan" />
                 <Tab value="history" label="History" />
+                <Tab value="reports" label="My Reports" />
               </Tabs>
 
               {/* Training Plan Tab */}
@@ -544,6 +594,13 @@ export const MyTraining: React.FC = () => {
                   onDelete={handleDeleteWorkout}
                   onEdit={handleEditWorkout}
                 />
+              )}
+
+              {/* My Reports Tab */}
+              {teamSessionTab === 'reports' && user && (
+                <Box>
+                  <ReportsHistory userId={user.id} source="coach" />
+                </Box>
               )}
             </>
           ) : (
@@ -622,6 +679,14 @@ export const MyTraining: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Workout Report Dialog */}
+      <WorkoutReportDialog
+        open={showWorkoutReport}
+        onClose={() => setShowWorkoutReport(false)}
+        report={workoutReport}
+        workoutTitle={lastWorkoutTitle}
+      />
     </Box>
   );
 };

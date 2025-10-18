@@ -7,12 +7,19 @@ import type { PowerSummary } from '../../types/testing';
 
 interface PowerProfileCardProps {
   summary: PowerSummary | null;
+  change: number | null;
 }
 
-export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary }) => {
+export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary, change }) => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const formatChange = (changeVal: number | null) => {
+    if (changeVal === null) return '';
+    if (changeVal > 0) return `+${changeVal}`;
+    return changeVal.toString();
+  };
 
   const getLabelColor = (label: string) => {
     switch (label) {
@@ -60,6 +67,18 @@ export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary }) =
             <Typography variant="caption" color="text.secondary">
               {t('profile.power.scoreLabel')}
             </Typography>
+            {change !== null && (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: change > 0 ? 'success.main' : change < 0 ? 'error.main' : 'text.secondary',
+                  fontWeight: 600,
+                  mt: 0.5
+                }}
+              >
+                {formatChange(change)} {t('profile.sinceLastTest')}
+              </Typography>
+            )}
           </Box>
 
           <Box sx={{ textAlign: 'center', mb: 2 }}>

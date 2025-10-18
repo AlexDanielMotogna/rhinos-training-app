@@ -54,6 +54,7 @@ import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 import { getAllBlockInfo } from '../services/blockInfo';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 import { NotificationTemplates, getNotificationStatus, requestNotificationPermission } from '../services/notifications';
+import { createSession, getTeamSessions, deleteSession } from '../services/trainingSessions';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
 interface TeamSession {
@@ -99,10 +100,7 @@ export const Admin: React.FC = () => {
   });
 
   // Sessions Management State
-  const [sessions, setSessions] = useState<TeamSession[]>([
-    { id: '1', date: '2025-01-21', startTime: '19:00', endTime: '21:00', type: 'Team Training' },
-    { id: '2', date: '2025-01-23', startTime: '19:00', endTime: '21:00', type: 'Team Training' },
-  ]);
+  const [sessions, setSessions] = useState<TeamSession[]>([]);
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
   const [newSession, setNewSession] = useState<Partial<TeamSession>>({
     date: new Date().toISOString().split('T')[0], // Today's date
@@ -112,6 +110,30 @@ export const Admin: React.FC = () => {
     location: '',
     address: '',
   });
+
+  // Helper function to calculate end time
+  const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    const endHours = Math.floor(totalMinutes / 60) % 24;
+    const endMinutes = totalMinutes % 60;
+    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+  };
+
+  // Load team sessions from service on mount
+  React.useEffect(() => {
+    const teamSessions = getTeamSessions();
+    const adminSessions: TeamSession[] = teamSessions.map(ts => ({
+      id: ts.id,
+      date: ts.date,
+      startTime: ts.time,
+      endTime: calculateEndTime(ts.time, 120), // Default 2 hours
+      type: ts.title,
+      location: ts.location,
+      address: ts.address,
+    }));
+    setSessions(adminSessions);
+  }, []);
 
   // Policies Management State
   const [policies, setPolicies] = useState<Policy>({
@@ -232,8 +254,27 @@ export const Admin: React.FC = () => {
 
   // Sessions Management Handlers
   const handleSaveSession = async () => {
+    const currentUser = getUser();
+    if (!currentUser) return;
+
+    // Create team session in unified service
+    const createdSession = createSession({
+      creatorId: currentUser.id,
+      creatorName: currentUser.name,
+      sessionCategory: 'team',
+      type: 'coach-plan',
+      title: newSession.type!,
+      location: newSession.location || 'TBD',
+      address: newSession.address,
+      date: newSession.date!,
+      time: newSession.startTime!,
+      description: `Team training from ${newSession.startTime} to ${newSession.endTime}`,
+      attendees: [],
+    });
+
+    // Update local admin state
     const session: TeamSession = {
-      id: Date.now().toString(),
+      id: createdSession.id,
       date: newSession.date!,
       startTime: newSession.startTime!,
       endTime: newSession.endTime!,
@@ -271,6 +312,9 @@ export const Admin: React.FC = () => {
 
   const handleDeleteSession = (id: string) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
+      // Delete from unified service
+      deleteSession(id);
+      // Update local admin state
       setSessions(sessions.filter(s => s.id !== id));
     }
   };

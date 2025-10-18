@@ -14,9 +14,11 @@ import {
   IconButton,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { TestKey, StrengthInput, StrengthResult } from '../../types/testing';
 import { epley1RM, relative, testToSegment } from '../../services/strengthCalc';
+import { VideoModal } from './VideoModal';
 
 interface StrengthWizardProps {
   bodyWeightKg: number;
@@ -25,9 +27,20 @@ interface StrengthWizardProps {
 
 const testOrder: TestKey[] = ['bench', 'row', 'ohp', 'squat', 'trapbar', 'plank'];
 
+// Map test exercises to YouTube URLs
+const exerciseVideos: Record<TestKey, string> = {
+  bench: 'https://www.youtube.com/watch?v=rT7DgCr-3pg',
+  row: 'https://www.youtube.com/watch?v=FWJR5Ve8bnQ',
+  ohp: 'https://www.youtube.com/watch?v=2yjwXTZQDDI',
+  squat: 'https://www.youtube.com/watch?v=ultWZbUMPL8',
+  trapbar: 'https://www.youtube.com/watch?v=tvrJOK1tS8w',
+  plank: 'https://www.youtube.com/watch?v=pSHjTRCQxIw',
+};
+
 export const StrengthWizard: React.FC<StrengthWizardProps> = ({ bodyWeightKg, onFinish }) => {
   const { t } = useI18n();
   const [currentStep, setCurrentStep] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const [inputs, setInputs] = useState<Record<TestKey, StrengthInput>>({
     bench: {},
     row: {},
@@ -137,9 +150,19 @@ export const StrengthWizard: React.FC<StrengthWizardProps> = ({ bodyWeightKg, on
       </Box>
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          {t(`tests.${currentTest}`)}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h5">
+            {t(`tests.${currentTest}`)}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<PlayCircleOutlineIcon />}
+            onClick={() => setShowVideo(true)}
+            size="small"
+          >
+            {t('tests.watchExercise')}
+          </Button>
+        </Box>
 
         <Alert severity="info" sx={{ mb: 2 }}>
           <Typography variant="body2" gutterBottom fontWeight={600}>
@@ -262,6 +285,13 @@ export const StrengthWizard: React.FC<StrengthWizardProps> = ({ bodyWeightKg, on
           </Button>
         </Box>
       </Paper>
+
+      <VideoModal
+        open={showVideo}
+        onClose={() => setShowVideo(false)}
+        videoUrl={exerciseVideos[currentTest]}
+        title={t(`tests.${currentTest}`)}
+      />
     </Box>
   );
 };

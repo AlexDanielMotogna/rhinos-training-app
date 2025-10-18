@@ -7,12 +7,34 @@ import type { StrengthSummary, Segment } from '../../types/testing';
 
 interface StrengthProfileCardProps {
   summary: StrengthSummary | null;
+  change: number | null;
 }
 
-export const StrengthProfileCard: React.FC<StrengthProfileCardProps> = ({ summary }) => {
+export const StrengthProfileCard: React.FC<StrengthProfileCardProps> = ({ summary, change }) => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [previousSummary, setPreviousSummary] = useState<StrengthSummary | null>(null);
+
+  // Load previous test when dialog opens
+  React.useEffect(() => {
+    if (dialogOpen) {
+      const prevTest = localStorage.getItem('lastStrengthTest_previous');
+      if (prevTest) {
+        try {
+          setPreviousSummary(JSON.parse(prevTest));
+        } catch (e) {
+          console.error('Failed to parse previous strength test', e);
+        }
+      }
+    }
+  }, [dialogOpen]);
+
+  const formatChange = (changeVal: number | null) => {
+    if (changeVal === null) return '';
+    if (changeVal > 0) return `+${changeVal}`;
+    return changeVal.toString();
+  };
 
   const segmentOrder: Segment[] = ['legs', 'arms', 'back', 'shoulders', 'core'];
 
@@ -80,6 +102,18 @@ export const StrengthProfileCard: React.FC<StrengthProfileCardProps> = ({ summar
             <Typography variant="caption" color="text.secondary">
               {t('profile.strength.index')}
             </Typography>
+            {change !== null && (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: change > 0 ? 'success.main' : change < 0 ? 'error.main' : 'text.secondary',
+                  fontWeight: 600,
+                  mt: 0.5
+                }}
+              >
+                {formatChange(change)} {t('profile.sinceLastTest')}
+              </Typography>
+            )}
           </Box>
 
           <Box sx={{ textAlign: 'center', mb: 2 }}>
@@ -181,9 +215,28 @@ export const StrengthProfileCard: React.FC<StrengthProfileCardProps> = ({ summar
               <Typography variant="body2" color="text.secondary">
                 <strong>{t('profile.testDate')}:</strong> {new Date(summary.dateISO).toLocaleDateString()}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>{t('profile.strength.index')}:</strong> {summary.strengthIndex}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>{t('profile.strength.index')}:</strong> {summary.strengthIndex}
+                </Typography>
+                {change !== null && (
+                  <Chip
+                    label={formatChange(change)}
+                    size="small"
+                    sx={{
+                      backgroundColor: change > 0 ? 'success.light' : change < 0 ? 'error.light' : 'grey.200',
+                      color: change > 0 ? 'success.dark' : change < 0 ? 'error.dark' : 'text.secondary',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                    }}
+                  />
+                )}
+              </Box>
+              {previousSummary && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                  {t('profile.previousTest')}: {previousSummary.strengthIndex} ({new Date(previousSummary.dateISO).toLocaleDateString()})
+                </Typography>
+              )}
             </Box>
           </DialogContent>
           <DialogActions>

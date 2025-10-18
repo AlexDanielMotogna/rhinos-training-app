@@ -1,0 +1,93 @@
+{
+  "workout": {
+    "userId": "user-123",
+    "userName": "Juan Rodriguez",
+    "userPosition": "RB",
+    "userAge": 22,
+    "userWeight": 85,
+    "userHeight": 178,
+    "workoutTitle": "Compound Lifts - Strength Session",
+    "workoutDate": "2025-01-18",
+    "duration": 45,
+    "trainingType": "Strength & Conditioning",
+    "source": "coach"
+  },
+  "exercises": [
+    {
+      "name": "Bench Press",
+      "category": "Strength",
+      "targetSets": 3,
+      "sets": [
+        { "setNumber": 1, "reps": 10, "weight": 50, "rpe": 7 },
+        { "setNumber": 2, "reps": 8, "weight": 55, "rpe": 8 },
+        { "setNumber": 3, "reps": 6, "weight": 60, "rpe": 9 }
+      ],
+      "notes": "Felt strong today, good bar speed"
+    },
+    {
+      "name": "Trap Bar Deadlift",
+      "category": "Strength",
+      "targetSets": 3,
+      "sets": [
+        { "setNumber": 1, "reps": 8, "weight": 80, "rpe": 8 },
+        { "setNumber": 2, "reps": 8, "weight": 85, "rpe": 9 },
+        { "setNumber": 3, "reps": 6, "weight": 90, "rpe": 9 }
+      ],
+      "notes": "Heavy but controlled"
+    },
+    {
+      "name": "Overhead Press",
+      "category": "Strength",
+      "targetSets": 3,
+      "sets": [
+        { "setNumber": 1, "reps": 10, "weight": 30, "rpe": 6 },
+        { "setNumber": 2, "reps": 8, "weight": 32.5, "rpe": 7 },
+        { "setNumber": 3, "reps": 8, "weight": 32.5, "rpe": 7 }
+      ]
+    },
+    {
+      "name": "Barbell Row",
+      "category": "Strength",
+      "targetSets": 3,
+      "sets": [
+        { "setNumber": 1, "reps": 10, "weight": 50, "rpe": 7 },
+        { "setNumber": 2, "reps": 10, "weight": 50, "rpe": 7 },
+        { "setNumber": 3, "reps": 8, "weight": 55, "rpe": 8 }
+      ]
+    }
+  ],
+  "calculatedMetrics": {
+    "totalVolume": 2485,
+    "totalSets": 12,
+    "completedSets": 12,
+    "averageRPE": 7.75,
+    "intensityScore": 62,
+    "workCapacityScore": 58,
+    "athleticQualityScore": 75,
+    "positionRelevanceScore": 65,
+    "powerWorkPercentage": 0,
+    "strengthWorkPercentage": 100,
+    "speedWorkPercentage": 0
+  },
+  "context": {
+    "recentWorkouts": [
+      {
+        "date": "2025-01-15",
+        "type": "Sprints / Speed",
+        "volume": 0,
+        "notes": "10x40m sprints"
+      },
+      {
+        "date": "2025-01-13",
+        "type": "Strength & Conditioning",
+        "volume": 2200,
+        "notes": "Accessory work day"
+      }
+    ],
+    "goals": [
+      "Increase explosive power for burst acceleration",
+      "Maintain strength while improving speed",
+      "Reduce body fat to 12%"
+    ]
+  }
+}

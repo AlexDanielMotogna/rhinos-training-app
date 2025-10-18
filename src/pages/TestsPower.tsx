@@ -57,6 +57,12 @@ export const TestsPower: React.FC = () => {
 
     setSummary(newSummary);
 
+    // Save previous test before overwriting
+    const previousTest = localStorage.getItem('lastPowerTest');
+    if (previousTest) {
+      localStorage.setItem('lastPowerTest_previous', previousTest);
+    }
+
     // Save to localStorage
     localStorage.setItem('lastPowerTest', JSON.stringify(newSummary));
   };

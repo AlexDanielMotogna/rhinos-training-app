@@ -49,6 +49,12 @@ export const TestsAgility: React.FC = () => {
 
     setSummary(newSummary);
 
+    // Save previous test before overwriting
+    const previousTest = localStorage.getItem('lastAgilityTest');
+    if (previousTest) {
+      localStorage.setItem('lastAgilityTest_previous', previousTest);
+    }
+
     // Save to localStorage
     localStorage.setItem('lastAgilityTest', JSON.stringify(newSummary));
   };

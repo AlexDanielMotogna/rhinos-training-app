@@ -111,6 +111,32 @@ export const globalCatalog: Exercise[] = [
     positionTags: ['OL', 'DL', 'TE'],
     youtubeUrl: 'https://www.youtube.com/watch?v=SrqOu55lrYU',
   },
+  {
+    id: 'ex-061',
+    name: 'Barbell Row',
+    category: 'Strength',
+    intensity: 'high',
+    isGlobal: true,
+    positionTags: ['RB', 'LB', 'OL', 'DL', 'TE'],
+    youtubeUrl: 'https://www.youtube.com/watch?v=FWJR5Ve8bnQ',
+  },
+  {
+    id: 'ex-062',
+    name: 'Trap Bar Deadlift',
+    category: 'Strength',
+    intensity: 'high',
+    isGlobal: true,
+    positionTags: ['RB', 'LB', 'OL', 'DL'],
+    youtubeUrl: 'https://www.youtube.com/watch?v=tvrJOK1tS8w',
+  },
+  {
+    id: 'ex-063',
+    name: 'Plank Hold',
+    category: 'Strength',
+    intensity: 'mod',
+    isGlobal: true,
+    youtubeUrl: 'https://www.youtube.com/watch?v=pSHjTRCQxIw',
+  },
 
   // Speed Exercises
   {

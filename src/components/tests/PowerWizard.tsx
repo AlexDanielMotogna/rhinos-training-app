@@ -10,9 +10,11 @@ import {
   Step,
   StepLabel,
 } from '@mui/material';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { PowerTestKey, PowerInput, PowerResult } from '../../types/testing';
 import { cmToInches } from '../../services/powerCalc';
+import { VideoModal } from './VideoModal';
 
 interface PowerWizardProps {
   onFinish: (results: PowerResult[]) => void;
@@ -20,9 +22,16 @@ interface PowerWizardProps {
 
 const testOrder: PowerTestKey[] = ['verticalJump', 'broadJump'];
 
+// Map power tests to YouTube URLs
+const exerciseVideos: Record<PowerTestKey, string> = {
+  verticalJump: 'https://www.youtube.com/watch?v=AQP6OoAM_X0',
+  broadJump: 'https://www.youtube.com/watch?v=BKJKDwiJPCQ',
+};
+
 export const PowerWizard: React.FC<PowerWizardProps> = ({ onFinish }) => {
   const { t } = useI18n();
   const [currentStep, setCurrentStep] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const [inputs, setInputs] = useState<Record<PowerTestKey, PowerInput>>({
     verticalJump: {},
     broadJump: {},
@@ -112,9 +121,19 @@ export const PowerWizard: React.FC<PowerWizardProps> = ({ onFinish }) => {
       </Box>
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          {t(`tests.power.${currentTest}`)}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h5">
+            {t(`tests.power.${currentTest}`)}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<PlayCircleOutlineIcon />}
+            onClick={() => setShowVideo(true)}
+            size="small"
+          >
+            {t('tests.watchExercise')}
+          </Button>
+        </Box>
 
         <Alert severity="info" sx={{ mb: 2 }}>
           <Typography variant="body2" gutterBottom fontWeight={600}>
@@ -167,6 +186,13 @@ export const PowerWizard: React.FC<PowerWizardProps> = ({ onFinish }) => {
           </Button>
         </Box>
       </Paper>
+
+      <VideoModal
+        open={showVideo}
+        onClose={() => setShowVideo(false)}
+        videoUrl={exerciseVideos[currentTest]}
+        title={t(`tests.power.${currentTest}`)}
+      />
     </Box>
   );
 };

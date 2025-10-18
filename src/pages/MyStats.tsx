@@ -15,6 +15,7 @@ import {
   Alert,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { getUser } from '../services/mock';
 import { getWorkoutLogsByUser } from '../services/workoutLog';
 import { getYouTubeThumbnail } from '../services/yt';
@@ -22,6 +23,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import type { WorkoutLog } from '../services/workoutLog';
 import CardMedia from '@mui/material/CardMedia';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import { getUpcomingSessions } from '../services/trainingSessions';
 
 interface DayData {
   date: string;
@@ -31,6 +33,13 @@ interface DayData {
     completionPercentage: number;
     source: 'player' | 'coach';
   }>;
+  sessions: Array<{
+    id: string;
+    title: string;
+    time: string;
+    location: string;
+    sessionCategory: 'team' | 'private';
+  }>;
 }
 
 export const MyStats: React.FC = () => {
@@ -39,12 +48,18 @@ export const MyStats: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedWorkouts, setSelectedWorkouts] = useState<WorkoutLog[]>([]);
+  const [selectedSessions, setSelectedSessions] = useState<DayData['sessions']>([]);
 
   // Get all workout logs for the user
   const allWorkoutLogs = useMemo(() => {
     if (!user) return [];
     return getWorkoutLogsByUser(user.id, true); // includeDeleted = true
   }, [user]);
+
+  // Get all training sessions (team + private)
+  const allSessions = useMemo(() => {
+    return getUpcomingSessions();
+  }, []);
 
   // Generate calendar data for current month
   const calendarData = useMemo(() => {
@@ -57,7 +72,9 @@ export const MyStats: React.FC = () => {
     const startDayOfWeek = firstDay.getDay();
 
     const workoutsByDate = new Map<string, DayData['workouts']>();
+    const sessionsByDate = new Map<string, DayData['sessions']>();
 
+    // Process workouts
     allWorkoutLogs.forEach(log => {
       const logDate = log.date;
       let completionPercentage = 0;
@@ -88,6 +105,23 @@ export const MyStats: React.FC = () => {
       });
     });
 
+    // Process training sessions
+    allSessions.forEach(session => {
+      const sessionDate = session.date;
+
+      if (!sessionsByDate.has(sessionDate)) {
+        sessionsByDate.set(sessionDate, []);
+      }
+
+      sessionsByDate.get(sessionDate)!.push({
+        id: session.id,
+        title: session.title,
+        time: session.time,
+        location: session.location,
+        sessionCategory: session.sessionCategory,
+      });
+    });
+
     const calendar: (DayData | null)[] = [];
     for (let i = 0; i < startDayOfWeek; i++) {
       calendar.push(null);
@@ -96,11 +130,12 @@ export const MyStats: React.FC = () => {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const workouts = workoutsByDate.get(dateStr) || [];
-      calendar.push({ date: dateStr, workouts });
+      const sessions = sessionsByDate.get(dateStr) || [];
+      calendar.push({ date: dateStr, workouts, sessions });
     }
 
     return calendar;
-  }, [currentMonth, allWorkoutLogs, t]);
+  }, [currentMonth, allWorkoutLogs, allSessions, t]);
 
   const goToPreviousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
@@ -116,15 +151,25 @@ export const MyStats: React.FC = () => {
 
   const handleDayClick = (date: string) => {
     const workoutsForDate = allWorkoutLogs.filter(log => log.date === date);
-    if (workoutsForDate.length > 0) {
+    const sessionsForDate = allSessions.filter(session => session.date === date);
+
+    if (workoutsForDate.length > 0 || sessionsForDate.length > 0) {
       setSelectedDate(date);
       setSelectedWorkouts(workoutsForDate);
+      setSelectedSessions(sessionsForDate.map(s => ({
+        id: s.id,
+        title: s.title,
+        time: s.time,
+        location: s.location,
+        sessionCategory: s.sessionCategory,
+      })));
     }
   };
 
   const handleCloseModal = () => {
     setSelectedDate(null);
     setSelectedWorkouts([]);
+    setSelectedSessions([]);
   };
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -194,19 +239,21 @@ export const MyStats: React.FC = () => {
 
               const dayNumber = new Date(dayData.date).getDate();
               const hasWorkouts = dayData.workouts.length > 0;
+              const hasSessions = dayData.sessions.length > 0;
+              const hasActivity = hasWorkouts || hasSessions;
 
               return (
                 <Grid item xs={12 / 7} key={dayData.date}>
                   <Card
-                    onClick={() => hasWorkouts && handleDayClick(dayData.date)}
+                    onClick={() => hasActivity && handleDayClick(dayData.date)}
                     sx={{
                       height: { xs: 60, sm: 80, md: 100 },
-                      cursor: hasWorkouts ? 'pointer' : 'default',
+                      cursor: hasActivity ? 'pointer' : 'default',
                       border: 1,
                       borderColor: 'divider',
                       backgroundColor: 'background.paper',
                       transition: 'all 0.2s',
-                      '&:hover': hasWorkouts
+                      '&:hover': hasActivity
                         ? {
                             transform: 'scale(1.05)',
                             boxShadow: 3,
@@ -230,14 +277,26 @@ export const MyStats: React.FC = () => {
                       >
                         {dayNumber}
                       </Typography>
-                      {hasWorkouts && (
+                      {hasActivity && (
                         <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          {/* Workouts */}
                           {dayData.workouts.map((workout, idx) => (
                             <Box
-                              key={idx}
+                              key={`workout-${idx}`}
                               sx={{
                                 height: 4,
                                 backgroundColor: getWorkoutTypeColor(workout.source),
+                                borderRadius: 0.5,
+                              }}
+                            />
+                          ))}
+                          {/* Training Sessions */}
+                          {dayData.sessions.map((session, idx) => (
+                            <Box
+                              key={`session-${idx}`}
+                              sx={{
+                                height: 4,
+                                backgroundColor: session.sessionCategory === 'team' ? '#ff9800' : '#9c27b0',
                                 borderRadius: 0.5,
                               }}
                             />
@@ -250,7 +309,9 @@ export const MyStats: React.FC = () => {
                               mt: 0.25,
                             }}
                           >
-                            {dayData.workouts.length} workout{dayData.workouts.length > 1 ? 's' : ''}
+                            {hasWorkouts && `${dayData.workouts.length} workout${dayData.workouts.length > 1 ? 's' : ''}`}
+                            {hasWorkouts && hasSessions && ', '}
+                            {hasSessions && `${dayData.sessions.length} session${dayData.sessions.length > 1 ? 's' : ''}`}
                           </Typography>
                         </Box>
                       )}
@@ -284,6 +345,26 @@ export const MyStats: React.FC = () => {
               height: { xs: 20, sm: 24 }
             }}
           />
+          <Chip
+            label="Team Session"
+            size="small"
+            sx={{
+              backgroundColor: '#ff9800',
+              color: 'white',
+              fontSize: { xs: '0.65rem', sm: '0.75rem' },
+              height: { xs: 20, sm: 24 }
+            }}
+          />
+          <Chip
+            label="Private Session"
+            size="small"
+            sx={{
+              backgroundColor: '#9c27b0',
+              color: 'white',
+              fontSize: { xs: '0.65rem', sm: '0.75rem' },
+              height: { xs: 20, sm: 24 }
+            }}
+          />
         </Box>
       </Paper>
 
@@ -297,7 +378,7 @@ export const MyStats: React.FC = () => {
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6">
-              Workouts - {selectedDate && new Date(selectedDate).toLocaleDateString('en-US', {
+              {selectedDate && new Date(selectedDate).toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
@@ -310,6 +391,54 @@ export const MyStats: React.FC = () => {
           </Box>
         </DialogTitle>
         <DialogContent>
+          {/* Training Sessions */}
+          {selectedSessions.length > 0 && (
+            <>
+              <Typography variant="h6" sx={{ mb: 2, mt: 1 }}>
+                Training Sessions
+              </Typography>
+              {selectedSessions.map((session) => (
+                <Card key={session.id} sx={{ mb: 2, border: 2, borderColor: session.sessionCategory === 'team' ? '#ff9800' : '#9c27b0' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                      <Box>
+                        <Typography variant="h6" sx={{ mb: 0.5 }}>
+                          {session.title}
+                        </Typography>
+                        <Chip
+                          label={session.sessionCategory === 'team' ? 'Team Session' : 'Private Session'}
+                          size="small"
+                          sx={{
+                            backgroundColor: session.sessionCategory === 'team' ? '#ff9800' : '#9c27b0',
+                            color: 'white',
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        {session.time}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <LocationOnIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {session.location}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+              {selectedWorkouts.length > 0 && <Divider sx={{ my: 2 }} />}
+            </>
+          )}
+
+          {/* Workouts */}
+          {selectedWorkouts.length > 0 && (
+            <>
+              <Typography variant="h6" sx={{ mb: 2, mt: selectedSessions.length > 0 ? 0 : 1 }}>
+                Workouts
+              </Typography>
+            </>
+          )}
           {selectedWorkouts.map((workout, idx) => (
             <Card key={workout.id} sx={{ mb: idx < selectedWorkouts.length - 1 ? 2 : 0 }}>
               <CardContent>

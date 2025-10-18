@@ -10,8 +10,10 @@ import {
   Step,
   StepLabel,
 } from '@mui/material';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { AgilityTestKey, AgilityInput, AgilityResult } from '../../types/testing';
+import { VideoModal } from './VideoModal';
 
 interface AgilityWizardProps {
   onFinish: (results: AgilityResult[]) => void;
@@ -19,9 +21,16 @@ interface AgilityWizardProps {
 
 const testOrder: AgilityTestKey[] = ['proAgility', 'threeCone'];
 
+// Map agility tests to YouTube URLs
+const exerciseVideos: Record<AgilityTestKey, string> = {
+  proAgility: 'https://www.youtube.com/watch?v=brFHyOtTwH4',
+  threeCone: 'https://www.youtube.com/watch?v=VNbZXU5fRfE',
+};
+
 export const AgilityWizard: React.FC<AgilityWizardProps> = ({ onFinish }) => {
   const { t } = useI18n();
   const [currentStep, setCurrentStep] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const [inputs, setInputs] = useState<Record<AgilityTestKey, AgilityInput>>({
     proAgility: {},
     threeCone: {},
@@ -97,9 +106,19 @@ export const AgilityWizard: React.FC<AgilityWizardProps> = ({ onFinish }) => {
       </Box>
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          {t(`tests.agility.${currentTest}`)}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h5">
+            {t(`tests.agility.${currentTest}`)}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<PlayCircleOutlineIcon />}
+            onClick={() => setShowVideo(true)}
+            size="small"
+          >
+            {t('tests.watchExercise')}
+          </Button>
+        </Box>
 
         <Alert severity="info" sx={{ mb: 2 }}>
           <Typography variant="body2" gutterBottom fontWeight={600}>
@@ -145,6 +164,13 @@ export const AgilityWizard: React.FC<AgilityWizardProps> = ({ onFinish }) => {
           </Button>
         </Box>
       </Paper>
+
+      <VideoModal
+        open={showVideo}
+        onClose={() => setShowVideo(false)}
+        videoUrl={exerciseVideos[currentTest]}
+        title={t(`tests.agility.${currentTest}`)}
+      />
     </Box>
   );
 };
