@@ -45,6 +45,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [showConfirmFinish, setShowConfirmFinish] = useState(false);
+  const [manualDuration, setManualDuration] = useState<number | null>(null);
 
   // Persistence key for this workout session
   const persistenceKey = block ? `coach_workout_progress_${trainingType}_${blockTitle}` : null;
@@ -133,7 +134,9 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
   };
 
   const handleConfirmFinish = () => {
-    const duration = Math.round((Date.now() - startTime) / 1000 / 60); // minutes
+    // Use manual duration if set, otherwise calculate elapsed time
+    const elapsedMinutes = Math.round((Date.now() - startTime) / 1000 / 60);
+    const duration = manualDuration !== null ? manualDuration : elapsedMinutes;
 
     // Create entries for ALL exercises in the block, not just completed ones
     const allEntries: WorkoutEntry[] = block.items.map((exercise, index) => {
@@ -362,7 +365,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
       <Dialog
         open={showConfirmFinish}
         onClose={() => setShowConfirmFinish(false)}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Finish Workout?</DialogTitle>
@@ -377,9 +380,22 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
             <Typography variant="body2" color="text.secondary">
               <strong>Completed:</strong> {completedEntries.length} / {block?.items.length || 0} exercises
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Duration:</strong> {Math.round((Date.now() - startTime) / 1000 / 60)} minutes
+          </Box>
+
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Session Duration
             </Typography>
+            <TextField
+              fullWidth
+              type="number"
+              label="Duration (minutes)"
+              value={manualDuration !== null ? manualDuration : Math.round((Date.now() - startTime) / 1000 / 60)}
+              onChange={(e) => setManualDuration(Number(e.target.value))}
+              inputProps={{ min: 1, max: 300 }}
+              helperText="Live timer shows elapsed time. Change this if you logged data after your workout."
+              size="small"
+            />
           </Box>
         </DialogContent>
         <DialogActions>

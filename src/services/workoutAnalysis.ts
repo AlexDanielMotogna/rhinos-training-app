@@ -11,6 +11,7 @@ export interface WorkoutReport {
 
   // Breakdown
   totalVolume: number;            // kg
+  totalDistance?: number;         // km (for cardio workouts)
   duration: number;               // minutes
   avgRPE: number;                 // 1-10
   setsCompleted: number;

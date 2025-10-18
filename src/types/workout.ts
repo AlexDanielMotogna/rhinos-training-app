@@ -8,6 +8,7 @@ export interface SetData {
   reps?: number;
   kg?: number;
   durationSec?: number; // Changed from durationMin to durationSec
+  distance?: number; // Distance in kilometers for cardio/running sets
 }
 
 export interface WorkoutEntry {
@@ -19,6 +20,7 @@ export interface WorkoutEntry {
   reps?: number;
   kg?: number;
   durationSec?: number; // Changed from durationMin to durationSec
+  distance?: number; // Distance in kilometers for cardio/running exercises
   setData?: SetData[]; // Individual set tracking
   rpe?: number;
   source: WorkoutSource;

@@ -1,5 +1,5 @@
 import type { WorkoutReport } from './workoutAnalysis';
-import type { WorkoutSource } from '../types/workout';
+import type { WorkoutSource, WorkoutEntry } from '../types/workout';
 
 const REPORTS_KEY = 'rhinos_workout_reports';
 
@@ -10,6 +10,7 @@ export interface SavedWorkoutReport extends WorkoutReport {
   dateISO: string;
   createdAt: string;
   source: WorkoutSource; // 'coach' or 'player'
+  entries: WorkoutEntry[]; // Store workout entries for AI analysis
 }
 
 /**
@@ -61,7 +62,8 @@ export function saveWorkoutReport(
   userId: string,
   workoutTitle: string,
   report: WorkoutReport,
-  source: WorkoutSource
+  source: WorkoutSource,
+  entries: WorkoutEntry[]
 ): SavedWorkoutReport {
   const allReports = getAllReports();
 
@@ -73,6 +75,7 @@ export function saveWorkoutReport(
     dateISO: new Date().toISOString().split('T')[0],
     createdAt: new Date().toISOString(),
     source,
+    entries,
   };
 
   allReports.push(savedReport);

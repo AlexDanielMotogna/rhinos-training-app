@@ -57,7 +57,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
     : 1;
 
   const [setData, setSetData] = useState<SetData[]>([
-    { setNumber: nextSetNumber, reps: undefined, kg: undefined, durationSec: undefined }
+    { setNumber: nextSetNumber, reps: undefined, kg: undefined, durationSec: undefined, distance: undefined }
   ]);
   const [rpe, setRpe] = useState<number>(initialData?.rpe || 5);
   const [notes, setNotes] = useState(initialData?.notes || '');
@@ -67,7 +67,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
       ? Math.max(...setData.map(s => s.setNumber))
       : nextSetNumber - 1;
     const newSetNumber = currentMaxSetNumber + 1;
-    setSetData([...setData, { setNumber: newSetNumber, reps: undefined, kg: undefined, durationSec: undefined }]);
+    setSetData([...setData, { setNumber: newSetNumber, reps: undefined, kg: undefined, durationSec: undefined, distance: undefined }]);
   };
 
   const handleRemoveSet = (index: number) => {
@@ -88,7 +88,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const handleSubmit = () => {
     // Filter out empty sets
     const validSets = setData.filter(set =>
-      set.reps !== undefined || set.kg !== undefined || set.durationSec !== undefined
+      set.reps !== undefined || set.kg !== undefined || set.durationSec !== undefined || set.distance !== undefined
     );
 
     const entry: WorkoutEntry = {
@@ -110,7 +110,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const isValid = () => {
     // Name must be filled and at least one set should have data
     return name.trim().length > 0 && setData.some(set =>
-      set.reps !== undefined || set.kg !== undefined || set.durationSec !== undefined
+      set.reps !== undefined || set.kg !== undefined || set.durationSec !== undefined || set.distance !== undefined
     );
   };
 
@@ -253,7 +253,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                     </>
                   )}
 
-                  {/* Speed/COD/Conditioning/Technique: Reps + Duration */}
+                  {/* Speed/COD/Conditioning/Technique: Reps + Duration + Distance */}
                   {(category === 'Speed' || category === 'COD' || category === 'Conditioning' || category === 'Technique') && (
                     <>
                       <TextField
@@ -267,6 +267,13 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                         label="Duration (sec)"
                         size="small"
                         value={set.durationSec ?? ''}
+                        disabled
+                        fullWidth
+                      />
+                      <TextField
+                        label="Distance (km)"
+                        size="small"
+                        value={set.distance ?? ''}
                         disabled
                         fullWidth
                       />
@@ -331,7 +338,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                     </>
                   )}
 
-                  {/* Speed/COD/Conditioning/Technique: Reps + Duration */}
+                  {/* Speed/COD/Conditioning/Technique: Reps + Duration + Distance */}
                   {(category === 'Speed' || category === 'COD' || category === 'Conditioning' || category === 'Technique') && (
                     <>
                       <TextField
@@ -350,6 +357,15 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                         value={set.durationSec ?? ''}
                         onChange={(e) => handleSetChange(index, 'durationSec', e.target.value ? Number(e.target.value) : undefined)}
                         inputProps={{ min: 0, max: 300, step: 0.1 }}
+                        fullWidth
+                      />
+                      <TextField
+                        label="Distance (km)"
+                        type="number"
+                        size="small"
+                        value={set.distance ?? ''}
+                        onChange={(e) => handleSetChange(index, 'distance', e.target.value ? Number(e.target.value) : undefined)}
+                        inputProps={{ min: 0, max: 50, step: 0.1 }}
                         fullWidth
                       />
                     </>

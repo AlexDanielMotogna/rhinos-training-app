@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -12,7 +12,6 @@ import {
   LinearProgress,
   Divider,
   Alert,
-  CircularProgress,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -20,8 +19,6 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useI18n } from '../../i18n/I18nProvider';
-import { getAIWorkoutInsight, getAPIKey } from '../../services/aiInsights';
-import { getUser } from '../../services/mock';
 import type { WorkoutReport } from '../../services/workoutAnalysis';
 
 interface WorkoutReportDialogProps {
@@ -38,41 +35,11 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
   workoutTitle,
 }) => {
   const { t } = useI18n();
-  const user = getUser();
-  const [aiInsight, setAiInsight] = useState<string | null>(null);
-  const [loadingAI, setLoadingAI] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
 
   if (!report) return null;
 
-  const handleGetAIInsight = async () => {
-    if (!user) return;
-
-    const apiKey = getAPIKey();
-    if (!apiKey) {
-      setAiError('Please configure your OpenAI API key in Profile settings first');
-      return;
-    }
-
-    setLoadingAI(true);
-    setAiError(null);
-
-    const result = await getAIWorkoutInsight(
-      report,
-      workoutTitle,
-      user.position,
-      user.name,
-      apiKey
-    );
-
-    setLoadingAI(false);
-
-    if (result.success && result.insight) {
-      setAiInsight(result.insight);
-    } else {
-      setAiError(result.error || 'Failed to get AI insight');
-    }
-  };
+  // Check if report was AI-generated (will have more personalized insights)
+  const isAIGenerated = 'aiGenerated' in report && report.aiGenerated === true;
 
   const getScoreColor = (score: number): string => {
     if (score >= 80) return 'success.main';
@@ -142,14 +109,27 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
           {t('report.breakdown')}
         </Typography>
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={6}>
-            <Typography variant="caption" color="text.secondary">
-              {t('report.totalVolume')}
-            </Typography>
-            <Typography variant="body1" fontWeight={600}>
-              {report.totalVolume.toLocaleString()} kg
-            </Typography>
-          </Grid>
+          {/* Show volume for strength workouts or distance for cardio */}
+          {report.totalVolume > 0 && (
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary">
+                {t('report.totalVolume')}
+              </Typography>
+              <Typography variant="body1" fontWeight={600}>
+                {report.totalVolume.toLocaleString()} kg
+              </Typography>
+            </Grid>
+          )}
+          {report.totalDistance && report.totalDistance > 0 && (
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary">
+                Total Distance
+              </Typography>
+              <Typography variant="body1" fontWeight={600}>
+                {report.totalDistance.toFixed(2)} km
+              </Typography>
+            </Grid>
+          )}
           <Grid item xs={6}>
             <Typography variant="caption" color="text.secondary">
               {t('report.avgRPE')}
@@ -305,68 +285,34 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
 
         {/* Coach Insights */}
         <Box sx={{ mt: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
             <Typography variant="subtitle2" fontWeight={600}>
               {t('report.coachInsights')}
             </Typography>
-            {!aiInsight && !loadingAI && (
-              <Button
+            {isAIGenerated && (
+              <Chip
+                icon={<AutoAwesomeIcon />}
+                label="AI-Powered"
                 size="small"
-                startIcon={<AutoAwesomeIcon />}
-                onClick={handleGetAIInsight}
+                color="success"
                 variant="outlined"
-                sx={{ fontSize: '0.75rem' }}
-              >
-                Get AI Insight
-              </Button>
+                sx={{ height: 20, fontSize: '0.65rem' }}
+              />
             )}
           </Box>
 
-          {/* Rule-based insight (default) */}
-          {!aiInsight && !loadingAI && (
-            <Alert severity="info">
-              <Typography variant="body2">
-                {t(report.coachInsights as any)}
-              </Typography>
-            </Alert>
-          )}
-
-          {/* Loading AI */}
-          {loadingAI && (
-            <Alert severity="info" icon={<CircularProgress size={20} />}>
-              <Typography variant="body2">
-                Getting AI-powered insight...
-              </Typography>
-            </Alert>
-          )}
-
-          {/* AI Insight */}
-          {aiInsight && (
-            <Alert
-              severity="success"
-              icon={<AutoAwesomeIcon />}
-              sx={{
-                bgcolor: 'success.lighter',
-                '& .MuiAlert-icon': { color: 'success.main' }
-              }}
-            >
-              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                AI Coach Insight
-              </Typography>
-              <Typography variant="body2">
-                {aiInsight}
-              </Typography>
-            </Alert>
-          )}
-
-          {/* AI Error */}
-          {aiError && (
-            <Alert severity="error" onClose={() => setAiError(null)}>
-              <Typography variant="body2">
-                {aiError}
-              </Typography>
-            </Alert>
-          )}
+          <Alert
+            severity={isAIGenerated ? "success" : "info"}
+            icon={isAIGenerated ? <AutoAwesomeIcon /> : undefined}
+            sx={isAIGenerated ? {
+              bgcolor: 'success.lighter',
+              '& .MuiAlert-icon': { color: 'success.main' }
+            } : undefined}
+          >
+            <Typography variant="body2">
+              {isAIGenerated ? report.coachInsights : t(report.coachInsights as any)}
+            </Typography>
+          </Alert>
         </Box>
       </DialogContent>
 

@@ -12,8 +12,10 @@ import {
   Chip,
   Card,
   CardContent,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useI18n } from '../i18n/I18nProvider';
 import { WorkoutBlock } from '../components/workout/WorkoutBlock';
 import { CoachBlockWorkoutDialog } from '../components/workout/CoachBlockWorkoutDialog';
@@ -35,6 +37,7 @@ import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
 import { sanitizeYouTubeUrl } from '../services/yt';
 import { analyzeWorkout, type WorkoutReport } from '../services/workoutAnalysis';
 import { saveWorkoutReport } from '../services/workoutReports';
+import { generateAIWorkoutReport, getAPIKey } from '../services/aiInsights';
 
 type SessionView = 'my' | 'team';
 type MySessionTab = 'plans' | 'history' | 'reports';
@@ -61,6 +64,7 @@ export const MyTraining: React.FC = () => {
   const [workoutReport, setWorkoutReport] = useState<WorkoutReport | null>(null);
   const [showWorkoutReport, setShowWorkoutReport] = useState(false);
   const [lastWorkoutTitle, setLastWorkoutTitle] = useState('');
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   const user = getUser();
   const trainingTypes = getTrainingTypes();
@@ -127,7 +131,56 @@ export const MyTraining: React.FC = () => {
     }
   };
 
-  const handleSaveFreeSession = (payload: WorkoutPayload) => {
+  /**
+   * Generate workout report - tries AI first, falls back to algorithm
+   */
+  const generateWorkoutReport = async (
+    entries: WorkoutEntry[],
+    duration: number,
+    workoutTitle: string
+  ): Promise<WorkoutReport> => {
+    if (!user) {
+      // Shouldn't happen, but fallback to algorithm
+      return analyzeWorkout(entries, duration, user!.id, user!.position);
+    }
+
+    const apiKey = getAPIKey();
+
+    if (apiKey) {
+      // Show loading state
+      setGeneratingReport(true);
+
+      try {
+        // Try AI report generation
+        const aiResult = await generateAIWorkoutReport(
+          entries,
+          duration,
+          workoutTitle,
+          user.position,
+          user.name,
+          apiKey
+        );
+
+        if (aiResult.success && aiResult.report) {
+          console.log('✅ AI-generated workout report');
+          setGeneratingReport(false);
+          return aiResult.report;
+        } else {
+          console.warn('⚠️ AI report failed, using algorithm fallback:', aiResult.error);
+        }
+      } catch (error) {
+        console.error('AI report generation error:', error);
+      } finally {
+        setGeneratingReport(false);
+      }
+    }
+
+    // Fallback to algorithm if no API key or AI failed
+    console.log('📊 Using algorithm-based workout report');
+    return analyzeWorkout(entries, duration, user.id, user.position);
+  };
+
+  const handleSaveFreeSession = async (payload: WorkoutPayload) => {
     if (user) {
       saveWorkoutLog(user.id, payload);
       refreshWorkoutHistory();
@@ -135,13 +188,12 @@ export const MyTraining: React.FC = () => {
 
       // Generate and save workout report for free sessions
       // Note: Free sessions don't track duration, so we estimate 60 minutes
-      const report = analyzeWorkout(
+      const report = await generateWorkoutReport(
         payload.entries,
         60, // Default duration for free sessions
-        user.id,
-        user.position
+        t('training.freeSessions')
       );
-      saveWorkoutReport(user.id, t('training.freeSessions'), report, 'player');
+      saveWorkoutReport(user.id, t('training.freeSessions'), report, 'player', payload.entries);
 
       setWorkoutReport(report);
       setLastWorkoutTitle(t('training.freeSessions'));
@@ -226,7 +278,7 @@ export const MyTraining: React.FC = () => {
     setShowStartWorkout(true);
   };
 
-  const handleFinishWorkout = (entries: WorkoutEntry[], notes: string, duration: number) => {
+  const handleFinishWorkout = async (entries: WorkoutEntry[], notes: string, duration: number) => {
     if (user && startingPlan) {
       const today = new Date().toISOString().split('T')[0];
 
@@ -271,13 +323,12 @@ export const MyTraining: React.FC = () => {
       refreshWorkoutHistory();
 
       // Generate and save workout report
-      const report = analyzeWorkout(
+      const report = await generateWorkoutReport(
         entries,
         duration,
-        user.id,
-        user.position
+        startingPlan.name
       );
-      saveWorkoutReport(user.id, startingPlan.name, report, 'player');
+      saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
 
       setWorkoutReport(report);
       setLastWorkoutTitle(startingPlan.name);
@@ -292,7 +343,7 @@ export const MyTraining: React.FC = () => {
     setShowBlockWorkout(true);
   };
 
-  const handleFinishBlockWorkout = (entries: WorkoutEntry[], notes: string, duration: number) => {
+  const handleFinishBlockWorkout = async (entries: WorkoutEntry[], notes: string, duration: number) => {
     if (user && selectedBlock) {
       const today = new Date().toISOString().split('T')[0];
 
@@ -334,13 +385,12 @@ export const MyTraining: React.FC = () => {
       refreshWorkoutHistory();
 
       // Generate and save workout report
-      const report = analyzeWorkout(
+      const report = await generateWorkoutReport(
         entries,
         duration,
-        user.id,
-        user.position
+        selectedBlock.title
       );
-      saveWorkoutReport(user.id, selectedBlock.title, report, 'coach');
+      saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
 
       setWorkoutReport(report);
       setLastWorkoutTitle(selectedBlock.title);
@@ -687,6 +737,26 @@ export const MyTraining: React.FC = () => {
         report={workoutReport}
         workoutTitle={lastWorkoutTitle}
       />
+
+      {/* Generating Report Loading Dialog */}
+      <Dialog open={generatingReport} maxWidth="sm" fullWidth>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, py: 3 }}>
+            <CircularProgress size={60} />
+            <Box sx={{ textAlign: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
+                <AutoAwesomeIcon color="primary" />
+                <Typography variant="h6">
+                  Generating AI Report
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Analyzing your workout performance...
+              </Typography>
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };
