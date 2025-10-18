@@ -10,11 +10,13 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
  */
 export interface AIWorkoutReport extends WorkoutReport {
   aiGenerated: true;
+  sessionPrimaryIntent?: string;
+  sessionSecondaryIntent?: string;
 }
 
 /**
  * Build AI prompt for COMPLETE workout report generation
- * AI will analyze exercises and generate all scores + feedback
+ * AI will analyze exercises and generate all scores + insights
  */
 function buildReportGenerationPrompt(
   entries: WorkoutEntry[],
@@ -46,9 +48,6 @@ function buildReportGenerationPrompt(
   const rpeValues = entries.filter(e => e.rpe).map(e => e.rpe!);
   const avgRPE = rpeValues.length > 0 ? rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length : 0;
 
-  // Count unique exercises
-  const uniqueExercises = new Set(entries.map(e => e.name)).size;
-
   // Exercise breakdown
   const exerciseList = entries.map(e => {
     let setsInfo = '';
@@ -58,7 +57,7 @@ function buildReportGenerationPrompt(
         if (s.reps) parts.push(`${s.reps} reps`);
         if (s.kg) parts.push(`${s.kg}kg`);
         if (s.durationSec) parts.push(`${s.durationSec}sec`);
-        if (s.distance) parts.push(`${s.distance}km`);
+        if (s.distance) parts.push(`${(s.distance * 1000).toFixed(0)}m`); // Convert km to m for readability
         return parts.join(' @ ');
       }).join(', ')}`;
     } else {
@@ -67,7 +66,7 @@ function buildReportGenerationPrompt(
       if (e.reps) parts.push(`${e.reps} reps`);
       if (e.kg) parts.push(`${e.kg}kg`);
       if (e.durationSec) parts.push(`${e.durationSec}sec`);
-      if (e.distance) parts.push(`${e.distance}km`);
+      if (e.distance) parts.push(`${(e.distance * 1000).toFixed(0)}m`);
       setsInfo = parts.join(' x ');
     }
     const rpeInfo = e.rpe ? ` (RPE ${e.rpe})` : '';
@@ -75,103 +74,99 @@ function buildReportGenerationPrompt(
     return `- ${e.name} [${e.category}]: ${setsInfo}${rpeInfo}${notesInfo}`;
   }).join('\n');
 
-  return `🏈 WORKOUT REPORT GENERATOR - American Football Training Analysis
+  return `🏈 UNIVERSAL WORKOUT REPORT GENERATOR – American Football S&C
 
-You are an expert American Football strength and conditioning coach. After each training session, generate a professional, clear, and motivating Workout Report.
+ROLE
+You are an expert American Football Strength & Conditioning coach. Analyze training sessions of ANY type and generate a professional, honest, and actionable report. Be tough, clear, and fair — no sugarcoating.
 
-═══════════════════════════════════════════════════════════════
-
-📊 PLAYER CONTEXT:
-• Name: ${userName}
-• Position: ${position}${playerWeight ? `\n• Body Weight: ${playerWeight} kg` : ''}${playerHeight ? `\n• Height: ${playerHeight} cm` : ''}
-
-📋 WORKOUT DATA:
-• Type: ${workoutTitle}
-• Duration: ${duration} minutes
-• Different Exercises: ${uniqueExercises}
-• Total Sets: ${totalSets}
-• Total Volume (lifting): ${totalVolume} kg
-• Total Distance (cardio): ${totalDistance.toFixed(2)} km
-• Average RPE: ${avgRPE.toFixed(1)}/10${totalDistance > 0 ? `\n• Pace: ${(duration / totalDistance).toFixed(2)} min/km` : ''}
-
-📝 EXERCISES COMPLETED:
+INPUTS
+• Player:
+  - Name: ${userName}
+  - Position: ${position}${playerWeight ? `\n  - Body Weight (kg): ${playerWeight}` : ''}${playerHeight ? `\n  - Height (cm): ${playerHeight}` : ''}
+• Workout:
+  - Title: ${workoutTitle}
+  - Duration (min): ${duration}
+  - Exercises (raw list):
 ${exerciseList}
+  - Total Sets: ${totalSets}
+  - Total Lifting Volume (kg): ${totalVolume}
+  - Total Distance (km): ${totalDistance.toFixed(3)}
+  - Average RPE: ${avgRPE.toFixed(1)}${workoutNotes ? `\n  - Notes: ${workoutNotes}` : ''}
 
-${workoutNotes ? `💭 WORKOUT NOTES:\n${workoutNotes}\n` : ''}
+TASK PIPELINE
+1) SESSION INTENT CLASSIFICATION (pick 1 primary, 1 optional secondary):
+   - SPEED/ACCELERATION: sprints, acceleration, dashes, flying runs, short distances, high RPE, long rests
+   - POWER/PLYOMETRICS: jumps, bounds, throws, explosive lifts
+   - STRENGTH: squats, deadlifts, presses, pulls, accessories; evaluate relative to bodyweight
+   - CONDITIONING/TEMPO: sustained distance/volume, repeated bouts, RPE 6–8
+   - AGILITY/COD: change of direction, ladders, pro-agility, T-test, reactive drills
+   - MOBILITY/RECOVERY: mobility, stretching, breathing, deload
+   - MIXED: significant combination of ≥2 categories
 
-═══════════════════════════════════════════════════════════════
+2) SAFETY & SETUP
+   - If no warm-up before intense work → warning + subtract 10–15 points from Athletic Quality
+   - If injury/pain noted → flag and adjust recommendations
 
-🎯 YOUR TASK:
-Generate a professional Workout Report that is HONEST, INTELLIGENT, and MOTIVATING.
+3) INTENT-SPECIFIC EVALUATION (do NOT punish a focused session for missing other modalities):
+   - SPEED: quality > volume. 8–16 total sprints with high RPE and long rests = solid even if distance is low
+   - POWER: explosive intent, short sets, avoid overfatigue
+   - STRENGTH: evaluate RELATIVE strength:${playerWeight ? `
+       <${(playerWeight * 0.5).toFixed(0)}kg (0.5× BW) with high RPE = weak/rehab
+       ${(playerWeight * 1.0).toFixed(0)}–${(playerWeight * 1.5).toFixed(0)}kg (1.0–1.5× BW) = adequate
+       >${(playerWeight * 2.0).toFixed(0)}kg (2.0× BW) = strong` : `
+       <0.5× BW with high RPE = weak/rehab
+       1.0–1.5× BW = adequate
+       >2.0× BW = strong`}
+   - CONDITIONING: evaluate volume, consistency, pace control
+   - AGILITY: execution quality, low technical breakdown, adequate rest
+   - MOBILITY: adherence, recovery, quality of movement
 
-⚠️ EVALUATION PRINCIPLES (BE INTELLIGENT):
+4) SCORING FRAMEWORK (0–100)
+   - intensityScore: effort relative to intent (RPE, density, load)
+   - workCapacityScore: useful volume within intent (don't penalize speed for low distance)
+   - athleticQualityScore: technique, warm-up, execution, rest management
+   - positionRelevanceScore: transfer to ${position} (e.g. RB → acceleration, COD, power)
 
-1. **CONTEXT MATTERS - Use Player Data:**
-   ${playerWeight ? `
-   - Player weighs ${playerWeight}kg - evaluate strength RELATIVE to bodyweight
-   - For strength exercises (squats, deadlifts, bench, etc.):
-     * Lifting <0.5× bodyweight with high RPE = WEAK/INJURED (RED FLAG)
-     * Lifting 1.0-1.5× bodyweight = ADEQUATE for most positions
-     * Lifting >2.0× bodyweight = STRONG
-   - Example: ${playerWeight}kg player lifting 50kg in squats at RPE 9 = CONCERNING
-   - Don't just look at total volume - look at RELATIVE STRENGTH` : ''}
+   Guidelines:
+   • <20 min with only 1–2 exercises (not max test) → WorkCapacity max 40–50
+   • No warm-up on intense session → −10–15 AthleticQuality
+   • Weak relative strength with high RPE → drop AthleticQuality & Position Fit
+   • Good speed session (8–16 sprints) → WorkCapacity 70–85 even if total distance is low
 
-   - Position ${position} has specific needs - consider them in Position Fit score
-   - Don't apply cardio rules to strength work or vice versa
+5) RECOVERY
+   - recoveryDemand: "low|medium|high|very-high" based on RPE + density
+   - recommendedRestHours: 24–72 depending on intensity & intent
+     (Speed/strength high intensity = 36–48h, Conditioning volume = 24–36h, Very high load = 48–72h)
 
-2. **WORKOUT COMPLETENESS:**
-   - Duration <20min + only 1-2 exercises = NOT a real workout (likely max testing)
-     * workCapacityScore: MAX 40-50, athleticQualityScore: MAX 50
-     * Add WARNING: "Too short for a complete training session"
-   - Duration <30min with only strength = probably max testing, not training
-   - Full workout = 30-60min with 3+ exercises or focused sprint work (10-15 sets)
+6) FEEDBACK
+   - strengths: 1–3 clear positives if deserved (don't add fake praise)
+   - warnings: 1–3 concrete risks (no warm-up, poor relative strength, insufficient sets, etc.)
+   - coachInsights: 2–3 sentences, direct & honest. Do NOT suggest adding other modalities into the same session if it was clearly focused. Recommend those for other days in the week.
 
-3. **WARM-UP CRITICAL:**
-   - Check workout notes for "[Warm-up: X min]" or "[No warm-up performed]"
-   - NO warm-up before intense work = WARNING + reduce athleticQualityScore by 10-15
-   - Warm-up present = mention positively in strengths
-
-4. **BE BRUTALLY HONEST:**
-   - If workout is incomplete/weak = CALL IT OUT, don't sugarcoat
-   - 10min with 1 exercise is NOT "focused strength training" - it's a MAX TEST or warm-up
-   - Weak relative strength (50kg for 100kg player) = SAY IT DIRECTLY
-   - Don't use generic positive phrases for bad workouts
-   - If they crushed it = CELEBRATE IT with enthusiasm
-   - Always connect to their position and on-field performance
-   - Use your expertise - don't be nice to make them feel good about poor effort
-
-5. **WORKOUT TYPE AWARENESS:**
-   - MAX EFFORT SPRINTS: Low distance (<500m), many sets (10-15+), RPE 9-10, short reps
-     * QUALITY > QUANTITY - don't penalize low distance if intensity is maximal
-   - TEMPO/CONDITIONING: Higher distance, sustained pace, moderate-high RPE
-   - STRENGTH: Focus on relative strength (weight vs bodyweight), not just total volume
-   - Use your expertise to identify the workout type and evaluate accordingly
-
-═══════════════════════════════════════════════════════════════
-
-📝 OUTPUT FORMAT - Generate ONLY valid JSON (no markdown, no extra text):
+OUTPUT
+Return ONLY valid JSON with this exact schema:
 
 {
-  "intensityScore": <number 0-100>,
-  "workCapacityScore": <number 0-100>,
-  "athleticQualityScore": <number 0-100>,
-  "positionRelevanceScore": <number 0-100>,
+  "intensityScore": <0-100>,
+  "workCapacityScore": <0-100>,
+  "athleticQualityScore": <0-100>,
+  "positionRelevanceScore": <0-100>,
   "totalVolume": ${totalVolume},
-  "totalDistance": ${totalDistance.toFixed(2)},
+  "totalDistance": ${totalDistance.toFixed(3)},
   "duration": ${duration},
   "avgRPE": ${avgRPE.toFixed(1)},
   "setsCompleted": ${totalSets},
   "setsPlanned": ${totalSets},
-  "powerWork": <percentage 0-100>,
-  "strengthWork": <percentage 0-100>,
-  "speedWork": <percentage 0-100>,
-  "strengths": ["<1-3 positive observations - ONLY if workout was actually good. If workout was incomplete/weak, keep this short or skip generic praise>"],
-  "warnings": ["<1-3 legitimate concerns - BE DIRECT. Include warm-up if missing, workout too short, weak relative strength, etc>"],
-  "volumeChange": null,
-  "intensityChange": null,
+  "sessionPrimaryIntent": "<speed|power|strength|conditioning|agility|mobility|mixed>",
+  "sessionSecondaryIntent": "<none|speed|power|strength|conditioning|agility|mobility>",
+  "powerWork": <0-100>,
+  "strengthWork": <0-100>,
+  "speedWork": <0-100>,
+  "strengths": ["..."],
+  "warnings": ["..."],
   "recoveryDemand": "<low|medium|high|very-high>",
   "recommendedRestHours": <24-72>,
-  "coachInsights": "<2-3 sentences. BE BRUTALLY HONEST. Don't say 'focused on strength training' for a 10min session. Don't praise incomplete workouts. If it's weak/short/incomplete, SAY IT. Connect to position. If they did well, CELEBRATE. If not, tell them what needs to improve.>"
+  "coachInsights": "..."
 }`;
 }
 
@@ -220,7 +215,7 @@ export async function generateAIWorkoutReport(
         messages: [
           {
             role: 'system',
-            content: 'You are an expert strength coach for American Football. Analyze workouts intelligently - speed work is NOT the same as strength work. Generate accurate, fair performance scores. Output ONLY valid JSON.',
+            content: 'You are an expert strength coach for American Football. Analyze workouts intelligently - speed work is NOT the same as strength work. Evaluate based on SESSION INTENT first. Generate accurate, fair performance scores. Output ONLY valid JSON.',
           },
           {
             role: 'user',
