@@ -160,7 +160,9 @@ export const MyTraining: React.FC = () => {
           user.position,
           user.name,
           apiKey,
-          workoutNotes
+          workoutNotes,
+          user.weightKg,
+          user.heightCm
         );
 
         if (aiResult.success && aiResult.report) {
