@@ -103,9 +103,19 @@ Check if the player did a proper warm-up:
 - Look for recovery/mobility category exercises that might indicate warm-up
 
 **IMPORTANT - ANALYZE THE WORKOUT TYPE:**
-For running/cardio workouts, calculate the pace (min/km) and determine the type:
-- If pace ~3-4 min/km with high RPE → Sprint/Speed work
-- If pace ~4-5 min/km with RPE 7-9 → Tempo/Threshold run (this is RESISTANCE/ENDURANCE, not pure speed)
+For running/cardio workouts, determine the type:
+
+**MAX EFFORT SPRINTS** (detect by these signs):
+- Very low total distance (<500m) with HIGH sets (10-15+)
+- RPE 9-10 consistently
+- Short duration per set (10-30 seconds)
+- Exercises like: Flying 20s, 40-Yard Dash, Hill Sprints, Acceleration Starts
+- Example: 12 sets of 20m sprints = 240m total, RPE 9.8 → This is MAX EFFORT SPRINT work
+- For these: prioritize QUALITY over total distance in workCapacityScore
+
+**CONDITIONING/TEMPO RUNS** (calculate pace):
+- If pace ~3-4 min/km with high RPE → Sprint intervals/conditioning
+- If pace ~4-5 min/km with RPE 7-9 → Tempo/Threshold run (RESISTANCE/ENDURANCE)
 - If pace ~5-6 min/km with moderate RPE → Easy/Aerobic run
 - If pace >6 min/km → Recovery run
 
@@ -130,8 +140,13 @@ For this workout:
 
 2. **workCapacityScore**: Total work done relative to time
    - For STRENGTH: Volume (kg) + sets completed + duration
-   - For CARDIO: Duration + distance + RPE
-   - 30min tempo run at 6km = SOLID score (80-90)
+   - For CARDIO/CONDITIONING: Duration + distance + RPE
+     * 30min tempo run at 6km = SOLID score (80-90)
+   - For MAX EFFORT SPRINTS (RPE 9-10, short distance):
+     * QUALITY > QUANTITY - sprints need full recovery between reps
+     * 10-15 max effort sprints (200-400m total) in 30-45min = EXCELLENT (85-95)
+     * Don't penalize low total distance if RPE is very high and sets are complete
+     * Example: 12 flying 20s (240m total) at RPE 9.8 = 85+ workCapacity
    - Don't penalize cardio workouts for low kg!
 
 3. **athleticQualityScore**: How athletic/football-relevant is this?
