@@ -49,6 +49,7 @@ export function analyzeWorkout(
 ): WorkoutReport {
   // Calculate basic metrics
   const totalVolume = calculateTotalVolume(entries);
+  const totalDistance = calculateTotalDistance(entries);
   const avgRPE = calculateAvgRPE(entries);
   const setsCompleted = countCompletedSets(entries);
   const setsPlanned = countPlannedSets(entries);
@@ -90,6 +91,7 @@ export function analyzeWorkout(
     athleticQualityScore,
     positionRelevanceScore,
     totalVolume,
+    totalDistance,
     duration,
     avgRPE,
     setsCompleted,
@@ -124,6 +126,27 @@ function calculateTotalVolume(entries: WorkoutEntry[]): number {
   });
 
   return Math.round(volume);
+}
+
+/**
+ * Calculate total distance (in km) for cardio/speed workouts
+ */
+function calculateTotalDistance(entries: WorkoutEntry[]): number | undefined {
+  let distance = 0;
+  let hasDistance = false;
+
+  entries.forEach(entry => {
+    if (entry.setData) {
+      entry.setData.forEach(set => {
+        if (set.distance !== undefined && set.distance > 0) {
+          distance += set.distance;
+          hasDistance = true;
+        }
+      });
+    }
+  });
+
+  return hasDistance ? distance : undefined;
 }
 
 /**
