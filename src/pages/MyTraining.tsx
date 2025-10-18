@@ -24,6 +24,7 @@ import { WorkoutHistory } from '../components/workout/WorkoutHistory';
 import { EditWorkoutDialog } from '../components/workout/EditWorkoutDialog';
 import { WorkoutReportDialog } from '../components/workout/WorkoutReportDialog';
 import { ReportsHistory } from '../components/workout/ReportsHistory';
+import { FinishWorkoutDialog } from '../components/workout/FinishWorkoutDialog';
 import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
@@ -35,7 +36,7 @@ import type { TrainingTypeKey, PositionTemplate, TemplateBlock } from '../types/
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
 import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
 import { sanitizeYouTubeUrl } from '../services/yt';
-import { analyzeWorkout, type WorkoutReport } from '../services/workoutAnalysis';
+import { analyzeWorkout, estimateWorkoutDuration, type WorkoutReport } from '../services/workoutAnalysis';
 import { saveWorkoutReport } from '../services/workoutReports';
 import { generateAIWorkoutReport, getAPIKey } from '../services/aiInsights';
 
@@ -65,6 +66,14 @@ export const MyTraining: React.FC = () => {
   const [showWorkoutReport, setShowWorkoutReport] = useState(false);
   const [lastWorkoutTitle, setLastWorkoutTitle] = useState('');
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [pendingWorkout, setPendingWorkout] = useState<{
+    entries: WorkoutEntry[];
+    notes: string;
+    elapsedMinutes: number;
+    estimatedMinutes: number;
+    totalSets: number;
+  } | null>(null);
 
   const user = getUser();
   const trainingTypes = getTrainingTypes();
@@ -284,6 +293,22 @@ export const MyTraining: React.FC = () => {
     setShowStartWorkout(true);
   };
 
+  // Interceptor: Show duration dialog instead of saving directly
+  const handleFinishWorkoutRequest = (entries: WorkoutEntry[], notes: string, elapsedMinutes: number) => {
+    const totalSets = entries.reduce((sum, entry) => sum + (entry.setData?.length || 0), 0);
+    const estimatedMinutes = estimateWorkoutDuration(entries);
+
+    setPendingWorkout({
+      entries,
+      notes,
+      elapsedMinutes,
+      estimatedMinutes,
+      totalSets,
+    });
+    setShowFinishDialog(true);
+  };
+
+  // Actual save function (called after duration confirmation)
   const handleFinishWorkout = async (entries: WorkoutEntry[], notes: string, duration: number) => {
     if (user && startingPlan) {
       const today = new Date().toISOString().split('T')[0];
@@ -348,6 +373,21 @@ export const MyTraining: React.FC = () => {
   const handleStartBlock = (block: TemplateBlock) => {
     setSelectedBlock(block);
     setShowBlockWorkout(true);
+  };
+
+  // Interceptor for block workouts
+  const handleFinishBlockWorkoutRequest = (entries: WorkoutEntry[], notes: string, elapsedMinutes: number) => {
+    const totalSets = entries.reduce((sum, entry) => sum + (entry.setData?.length || 0), 0);
+    const estimatedMinutes = estimateWorkoutDuration(entries);
+
+    setPendingWorkout({
+      entries,
+      notes,
+      elapsedMinutes,
+      estimatedMinutes,
+      totalSets,
+    });
+    setShowFinishDialog(true);
   };
 
   const handleFinishBlockWorkout = async (entries: WorkoutEntry[], notes: string, duration: number) => {
@@ -699,7 +739,7 @@ export const MyTraining: React.FC = () => {
           setShowStartWorkout(false);
           setStartingPlan(null);
         }}
-        onFinish={handleFinishWorkout}
+        onFinish={handleFinishWorkoutRequest}
       />
 
       <CoachBlockWorkoutDialog
@@ -711,7 +751,7 @@ export const MyTraining: React.FC = () => {
           setShowBlockWorkout(false);
           setSelectedBlock(null);
         }}
-        onFinish={handleFinishBlockWorkout}
+        onFinish={handleFinishBlockWorkoutRequest}
       />
 
       <Dialog
@@ -765,6 +805,30 @@ export const MyTraining: React.FC = () => {
           </Box>
         </DialogContent>
       </Dialog>
+
+      {/* Finish Workout Duration Dialog */}
+      {pendingWorkout && (
+        <FinishWorkoutDialog
+          open={showFinishDialog}
+          onClose={() => {
+            setShowFinishDialog(false);
+            setPendingWorkout(null);
+          }}
+          onConfirm={(duration) => {
+            // Call the appropriate finish handler based on context
+            if (startingPlan) {
+              handleFinishWorkout(pendingWorkout.entries, pendingWorkout.notes, duration);
+            } else if (selectedBlock) {
+              handleFinishBlockWorkout(pendingWorkout.entries, pendingWorkout.notes, duration);
+            }
+            setShowFinishDialog(false);
+            setPendingWorkout(null);
+          }}
+          elapsedMinutes={pendingWorkout.elapsedMinutes}
+          estimatedMinutes={pendingWorkout.estimatedMinutes}
+          totalSets={pendingWorkout.totalSets}
+        />
+      )}
     </Box>
   );
 };
