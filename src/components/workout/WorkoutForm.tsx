@@ -64,6 +64,30 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const [rpe, setRpe] = useState<number>(initialData?.rpe || 5);
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [durationUnit, setDurationUnit] = useState<'sec' | 'min'>('sec');
+  const [distanceUnit, setDistanceUnit] = useState<'km' | 'm' | 'mi' | 'yd'>('km');
+
+  // Distance conversion helpers (all stored in km)
+  const convertDistanceToDisplay = (km: number | undefined): number | undefined => {
+    if (km === undefined) return undefined;
+    switch (distanceUnit) {
+      case 'km': return km;
+      case 'm': return km * 1000;
+      case 'mi': return km * 0.621371; // km to miles
+      case 'yd': return km * 1093.61; // km to yards
+      default: return km;
+    }
+  };
+
+  const convertDistanceToKm = (value: number | undefined): number | undefined => {
+    if (value === undefined) return undefined;
+    switch (distanceUnit) {
+      case 'km': return value;
+      case 'm': return value / 1000;
+      case 'mi': return value / 0.621371; // miles to km
+      case 'yd': return value / 1093.61; // yards to km
+      default: return value;
+    }
+  };
 
   const handleAddSet = () => {
     const currentMaxSetNumber = setData.length > 0
@@ -274,9 +298,9 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                         fullWidth
                       />
                       <TextField
-                        label="Distance (km)"
+                        label={`Distance (${distanceUnit})`}
                         size="small"
-                        value={set.distance ?? ''}
+                        value={set.distance !== undefined ? convertDistanceToDisplay(set.distance) : ''}
                         disabled
                         fullWidth
                       />
@@ -392,15 +416,46 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
                           </ToggleButton>
                         </ToggleButtonGroup>
                       </Box>
-                      <TextField
-                        label="Distance (km)"
-                        type="number"
-                        size="small"
-                        value={set.distance ?? ''}
-                        onChange={(e) => handleSetChange(index, 'distance', e.target.value ? Number(e.target.value) : undefined)}
-                        inputProps={{ min: 0, max: 50, step: 0.1 }}
-                        fullWidth
-                      />
+                      <Box sx={{ gridColumn: { xs: '1', sm: 'span 2' } }}>
+                        <TextField
+                          label={`Distance (${distanceUnit})`}
+                          type="number"
+                          size="small"
+                          value={
+                            set.distance !== undefined
+                              ? convertDistanceToDisplay(set.distance)
+                              : ''
+                          }
+                          onChange={(e) => {
+                            const inputValue = e.target.value ? Number(e.target.value) : undefined;
+                            const valueInKm = convertDistanceToKm(inputValue);
+                            handleSetChange(index, 'distance', valueInKm);
+                          }}
+                          inputProps={{ min: 0, step: 0.01 }}
+                          fullWidth
+                        />
+                        <ToggleButtonGroup
+                          value={distanceUnit}
+                          exclusive
+                          onChange={(_, newUnit) => newUnit && setDistanceUnit(newUnit)}
+                          size="small"
+                          fullWidth
+                          sx={{ mt: 1, height: 32 }}
+                        >
+                          <ToggleButton value="km" sx={{ px: 0.5, fontSize: '0.75rem' }}>
+                            km
+                          </ToggleButton>
+                          <ToggleButton value="m" sx={{ px: 0.5, fontSize: '0.75rem' }}>
+                            m
+                          </ToggleButton>
+                          <ToggleButton value="mi" sx={{ px: 0.5, fontSize: '0.75rem' }}>
+                            mi
+                          </ToggleButton>
+                          <ToggleButton value="yd" sx={{ px: 0.5, fontSize: '0.75rem' }}>
+                            yd
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                      </Box>
                     </>
                   )}
 

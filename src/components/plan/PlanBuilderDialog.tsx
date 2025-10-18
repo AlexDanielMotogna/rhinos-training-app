@@ -25,7 +25,7 @@ interface PlanBuilderDialogProps {
   open: boolean;
   editingPlan?: UserPlanTemplate | null;
   onClose: () => void;
-  onSave: (planName: string, exercises: PlanExercise[]) => void;
+  onSave: (planName: string, exercises: PlanExercise[], warmupMinutes?: number) => void;
 }
 
 export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
@@ -37,6 +37,7 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
   const { t } = useI18n();
   const [planName, setPlanName] = useState('');
   const [exercises, setExercises] = useState<PlanExercise[]>([]);
+  const [warmupMinutes, setWarmupMinutes] = useState<number | undefined>(undefined);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [editingExerciseIndex, setEditingExerciseIndex] = useState<number | null>(null);
 
@@ -44,9 +45,11 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
     if (editingPlan) {
       setPlanName(editingPlan.name);
       setExercises(editingPlan.exercises);
+      setWarmupMinutes(editingPlan.warmupMinutes);
     } else {
       setPlanName('');
       setExercises([]);
+      setWarmupMinutes(undefined);
     }
   }, [editingPlan, open]);
 
@@ -98,17 +101,18 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
       alert('Please enter a plan name');
       return;
     }
-    if (exercises.length === 0) {
-      alert('Please add at least one exercise');
+    if (exercises.length === 0 && !warmupMinutes) {
+      alert('Please add at least one exercise or specify warm-up time');
       return;
     }
-    onSave(planName, exercises);
+    onSave(planName, exercises, warmupMinutes);
     handleClose();
   };
 
   const handleClose = () => {
     setPlanName('');
     setExercises([]);
+    setWarmupMinutes(undefined);
     setEditingExerciseIndex(null);
     onClose();
   };
@@ -130,6 +134,17 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
               required
               placeholder="e.g., Upper Body, Leg Day, Full Body"
               autoFocus
+            />
+
+            {/* Free Warm-up */}
+            <TextField
+              label="Free Warm-up (minutes)"
+              type="number"
+              value={warmupMinutes ?? ''}
+              onChange={(e) => setWarmupMinutes(e.target.value ? Number(e.target.value) : undefined)}
+              placeholder="Optional: e.g., 10 minutes"
+              helperText="For players who improvise their warm-up without specific exercises"
+              inputProps={{ min: 0, max: 60, step: 1 }}
             />
 
             {/* Exercises List */}

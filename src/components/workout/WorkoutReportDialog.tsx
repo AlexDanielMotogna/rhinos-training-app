@@ -317,9 +317,8 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>{t('common.close')}</Button>
         <Button variant="contained" onClick={onClose}>
-          {t('report.saveReport')}
+          {t('common.close')}
         </Button>
       </DialogActions>
     </Dialog>

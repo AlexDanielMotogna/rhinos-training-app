@@ -231,12 +231,13 @@ export const MyTraining: React.FC = () => {
   };
 
   // Plan handlers
-  const handleCreatePlan = (planName: string, exercises: PlanExercise[]) => {
+  const handleCreatePlan = (planName: string, exercises: PlanExercise[], warmupMinutes?: number) => {
     if (user) {
       createUserPlan({
         userId: user.id,
         name: planName,
         exercises,
+        warmupMinutes,
       });
       refreshUserPlans();
       setSuccessMessage('Plan created successfully!');
@@ -244,11 +245,12 @@ export const MyTraining: React.FC = () => {
     }
   };
 
-  const handleUpdatePlan = (planName: string, exercises: PlanExercise[]) => {
+  const handleUpdatePlan = (planName: string, exercises: PlanExercise[], warmupMinutes?: number) => {
     if (editingPlan) {
       updateUserPlan(editingPlan.id, {
         name: planName,
         exercises,
+        warmupMinutes,
       });
       refreshUserPlans();
       setEditingPlan(null);

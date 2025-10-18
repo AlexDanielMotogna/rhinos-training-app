@@ -35,6 +35,7 @@ export interface UserPlanTemplate {
   userId: string;
   name: string; // e.g., "Upper Body", "Leg Day"
   exercises: PlanExercise[];
+  warmupMinutes?: number; // Optional: Free warm-up time (for users who improvise warm-up)
   createdAt: string;
   updatedAt: string;
   lastUsed?: string; // Last time this plan was executed

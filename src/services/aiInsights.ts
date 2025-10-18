@@ -86,6 +86,16 @@ ${exerciseList}
 **YOUR TASK:**
 Analyze this workout INTELLIGENTLY. Look at the exercises, pace, distance, RPE, and notes to determine what type of training this actually was.
 
+**CRITICAL - WARM-UP VERIFICATION:**
+Check if the player did a proper warm-up:
+- Look for warm-up exercises (dynamic stretching, mobility work, light cardio)
+- Check exercise notes for warm-up mentions (e.g., "warmup", "light weight", "activation")
+- Look for recovery/mobility category exercises at the start
+- If NO warm-up detected AND workout includes heavy lifting or high-intensity work:
+  * Add a WARNING: "No warm-up detected - always warm up before intense training to prevent injury"
+  * Lower the athleticQualityScore by 10-15 points (injury risk from skipping warm-up)
+- If warm-up IS detected: mention it positively in strengths
+
 **IMPORTANT - ANALYZE THE WORKOUT TYPE:**
 For running/cardio workouts, calculate the pace (min/km) and determine the type:
 - If pace ~3-4 min/km with high RPE → Sprint/Speed work
