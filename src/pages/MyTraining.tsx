@@ -366,6 +366,7 @@ export const MyTraining: React.FC = () => {
       setLastWorkoutTitle(startingPlan.name);
       setShowWorkoutReport(true);
       setStartingPlan(null);
+      setShowStartWorkout(false); // Close StartWorkoutDialog after everything is done
     }
   };
 
@@ -444,6 +445,7 @@ export const MyTraining: React.FC = () => {
       setLastWorkoutTitle(selectedBlock.title);
       setShowWorkoutReport(true);
       setSelectedBlock(null);
+      setShowBlockWorkout(false); // Close CoachBlockWorkoutDialog after everything is done
     }
   };
 

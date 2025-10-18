@@ -45,8 +45,6 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
   const [warmupMinutes, setWarmupMinutes] = useState<number | undefined>(undefined);
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [startTime, setStartTime] = useState<number>(Date.now());
-  const [showConfirmFinish, setShowConfirmFinish] = useState(false);
-  const [manualDuration, setManualDuration] = useState<number | null>(null);
 
   // Persistence key for this workout session
   const persistenceKey = block ? `coach_workout_progress_${trainingType}_${blockTitle}` : null;
@@ -137,10 +135,9 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
     setSelectedExerciseIndex(null);
   };
 
-  const handleConfirmFinish = () => {
-    // Use manual duration if set, otherwise calculate elapsed time
+  const handleFinishClick = () => {
+    // Calculate elapsed time and pass to parent (will show FinishWorkoutDialog)
     const elapsedMinutes = Math.round((Date.now() - startTime) / 1000 / 60);
-    const duration = manualDuration !== null ? manualDuration : elapsedMinutes;
 
     // Create entries for ALL exercises in the block, not just completed ones
     const allEntries: WorkoutEntry[] = block.items.map((exercise, index) => {
@@ -174,14 +171,13 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
       finalNotes = `[No warm-up performed]${workoutNotes ? '\n' + workoutNotes : ''}`;
     }
 
-    onFinish(allEntries, finalNotes, duration);
+    onFinish(allEntries, finalNotes, elapsedMinutes);
 
     // Clear persisted data after finishing
     if (persistenceKey) {
       localStorage.removeItem(persistenceKey);
     }
-    setShowConfirmFinish(false);
-    onClose();
+    // Don't close dialog yet - let parent handle the full flow
   };
 
   const handleSelectExercise = (index: number) => {
@@ -376,7 +372,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
         </Button>
         {completedEntries.length > 0 && (
           <Button
-            onClick={() => setShowConfirmFinish(true)}
+            onClick={handleFinishClick}
             variant="contained"
             color="success"
             sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
@@ -385,57 +381,6 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
           </Button>
         )}
       </DialogActions>
-
-      {/* Confirmation Dialog */}
-      <Dialog
-        open={showConfirmFinish}
-        onClose={() => setShowConfirmFinish(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Finish Workout?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to finish this workout? This action cannot be undone.
-          </Typography>
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Block:</strong> {blockTitle}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Completed:</strong> {completedEntries.length} / {block?.items.length || 0} exercises
-            </Typography>
-          </Box>
-
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Session Duration
-            </Typography>
-            <TextField
-              fullWidth
-              type="number"
-              label="Duration (minutes)"
-              value={manualDuration !== null ? manualDuration : Math.round((Date.now() - startTime) / 1000 / 60)}
-              onChange={(e) => setManualDuration(Number(e.target.value))}
-              inputProps={{ min: 1, max: 300 }}
-              helperText="Live timer shows elapsed time. Change this if you logged data after your workout."
-              size="small"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowConfirmFinish(false)}>
-            Continue Training
-          </Button>
-          <Button
-            onClick={handleConfirmFinish}
-            variant="contained"
-            color="success"
-          >
-            Yes, Finish Workout
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Dialog>
   );
 };
