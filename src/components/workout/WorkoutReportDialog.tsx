@@ -109,7 +109,7 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
           {t('report.breakdown')}
         </Typography>
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          {/* Show volume for strength workouts or distance for cardio */}
+          {/* Show volume for strength workouts */}
           {report.totalVolume > 0 && (
             <Grid item xs={6}>
               <Typography variant="caption" color="text.secondary">
@@ -120,6 +120,7 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
               </Typography>
             </Grid>
           )}
+          {/* Show distance for cardio workouts */}
           {report.totalDistance && report.totalDistance > 0 && (
             <Grid item xs={6}>
               <Typography variant="caption" color="text.secondary">
@@ -130,6 +131,7 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
               </Typography>
             </Grid>
           )}
+          {/* Always show these */}
           <Grid item xs={6}>
             <Typography variant="caption" color="text.secondary">
               {t('report.avgRPE')}
