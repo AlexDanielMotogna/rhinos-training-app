@@ -29,6 +29,7 @@ import {
   Grid,
   FormControlLabel,
   Checkbox,
+  Pagination,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -51,7 +52,11 @@ import {
 } from '../services/trainingBuilder';
 import { getUser } from '../services/mock';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
+import { PointsSystemManager } from '../components/admin/PointsSystemManager';
 import { getAllBlockInfo } from '../services/blockInfo';
+import { getTeamSettings, updateTeamSettings } from '../services/teamSettings';
+import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
+import { validateAPIKey } from '../services/aiInsights';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 import { NotificationTemplates, getNotificationStatus, requestNotificationPermission } from '../services/notifications';
 import { createSession, getTeamSessions, deleteSession } from '../services/trainingSessions';
@@ -85,11 +90,14 @@ interface TrainingType {
 export const Admin: React.FC = () => {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
+  const user = getUser();
 
   // Exercise Management State
   const [exercises, setExercises] = useState<Exercise[]>(globalCatalog);
   const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [exercisePage, setExercisePage] = useState(0);
+  const [exercisesPerPage] = useState(20);
   const [newExercise, setNewExercise] = useState<Partial<Exercise & { trainingTypes?: string[] }>>({
     name: '',
     category: 'Strength',
@@ -110,6 +118,18 @@ export const Admin: React.FC = () => {
     location: '',
     address: '',
   });
+
+  // Team Settings State
+  const [teamSettings, setTeamSettings] = useState(() => getTeamSettings());
+  const [seasonPhase, setSeasonPhase] = useState<SeasonPhase>(teamSettings.seasonPhase);
+  const [teamLevel, setTeamLevel] = useState<TeamLevel>(teamSettings.teamLevel);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
+  // AI Coach State
+  const [teamApiKey, setTeamApiKey] = useState<string>(teamSettings.aiApiKey || '');
+  const [apiKeyValidating, setApiKeyValidating] = useState(false);
+  const [apiKeyValidationResult, setApiKeyValidationResult] = useState<{ valid: boolean; error?: string } | null>(null);
+  const [aiCoachSaved, setAiCoachSaved] = useState(false);
 
   // Helper function to calculate end time
   const calculateEndTime = (startTime: string, durationMinutes: number): string => {
@@ -317,6 +337,63 @@ export const Admin: React.FC = () => {
       // Update local admin state
       setSessions(sessions.filter(s => s.id !== id));
     }
+  };
+
+  // Team Settings Handlers
+  const handleSaveTeamSettings = () => {
+    if (!user) return;
+
+    const updated = updateTeamSettings(seasonPhase, teamLevel, user.name);
+    setTeamSettings(updated);
+    setSettingsSaved(true);
+
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setSettingsSaved(false);
+    }, 3000);
+  };
+
+  // AI Coach Configuration Handlers
+  const handleTestAPIKey = async () => {
+    if (!teamApiKey.trim()) {
+      setApiKeyValidationResult({ valid: false, error: 'Please enter an API key' });
+      return;
+    }
+
+    setApiKeyValidating(true);
+    setApiKeyValidationResult(null);
+
+    const result = await validateAPIKey(teamApiKey.trim());
+    setApiKeyValidationResult(result);
+    setApiKeyValidating(false);
+  };
+
+  const handleSaveAICoachConfig = () => {
+    if (!user) return;
+
+    // Get current team settings
+    const currentSettings = getTeamSettings();
+
+    // Update with new API key
+    const updatedSettings = {
+      ...currentSettings,
+      aiApiKey: teamApiKey.trim() || undefined,
+      updatedAt: new Date().toISOString(),
+      updatedBy: user.name,
+    };
+
+    // Save to localStorage
+    localStorage.setItem('teamSettings', JSON.stringify(updatedSettings));
+    setTeamSettings(updatedSettings);
+    setAiCoachSaved(true);
+
+    // Clear validation result and show success
+    setApiKeyValidationResult(null);
+
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setAiCoachSaved(false);
+    }, 3000);
   };
 
   // Policies Management Handlers
@@ -622,6 +699,9 @@ export const Admin: React.FC = () => {
         <Tab label={t('admin.trainingTypesTab')} />
         <Tab label={t('admin.policiesTab')} />
         <Tab label={t('admin.blockInfoTab')} />
+        <Tab label={t('admin.teamSettingsTab')} />
+        <Tab label={t('admin.aiCoachTab')} />
+        <Tab label={t('admin.pointsSystemTab')} />
       </Tabs>
 
       {/* Training Builder Tab */}
@@ -816,62 +896,73 @@ export const Admin: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {exercises.slice(0, 20).map((exercise) => (
-                  <TableRow key={exercise.id}>
-                    <TableCell>{exercise.name}</TableCell>
-                    <TableCell>
-                      <Chip label={exercise.category} size="small" />
-                    </TableCell>
-                    <TableCell>
-                      {exercise.intensity && (
-                        <Chip
-                          label={exercise.intensity}
+                {exercises
+                  .slice(exercisePage * exercisesPerPage, (exercisePage + 1) * exercisesPerPage)
+                  .map((exercise) => (
+                    <TableRow key={exercise.id}>
+                      <TableCell>{exercise.name}</TableCell>
+                      <TableCell>
+                        <Chip label={exercise.category} size="small" />
+                      </TableCell>
+                      <TableCell>
+                        {exercise.intensity && (
+                          <Chip
+                            label={exercise.intensity}
+                            size="small"
+                            color={
+                              exercise.intensity === 'high'
+                                ? 'error'
+                                : exercise.intensity === 'mod'
+                                ? 'warning'
+                                : 'success'
+                            }
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {exercise.positionTags?.join(', ') || 'All'}
+                      </TableCell>
+                      <TableCell>
+                        {exercise.youtubeUrl ? (
+                          <Chip label="Yes" size="small" color="success" />
+                        ) : (
+                          <Chip label="No" size="small" color="default" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
                           size="small"
-                          color={
-                            exercise.intensity === 'high'
-                              ? 'error'
-                              : exercise.intensity === 'mod'
-                              ? 'warning'
-                              : 'success'
-                          }
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {exercise.positionTags?.join(', ') || 'All'}
-                    </TableCell>
-                    <TableCell>
-                      {exercise.youtubeUrl ? (
-                        <Chip label="Yes" size="small" color="success" />
-                      ) : (
-                        <Chip label="No" size="small" color="default" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => handleOpenExerciseDialog(exercise)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteExercise(exercise.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          color="primary"
+                          onClick={() => handleOpenExerciseDialog(exercise)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteExercise(exercise.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </TableContainer>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Showing 20 of {exercises.length} exercises
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Showing {exercisePage * exercisesPerPage + 1}-
+              {Math.min((exercisePage + 1) * exercisesPerPage, exercises.length)} of {exercises.length} exercises
+            </Typography>
+            <Pagination
+              count={Math.ceil(exercises.length / exercisesPerPage)}
+              page={exercisePage + 1}
+              onChange={(_, page) => setExercisePage(page - 1)}
+              color="primary"
+            />
+          </Box>
         </Box>
       )}
 
@@ -1158,6 +1249,126 @@ export const Admin: React.FC = () => {
 
       {/* Block Info Management Tab */}
       {activeTab === 6 && <BlockInfoManager />}
+
+      {/* Team Settings Tab */}
+      {activeTab === 7 && (
+        <Box>
+          <Typography variant="h6" sx={{ mb: 3 }}>
+            {t('teamSettings.title')}
+          </Typography>
+
+          {settingsSaved && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {t('teamSettings.settingsSaved')}
+            </Alert>
+          )}
+
+          <Card>
+            <CardContent>
+              <Grid container spacing={3}>
+                {/* Season Phase */}
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('teamSettings.seasonPhase')}</InputLabel>
+                    <Select
+                      value={seasonPhase}
+                      label={t('teamSettings.seasonPhase')}
+                      onChange={(e) => setSeasonPhase(e.target.value as SeasonPhase)}
+                    >
+                      <MenuItem value="off-season">
+                        {t('teamSettings.phase.off-season')}
+                      </MenuItem>
+                      <MenuItem value="pre-season">
+                        {t('teamSettings.phase.pre-season')}
+                      </MenuItem>
+                      <MenuItem value="in-season">
+                        {t('teamSettings.phase.in-season')}
+                      </MenuItem>
+                      <MenuItem value="post-season">
+                        {t('teamSettings.phase.post-season')}
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                    {t(`teamSettings.phaseDesc.${seasonPhase}`)}
+                  </Typography>
+                </Grid>
+
+                {/* Team Level */}
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('teamSettings.teamLevel')}</InputLabel>
+                    <Select
+                      value={teamLevel}
+                      label={t('teamSettings.teamLevel')}
+                      onChange={(e) => setTeamLevel(e.target.value as TeamLevel)}
+                    >
+                      <MenuItem value="amateur">
+                        {t('teamSettings.level.amateur')}
+                      </MenuItem>
+                      <MenuItem value="semi-pro">
+                        {t('teamSettings.level.semi-pro')}
+                      </MenuItem>
+                      <MenuItem value="college">
+                        {t('teamSettings.level.college')}
+                      </MenuItem>
+                      <MenuItem value="pro">
+                        {t('teamSettings.level.pro')}
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                    {t(`teamSettings.levelDesc.${teamLevel}`)}
+                  </Typography>
+                </Grid>
+
+                {/* Current Settings Display */}
+                <Grid item xs={12}>
+                  <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      {t('teamSettings.currentConfig')}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>{t('teamSettings.seasonPhase')}:</strong> {t(`teamSettings.phase.${seasonPhase}`)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>{t('teamSettings.teamLevel')}:</strong> {t(`teamSettings.level.${teamLevel}`)}
+                    </Typography>
+                    {teamSettings.updatedAt && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        Last updated by {teamSettings.updatedBy} on {new Date(teamSettings.updatedAt).toLocaleString()}
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+
+                {/* Save Button */}
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    onClick={handleSaveTeamSettings}
+                    disabled={
+                      seasonPhase === teamSettings.seasonPhase &&
+                      teamLevel === teamSettings.teamLevel
+                    }
+                  >
+                    {t('teamSettings.saveSettings')}
+                  </Button>
+                </Grid>
+
+                {/* Impact Info */}
+                <Grid item xs={12}>
+                  <Alert severity="info">
+                    <Typography variant="body2">
+                      {t('teamSettings.impact')}
+                    </Typography>
+                  </Alert>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
 
       {/* Exercise Dialog */}
       <Dialog
@@ -1837,6 +2048,131 @@ export const Admin: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* AI Coach Configuration Tab */}
+      {activeTab === 8 && (
+        <Box>
+          <Typography variant="h6" sx={{ mb: 3 }}>
+            {t('admin.aiCoachTab')}
+          </Typography>
+
+          {aiCoachSaved && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {t('admin.aiCoachSaved')}
+            </Alert>
+          )}
+
+          <Card>
+            <CardContent>
+              <Grid container spacing={3}>
+                {/* Info Alert */}
+                <Grid item xs={12}>
+                  <Alert severity="info">
+                    <Typography variant="body2">
+                      {t('admin.aiCoachInfo')}
+                    </Typography>
+                  </Alert>
+                </Grid>
+
+                {/* Team API Key */}
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t('admin.teamApiKey')}
+                    value={teamApiKey}
+                    onChange={(e) => {
+                      setTeamApiKey(e.target.value);
+                      setApiKeyValidationResult(null);
+                    }}
+                    placeholder="sk-..."
+                    type="password"
+                    helperText={t('admin.teamApiKeyHelp')}
+                  />
+                </Grid>
+
+                {/* Test Button */}
+                <Grid item xs={12}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleTestAPIKey}
+                    disabled={!teamApiKey.trim() || apiKeyValidating}
+                  >
+                    {apiKeyValidating ? t('admin.testing') : t('admin.testApiKey')}
+                  </Button>
+                </Grid>
+
+                {/* Validation Result */}
+                {apiKeyValidationResult && (
+                  <Grid item xs={12}>
+                    <Alert severity={apiKeyValidationResult.valid ? 'success' : 'error'}>
+                      <Typography variant="body2">
+                        {apiKeyValidationResult.valid
+                          ? t('admin.apiKeyValid')
+                          : `${t('admin.apiKeyInvalid')}: ${apiKeyValidationResult.error}`}
+                      </Typography>
+                    </Alert>
+                  </Grid>
+                )}
+
+                {/* Save Button */}
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    onClick={handleSaveAICoachConfig}
+                    disabled={teamApiKey === (teamSettings.aiApiKey || '')}
+                  >
+                    {t('admin.saveAICoach')}
+                  </Button>
+                  {teamApiKey && (
+                    <Button
+                      sx={{ ml: 2 }}
+                      onClick={() => {
+                        setTeamApiKey('');
+                        setApiKeyValidationResult(null);
+                      }}
+                    >
+                      {t('admin.clearApiKey')}
+                    </Button>
+                  )}
+                </Grid>
+
+                {/* Current Configuration */}
+                <Grid item xs={12}>
+                  <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      {t('admin.currentAIConfig')}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>{t('admin.teamApiKeyStatus')}:</strong>{' '}
+                      {teamSettings.aiApiKey
+                        ? t('admin.configured')
+                        : t('admin.notConfigured')}
+                    </Typography>
+                    {teamSettings.updatedAt && teamSettings.aiApiKey && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        Last updated by {teamSettings.updatedBy} on{' '}
+                        {new Date(teamSettings.updatedAt).toLocaleString()}
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+
+                {/* Usage Info */}
+                <Grid item xs={12}>
+                  <Alert severity="warning">
+                    <Typography variant="body2">
+                      {t('admin.aiCoachUsageInfo')}
+                    </Typography>
+                  </Alert>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
+
+      {/* Points System Configuration Tab */}
+      {activeTab === 9 && <PointsSystemManager />}
     </Box>
   );
 };

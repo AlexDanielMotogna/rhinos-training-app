@@ -39,6 +39,7 @@ import { sanitizeYouTubeUrl } from '../services/yt';
 import { analyzeWorkout, estimateWorkoutDuration, type WorkoutReport } from '../services/workoutAnalysis';
 import { saveWorkoutReport } from '../services/workoutReports';
 import { generateAIWorkoutReport, getAPIKey } from '../services/aiInsights';
+import { addWorkoutPoints } from '../services/pointsSystem';
 
 type SessionView = 'my' | 'team';
 type MySessionTab = 'plans' | 'history' | 'reports';
@@ -199,14 +200,41 @@ export const MyTraining: React.FC = () => {
       refreshWorkoutHistory();
       setShowFreeSession(false);
 
+      // Default duration for free sessions (60 minutes)
+      const duration = 60;
+
       // Generate and save workout report for free sessions
-      // Note: Free sessions don't track duration, so we estimate 60 minutes
       const report = await generateWorkoutReport(
         payload.entries,
-        60, // Default duration for free sessions
+        duration,
         t('training.freeSessions')
       );
       saveWorkoutReport(user.id, t('training.freeSessions'), report, 'player', payload.entries);
+
+      // Add points to player's weekly total
+      const totalSets = payload.entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
+      const totalVolume = payload.entries.reduce((sum, e) => {
+        if (e.setData) {
+          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
+        }
+        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
+      }, 0);
+      const totalDistance = payload.entries.reduce((sum, e) => {
+        if (e.setData) {
+          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
+        }
+        return sum + (e.distance || 0);
+      }, 0);
+      addWorkoutPoints(
+        user.id,
+        t('training.freeSessions'),
+        duration,
+        'personal',
+        totalSets,
+        totalVolume,
+        totalDistance > 0 ? totalDistance : undefined,
+        payload.notes
+      );
 
       setWorkoutReport(report);
       setLastWorkoutTitle(t('training.freeSessions'));
@@ -296,7 +324,7 @@ export const MyTraining: React.FC = () => {
   // Interceptor: Show duration dialog instead of saving directly
   const handleFinishWorkoutRequest = (entries: WorkoutEntry[], notes: string, elapsedMinutes: number) => {
     const totalSets = entries.reduce((sum, entry) => sum + (entry.setData?.length || 0), 0);
-    const estimatedMinutes = estimateWorkoutDuration(entries);
+    const estimatedMinutes = estimateWorkoutDuration(entries, startingPlan?.warmupMinutes);
 
     setPendingWorkout({
       entries,
@@ -361,6 +389,31 @@ export const MyTraining: React.FC = () => {
         notes
       );
       saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
+
+      // Add points to player's weekly total
+      const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
+      const totalVolume = entries.reduce((sum, e) => {
+        if (e.setData) {
+          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
+        }
+        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
+      }, 0);
+      const totalDistance = entries.reduce((sum, e) => {
+        if (e.setData) {
+          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
+        }
+        return sum + (e.distance || 0);
+      }, 0);
+      addWorkoutPoints(
+        user.id,
+        startingPlan.name,
+        duration,
+        'personal',
+        totalSets,
+        totalVolume,
+        totalDistance > 0 ? totalDistance : undefined,
+        notes
+      );
 
       setWorkoutReport(report);
       setLastWorkoutTitle(startingPlan.name);
@@ -440,6 +493,31 @@ export const MyTraining: React.FC = () => {
         notes
       );
       saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
+
+      // Add points to player's weekly total
+      const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
+      const totalVolume = entries.reduce((sum, e) => {
+        if (e.setData) {
+          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
+        }
+        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
+      }, 0);
+      const totalDistance = entries.reduce((sum, e) => {
+        if (e.setData) {
+          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
+        }
+        return sum + (e.distance || 0);
+      }, 0);
+      addWorkoutPoints(
+        user.id,
+        selectedBlock.title,
+        duration,
+        'coach',
+        totalSets,
+        totalVolume,
+        totalDistance > 0 ? totalDistance : undefined,
+        notes
+      );
 
       setWorkoutReport(report);
       setLastWorkoutTitle(selectedBlock.title);

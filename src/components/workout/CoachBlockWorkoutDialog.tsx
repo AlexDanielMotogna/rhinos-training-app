@@ -367,10 +367,16 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
       </DialogContent>
 
       <DialogActions sx={{ p: '10px' }}>
-        <Button onClick={onClose} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-          {t('common.cancel')}
-        </Button>
-        {completedEntries.length > 0 && (
+        {selectedExerciseIndex === null ? (
+          <Button onClick={onClose} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+            {t('common.cancel')}
+          </Button>
+        ) : (
+          <Button onClick={() => setSelectedExerciseIndex(null)} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+            {t('common.goBack')}
+          </Button>
+        )}
+        {completedEntries.length > 0 && selectedExerciseIndex === null && (
           <Button
             onClick={handleFinishClick}
             variant="contained"

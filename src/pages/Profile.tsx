@@ -12,6 +12,8 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhoneIcon from '@mui/icons-material/Phone';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { getUser, getAllUsers, type MockUser } from '../services/mock';
@@ -23,6 +25,7 @@ import { PowerProfileCard } from '../components/profile/PowerProfileCard';
 import { AgilityProfileCard } from '../components/profile/AgilityProfileCard';
 import { EditProfileDialog } from '../components/profile/EditProfileDialog';
 import { AISettings } from '../components/profile/AISettings';
+import { getTeamSettings } from '../services/teamSettings';
 import type { KPISnapshot } from '../types/kpi';
 import type { StrengthSummary, SpeedSummary, PowerSummary, AgilitySummary } from '../types/testing';
 
@@ -48,6 +51,7 @@ export const Profile: React.FC = () => {
   const [powerSummary, setPowerSummary] = useState<PowerSummary | null>(null);
   const [agilitySummary, setAgilitySummary] = useState<AgilitySummary | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [teamSettings] = useState(() => getTeamSettings());
 
   useEffect(() => {
     if (user) {
@@ -285,6 +289,69 @@ export const Profile: React.FC = () => {
                 )}
               </Box>
             )}
+          </CardContent>
+        </Card>
+      </Box>
+
+      {/* Team Settings Card */}
+      <Box sx={{ mb: 3 }}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              {t('teamSettings.title')}
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      backgroundColor: 'primary.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <CalendarMonthIcon sx={{ color: 'white', fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('teamSettings.seasonPhase')}
+                    </Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      {t(`teamSettings.phase.${teamSettings.seasonPhase}`)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      backgroundColor: 'warning.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <WorkspacePremiumIcon sx={{ color: 'white', fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('teamSettings.teamLevel')}
+                    </Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      {t(`teamSettings.level.${teamSettings.teamLevel}`)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
           </CardContent>
         </Card>
       </Box>

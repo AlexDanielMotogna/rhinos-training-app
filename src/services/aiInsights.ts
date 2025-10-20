@@ -1,6 +1,7 @@
 import type { WorkoutReport } from './workoutAnalysis';
 import type { Position } from '../types/exercise';
 import type { WorkoutEntry } from '../types/workout';
+import { getTeamSettings } from './teamSettings';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
@@ -31,6 +32,13 @@ function buildReportGenerationPrompt(
   // Calculate basic metrics that AI will use
   const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
 
+  const totalReps = entries.reduce((sum, e) => {
+    if (e.setData) {
+      return sum + e.setData.reduce((s, set) => s + (set.reps || 0), 0);
+    }
+    return sum + ((e.reps || 0) * (e.sets || 0));
+  }, 0);
+
   const totalVolume = entries.reduce((sum, e) => {
     if (e.setData) {
       return sum + e.setData.reduce((s, set) => s + (set.kg || 0) * (set.reps || 0), 0);
@@ -47,6 +55,29 @@ function buildReportGenerationPrompt(
 
   const rpeValues = entries.filter(e => e.rpe).map(e => e.rpe!);
   const avgRPE = rpeValues.length > 0 ? rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length : 0;
+
+  // Debug logging to diagnose data issues
+  console.log('🔍 AI Prompt Data:', {
+    exerciseCount: entries.length,
+    totalSets,
+    totalReps,
+    totalVolume,
+    totalDistance: totalDistance.toFixed(3),
+    avgRPE: avgRPE.toFixed(1),
+    duration,
+    workoutTitle,
+    entries: entries.map(e => ({
+      name: e.name,
+      setDataLength: e.setData?.length,
+      sets: e.sets,
+      reps: e.reps,
+      kg: e.kg,
+      hasSetData: !!e.setData
+    }))
+  });
+
+  // Get team settings for context
+  const teamSettings = getTeamSettings();
 
   // Exercise breakdown
   const exerciseList = entries.map(e => {
@@ -74,83 +105,160 @@ function buildReportGenerationPrompt(
     return `- ${e.name} [${e.category}]: ${setsInfo}${rpeInfo}${notesInfo}`;
   }).join('\n');
 
-  return `🏈 UNIVERSAL WORKOUT REPORT GENERATOR – American Football S&C
+  return `🏈 UNIVERSAL WORKOUT REPORT GENERATOR – American Football S&C (FINAL STRICT MODE)
 
 ROLE
-You are an expert American Football Strength & Conditioning coach. Analyze training sessions of ANY type and generate a professional, honest, and actionable report. Be tough, clear, and fair — no sugarcoating.
+You are an expert American Football Strength & Conditioning coach. Analyze training sessions of ANY type and generate a professional, honest, and actionable report. Be tough, clear, and fair — no sugarcoating. Validate sets, reps, load, distance, and RPE. Never add fake praise. Adjust expectations based on position, season phase, and team level.
 
 INPUTS
 • Player:
   - Name: ${userName}
-  - Position: ${position}${playerWeight ? `\n  - Body Weight (kg): ${playerWeight}` : ''}${playerHeight ? `\n  - Height (cm): ${playerHeight}` : ''}
+  - Position: ${position}
+  - Body Weight (kg): ${playerWeight || 'Unknown'}
+  - Height (cm): ${playerHeight || 'Unknown'}
+  - Season Phase: ${teamSettings.seasonPhase}
+  - Team Level: ${teamSettings.teamLevel}
 • Workout:
   - Title: ${workoutTitle}
   - Duration (min): ${duration}
   - Exercises (raw list):
 ${exerciseList}
   - Total Sets: ${totalSets}
+  - Total Reps: ${totalReps}
   - Total Lifting Volume (kg): ${totalVolume}
   - Total Distance (km): ${totalDistance.toFixed(3)}
   - Average RPE: ${avgRPE.toFixed(1)}${workoutNotes ? `\n  - Notes: ${workoutNotes}` : ''}
 
 TASK PIPELINE
-1) SESSION INTENT CLASSIFICATION (pick 1 primary, 1 optional secondary):
-   - SPEED/ACCELERATION: sprints, acceleration, dashes, flying runs, short distances, high RPE, long rests
-   - POWER/PLYOMETRICS: jumps, bounds, throws, explosive lifts
-   - STRENGTH: squats, deadlifts, presses, pulls, accessories; evaluate relative to bodyweight
-   - CONDITIONING/TEMPO: sustained distance/volume, repeated bouts, RPE 6–8
-   - AGILITY/COD: change of direction, ladders, pro-agility, T-test, reactive drills
-   - MOBILITY/RECOVERY: mobility, stretching, breathing, deload
-   - MIXED: significant combination of ≥2 categories
 
-2) SAFETY & SETUP
-   - If no warm-up before intense work → warning + subtract 10–15 points from Athletic Quality
-   - If injury/pain noted → flag and adjust recommendations
+1) SESSION INTENT CLASSIFICATION
+Pick 1 primary, 1 optional secondary: speed | power | strength | conditioning | agility | mobility | mixed
 
-3) INTENT-SPECIFIC EVALUATION (do NOT punish a focused session for missing other modalities):
-   - SPEED: quality > volume. 8–16 total sprints with high RPE and long rests = solid even if distance is low
-   - POWER: explosive intent, short sets, avoid overfatigue
-   - STRENGTH: evaluate RELATIVE strength:${playerWeight ? `
-       <${(playerWeight * 0.5).toFixed(0)}kg (0.5× BW) with high RPE = weak/rehab
-       ${(playerWeight * 1.0).toFixed(0)}–${(playerWeight * 1.5).toFixed(0)}kg (1.0–1.5× BW) = adequate
-       >${(playerWeight * 2.0).toFixed(0)}kg (2.0× BW) = strong` : `
-       <0.5× BW with high RPE = weak/rehab
-       1.0–1.5× BW = adequate
-       >2.0× BW = strong`}
-   - CONDITIONING: evaluate volume, consistency, pace control
-   - AGILITY: execution quality, low technical breakdown, adequate rest
-   - MOBILITY: adherence, recovery, quality of movement
+CRITICAL: Evaluate THIS session based on its PRIMARY INTENT only.
+• DO NOT penalize a focused session for missing other modalities
+• If session intent = strength upper → judge the strength work, NOT the lack of sprints/legs
+• If session intent = speed → judge the speed work, NOT the lack of lifting
+• Missing modalities can be mentioned for WEEKLY BALANCE context, but NEVER as a fault of this specific session
+• Example GOOD feedback: "Solid upper strength session. Remember to balance this week with lower body and speed work."
+• Example BAD feedback: "No lower body work detected - make sure to train legs" ❌ (This penalizes a valid upper-focused session)
 
-4) SCORING FRAMEWORK (0–100)
-   - intensityScore: effort relative to intent (RPE, density, load)
-   - workCapacityScore: useful volume within intent (don't penalize speed for low distance)
-   - athleticQualityScore: technique, warm-up, execution, rest management
-   - positionRelevanceScore: transfer to ${position} (e.g. RB → acceleration, COD, power)
+2) POSITION-SPECIFIC BENCHMARKS
+Compare training metrics against standards (relative to BW unless otherwise noted).
 
-   Guidelines:
-   • <20 min with only 1–2 exercises (not max test) → WorkCapacity max 40–50
-   • No warm-up on intense session → −10–15 AthleticQuality
-   • Weak relative strength with high RPE → drop AthleticQuality & Position Fit
-   • Good speed session (8–16 sprints) → WorkCapacity 70–85 even if total distance is low
+RB / WR / CB / S (Skill Players)
+  Squat: Weak <1.0× BW | Adequate 1.4–1.8× BW | Elite >1.9× BW
+  Bench: Weak <0.7× BW | Adequate 1.1–1.3× BW | Elite >1.4× BW
+  Deadlift: Weak <1.2× BW | Adequate 1.7–2.0× BW | Elite >2.2× BW
+  40y Sprint: Elite WR ≤4.40s | Elite RB ≤4.45s | Adequate WR ≤4.55s, RB ≤4.60s | Weak above these
+  Pro-Agility (5–10–5): Elite ≤4.15s | Adequate 4.26–4.35s | Weak ≥4.36s
+  Broad Jump: Adequate 2.5–2.7m | Elite >2.8m
+  Vertical Jump: Adequate 75–85cm | Elite >86cm
 
-5) RECOVERY
-   - recoveryDemand: "low|medium|high|very-high" based on RPE + density
-   - recommendedRestHours: 24–72 depending on intensity & intent
-     (Speed/strength high intensity = 36–48h, Conditioning volume = 24–36h, Very high load = 48–72h)
+LB / TE (Hybrid Power)
+  Squat: Adequate 1.7–2.0× BW | Elite >2.1× BW
+  Bench: Adequate 1.3–1.5× BW | Elite >1.6× BW
+  Deadlift: Adequate 1.9–2.2× BW | Elite >2.3× BW
+  40y Sprint: Adequate 5.10–5.29s | Elite <5.09s
+  Pro-Agility: Adequate 4.6–4.79s | Elite <4.59s
+  Broad Jump: Adequate 2.6–2.8m | Elite >2.9m
+  Vertical: Adequate 69–77cm | Elite >78cm
 
-6) FEEDBACK
-   - strengths: 1–3 clear positives if deserved (don't add fake praise)
-   - warnings: 1–3 concrete risks (no warm-up, poor relative strength, insufficient sets, etc.)
-   - coachInsights: 2–3 sentences, direct & honest. Do NOT suggest adding other modalities into the same session if it was clearly focused. Recommend those for other days in the week.
+OL / DL (Linemen)
+  Squat: Adequate 2.0–2.3× BW | Elite >2.4× BW
+  Bench: Adequate 1.4–1.6× BW | Elite >1.7× BW
+  Deadlift: Adequate 2.1–2.4× BW | Elite >2.5× BW
+  40y Sprint: Adequate 5.30–5.49s | Elite <5.29s
+  Pro-Agility: Adequate 4.8–4.99s | Elite <4.79s
+  Broad Jump: Adequate 2.3–2.4m | Elite >2.5m
+  Vertical: Adequate 63–70cm | Elite >71cm
 
-OUTPUT
-Return ONLY valid JSON with this exact schema:
+QB (Quarterbacks)
+  Squat: Adequate 1.3–1.5× BW | Elite >1.6× BW
+  Bench: Adequate 1.0–1.2× BW | Elite >1.3× BW
+  Deadlift: Adequate 1.5–1.8× BW | Elite >1.9× BW
+  40y Sprint: Adequate 4.90–5.09s | Elite <4.89s
+  Pro-Agility: Adequate 4.6–4.79s | Elite <4.59s
+  Broad Jump: Adequate 2.5–2.6m | Elite >2.7m
+  Vertical: Adequate 69–75cm | Elite >76cm
+
+3) MINIMUM EFFECTIVE DOSE VALIDATION
+Mark session as insufficient if ANY of these are true:
+  • < 2 exercises (unless max-test or focused single-lift session)
+  • < 4 total sets (strength/power)
+  • < 12 total reps (strength/power)
+  • Sprint volume < 150m or < 5 sprints (speed work)
+  • Conditioning < 6 min (conditioning work)
+  • RPE > 7 with trivial volume (< 3 sets)
+
+IMPORTANT: A session with adequate sets, reps, and volume is VALID even if duration is short.
+Example: 4×10×90kg Bench + 4×10×100kg Squat = VALID (8 sets, 80 reps, high volume) even if only 20-30 minutes.
+
+If insufficient →
+  "sessionValid": false
+  "intensityScore": ≤ 35
+  "workCapacityScore": ≤ 25
+  "athleticQualityScore": ≤ 40
+  "positionRelevanceScore": ≤ 40
+  "strengths": []
+  "warnings": ["Session insufficient: specific reason with numbers"]
+  "recoveryDemand": "insufficient"
+  "recommendedRestHours": 0
+  "coachInsights": USE VERY DIRECT TONE:
+    "This was not a real workout. [Specific numbers: X sets, Y reps, Z kg total] has ZERO training effect.
+     Minimum requirements for valid strength session: 4+ sets, 12+ total reps, adequate volume.
+     This session will NOT produce any adaptation or strength gains. Plan a proper training session next time."
+
+4) SEASON PHASE MULTIPLIERS
+Apply to raw scores:
+
+Phase         Intensity  WorkCap  AthleticQual  PositionFit
+off-season    ×1.1       ×1.2     ×1.1          ×1.0
+pre-season    ×1.0       ×0.9     ×1.1          ×1.2
+in-season     ×0.8       ×0.7     ×1.2          ×1.3
+post-season   ×0.7       ×0.6     ×1.0          ×0.8
+
+5) TEAM LEVEL MULTIPLIERS
+Apply to raw scores:
+
+Level       Intensity  WorkCap  AthleticQual  PositionFit
+amateur     ×0.9       ×0.9     ×1.0          ×0.8
+semi-pro    ×1.0       ×1.0     ×1.0          ×1.0
+college     ×1.1       ×1.1     ×1.1          ×1.1
+pro         ×1.3       ×1.3     ×1.2          ×1.3
+
+6) SCORING FRAMEWORK (0–100)
+  • intensityScore: effort vs intent (load, RPE, density)
+  • workCapacityScore: useful volume vs position standards
+  • athleticQualityScore: warm-up, execution, technique
+  • positionRelevanceScore: alignment with role & benchmarks
+
+Final scores = raw × SeasonPhaseMultiplier × TeamLevelMultiplier (capped 0–100).
+
+7) RECOVERY
+  • recoveryDemand: low | medium | high | very-high
+  • Hours: 24–72 (adjusted by intensity & season phase)
+
+8) FEEDBACK
+  • strengths: 1–3 positives (only if earned, based on session intent)
+  • warnings: 1–3 risks/faults (ONLY within session scope - no "missing leg day" on an upper session)
+  • coachInsights: 2–3 sentences, direct, contextual to role & season
+
+IMPORTANT FEEDBACK RULES:
+  • Judge session quality within its PRIMARY INTENT - don't mark down for what it wasn't trying to be
+  • "No lower body work" is ONLY a warning if session was supposed to be full-body or mixed
+  • Weekly balance reminders are OK in coachInsights, but not in warnings
+  • Focus on execution quality, effort, volume adequacy FOR THE INTENT
+
+OUTPUT FORMAT (JSON only):
 
 {
+  "sessionValid": <true|false>,
   "intensityScore": <0-100>,
   "workCapacityScore": <0-100>,
   "athleticQualityScore": <0-100>,
   "positionRelevanceScore": <0-100>,
+  "seasonPhase": "${teamSettings.seasonPhase}",
+  "teamLevel": "${teamSettings.teamLevel}",
   "totalVolume": ${totalVolume},
   "totalDistance": ${totalDistance.toFixed(3)},
   "duration": ${duration},
@@ -164,8 +272,8 @@ Return ONLY valid JSON with this exact schema:
   "speedWork": <0-100>,
   "strengths": ["..."],
   "warnings": ["..."],
-  "recoveryDemand": "<low|medium|high|very-high>",
-  "recommendedRestHours": <24-72>,
+  "recoveryDemand": "<low|medium|high|very-high|insufficient>",
+  "recommendedRestHours": <0-72>,
   "coachInsights": "..."
 }`;
 }
@@ -471,15 +579,77 @@ export function estimateAICost(): string {
 }
 
 /**
- * Check if API key is configured
+ * Validate if an API key is functional by making a test request
  */
-export function hasAPIKey(): boolean {
-  const apiKey = localStorage.getItem('openai_api_key');
-  return Boolean(apiKey && apiKey.startsWith('sk-'));
+export async function validateAPIKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+  if (!apiKey || !apiKey.startsWith('sk-')) {
+    return { valid: false, error: 'Invalid API key format' };
+  }
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/models', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+
+    if (response.ok) {
+      return { valid: true };
+    }
+
+    if (response.status === 401) {
+      return { valid: false, error: 'Invalid API key' };
+    }
+
+    if (response.status === 429) {
+      return { valid: false, error: 'Rate limit exceeded - add credits to your OpenAI account' };
+    }
+
+    return { valid: false, error: `API error: ${response.status}` };
+  } catch (error) {
+    return { valid: false, error: error instanceof Error ? error.message : 'Network error' };
+  }
 }
 
 /**
- * Save API key to localStorage
+ * Get API key with priority: Team Settings > User Settings (only if enabled)
+ * Returns null if no valid API key is configured or AI Coach is disabled
+ */
+export function getAPIKey(): string | null {
+  // Priority 1: Team API Key (configured by admin)
+  const teamSettings = getTeamSettings();
+  if (teamSettings.aiApiKey) {
+    return teamSettings.aiApiKey;
+  }
+
+  // Priority 2: User API Key (personal, only if enabled)
+  const userStr = localStorage.getItem('currentUser');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.aiCoachEnabled && user.aiApiKey) {
+        return user.aiApiKey;
+      }
+    } catch (e) {
+      console.error('Error parsing user data:', e);
+    }
+  }
+
+  // No API key configured or AI Coach is disabled
+  return null;
+}
+
+/**
+ * Check if API key is configured (Team or User)
+ */
+export function hasAPIKey(): boolean {
+  return Boolean(getAPIKey());
+}
+
+/**
+ * Save API key to localStorage (DEPRECATED - use Profile or Admin settings instead)
+ * @deprecated Use user.aiApiKey or teamSettings.aiApiKey instead
  */
 export function saveAPIKey(apiKey: string): boolean {
   if (!apiKey || !apiKey.startsWith('sk-')) {
@@ -490,14 +660,8 @@ export function saveAPIKey(apiKey: string): boolean {
 }
 
 /**
- * Get saved API key
- */
-export function getAPIKey(): string | null {
-  return localStorage.getItem('openai_api_key');
-}
-
-/**
- * Remove API key
+ * Remove API key (DEPRECATED)
+ * @deprecated Manage API keys through Profile or Admin settings instead
  */
 export function removeAPIKey(): void {
   localStorage.removeItem('openai_api_key');

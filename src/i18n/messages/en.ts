@@ -30,6 +30,7 @@ export const messagesEN = {
   'common.error': 'Error',
   'common.success': 'Success',
   'common.back': 'Back to Team',
+  'common.goBack': 'Back',
 
   // Auth
   'auth.login': 'Login',
@@ -273,6 +274,9 @@ export const messagesEN = {
   'admin.trainingTypesTab': 'Training Types',
   'admin.policiesTab': 'Policies',
   'admin.blockInfoTab': 'Block Info',
+  'admin.teamSettingsTab': 'Team Settings',
+  'admin.aiCoachTab': 'AI Coach',
+  'admin.pointsSystemTab': 'Points System',
   'admin.exerciseCatalog': 'Exercise Catalog',
   'admin.exercises': 'exercises',
   'admin.addExercise': 'Add Exercise',
@@ -331,6 +335,21 @@ export const messagesEN = {
   'admin.blockInfoSaved': 'Block info saved successfully',
   'admin.blockInfoDeleted': 'Block info deleted successfully',
   'admin.noBlockInfoYet': 'No block information configured yet. Add informational tooltips to help players understand workout blocks.',
+  'admin.teamApiKey': 'Team API Key (OpenAI)',
+  'admin.teamApiKeyHelp': 'Enter your OpenAI API key to enable AI-powered workout reports for all players',
+  'admin.testApiKey': 'Test API Key',
+  'admin.testing': 'Testing...',
+  'admin.apiKeyValid': 'API key is valid and working',
+  'admin.apiKeyInvalid': 'API key is invalid',
+  'admin.saveAICoach': 'Save AI Coach Configuration',
+  'admin.clearApiKey': 'Clear API Key',
+  'admin.aiCoachSaved': 'AI Coach configuration saved successfully',
+  'admin.aiCoachInfo': 'Configure a team-wide OpenAI API key to enable AI-powered workout analysis for all players. If set, all players will automatically use this API key for workout reports.',
+  'admin.currentAIConfig': 'Current AI Coach Configuration',
+  'admin.teamApiKeyStatus': 'Team API Key Status',
+  'admin.configured': 'Configured',
+  'admin.notConfigured': 'Not Configured',
+  'admin.aiCoachUsageInfo': 'When a team API key is configured, players cannot configure their own API keys. If you want players to use their own API keys, leave this field empty.',
 
   // MyTraining assigned programs
   'training.yourAssignedPrograms': 'Your Assigned Programs',
@@ -662,9 +681,12 @@ export const messagesEN = {
   'report.recoveryDemand.medium': 'Medium Demand',
   'report.recoveryDemand.high': 'High Demand',
   'report.recoveryDemand.very-high': 'Very High Demand',
+  'report.recoveryDemand.insufficient': 'Insufficient Session',
   'report.recommended': 'recommended rest',
   'report.coachInsights': 'Coach Insights',
   'report.saveReport': 'Save Report',
+  'report.invalidSession': 'INVALID SESSION',
+  'report.invalidSessionWarning': '⚠️ Does not meet training standards',
 
   // Report Strengths
   'report.strength.athleticFocus': 'Excellent athletic focus - you prioritized explosive and functional movements',
@@ -686,6 +708,57 @@ export const messagesEN = {
   'report.insight.needStrength': 'As a lineman, focus on max strength development with heavy compound lifts.',
   'report.insight.volumeJump': 'Significant volume increase from last week - monitor recovery and ensure proper rest.',
   'report.insight.keepGoing': 'Keep up the consistent work! Focus on progressive overload while maintaining good form.',
+  'report.insight.goodConditioningWork': 'Solid conditioning work! This builds your aerobic base and work capacity.',
+  'report.insight.decentConditioningWork': 'Good conditioning session. Keep building your aerobic base progressively.',
+  'report.insight.keepBuildingBase': 'Keep building your conditioning base. Gradually increase distance and intensity.',
+  'report.insight.balanceWithStrength': 'Remember to balance cardio with strength and power work for complete football fitness.',
+  'report.insight.mobilityWork': 'Great mobility session! Flexibility and range of motion are crucial for injury prevention.',
+  'report.insight.balanceWithPower': 'Balance this with explosive power work to maximize athletic performance.',
+  'report.insight.recoveryWork': 'Excellent recovery session. Active recovery accelerates adaptation and prevents overtraining.',
+  'report.insight.essentialForProgress': 'Recovery is where you grow stronger. Keep prioritizing it alongside hard training.',
+  'report.insight.techniqueWork': 'Solid technique work! Skill refinement is what separates good players from great ones.',
+  'report.insight.skillDevelopment': 'Technical mastery gives you the edge in game situations. Keep drilling fundamentals.',
+  'report.insight.speedWork': 'Explosive speed session! Speed kills on the football field.',
+  'report.insight.perfectForPosition': 'This type of work is perfect for your position demands.',
+  'report.insight.agilityWork': 'Excellent agility work! Change of direction speed wins games.',
+  'report.insight.gameChangerSkill': 'COD ability is a game-changer. Keep sharpening this skill.',
+  'report.insight.explosiveWork': 'Outstanding explosive work! Plyometrics build game-changing power.',
+  'report.insight.athleticPower': 'This develops the elastic strength that translates directly to the field.',
+
+  // Team Settings
+  'teamSettings.title': 'Team Settings',
+  'teamSettings.seasonPhase': 'Season Phase',
+  'teamSettings.teamLevel': 'Team Level',
+  'teamSettings.selectPhase': 'Select Season Phase',
+  'teamSettings.selectLevel': 'Select Team Level',
+  'teamSettings.currentConfig': 'Current Configuration',
+  'teamSettings.saveSettings': 'Save Team Settings',
+  'teamSettings.settingsSaved': 'Team settings saved successfully!',
+  'teamSettings.impact': 'These settings affect how the AI evaluates workouts and provides recommendations.',
+
+  // Season Phases
+  'teamSettings.phase.off-season': 'Off-Season',
+  'teamSettings.phase.pre-season': 'Pre-Season',
+  'teamSettings.phase.in-season': 'In-Season',
+  'teamSettings.phase.post-season': 'Post-Season',
+
+  // Season Phase Descriptions
+  'teamSettings.phaseDesc.off-season': 'Building phase: Focus on strength, power, and conditioning base. Higher volume, longer sessions acceptable.',
+  'teamSettings.phaseDesc.pre-season': 'Preparation phase: Peak conditioning, sport-specific work, team integration. Moderate-high volume.',
+  'teamSettings.phaseDesc.in-season': 'Maintenance phase: Preserve performance, manage fatigue, prioritize recovery. Lower volume, higher intensity.',
+  'teamSettings.phaseDesc.post-season': 'Recovery phase: Active recovery, address injuries, light training. Low volume and intensity.',
+
+  // Team Levels
+  'teamSettings.level.amateur': 'Amateur',
+  'teamSettings.level.semi-pro': 'Semi-Pro',
+  'teamSettings.level.college': 'College',
+  'teamSettings.level.pro': 'Professional',
+
+  // Team Level Descriptions
+  'teamSettings.levelDesc.amateur': 'Amateur level: Recreational/hobby sport, limited training time, focus on enjoyment and fitness.',
+  'teamSettings.levelDesc.semi-pro': 'Semi-professional level: Competitive standards, part-time training, balance with work/life commitments.',
+  'teamSettings.levelDesc.college': 'College level: NCAA/university standards, structured training programs, competitive athletics with academic balance.',
+  'teamSettings.levelDesc.pro': 'Professional level: Elite standards, full-time training, high expectations for performance and professionalism.',
 };
 
 export type MessageKey = keyof typeof messagesEN;

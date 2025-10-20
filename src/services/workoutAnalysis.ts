@@ -6,8 +6,8 @@ import { getWorkoutLogsByUser } from './workoutLog';
  * Estimate workout duration based on exercises and sets
  * Used when user logs workout after the fact
  */
-export function estimateWorkoutDuration(entries: WorkoutEntry[]): number {
-  if (entries.length === 0) return 0;
+export function estimateWorkoutDuration(entries: WorkoutEntry[], warmupMinutes?: number): number {
+  if (entries.length === 0) return warmupMinutes || 0;
 
   const totalSets = entries.reduce((sum, entry) => sum + (entry.setData?.length || 0), 0);
   const uniqueExercises = entries.length;
@@ -17,11 +17,16 @@ export function estimateWorkoutDuration(entries: WorkoutEntry[]): number {
   // - Each exercise transition adds ~2 minutes (setup, transition)
   // - Minimum 10 minutes for any workout
   const estimatedMinutes = (totalSets * 1.5) + (uniqueExercises * 2);
+  const baseEstimate = Math.max(10, Math.round(estimatedMinutes));
 
-  return Math.max(10, Math.round(estimatedMinutes));
+  // Add warmup time if provided
+  return baseEstimate + (warmupMinutes || 0);
 }
 
 export interface WorkoutReport {
+  // Session validity
+  sessionValid?: boolean;         // false if session doesn't meet minimum effective dose
+
   // Scores principales (0-100)
   intensityScore: number;
   workCapacityScore: number;
@@ -50,7 +55,7 @@ export interface WorkoutReport {
   intensityChange: number | null; // % vs last week
 
   // Recovery
-  recoveryDemand: 'low' | 'medium' | 'high' | 'very-high';
+  recoveryDemand: 'low' | 'medium' | 'high' | 'very-high' | 'insufficient';
   recommendedRestHours: number;
 
   // AI Insights
@@ -262,6 +267,70 @@ function calculateAthleticQualityScore(entries: WorkoutEntry[]): number {
   const categories = entries.map(e => e.category);
   const exerciseNames = entries.map(e => e.name.toLowerCase());
 
+  // Check if this is a single-category session
+  const uniqueCategories = new Set(categories);
+  const isSingleCategorySession = uniqueCategories.size === 1;
+  const primaryCategory = isSingleCategorySession ? categories[0] : null;
+
+  // Handle single-category sessions first (Conditioning, Mobility, Recovery, Technique)
+  if (isSingleCategorySession && primaryCategory) {
+    switch (primaryCategory) {
+      case 'Conditioning': {
+        // Conditioning is athletic! Give 60-85 base score
+        score += 65;
+        const totalDistance = entries.reduce((sum, e) => sum + (e.distance || 0), 0);
+        if (totalDistance >= 3) score += 10; // 3+ km
+        if (totalDistance >= 5) score += 10; // 5+ km
+        return Math.round(Math.max(0, Math.min(100, score)));
+      }
+
+      case 'Mobility': {
+        // Mobility is important for athletes but not primary athletic quality
+        score += 50; // Base score for mobility work
+        if (entries.length >= 4) score += 10; // Good variety of mobility exercises
+        if (entries.length >= 6) score += 10; // Excellent mobility session
+        return Math.round(Math.max(0, Math.min(100, score)));
+      }
+
+      case 'Recovery': {
+        // Recovery is essential but not high athletic quality
+        score += 40; // Base score for recovery work
+        if (entries.length >= 3) score += 10; // Comprehensive recovery
+        return Math.round(Math.max(0, Math.min(100, score)));
+      }
+
+      case 'Technique': {
+        // Technique work is valuable but not pure athleticism
+        score += 55; // Base score for technique work
+        if (entries.length >= 4) score += 10; // Good variety of drills
+        return Math.round(Math.max(0, Math.min(100, score)));
+      }
+
+      case 'Speed': {
+        // Pure speed work is excellent for athletes
+        score += 70; // High base for speed
+        if (entries.length >= 3) score += 15; // Good volume
+        return Math.round(Math.max(0, Math.min(100, score)));
+      }
+
+      case 'COD': {
+        // Change of direction is excellent for athletes
+        score += 65; // High base for agility
+        if (entries.length >= 4) score += 15; // Good volume
+        return Math.round(Math.max(0, Math.min(100, score)));
+      }
+
+      case 'Plyometrics': {
+        // Plyometrics are explosive and athletic
+        score += 75; // Very high base for plyo work
+        if (entries.length >= 3) score += 15; // Good volume
+        return Math.round(Math.max(0, Math.min(100, score)));
+      }
+    }
+  }
+
+  // For mixed sessions or primarily strength sessions:
+
   // Compound movements (good for athletes)
   const compoundCount = categories.filter(c => c === 'Strength').length;
   score += Math.min(50, compoundCount * 15); // 3-4 compounds = 50 points
@@ -274,6 +343,14 @@ function calculateAthleticQualityScore(entries: WorkoutEntry[]): number {
   const speedCount = categories.filter(c => c === 'Speed' || c === 'COD').length;
   score += Math.min(30, speedCount * 15);
 
+  // Mobility work (important but lower priority)
+  const mobilityCount = categories.filter(c => c === 'Mobility').length;
+  score += Math.min(15, mobilityCount * 8); // 2 mobility exercises = 15 points
+
+  // Technique work (valuable for skill development)
+  const techniqueCount = categories.filter(c => c === 'Technique').length;
+  score += Math.min(15, techniqueCount * 8); // 2 technique exercises = 15 points
+
   // Isolation exercises (bodybuilding, not athletic)
   const isolationKeywords = ['curl', 'extension', 'raise', 'fly', 'flye'];
   const isolationCount = exerciseNames.filter(name =>
@@ -281,10 +358,11 @@ function calculateAthleticQualityScore(entries: WorkoutEntry[]): number {
   ).length;
   score -= isolationCount * 15; // Heavy penalty for isolation
 
-  // Only one exercise type? That's weak variety
-  const uniqueCategories = new Set(categories).size;
-  if (uniqueCategories === 1) score -= 20; // Penalty for no variety
-  if (uniqueCategories >= 3) score += 20; // Bonus for good variety
+  // Variety bonus (but don't penalize single-category sessions we already handled)
+  if (uniqueCategories.size === 1 && !primaryCategory) {
+    score -= 20; // Penalty for no variety (shouldn't happen but safety check)
+  }
+  if (uniqueCategories.size >= 3) score += 20; // Bonus for good variety
 
   return Math.round(Math.max(0, Math.min(100, score)));
 }
@@ -456,20 +534,32 @@ function generateStrengths(athletic: number, intensity: number, capacity: number
 function generateWarnings(entries: WorkoutEntry[], userId: string, athleticScore: number): string[] {
   const warnings: string[] = [];
 
-  // Low athletic quality
-  if (athleticScore < 50) {
+  // Check session type
+  const categories = entries.map(e => e.category);
+  const uniqueCategories = new Set(categories);
+  const isSingleCategorySession = uniqueCategories.size === 1;
+  const primaryCategory = isSingleCategorySession ? categories[0] : null;
+
+  // Skip warnings for specialized sessions (Conditioning, Mobility, Recovery, Technique, Speed, COD, Plyometrics)
+  const specializedCategories = ['Conditioning', 'Mobility', 'Recovery', 'Technique', 'Speed', 'COD', 'Plyometrics'];
+  const isSpecializedSession = primaryCategory && specializedCategories.includes(primaryCategory);
+
+  // Low athletic quality (but NOT for specialized sessions)
+  if (athleticScore < 50 && !isSpecializedSession) {
     warnings.push('report.warning.lowAthletic');
   }
 
-  // Only upper body
-  const hasLowerBody = entries.some(e =>
-    e.name.toLowerCase().includes('squat') ||
-    e.name.toLowerCase().includes('deadlift') ||
-    e.name.toLowerCase().includes('lunge')
-  );
+  // Only upper body (but skip for specialized sessions)
+  if (!isSpecializedSession) {
+    const hasLowerBody = entries.some(e =>
+      e.name.toLowerCase().includes('squat') ||
+      e.name.toLowerCase().includes('deadlift') ||
+      e.name.toLowerCase().includes('lunge')
+    );
 
-  if (!hasLowerBody && entries.length > 3) {
-    warnings.push('report.warning.noLowerBody');
+    if (!hasLowerBody && entries.length > 3) {
+      warnings.push('report.warning.noLowerBody');
+    }
   }
 
   // Check recent workout frequency
@@ -496,7 +586,7 @@ function generateWarnings(entries: WorkoutEntry[], userId: string, athleticScore
  * Generate coach insights (rule-based AI)
  */
 function generateCoachInsights(
-  _entries: WorkoutEntry[],
+  entries: WorkoutEntry[],
   athleticScore: number,
   positionScore: number,
   position: Position,
@@ -505,29 +595,97 @@ function generateCoachInsights(
 ): string {
   const insights: string[] = [];
 
-  // Athletic quality feedback
-  if (athleticScore >= 85) {
-    insights.push('report.insight.excellentAthletic');
-  } else if (athleticScore >= 70) {
-    insights.push('report.insight.goodAthletic');
-  } else if (athleticScore < 50) {
-    insights.push('report.insight.improveAthletic');
-  }
+  // Check session type
+  const categories = entries.map(e => e.category);
+  const uniqueCategories = new Set(categories);
+  const isSingleCategorySession = uniqueCategories.size === 1;
+  const primaryCategory = isSingleCategorySession ? categories[0] : null;
 
-  // Position-specific feedback
-  if (positionScore >= 80) {
-    insights.push('report.insight.positionGood');
-  } else if (positionScore < 60) {
-    if (position === 'RB' || position === 'WR' || position === 'DB') {
-      insights.push('report.insight.needExplosive');
-    } else if (position === 'OL' || position === 'DL') {
-      insights.push('report.insight.needStrength');
+  // Handle single-category sessions with specific feedback
+  if (isSingleCategorySession && primaryCategory) {
+    switch (primaryCategory) {
+      case 'Conditioning': {
+        const totalDistance = entries.reduce((sum, e) => sum + (e.distance || 0), 0);
+        if (totalDistance >= 5) {
+          insights.push('report.insight.goodConditioningWork');
+        } else if (totalDistance >= 3) {
+          insights.push('report.insight.decentConditioningWork');
+        } else {
+          insights.push('report.insight.keepBuildingBase');
+        }
+        insights.push('report.insight.balanceWithStrength');
+        break;
+      }
+
+      case 'Mobility':
+        insights.push('report.insight.mobilityWork');
+        insights.push('report.insight.balanceWithPower');
+        break;
+
+      case 'Recovery':
+        insights.push('report.insight.recoveryWork');
+        insights.push('report.insight.essentialForProgress');
+        break;
+
+      case 'Technique':
+        insights.push('report.insight.techniqueWork');
+        insights.push('report.insight.skillDevelopment');
+        break;
+
+      case 'Speed':
+        insights.push('report.insight.speedWork');
+        if (position === 'RB' || position === 'WR' || position === 'DB') {
+          insights.push('report.insight.perfectForPosition');
+        }
+        break;
+
+      case 'COD':
+        insights.push('report.insight.agilityWork');
+        insights.push('report.insight.gameChangerSkill');
+        break;
+
+      case 'Plyometrics':
+        insights.push('report.insight.explosiveWork');
+        insights.push('report.insight.athleticPower');
+        break;
+
+      default:
+        // For Strength-only sessions
+        if (athleticScore >= 85) {
+          insights.push('report.insight.excellentAthletic');
+        } else if (athleticScore >= 70) {
+          insights.push('report.insight.goodAthletic');
+        } else if (athleticScore < 50) {
+          insights.push('report.insight.improveAthletic');
+        }
     }
-  }
+  } else {
+    // For mixed sessions, use original feedback:
 
-  // Volume feedback
-  if (volumeChange !== null && volumeChange > 25) {
-    insights.push('report.insight.volumeJump');
+    // Athletic quality feedback
+    if (athleticScore >= 85) {
+      insights.push('report.insight.excellentAthletic');
+    } else if (athleticScore >= 70) {
+      insights.push('report.insight.goodAthletic');
+    } else if (athleticScore < 50) {
+      insights.push('report.insight.improveAthletic');
+    }
+
+    // Position-specific feedback
+    if (positionScore >= 80) {
+      insights.push('report.insight.positionGood');
+    } else if (positionScore < 60) {
+      if (position === 'RB' || position === 'WR' || position === 'DB') {
+        insights.push('report.insight.needExplosive');
+      } else if (position === 'OL' || position === 'DL') {
+        insights.push('report.insight.needStrength');
+      }
+    }
+
+    // Volume feedback
+    if (volumeChange !== null && volumeChange > 25) {
+      insights.push('report.insight.volumeJump');
+    }
   }
 
   // Default if no specific insights

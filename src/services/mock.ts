@@ -25,6 +25,10 @@ export interface MockUser {
   snapchat?: string; // Optional Snapchat username
   tiktok?: string; // Optional TikTok handle
   hudl?: string; // Optional Hudl profile URL
+
+  // AI Coach Configuration (personal - only used if team API not configured)
+  aiCoachEnabled?: boolean; // Toggle to enable/disable AI coach
+  aiApiKey?: string; // Personal OpenAI API key
 }
 
 /**

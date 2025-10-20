@@ -57,6 +57,7 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
   const getRecoveryColor = (demand: string): 'success' | 'warning' | 'error' => {
     if (demand === 'low') return 'success';
     if (demand === 'medium') return 'warning';
+    if (demand === 'insufficient') return 'error';
     return 'error';
   };
 
@@ -75,6 +76,18 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
       </DialogTitle>
 
       <DialogContent>
+        {/* Invalid Session Banner */}
+        {(report.sessionValid === false || report.recoveryDemand === 'insufficient') && (
+          <Alert severity="error" icon={<WarningIcon />} sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" fontWeight={700}>
+              {t('report.invalidSession')}
+            </Typography>
+            <Typography variant="body2">
+              {t('report.invalidSessionWarning')}
+            </Typography>
+          </Alert>
+        )}
+
         {/* Performance Scores */}
         <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ mt: 1 }}>
           {t('report.performanceScores')}
@@ -312,7 +325,10 @@ export const WorkoutReportDialog: React.FC<WorkoutReportDialogProps> = ({
             } : undefined}
           >
             <Typography variant="body2">
-              {isAIGenerated ? report.coachInsights : t(report.coachInsights as any)}
+              {isAIGenerated
+                ? report.coachInsights
+                : report.coachInsights.split(' ').map(key => t(key as any)).join(' ')
+              }
             </Typography>
           </Alert>
         </Box>

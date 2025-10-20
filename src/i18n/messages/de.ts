@@ -29,6 +29,7 @@ export const messagesDE = {
   'common.loading': 'Laden...',
   'common.error': 'Fehler',
   'common.success': 'Erfolg',
+  'common.goBack': 'Zurück',
 
   // Auth
   'auth.login': 'Anmelden',
@@ -263,6 +264,9 @@ export const messagesDE = {
   'admin.trainingTypesTab': 'Trainingstypen',
   'admin.policiesTab': 'Richtlinien',
   'admin.blockInfoTab': 'Block-Info',
+  'admin.teamSettingsTab': 'Team-Einstellungen',
+  'admin.aiCoachTab': 'KI-Coach',
+  'admin.pointsSystemTab': 'Punktesystem',
   'admin.exerciseCatalog': 'Übungskatalog',
   'admin.exercises': 'Übungen',
   'admin.addExercise': 'Übung hinzufügen',
@@ -321,6 +325,21 @@ export const messagesDE = {
   'admin.blockInfoSaved': 'Block-Info erfolgreich gespeichert',
   'admin.blockInfoDeleted': 'Block-Info erfolgreich gelöscht',
   'admin.noBlockInfoYet': 'Noch keine Block-Information konfiguriert. Fügen Sie Informations-Tooltips hinzu, um Spielern das Verständnis der Trainingsblöcke zu erleichtern.',
+  'admin.teamApiKey': 'Team-API-Schlüssel (OpenAI)',
+  'admin.teamApiKeyHelp': 'Geben Sie Ihren OpenAI-API-Schlüssel ein, um KI-gestützte Trainingsberichte für alle Spieler zu aktivieren',
+  'admin.testApiKey': 'API-Schlüssel testen',
+  'admin.testing': 'Teste...',
+  'admin.apiKeyValid': 'API-Schlüssel ist gültig und funktioniert',
+  'admin.apiKeyInvalid': 'API-Schlüssel ist ungültig',
+  'admin.saveAICoach': 'KI-Coach-Konfiguration speichern',
+  'admin.clearApiKey': 'API-Schlüssel löschen',
+  'admin.aiCoachSaved': 'KI-Coach-Konfiguration erfolgreich gespeichert',
+  'admin.aiCoachInfo': 'Konfigurieren Sie einen teamweiten OpenAI-API-Schlüssel, um KI-gestützte Trainingsanalysen für alle Spieler zu aktivieren. Wenn eingestellt, verwenden alle Spieler automatisch diesen API-Schlüssel für Trainingsberichte.',
+  'admin.currentAIConfig': 'Aktuelle KI-Coach-Konfiguration',
+  'admin.teamApiKeyStatus': 'Team-API-Schlüssel-Status',
+  'admin.configured': 'Konfiguriert',
+  'admin.notConfigured': 'Nicht konfiguriert',
+  'admin.aiCoachUsageInfo': 'Wenn ein Team-API-Schlüssel konfiguriert ist, können Spieler keine eigenen API-Schlüssel konfigurieren. Wenn Sie möchten, dass Spieler ihre eigenen API-Schlüssel verwenden, lassen Sie dieses Feld leer.',
 
   // MyTraining assigned programs
   'training.yourAssignedPrograms': 'Ihre zugewiesenen Programme',
@@ -652,9 +671,12 @@ export const messagesDE = {
   'report.recoveryDemand.medium': 'Mittlere Belastung',
   'report.recoveryDemand.high': 'Hohe Belastung',
   'report.recoveryDemand.very-high': 'Sehr hohe Belastung',
+  'report.recoveryDemand.insufficient': 'Unzureichende Einheit',
   'report.recommended': 'empfohlene Ruhezeit',
   'report.coachInsights': 'Coach-Insights',
   'report.saveReport': 'Report speichern',
+  'report.invalidSession': 'UNGÜLTIGE EINHEIT',
+  'report.invalidSessionWarning': '⚠️ Erfüllt nicht die Trainingsstandards',
 
   // Report Strengths
   'report.strength.athleticFocus': 'Ausgezeichneter athletischer Fokus - du hast explosive und funktionelle Bewegungen priorisiert',
@@ -676,4 +698,55 @@ export const messagesDE = {
   'report.insight.needStrength': 'Als Lineman fokussiere auf maximale Kraftentwicklung mit schweren Grundübungen.',
   'report.insight.volumeJump': 'Signifikanter Volumenanstieg gegenüber letzter Woche - überwache Regeneration und stelle ausreichende Ruhe sicher.',
   'report.insight.keepGoing': 'Mach weiter so! Fokussiere auf progressive Überlastung bei guter Technik.',
+  'report.insight.goodConditioningWork': 'Solide Konditionsarbeit! Das baut deine aerobe Basis und Arbeitskapazität auf.',
+  'report.insight.decentConditioningWork': 'Gute Konditionseinheit. Baue weiter deine aerobe Basis progressiv auf.',
+  'report.insight.keepBuildingBase': 'Baue weiter deine Konditionsbasis auf. Steigere schrittweise Distanz und Intensität.',
+  'report.insight.balanceWithStrength': 'Denk daran, Cardio mit Kraft- und Powerarbeit für vollständige Football-Fitness auszugleichen.',
+  'report.insight.mobilityWork': 'Großartige Mobilitätseinheit! Flexibilität und Bewegungsumfang sind entscheidend für Verletzungsprävention.',
+  'report.insight.balanceWithPower': 'Gleiche dies mit explosiver Kraftarbeit aus, um athletische Leistung zu maximieren.',
+  'report.insight.recoveryWork': 'Ausgezeichnete Regenerationseinheit. Aktive Erholung beschleunigt Anpassung und verhindert Übertraining.',
+  'report.insight.essentialForProgress': 'Regeneration ist, wo du stärker wirst. Priorisiere sie weiterhin neben hartem Training.',
+  'report.insight.techniqueWork': 'Solide Technikarbeit! Fertigkeitsverfeinerung unterscheidet gute von großartigen Spielern.',
+  'report.insight.skillDevelopment': 'Technische Meisterschaft gibt dir den Vorteil in Spielsituationen. Trainiere weiter Grundlagen.',
+  'report.insight.speedWork': 'Explosive Schnelligkeitseinheit! Geschwindigkeit tötet auf dem Football-Feld.',
+  'report.insight.perfectForPosition': 'Diese Art von Arbeit ist perfekt für deine Positionsanforderungen.',
+  'report.insight.agilityWork': 'Ausgezeichnete Agilitätsarbeit! Richtungswechsel-Geschwindigkeit gewinnt Spiele.',
+  'report.insight.gameChangerSkill': 'COD-Fähigkeit ist ein Game-Changer. Schärfe diese Fertigkeit weiter.',
+  'report.insight.explosiveWork': 'Herausragende explosive Arbeit! Plyometrie baut spielverändernde Kraft auf.',
+  'report.insight.athleticPower': 'Dies entwickelt die elastische Kraft, die direkt auf das Feld übertragen wird.',
+
+  // Team Settings
+  'teamSettings.title': 'Team-Einstellungen',
+  'teamSettings.seasonPhase': 'Saisonphase',
+  'teamSettings.teamLevel': 'Team-Level',
+  'teamSettings.selectPhase': 'Saisonphase auswählen',
+  'teamSettings.selectLevel': 'Team-Level auswählen',
+  'teamSettings.currentConfig': 'Aktuelle Konfiguration',
+  'teamSettings.saveSettings': 'Team-Einstellungen speichern',
+  'teamSettings.settingsSaved': 'Team-Einstellungen erfolgreich gespeichert!',
+  'teamSettings.impact': 'Diese Einstellungen beeinflussen, wie die KI Workouts bewertet und Empfehlungen gibt.',
+
+  // Season Phases
+  'teamSettings.phase.off-season': 'Off-Season',
+  'teamSettings.phase.pre-season': 'Pre-Season',
+  'teamSettings.phase.in-season': 'In-Season',
+  'teamSettings.phase.post-season': 'Post-Season',
+
+  // Season Phase Descriptions
+  'teamSettings.phaseDesc.off-season': 'Aufbauphase: Fokus auf Kraft, Power und Konditionsgrundlage. Höheres Volumen, längere Einheiten akzeptabel.',
+  'teamSettings.phaseDesc.pre-season': 'Vorbereitungsphase: Spitzenkondition, sportspezifische Arbeit, Teamintegration. Moderat-hohes Volumen.',
+  'teamSettings.phaseDesc.in-season': 'Erhaltungsphase: Leistung bewahren, Ermüdung managen, Regeneration priorisieren. Geringeres Volumen, höhere Intensität.',
+  'teamSettings.phaseDesc.post-season': 'Regenerationsphase: Aktive Erholung, Verletzungen behandeln, leichtes Training. Geringes Volumen und Intensität.',
+
+  // Team Levels
+  'teamSettings.level.amateur': 'Amateur',
+  'teamSettings.level.semi-pro': 'Semi-Profi',
+  'teamSettings.level.college': 'College',
+  'teamSettings.level.pro': 'Professionell',
+
+  // Team Level Descriptions
+  'teamSettings.levelDesc.amateur': 'Amateur-Level: Freizeitsport, begrenzte Trainingszeit, Fokus auf Spaß und Fitness.',
+  'teamSettings.levelDesc.semi-pro': 'Semi-professionelles Level: Wettbewerbsstandards, Teilzeit-Training, Balance mit Arbeit/Leben.',
+  'teamSettings.levelDesc.college': 'College-Level: NCAA/Universitätsstandards, strukturierte Trainingsprogramme, Wettkampfsport mit akademischem Ausgleich.',
+  'teamSettings.levelDesc.pro': 'Professionelles Level: Elite-Standards, Vollzeit-Training, hohe Erwartungen an Leistung und Professionalität.',
 };

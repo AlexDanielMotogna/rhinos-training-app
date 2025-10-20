@@ -311,8 +311,12 @@ export const StartWorkoutDialog: React.FC<StartWorkoutDialogProps> = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>{t('common.cancel')}</Button>
-        {completedEntries.length > 0 && (
+        {selectedExerciseIndex === null ? (
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
+        ) : (
+          <Button onClick={() => setSelectedExerciseIndex(null)}>{t('common.goBack')}</Button>
+        )}
+        {completedEntries.length > 0 && selectedExerciseIndex === null && (
           <Button
             onClick={handleFinishClick}
             variant="contained"
