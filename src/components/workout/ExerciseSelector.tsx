@@ -8,6 +8,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  ListItemIcon,
   InputAdornment,
   Box,
   Chip,
@@ -15,12 +16,14 @@ import {
   Tabs,
   Tab,
   IconButton,
+  Avatar,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { globalCatalog } from '../../services/catalog';
 import type { Exercise, ExerciseCategory } from '../../types/exercise';
 import { sanitizeYouTubeUrl } from '../../services/yt';
+import { getExerciseIcon, getCategoryGradient } from '../../utils/exerciseIcons';
 
 interface ExerciseSelectorProps {
   open: boolean;
@@ -168,12 +171,34 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 }
               >
                 <ListItemButton onClick={() => handleSelect(exercise)}>
+                  <ListItemIcon>
+                    <Avatar
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        background: getCategoryGradient(exercise.category),
+                        color: 'white',
+                      }}
+                    >
+                      {getExerciseIcon(exercise.name, exercise.category)}
+                    </Avatar>
+                  </ListItemIcon>
                   <ListItemText
                     primary={exercise.name}
                     secondary={
                       <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, alignItems: 'center' }}>
                         <Chip label={exercise.category} size="small" />
-                        <Chip label={exercise.intensity} size="small" color="secondary" />
+                        <Chip
+                          label={exercise.intensity}
+                          size="small"
+                          color={
+                            exercise.intensity === 'high'
+                              ? 'error'
+                              : exercise.intensity === 'mod'
+                              ? 'warning'
+                              : 'success'
+                          }
+                        />
                         {exercise.youtubeUrl && (
                           <Chip
                             icon={<PlayCircleOutlineIcon sx={{ fontSize: '0.9rem' }} />}
