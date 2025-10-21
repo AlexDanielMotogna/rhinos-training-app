@@ -28,6 +28,7 @@ const Videos = lazy(() => import('./pages/Videos').then(m => ({ default: m.Video
 const VideosAdmin = lazy(() => import('./pages/VideosAdmin').then(m => ({ default: m.VideosAdmin })));
 const Team = lazy(() => import('./pages/Team').then(m => ({ default: m.Team })));
 const TrainingSessions = lazy(() => import('./pages/TrainingSessions').then(m => ({ default: m.TrainingSessions })));
+const Configuration = lazy(() => import('./pages/Configuration').then(m => ({ default: m.Configuration })));
 
 function App() {
   // Initialize demo profiles on app startup
@@ -154,6 +155,14 @@ function App() {
                   element={
                     currentUser.role === 'coach'
                       ? <Admin />
+                      : <Navigate to="/training" replace />
+                  }
+                />
+                <Route
+                  path="/configuration"
+                  element={
+                    currentUser.role === 'coach'
+                      ? <Configuration />
                       : <Navigate to="/training" replace />
                   }
                 />

@@ -26,6 +26,7 @@ import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import GroupIcon from '@mui/icons-material/Group';
 import GroupsIcon from '@mui/icons-material/Groups';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -78,6 +79,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports', showForAll: false, coachOnly: true },
     { key: 'videosAdmin', label: t('nav.videosAdmin'), icon: <VideoLibraryIcon />, path: '/videos-admin', showForAll: false, coachOnly: true },
     { key: 'admin', label: t('nav.admin'), icon: <AdminPanelSettingsIcon />, path: '/admin', showForAll: false, coachOnly: true },
+    { key: 'configuration', label: 'Configuration', icon: <SettingsIcon />, path: '/configuration', showForAll: false, coachOnly: true },
   ];
 
   const visibleMenuItems = menuItems.filter(item =>
