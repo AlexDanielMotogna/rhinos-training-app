@@ -26,6 +26,7 @@ import {
 } from 'react-icons/io';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import type { ExerciseCategory } from '../types/exercise';
+import { packersColors } from '../theme';
 
 /**
  * Get icon component for exercise based on name and category
@@ -132,27 +133,29 @@ export function getCategoryIcon(category: ExerciseCategory, size: number = 40): 
 
 /**
  * Get background gradient for category
- * Using Green Bay Packers Gold colors: #FFB612, #FFC72C, #F2A900
+ * Using centralized Green Bay Packers Gold colors from theme
  */
 export function getCategoryGradient(category: ExerciseCategory): string {
+  const { gold } = packersColors;
+
   switch (category) {
     case 'Strength':
-      return 'linear-gradient(135deg, #FFB612 0%, #F2A900 100%)'; // Classic Gold
+      return `linear-gradient(135deg, ${gold.main} 0%, ${gold.dark} 100%)`; // Classic Gold
     case 'Conditioning':
-      return 'linear-gradient(135deg, #FFC72C 0%, #FFB612 100%)'; // Light Gold
+      return `linear-gradient(135deg, ${gold.light} 0%, ${gold.main} 100%)`; // Light Gold
     case 'Speed':
-      return 'linear-gradient(135deg, #FFD54F 0%, #FFC72C 100%)'; // Bright Gold
+      return `linear-gradient(135deg, ${gold.bright} 0%, ${gold.light} 100%)`; // Bright Gold
     case 'Plyometrics':
-      return 'linear-gradient(135deg, #F2A900 0%, #D49000 100%)'; // Dark Gold
+      return `linear-gradient(135deg, ${gold.dark} 0%, ${gold.darker} 100%)`; // Dark Gold
     case 'Mobility':
-      return 'linear-gradient(135deg, #FFB612 0%, #FFD54F 100%)'; // Gold to Light
+      return `linear-gradient(135deg, ${gold.main} 0%, ${gold.bright} 100%)`; // Gold to Light
     case 'Recovery':
-      return 'linear-gradient(135deg, #D49000 0%, #B87900 100%)'; // Bronze Gold
+      return `linear-gradient(135deg, ${gold.darker} 0%, ${gold.bronze} 100%)`; // Bronze Gold
     case 'COD':
-      return 'linear-gradient(135deg, #FFC72C 0%, #F2A900 100%)'; // Medium Gold
+      return `linear-gradient(135deg, ${gold.light} 0%, ${gold.dark} 100%)`; // Medium Gold
     case 'Technique':
-      return 'linear-gradient(135deg, #FFD54F 0%, #FFB612 100%)'; // Bright to Classic
+      return `linear-gradient(135deg, ${gold.bright} 0%, ${gold.main} 100%)`; // Bright to Classic
     default:
-      return 'linear-gradient(135deg, #FFB612 0%, #F2A900 100%)';
+      return `linear-gradient(135deg, ${gold.main} 0%, ${gold.dark} 100%)`;
   }
 }

@@ -24,6 +24,7 @@ import type { WorkoutLog } from '../services/workoutLog';
 import CardMedia from '@mui/material/CardMedia';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { getUpcomingSessions } from '../services/trainingSessions';
+import { workoutTypeColors } from '../theme';
 
 interface DayData {
   date: string;
@@ -146,7 +147,7 @@ export const MyStats: React.FC = () => {
   };
 
   const getWorkoutTypeColor = (source: 'player' | 'coach') => {
-    return source === 'coach' ? '#4caf50' : '#ffc107'; // Green for team, Yellow for free
+    return source === 'coach' ? workoutTypeColors.coach : workoutTypeColors.player;
   };
 
   const handleDayClick = (date: string) => {
@@ -296,7 +297,7 @@ export const MyStats: React.FC = () => {
                               key={`session-${idx}`}
                               sx={{
                                 height: 4,
-                                backgroundColor: session.sessionCategory === 'team' ? '#ff9800' : '#9c27b0',
+                                backgroundColor: session.sessionCategory === 'team' ? workoutTypeColors.team : workoutTypeColors.personal,
                                 borderRadius: 0.5,
                               }}
                             />
@@ -329,7 +330,7 @@ export const MyStats: React.FC = () => {
             label="Team Workout"
             size="small"
             sx={{
-              backgroundColor: '#4caf50',
+              backgroundColor: workoutTypeColors.coach,
               color: 'white',
               fontSize: { xs: '0.65rem', sm: '0.75rem' },
               height: { xs: 20, sm: 24 }
@@ -339,7 +340,7 @@ export const MyStats: React.FC = () => {
             label="Free Workout"
             size="small"
             sx={{
-              backgroundColor: '#ffc107',
+              backgroundColor: workoutTypeColors.player,
               color: 'white',
               fontSize: { xs: '0.65rem', sm: '0.75rem' },
               height: { xs: 20, sm: 24 }
@@ -349,7 +350,7 @@ export const MyStats: React.FC = () => {
             label="Team Session"
             size="small"
             sx={{
-              backgroundColor: '#ff9800',
+              backgroundColor: workoutTypeColors.team,
               color: 'white',
               fontSize: { xs: '0.65rem', sm: '0.75rem' },
               height: { xs: 20, sm: 24 }
@@ -359,7 +360,7 @@ export const MyStats: React.FC = () => {
             label="Private Session"
             size="small"
             sx={{
-              backgroundColor: '#9c27b0',
+              backgroundColor: workoutTypeColors.personal,
               color: 'white',
               fontSize: { xs: '0.65rem', sm: '0.75rem' },
               height: { xs: 20, sm: 24 }
@@ -398,7 +399,7 @@ export const MyStats: React.FC = () => {
                 Training Sessions
               </Typography>
               {selectedSessions.map((session) => (
-                <Card key={session.id} sx={{ mb: 2, border: 2, borderColor: session.sessionCategory === 'team' ? '#ff9800' : '#9c27b0' }}>
+                <Card key={session.id} sx={{ mb: 2, border: 2, borderColor: session.sessionCategory === 'team' ? workoutTypeColors.team : workoutTypeColors.personal }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                       <Box>
@@ -409,7 +410,7 @@ export const MyStats: React.FC = () => {
                           label={session.sessionCategory === 'team' ? 'Team Session' : 'Private Session'}
                           size="small"
                           sx={{
-                            backgroundColor: session.sessionCategory === 'team' ? '#ff9800' : '#9c27b0',
+                            backgroundColor: session.sessionCategory === 'team' ? workoutTypeColors.team : workoutTypeColors.personal,
                             color: 'white',
                           }}
                         />

@@ -24,6 +24,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { getPointsConfig, updatePointsConfig, resetPointsConfig } from '../../services/pointsSystem';
 import { getUser } from '../../services/mock';
 import type { PointsConfig, PointCategory, PointCategoryType } from '../../types/pointsSystem';
+import { pointsCategoryColors } from '../../theme';
 
 export const PointsSystemManager: React.FC = () => {
   const user = getUser();
@@ -147,13 +148,7 @@ export const PointsSystemManager: React.FC = () => {
   };
 
   const getCategoryTypeColor = (type: PointCategoryType) => {
-    switch (type) {
-      case 'light': return '#90caf9';
-      case 'moderate': return '#ffa726';
-      case 'team': return '#ab47bc';
-      case 'intensive': return '#ef5350';
-      default: return '#90caf9';
-    }
+    return pointsCategoryColors[type] || pointsCategoryColors.light;
   };
 
   return (
