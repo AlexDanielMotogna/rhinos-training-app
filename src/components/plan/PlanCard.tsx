@@ -7,6 +7,7 @@ import {
   IconButton,
   Chip,
   Button,
+  Avatar,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import EditIcon from '@mui/icons-material/Edit';
@@ -14,6 +15,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useI18n } from '../../i18n/I18nProvider';
+import { getExerciseIcon, getCategoryGradient } from '../../utils/exerciseIcons';
 import type { UserPlanTemplate } from '../../types/userPlan';
 
 interface PlanCardProps {
@@ -62,33 +64,67 @@ export const PlanCard: React.FC<PlanCardProps> = ({
     }
   };
 
+  // Get primary exercise category for styling
+  const primaryExercise = plan.exercises[0];
+  const gradient = primaryExercise ? getCategoryGradient(primaryExercise.category) : getCategoryGradient('Strength');
+
   return (
-    <Card sx={{ width: '100%' }}>
-      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        {/* Header */}
-        <Box sx={{ mb: 1.5 }}>
-          <Typography variant="h6" sx={{ mb: 0.5, fontSize: '1.1rem' }}>
+    <Card sx={{ width: '100%', position: 'relative', overflow: 'hidden' }}>
+      {/* Gradient Header Background */}
+      <Box
+        sx={{
+          height: 80,
+          background: gradient,
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          px: 2,
+        }}
+      >
+        <Avatar
+          sx={{
+            width: 56,
+            height: 56,
+            bgcolor: 'rgba(255, 255, 255, 0.9)',
+            color: 'primary.main',
+            mr: 2,
+          }}
+        >
+          {primaryExercise ? getExerciseIcon(primaryExercise.name, primaryExercise.category) : <FitnessCenterIcon />}
+        </Avatar>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
             {plan.name}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
             <Chip
-              icon={<FitnessCenterIcon sx={{ fontSize: '0.9rem' }} />}
+              icon={<FitnessCenterIcon sx={{ fontSize: '0.8rem' }} />}
               label={`${plan.exercises.length} ${plan.exercises.length === 1 ? 'exercise' : 'exercises'}`}
               size="small"
-              variant="outlined"
-              sx={{ height: 24, fontSize: '0.75rem' }}
+              sx={{
+                height: 20,
+                fontSize: '0.7rem',
+                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                color: 'text.primary',
+              }}
             />
             {plan.timesCompleted > 0 && (
               <Chip
-                label={`${plan.timesCompleted}x`}
+                label={`${plan.timesCompleted}x completed`}
                 size="small"
-                color="success"
-                variant="outlined"
-                sx={{ height: 24, fontSize: '0.75rem' }}
+                sx={{
+                  height: 20,
+                  fontSize: '0.7rem',
+                  bgcolor: 'rgba(76, 175, 80, 0.9)',
+                  color: 'white',
+                }}
               />
             )}
           </Box>
         </Box>
+      </Box>
+
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
 
         {/* Exercise Preview - Compact */}
         <Box sx={{ mb: 1.5 }}>
