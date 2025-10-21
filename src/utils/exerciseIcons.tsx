@@ -33,15 +33,19 @@ import type { ExerciseCategory } from '../types/exercise';
 export function getExerciseIcon(exerciseName: string, category: ExerciseCategory): React.ReactNode {
   const name = exerciseName.toLowerCase();
 
-  // Strength exercises
+  // Strength exercises - More specific icon matching
   if (category === 'Strength') {
-    if (name.includes('squat')) return <GiStrongMan size={24} />;
-    if (name.includes('bench') || name.includes('press')) return <GiBiceps size={24} />;
-    if (name.includes('deadlift')) return <GiWeightLiftingUp size={24} />;
-    if (name.includes('pull') || name.includes('row')) return <FaDumbbell size={24} />;
-    if (name.includes('curl') || name.includes('tricep') || name.includes('bicep')) return <GiBiceps size={24} />;
-    if (name.includes('leg') || name.includes('calf')) return <IoMdFitness size={24} />;
-    return <FitnessCenterIcon style={{ fontSize: 24 }} />;
+    if (name.includes('squat')) return <GiWeightLiftingUp size={24} />; // Barbell squat
+    if (name.includes('bench')) return <GiBiceps size={24} />; // Bench press
+    if (name.includes('press') && !name.includes('bench')) return <GiStrongMan size={24} />; // Overhead/shoulder press
+    if (name.includes('deadlift')) return <GiWeightLiftingUp size={24} />; // Deadlift
+    if (name.includes('pull') || name.includes('row')) return <FaDumbbell size={24} />; // Back exercises
+    if (name.includes('curl')) return <GiBiceps size={24} />; // Arm curls
+    if (name.includes('tricep')) return <FaDumbbell size={24} />; // Tricep work
+    if (name.includes('leg') || name.includes('calf')) return <GiStrongMan size={24} />; // Leg exercises
+    if (name.includes('lunge')) return <IoMdFitness size={24} />; // Lunges
+    if (name.includes('cable') || name.includes('lat')) return <FaDumbbell size={24} />; // Cable/lat exercises
+    return <FitnessCenterIcon style={{ fontSize: 24 }} />; // Default strength
   }
 
   // Conditioning / Cardio
@@ -128,26 +132,27 @@ export function getCategoryIcon(category: ExerciseCategory, size: number = 40): 
 
 /**
  * Get background gradient for category
+ * Using Green Bay Packers Gold colors: #FFB612, #FFC72C, #F2A900
  */
 export function getCategoryGradient(category: ExerciseCategory): string {
   switch (category) {
     case 'Strength':
-      return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      return 'linear-gradient(135deg, #FFB612 0%, #F2A900 100%)'; // Classic Gold
     case 'Conditioning':
-      return 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+      return 'linear-gradient(135deg, #FFC72C 0%, #FFB612 100%)'; // Light Gold
     case 'Speed':
-      return 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+      return 'linear-gradient(135deg, #FFD54F 0%, #FFC72C 100%)'; // Bright Gold
     case 'Plyometrics':
-      return 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+      return 'linear-gradient(135deg, #F2A900 0%, #D49000 100%)'; // Dark Gold
     case 'Mobility':
-      return 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
+      return 'linear-gradient(135deg, #FFB612 0%, #FFD54F 100%)'; // Gold to Light
     case 'Recovery':
-      return 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)';
+      return 'linear-gradient(135deg, #D49000 0%, #B87900 100%)'; // Bronze Gold
     case 'COD':
-      return 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)';
+      return 'linear-gradient(135deg, #FFC72C 0%, #F2A900 100%)'; // Medium Gold
     case 'Technique':
-      return 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)';
+      return 'linear-gradient(135deg, #FFD54F 0%, #FFB612 100%)'; // Bright to Classic
     default:
-      return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      return 'linear-gradient(135deg, #FFB612 0%, #F2A900 100%)';
   }
 }
