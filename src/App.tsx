@@ -1,13 +1,14 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import { theme } from './theme';
+import { createDynamicTheme } from './theme';
 import { I18nProvider } from './i18n/I18nProvider';
 import { AppShell } from './components/AppShell';
 import { HardNotification } from './components/HardNotification';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { getUser, initializeDemoProfiles } from './services/mock';
 import type { HardNotification as HardNotificationType } from './types/notification';
+import { getTeamBranding } from './services/teamSettings';
 
 // Lazy load all page components
 const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
@@ -32,6 +33,25 @@ function App() {
   // Initialize demo profiles on app startup
   useEffect(() => {
     initializeDemoProfiles();
+  }, []);
+
+  // Initialize branding (favicon and title) on app startup
+  useEffect(() => {
+    const branding = getTeamBranding();
+
+    // Update document title
+    if (branding.appName) {
+      document.title = branding.appName;
+    }
+
+    // Update favicon
+    if (branding.faviconUrl) {
+      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'shortcut icon';
+      link.href = branding.faviconUrl;
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
   }, []);
 
   const [currentUser, setCurrentUser] = useState(() => getUser());
@@ -77,6 +97,12 @@ function App() {
     localStorage.setItem('hardNotificationAcked', 'true');
     setHardNotification(null);
   };
+
+  // Create dynamic theme based on branding
+  const theme = useMemo(() => {
+    const branding = getTeamBranding();
+    return createDynamicTheme(branding);
+  }, []); // Empty dependency array - theme only created once on mount
 
   return (
     <ThemeProvider theme={theme}>

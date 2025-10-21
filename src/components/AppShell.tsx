@@ -39,6 +39,7 @@ import {
 } from '../services/mock';
 import type { Notification } from '../types/notification';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
+import { getTeamBranding } from '../services/teamSettings';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -51,6 +52,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const user = getUser();
+  const branding = getTeamBranding();
 
   useEffect(() => {
     // Load notifications
@@ -186,15 +188,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
               <Box
                 component="img"
-                src={RhinosLogo}
-                alt="Rhinos Logo"
+                src={branding.logoUrl || RhinosLogo}
+                alt={`${branding.appName} Logo`}
                 sx={{
                   width: 40,
                   height: 40,
                   objectFit: 'contain',
                 }}
               />
-              <Typography variant="h6">{t('app.title')}</Typography>
+              <Typography variant="h6">{branding.appName || t('app.title')}</Typography>
             </Box>
             {user && (
               <Box sx={{ pl: 0.5 }}>

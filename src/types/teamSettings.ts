@@ -17,15 +17,37 @@ export type TeamLevel =
   | 'pro';            // Professional league (NFL, European pro leagues)
 
 /**
+ * Team branding configuration
+ */
+export interface TeamBranding {
+  appName: string;          // Application name (e.g., "Rhinos Training")
+  logoUrl?: string;         // Main logo URL/path
+  faviconUrl?: string;      // Favicon URL/path
+  primaryColor?: string;    // Primary theme color (hex)
+  secondaryColor?: string;  // Secondary theme color (hex)
+}
+
+/**
  * Team settings configuration
  */
 export interface TeamSettings {
   seasonPhase: SeasonPhase;
   teamLevel: TeamLevel;
-  aiApiKey?: string;   // Team-wide OpenAI API key (configured by admin)
+  aiApiKey?: string;        // Team-wide OpenAI API key (configured by admin)
+  branding?: TeamBranding;  // Team branding configuration
   updatedAt?: string;
-  updatedBy?: string; // Coach who updated settings
+  updatedBy?: string;       // Coach who updated settings
 }
+
+/**
+ * Default team branding
+ */
+export const DEFAULT_TEAM_BRANDING: TeamBranding = {
+  appName: 'Rhinos Training',
+  logoUrl: '/USR_Allgemein_Quard_Transparent.png',
+  primaryColor: '#203731',  // Packers Green
+  secondaryColor: '#FFB612', // Packers Gold
+};
 
 /**
  * Default team settings
@@ -33,4 +55,5 @@ export interface TeamSettings {
 export const DEFAULT_TEAM_SETTINGS: TeamSettings = {
   seasonPhase: 'off-season',
   teamLevel: 'amateur',
+  branding: DEFAULT_TEAM_BRANDING,
 };

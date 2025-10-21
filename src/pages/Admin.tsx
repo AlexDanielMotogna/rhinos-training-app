@@ -53,6 +53,7 @@ import {
 import { getUser } from '../services/mock';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 import { PointsSystemManager } from '../components/admin/PointsSystemManager';
+import { BrandingManager } from '../components/admin/BrandingManager';
 import { getAllBlockInfo } from '../services/blockInfo';
 import { getTeamSettings, updateTeamSettings } from '../services/teamSettings';
 import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
@@ -702,6 +703,7 @@ export const Admin: React.FC = () => {
         <Tab label={t('admin.teamSettingsTab')} />
         <Tab label={t('admin.aiCoachTab')} />
         <Tab label={t('admin.pointsSystemTab')} />
+        <Tab label="Configuration" />
       </Tabs>
 
       {/* Training Builder Tab */}
@@ -2173,6 +2175,9 @@ export const Admin: React.FC = () => {
 
       {/* Points System Configuration Tab */}
       {activeTab === 9 && <PointsSystemManager />}
+
+      {/* Configuration Tab - App Branding */}
+      {activeTab === 10 && <BrandingManager />}
     </Box>
   );
 };

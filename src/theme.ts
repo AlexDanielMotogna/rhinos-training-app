@@ -1,4 +1,5 @@
 import { createTheme } from '@mui/material/styles';
+import type { TeamBranding } from './types/teamSettings';
 
 // Green Bay Packers Color Palette
 export const packersColors = {
@@ -35,20 +36,27 @@ export const workoutTypeColors = {
   personal: '#9c27b0',   // Purple for personal sessions
 };
 
-export const theme = createTheme({
-  palette: {
-    primary: {
-      main: packersColors.green.main,
-      light: packersColors.green.light,
-      dark: packersColors.green.dark,
-      contrastText: '#ffffff',
-    },
-    secondary: {
-      main: packersColors.gold.main,
-      light: packersColors.gold.light,
-      dark: packersColors.gold.dark,
-      contrastText: packersColors.green.main,
-    },
+/**
+ * Create dynamic theme based on branding configuration
+ */
+export function createDynamicTheme(branding?: TeamBranding) {
+  const primaryColor = branding?.primaryColor || packersColors.green.main;
+  const secondaryColor = branding?.secondaryColor || packersColors.gold.main;
+
+  return createTheme({
+    palette: {
+      primary: {
+        main: primaryColor,
+        light: packersColors.green.light,
+        dark: packersColors.green.dark,
+        contrastText: '#ffffff',
+      },
+      secondary: {
+        main: secondaryColor,
+        light: packersColors.gold.light,
+        dark: packersColors.gold.dark,
+        contrastText: primaryColor,
+      },
     background: {
       default: '#f5f5f5',
       paper: '#ffffff',
@@ -162,7 +170,11 @@ export const theme = createTheme({
       },
     },
   },
-  shape: {
-    borderRadius: 8,
-  },
-});
+    shape: {
+      borderRadius: 8,
+    },
+  });
+}
+
+// Default theme (for backwards compatibility)
+export const theme = createDynamicTheme();

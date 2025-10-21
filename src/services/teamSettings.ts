@@ -1,5 +1,5 @@
-import type { TeamSettings, SeasonPhase, TeamLevel } from '../types/teamSettings';
-import { DEFAULT_TEAM_SETTINGS } from '../types/teamSettings';
+import type { TeamSettings, SeasonPhase, TeamLevel, TeamBranding } from '../types/teamSettings';
+import { DEFAULT_TEAM_SETTINGS, DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
 
 const STORAGE_KEY = 'rhinos_team_settings';
 
@@ -26,7 +26,9 @@ export function updateTeamSettings(
   teamLevel: TeamLevel,
   updatedBy: string
 ): TeamSettings {
+  const current = getTeamSettings();
   const settings: TeamSettings = {
+    ...current,
     seasonPhase,
     teamLevel,
     updatedAt: new Date().toISOString(),
@@ -35,6 +37,60 @@ export function updateTeamSettings(
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   return settings;
+}
+
+/**
+ * Get team branding configuration
+ */
+export function getTeamBranding(): TeamBranding {
+  const settings = getTeamSettings();
+  return settings.branding || DEFAULT_TEAM_BRANDING;
+}
+
+/**
+ * Update team branding
+ */
+export function updateTeamBranding(
+  branding: Partial<TeamBranding>,
+  updatedBy: string
+): TeamSettings {
+  const current = getTeamSettings();
+  const currentBranding = current.branding || DEFAULT_TEAM_BRANDING;
+
+  const settings: TeamSettings = {
+    ...current,
+    branding: {
+      ...currentBranding,
+      ...branding,
+    },
+    updatedAt: new Date().toISOString(),
+    updatedBy,
+  };
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+
+  // Update favicon if provided
+  if (branding.faviconUrl) {
+    updateFavicon(branding.faviconUrl);
+  }
+
+  // Update document title if app name changed
+  if (branding.appName) {
+    document.title = branding.appName;
+  }
+
+  return settings;
+}
+
+/**
+ * Update favicon dynamically
+ */
+function updateFavicon(faviconUrl: string) {
+  const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+  link.type = 'image/x-icon';
+  link.rel = 'shortcut icon';
+  link.href = faviconUrl;
+  document.getElementsByTagName('head')[0].appendChild(link);
 }
 
 /**
