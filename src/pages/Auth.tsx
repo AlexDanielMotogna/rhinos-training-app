@@ -36,6 +36,7 @@ export const Auth: React.FC = () => {
   const [heightCm, setHeightCm] = useState<number | ''>('');
   const [position, setPosition] = useState<Position>('RB');
   const [role, setRole] = useState<'player' | 'coach'>('player');
+  const [sex, setSex] = useState<'male' | 'female'>('male');
   const [coachCode, setCoachCode] = useState('');
 
   const COACH_CODE = 'RHINOS2025'; // Code provided by you to coaches
@@ -72,6 +73,7 @@ export const Auth: React.FC = () => {
         heightCm: Number(heightCm) || 0,
         position: role === 'player' ? position : 'RB', // Default for coaches (not used)
         role,
+        sex,
       };
 
       saveUser(user);
@@ -224,6 +226,18 @@ export const Auth: React.FC = () => {
                     min: new Date(new Date().setFullYear(new Date().getFullYear() - 100)).toISOString().split('T')[0]
                   }}
                 />
+
+                <FormControl required fullWidth>
+                  <InputLabel>{t('auth.gender')}</InputLabel>
+                  <Select
+                    value={sex}
+                    label={t('auth.gender')}
+                    onChange={(e) => setSex(e.target.value as 'male' | 'female')}
+                  >
+                    <MenuItem value="male">{t('auth.male')}</MenuItem>
+                    <MenuItem value="female">{t('auth.female')}</MenuItem>
+                  </Select>
+                </FormControl>
 
                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                   <TextField

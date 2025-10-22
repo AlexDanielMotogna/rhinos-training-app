@@ -13,9 +13,13 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useI18n } from '../i18n/I18nProvider';
 import { WorkoutBlock } from '../components/workout/WorkoutBlock';
 import { CoachBlockWorkoutDialog } from '../components/workout/CoachBlockWorkoutDialog';
@@ -29,10 +33,10 @@ import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
 import { getUser } from '../services/mock';
-import { getActiveAssignmentsForPlayer, getTrainingTypes, getTemplatesForPosition } from '../services/trainingBuilder';
+import { getActiveAssignmentsForPlayer, getTrainingTypes } from '../services/trainingBuilder';
 import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
-import type { TrainingTypeKey, PositionTemplate, TemplateBlock } from '../types/template';
+import type { TrainingTypeKey, TemplateBlock } from '../types/template';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
 import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
 import { sanitizeYouTubeUrl } from '../services/yt';
@@ -51,7 +55,7 @@ export const MyTraining: React.FC = () => {
   const [mySessionTab, setMySessionTab] = useState<MySessionTab>('plans');
   const [teamSessionTab, setTeamSessionTab] = useState<TeamSessionTab>('plan');
   const [activeTab, setActiveTab] = useState<TrainingTypeKey>('strength_conditioning');
-  const [template, setTemplate] = useState<PositionTemplate | null>(null);
+  // const [template, setTemplate] = useState<PositionTemplate | null>(null); // No longer needed - using assignment.template directly
   const [showFreeSession, setShowFreeSession] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -88,7 +92,7 @@ export const MyTraining: React.FC = () => {
     if (user) {
       setUserPlans(getUserPlans(user.id));
     }
-  }, [user]);
+  }, [user?.id]);
 
   const refreshUserPlans = () => {
     if (user) {
@@ -112,28 +116,27 @@ export const MyTraining: React.FC = () => {
     return { currentWeek, totalWeeks, progressPercent };
   };
 
-  useEffect(() => {
-    if (user) {
-      const templates = getTemplatesForPosition(user.position);
-      const trainingTemplate = templates[activeTab];
-
-      if (trainingTemplate) {
-        // Convert TrainingTemplate to PositionTemplate format
-        const positionTemplate: PositionTemplate = {
-          blocks: trainingTemplate.blocks.map(block => ({
-            order: block.order,
-            title: block.title,
-            items: block.exercises,
-            globalSets: (block as any).globalSets,
-            exerciseConfigs: (block as any).exerciseConfigs,
-          }))
-        };
-        setTemplate(positionTemplate);
-      } else {
-        setTemplate(null);
-      }
-    }
-  }, [user, activeTab]);
+  // No longer needed - using assignment.template directly in Team Sessions
+  // useEffect(() => {
+  //   if (user) {
+  //     const templates = getTemplatesForPosition(user.position);
+  //     const trainingTemplate = templates[activeTab];
+  //     if (trainingTemplate) {
+  //       const positionTemplate: PositionTemplate = {
+  //         blocks: trainingTemplate.blocks.map(block => ({
+  //           order: block.order,
+  //           title: block.title,
+  //           items: block.exercises,
+  //           globalSets: (block as any).globalSets,
+  //           exerciseConfigs: (block as any).exerciseConfigs,
+  //         }))
+  //       };
+  //       setTemplate(positionTemplate);
+  //     } else {
+  //       setTemplate(null);
+  //     }
+  //   }
+  // }, [user?.position, activeTab]);
 
   const refreshWorkoutHistory = () => {
     if (user) {
@@ -574,10 +577,11 @@ export const MyTraining: React.FC = () => {
                   setEditingPlan(null);
                   setShowPlanBuilder(true);
                 }}
-                fullWidth
                 sx={{
                   mb: 3,
                   py: 1.5,
+                  width: { xs: '100%', sm: 'auto' },
+                  minWidth: { sm: '200px' },
                 }}
               >
                 Create New Plan
@@ -638,20 +642,22 @@ export const MyTraining: React.FC = () => {
                   {t('training.yourAssignedPrograms')}
                 </Typography>
 
-                {activeAssignments.map((assignment) => {
-                  const { currentWeek, totalWeeks, progressPercent } = calculateProgress(
-                    assignment.startDate,
-                    assignment.endDate
-                  );
+                {activeAssignments
+                  .filter(assignment => assignment.template) // Filter out assignments without template
+                  .map((assignment) => {
+                    const { currentWeek, totalWeeks, progressPercent } = calculateProgress(
+                      assignment.startDate,
+                      assignment.endDate
+                    );
 
-                  return (
-                    <Card key={assignment.id} sx={{ mb: 2 }}>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                          <Box>
-                            <Typography variant="h6" sx={{ mb: 0.5 }}>
-                              {assignment.template.trainingTypeName}
-                            </Typography>
+                    return (
+                      <Card key={assignment.id} sx={{ mb: 2 }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                            <Box>
+                              <Typography variant="h6" sx={{ mb: 0.5 }}>
+                                {assignment.template.trainingTypeName}
+                              </Typography>
                             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                               <Chip
                                 label={`Week ${currentWeek} of ${totalWeeks}`}
@@ -720,12 +726,12 @@ export const MyTraining: React.FC = () => {
                     {trainingTypes
                       .filter((tt) => {
                         // Only show tabs for training types that are in activeAssignments
-                        return activeAssignments.some(assignment => assignment.template.trainingTypeId === tt.id);
+                        return activeAssignments.some(assignment => assignment.template && assignment.template.trainingTypeId === tt.id);
                       })
                       .map((tt) => {
                         // Use actual training type name from the assignment
-                        const assignment = activeAssignments.find(a => a.template.trainingTypeId === tt.id);
-                        const displayName = assignment?.template.trainingTypeName || tt.nameEN;
+                        const assignment = activeAssignments.find(a => a.template && a.template.trainingTypeId === tt.id);
+                        const displayName = assignment?.template?.trainingTypeName || tt.nameEN;
 
                         return (
                           <Tab
@@ -738,30 +744,202 @@ export const MyTraining: React.FC = () => {
                   </Tabs>
 
                   {/* Coach Plan Exercises */}
-                  {template ? (
-                    <Box>
-                      <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
-                        {t('training.coachPlan')}
-                      </Typography>
+                  {(() => {
+                    const assignment = activeAssignments.find(a => a.template && a.template.trainingTypeId === trainingTypes.find(tt => tt.key === activeTab)?.id);
 
-                      {template.blocks
-                        .sort((a, b) => a.order - b.order)
-                        .map((block) => (
-                          <WorkoutBlock
-                            key={block.order}
-                            block={block}
-                            showLogButtons={false}
-                            onStartBlock={handleStartBlock}
-                            onVideoClick={handleVideoClick}
-                            trainingType={activeTab}
-                          />
-                        ))}
-                    </Box>
-                  ) : (
-                    <Alert severity="info">
-                      No training plan available for this type
-                    </Alert>
-                  )}
+                    if (!assignment || !assignment.template) {
+                      return (
+                        <Alert severity="info">
+                          No training plan available for this type
+                        </Alert>
+                      );
+                    }
+
+                    const { currentWeek } = calculateProgress(assignment.startDate, assignment.endDate);
+
+                    // Helper function to group blocks by day
+                    const groupBlocksByDay = (blocks: typeof assignment.template.blocks) => {
+                      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                      const grouped = new Map<number, typeof assignment.template.blocks>();
+                      const unscheduled: typeof assignment.template.blocks = [];
+
+                      blocks.forEach(block => {
+                        const dayNum = (block as any).dayNumber;
+                        if (dayNum && dayNum >= 1 && dayNum <= 7) {
+                          if (!grouped.has(dayNum)) {
+                            grouped.set(dayNum, []);
+                          }
+                          grouped.get(dayNum)!.push(block);
+                        } else {
+                          unscheduled.push(block);
+                        }
+                      });
+
+                      const dayGroups = Array.from(grouped.entries())
+                        .sort(([a], [b]) => a - b)
+                        .map(([dayNum, dayBlocks]) => ({
+                          dayNumber: dayNum,
+                          dayName: `${dayNames[dayNum - 1]} / Day ${dayNum}`,
+                          blocks: dayBlocks
+                        }));
+
+                      return { dayGroups, unscheduled };
+                    };
+
+                    // Helper function to group blocks by session within a day
+                    const groupBlocksBySession = (blocks: typeof assignment.template.blocks) => {
+                      const grouped = new Map<string, typeof assignment.template.blocks>();
+
+                      blocks.forEach(block => {
+                        const sessionKey = (block as any).sessionName || '_default';
+                        if (!grouped.has(sessionKey)) {
+                          grouped.set(sessionKey, []);
+                        }
+                        grouped.get(sessionKey)!.push(block);
+                      });
+
+                      return Array.from(grouped.entries()).map(([name, blocks]) => ({
+                        name: name === '_default' ? '' : name,
+                        blocks: blocks.sort((a, b) => a.order - b.order)
+                      }));
+                    };
+
+                    const { dayGroups, unscheduled } = groupBlocksByDay(assignment.template.blocks);
+
+                    return (
+                      <Box>
+                        <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
+                          {t('training.coachPlan')}
+                        </Typography>
+
+                        {/* Weekly Notes */}
+                        {assignment.template.weeklyNotes && (
+                          <Alert severity="info" sx={{ mb: 3, whiteSpace: 'pre-line' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                              📋 Week {currentWeek} of {assignment.template.durationWeeks} - Progression Notes
+                            </Typography>
+                            <Typography variant="body2">
+                              {assignment.template.weeklyNotes}
+                            </Typography>
+                          </Alert>
+                        )}
+
+                        {/* Days with expandable sessions */}
+                        {dayGroups.length > 0 ? (
+                          dayGroups.map((dayGroup) => {
+                            const sessions = groupBlocksBySession(dayGroup.blocks);
+
+                            return (
+                              <Accordion key={dayGroup.dayNumber} sx={{ mb: 1 }}>
+                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                      {dayGroup.dayName}
+                                    </Typography>
+                                  </Box>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                  {sessions.map((session, sIdx) => (
+                                    <Box key={sIdx} sx={{ mb: 3 }}>
+                                      {session.name && (
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
+                                          {session.name}
+                                        </Typography>
+                                      )}
+
+                                      {session.blocks.map(block => {
+                                        // Convert TrainingBlock to TemplateBlock format
+                                        const templateBlock = {
+                                          order: block.order,
+                                          title: block.title,
+                                          items: (block as any).exercises || [],
+                                          globalSets: (block as any).globalSets,
+                                          exerciseConfigs: (block as any).exerciseConfigs,
+                                        };
+                                        return (
+                                          <WorkoutBlock
+                                            key={block.order}
+                                            block={templateBlock}
+                                            showLogButtons={false}
+                                            onStartBlock={undefined}
+                                            onVideoClick={handleVideoClick}
+                                            trainingType={activeTab}
+                                          />
+                                        );
+                                      })}
+
+                                      <Button
+                                        variant="contained"
+                                        size="small"
+                                        onClick={() => {
+                                          // Combine all blocks from this session/day into one workout
+                                          const allExercises: any[] = [];
+                                          const allExerciseConfigs: any[] = [];
+
+                                          session.blocks.forEach(block => {
+                                            const blockExercises = (block as any).exercises || [];
+                                            allExercises.push(...blockExercises);
+
+                                            // Preserve exercise configs from each block
+                                            const blockConfigs = (block as any).exerciseConfigs || [];
+                                            allExerciseConfigs.push(...blockConfigs);
+                                          });
+
+                                          // Create a combined block with all exercises
+                                          const combinedBlock = {
+                                            order: 1,
+                                            title: session.name || dayGroup.dayName,
+                                            items: allExercises,
+                                            globalSets: undefined, // Don't use global sets for combined blocks
+                                            exerciseConfigs: allExerciseConfigs,
+                                          };
+
+                                          handleStartBlock(combinedBlock);
+                                        }}
+                                        sx={{ mt: 1 }}
+                                      >
+                                        Start {session.name || 'Workout'}
+                                      </Button>
+                                    </Box>
+                                  ))}
+                                </AccordionDetails>
+                              </Accordion>
+                            );
+                          })
+                        ) : unscheduled.length > 0 ? (
+                          // Show unscheduled blocks as before (flat list)
+                          <Box>
+                            {unscheduled
+                              .sort((a, b) => a.order - b.order)
+                              .map((block) => {
+                                // Convert TrainingBlock to TemplateBlock format
+                                const templateBlock = {
+                                  order: block.order,
+                                  title: block.title,
+                                  items: (block as any).exercises || [],
+                                  globalSets: (block as any).globalSets,
+                                  exerciseConfigs: (block as any).exerciseConfigs,
+                                };
+                                return (
+                                  <WorkoutBlock
+                                    key={block.order}
+                                    block={templateBlock}
+                                    showLogButtons={false}
+                                    onStartBlock={handleStartBlock}
+                                    onVideoClick={handleVideoClick}
+                                    trainingType={activeTab}
+                                  />
+                                );
+                              })}
+                          </Box>
+                        ) : (
+                          <Alert severity="info">
+                            No blocks configured for this program yet
+                          </Alert>
+                        )}
+                      </Box>
+                    );
+                  })()}
                 </>
               )}
 

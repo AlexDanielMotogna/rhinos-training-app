@@ -169,6 +169,7 @@ export const Profile: React.FC = () => {
               <Chip label={`${user.age} years`} size="small" />
               <Chip label={`${user.weightKg} kg`} size="small" />
               <Chip label={`${user.heightCm} cm`} size="small" />
+              {user.sex && <Chip label={t(`auth.${user.sex}`)} size="small" />}
             </Box>
             {(user.phone || user.instagram || user.snapchat || user.tiktok || user.hudl) && (
               <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 2, alignItems: 'center' }}>

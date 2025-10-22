@@ -136,9 +136,13 @@ export const CatalogSearch: React.FC<CatalogSearchProps> = ({
                                 height="140"
                                 image={thumbnailUrl}
                                 alt={exercise.name}
+                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                  // Hide broken thumbnail silently - replace with placeholder
+                                  e.currentTarget.style.display = 'none';
+                                }}
                                 sx={{
                                   objectFit: 'cover',
-                                  backgroundColor: 'grey.900',
+                                  backgroundColor: 'grey.200',
                                 }}
                               />
                               <Box

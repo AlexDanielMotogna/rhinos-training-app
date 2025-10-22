@@ -337,6 +337,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                           {/* YouTube Thumbnail on the right */}
                           {thumbnailUrl && entry.youtubeUrl ? (
                             <Box
+                              data-thumbnail-container
                               onClick={() => handleVideoClick(entry.youtubeUrl!)}
                               sx={{
                                 position: 'relative',
@@ -358,6 +359,11 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                                 component="img"
                                 image={thumbnailUrl}
                                 alt={entry.name}
+                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                  // Hide broken thumbnail silently - thumbnail box will disappear
+                                  const parent = e.currentTarget.closest('[data-thumbnail-container]') as HTMLElement;
+                                  if (parent) parent.style.display = 'none';
+                                }}
                                 sx={{
                                   width: '100%',
                                   height: '100%',

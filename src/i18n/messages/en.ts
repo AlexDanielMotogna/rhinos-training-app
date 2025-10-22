@@ -67,6 +67,9 @@ export const messagesEN = {
   'auth.role': 'Role',
   'auth.rolePlayer': 'Player',
   'auth.roleCoach': 'Coach',
+  'auth.gender': 'Gender',
+  'auth.male': 'Male',
+  'auth.female': 'Female',
 
   // Positions
   'position.RB': 'Running Back',

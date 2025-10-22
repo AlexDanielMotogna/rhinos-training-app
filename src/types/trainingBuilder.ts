@@ -8,6 +8,9 @@ export interface TrainingBlock {
   id: string;
   title: string; // e.g., "Compound Lifts", "Accessory Work"
   order: number; // Display order (1, 2, 3...)
+  dayOfWeek?: string; // e.g., "Monday / Day 1", "Tuesday / Day 2"
+  dayNumber?: number; // 1-7 for sorting
+  sessionName?: string; // e.g., "Morning Session", "Evening Session", "Session 1"
   exercises: Exercise[]; // Exercises in this block
 }
 
@@ -23,6 +26,7 @@ export interface TrainingTemplate {
   blocks: TrainingBlock[]; // Ordered blocks
   durationWeeks: number; // Program duration in weeks (e.g., 8)
   frequencyPerWeek: string; // Recommended frequency (e.g., "2-3")
+  weeklyNotes?: string; // Progression notes (e.g., "Weeks 1-2: 60-70% 1RM...")
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -44,9 +48,13 @@ export interface TrainingTemplateDTO {
   positions: Position[]; // Multiple positions can share the same template
   durationWeeks: number; // Program duration in weeks
   frequencyPerWeek: string; // Recommended frequency (e.g., "2-3", "3", "4-5")
+  weeklyNotes?: string; // Progression notes
   blocks: {
     title: string;
     order: number;
+    dayOfWeek?: string; // e.g., "Monday / Day 1"
+    dayNumber?: number; // 1-7
+    sessionName?: string; // e.g., "Morning Session"
     exerciseIds: string[];
     exerciseConfigs?: ExerciseConfig[]; // Configuration for each exercise (sets, etc.)
     globalSets?: number; // Global sets that apply to all exercises in the block

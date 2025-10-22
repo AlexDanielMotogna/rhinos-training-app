@@ -150,17 +150,23 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           Last: {formatLastUsed(plan.lastUsed)}
         </Typography>
 
-        {/* Action Buttons - Mobile Optimized */}
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          {/* Start/Continue Button - Primary, Full Width */}
+        {/* Action Buttons - Responsive Layout */}
+        <Box sx={{
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}>
+          {/* Start/Continue Button - Compact on Desktop */}
           <Button
             variant="contained"
             startIcon={<PlayArrowIcon />}
             onClick={() => onStart(plan)}
-            fullWidth
             sx={{
               py: 1,
               fontWeight: 600,
+              flex: { xs: 1, sm: '0 0 auto' },
+              minWidth: { sm: '140px' },
             }}
           >
             {hasProgress() ? t('workout.continue') : t('workout.start')}
@@ -176,6 +182,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                 borderColor: 'divider',
                 '&:hover': { bgcolor: 'action.hover' }
               }}
+              title="Edit"
             >
               <EditIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>
@@ -187,6 +194,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                 borderColor: 'divider',
                 '&:hover': { bgcolor: 'action.hover' }
               }}
+              title="Duplicate"
             >
               <ContentCopyIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>
@@ -199,6 +207,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                 borderColor: 'divider',
                 '&:hover': { bgcolor: 'error.lighter' }
               }}
+              title="Delete"
             >
               <DeleteIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>

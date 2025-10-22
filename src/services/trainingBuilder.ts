@@ -107,10 +107,14 @@ export function createTrainingTemplate(dto: TrainingTemplateDTO): TrainingTempla
     positions: dto.positions,
     durationWeeks: dto.durationWeeks,
     frequencyPerWeek: dto.frequencyPerWeek,
+    weeklyNotes: dto.weeklyNotes,
     blocks: dto.blocks.map(blockDto => ({
       id: `block-${Date.now()}-${Math.random()}`,
       title: blockDto.title,
       order: blockDto.order,
+      dayOfWeek: blockDto.dayOfWeek,
+      dayNumber: blockDto.dayNumber,
+      sessionName: blockDto.sessionName,
       exercises: blockDto.exerciseIds
         .map(id => globalCatalog.find(ex => ex.id === id))
         .filter((ex): ex is Exercise => ex !== undefined),
@@ -153,10 +157,14 @@ export function updateTrainingTemplate(id: string, dto: TrainingTemplateDTO): Tr
     positions: dto.positions,
     durationWeeks: dto.durationWeeks,
     frequencyPerWeek: dto.frequencyPerWeek,
+    weeklyNotes: dto.weeklyNotes,
     blocks: dto.blocks.map(blockDto => ({
       id: `block-${Date.now()}-${Math.random()}`,
       title: blockDto.title,
       order: blockDto.order,
+      dayOfWeek: blockDto.dayOfWeek,
+      dayNumber: blockDto.dayNumber,
+      sessionName: blockDto.sessionName,
       exercises: blockDto.exerciseIds
         .map(id => globalCatalog.find(ex => ex.id === id))
         .filter((ex): ex is Exercise => ex !== undefined),
@@ -259,6 +267,41 @@ export function createTrainingAssignment(dto: TrainingAssignmentDTO, coachId: st
   localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
 
   return newAssignment;
+}
+
+/**
+ * Update an existing training assignment
+ */
+export function updateTrainingAssignment(id: string, dto: TrainingAssignmentDTO, _coachId: string): TrainingAssignment {
+  const assignments = getTrainingAssignments();
+  const template = getTrainingTemplates().find(t => t.id === dto.templateId);
+  const assignmentIndex = assignments.findIndex(a => a.id === id);
+
+  if (assignmentIndex === -1) {
+    throw new Error('Assignment not found');
+  }
+
+  if (!template) {
+    throw new Error('Template not found');
+  }
+
+  // Calculate end date based on template duration
+  const startDate = new Date(dto.startDate);
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + (template.durationWeeks * 7));
+
+  const updatedAssignment: TrainingAssignment = {
+    ...assignments[assignmentIndex],
+    templateId: dto.templateId,
+    playerIds: dto.playerIds,
+    startDate: dto.startDate,
+    endDate: endDate.toISOString().split('T')[0],
+  };
+
+  assignments[assignmentIndex] = updatedAssignment;
+  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
+
+  return updatedAssignment;
 }
 
 /**

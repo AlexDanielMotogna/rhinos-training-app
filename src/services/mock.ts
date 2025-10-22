@@ -58,6 +58,8 @@ export function saveUser(user: MockUser): void {
 
   // Check if user already exists (by email)
   const existingIndex = allUsers.findIndex(u => u.email === user.email);
+  const isNewUser = existingIndex < 0;
+
   if (existingIndex >= 0) {
     // Update existing user
     allUsers[existingIndex] = user;
@@ -67,6 +69,13 @@ export function saveUser(user: MockUser): void {
   }
 
   localStorage.setItem(usersKey, JSON.stringify(allUsers));
+
+  // Initialize default workout plans for new players
+  if (isNewUser && user.role === 'player') {
+    import('./workoutPlanTemplates').then(({ initializeDefaultWorkoutPlans }) => {
+      initializeDefaultWorkoutPlans(user.id, user.position);
+    });
+  }
 }
 
 export function getUser(): MockUser | null {
@@ -332,6 +341,7 @@ export function initializeDemoProfiles(): void {
       weightKg: 0,
       heightCm: 0,
       position: 'RB',
+      sex: 'male',
     },
     {
       id: 'demo-player-1',
@@ -343,6 +353,7 @@ export function initializeDemoProfiles(): void {
       weightKg: 95,
       heightCm: 180,
       position: 'RB',
+      sex: 'male',
     },
     {
       id: 'demo-player-2',
@@ -354,6 +365,7 @@ export function initializeDemoProfiles(): void {
       weightKg: 88,
       heightCm: 185,
       position: 'WR',
+      sex: 'male',
     },
     {
       id: 'demo-player-3',
@@ -365,6 +377,7 @@ export function initializeDemoProfiles(): void {
       weightKg: 102,
       heightCm: 193,
       position: 'TE',
+      sex: 'male',
     },
     {
       id: 'demo-player-4',
@@ -376,6 +389,7 @@ export function initializeDemoProfiles(): void {
       weightKg: 110,
       heightCm: 188,
       position: 'LB',
+      sex: 'male',
     },
   ];
 

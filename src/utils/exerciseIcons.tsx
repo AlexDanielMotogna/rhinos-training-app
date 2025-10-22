@@ -1,133 +1,141 @@
 import React from 'react';
+import Icon from '@mdi/react';
 import {
-  GiWeightLiftingUp,
-  GiRun,
-  GiJumpingRope,
-  GiMeditation,
-  GiBiceps,
-  GiStrongMan,
-} from 'react-icons/gi';
-import {
-  MdDirectionsRun,
-  MdPool,
-  MdDirectionsBike,
-  MdSportsGymnastics,
-  MdSelfImprovement,
-  MdHiking,
-} from 'react-icons/md';
-import {
-  FaDumbbell,
-  FaRunning,
-  FaWalking,
-  FaHeartbeat,
-} from 'react-icons/fa';
-import {
-  IoMdFitness,
-} from 'react-icons/io';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+  // Strength/Weights
+  mdiDumbbell,
+  mdiWeight,
+  mdiWeightLifter,
+  // Cardio/Running
+  mdiRun,
+  mdiRunFast,
+  mdiWalk,
+  mdiHiking,
+  // Cycling
+  mdiBike,
+  // Swimming
+  mdiSwim,
+  mdiPool,
+  // Sports/Activities
+  mdiYoga,
+  mdiMeditation,
+  mdiJumpRope,
+  // Body parts/exercises
+  mdiHumanHandsup,
+  mdiHumanHandsdown,
+  mdiKarate,
+  // General fitness
+  mdiHeartPulse,
+  mdiStairs,
+  mdiHumanMale,
+} from '@mdi/js';
 import type { ExerciseCategory } from '../types/exercise';
 import { packersColors } from '../theme';
 
 /**
- * Get icon component for exercise based on name and category
+ * Get icon path for exercise based on name and category
+ * Using Material Design Icons for better exercise representation
  */
-export function getExerciseIcon(exerciseName: string, category: ExerciseCategory): React.ReactNode {
+export function getExerciseIcon(exerciseName: string, category: ExerciseCategory, color?: string): React.ReactNode {
   const name = exerciseName.toLowerCase();
+  const iconSize = 1.2; // MDI uses size in rem units
+  const iconColor = color || 'currentColor'; // Use provided color or inherit from parent
 
-  // Strength exercises - More specific icon matching
+  // Strength exercises - specific icon matching
   if (category === 'Strength') {
-    if (name.includes('squat')) return <GiWeightLiftingUp size={24} />; // Barbell squat
-    if (name.includes('bench')) return <GiBiceps size={24} />; // Bench press
-    if (name.includes('press') && !name.includes('bench')) return <GiStrongMan size={24} />; // Overhead/shoulder press
-    if (name.includes('deadlift')) return <GiWeightLiftingUp size={24} />; // Deadlift
-    if (name.includes('pull') || name.includes('row')) return <FaDumbbell size={24} />; // Back exercises
-    if (name.includes('curl')) return <GiBiceps size={24} />; // Arm curls
-    if (name.includes('tricep')) return <FaDumbbell size={24} />; // Tricep work
-    if (name.includes('leg') || name.includes('calf')) return <GiStrongMan size={24} />; // Leg exercises
-    if (name.includes('lunge')) return <IoMdFitness size={24} />; // Lunges
-    if (name.includes('cable') || name.includes('lat')) return <FaDumbbell size={24} />; // Cable/lat exercises
-    return <FitnessCenterIcon style={{ fontSize: 24 }} />; // Default strength
+    if (name.includes('squat')) return <Icon path={mdiWeightLifter} size={iconSize} color={iconColor} />;
+    if (name.includes('bench')) return <Icon path={mdiWeight} size={iconSize} color={iconColor} />;
+    if (name.includes('press') && !name.includes('bench')) return <Icon path={mdiWeight} size={iconSize} color={iconColor} />;
+    if (name.includes('deadlift')) return <Icon path={mdiWeightLifter} size={iconSize} color={iconColor} />;
+    if (name.includes('pull') || name.includes('row') || name.includes('lat')) return <Icon path={mdiWeight} size={iconSize} color={iconColor} />;
+    if (name.includes('curl') || name.includes('bicep') || name.includes('tricep')) return <Icon path={mdiDumbbell} size={iconSize} color={iconColor} />;
+    if (name.includes('leg') || name.includes('calf') || name.includes('lunge')) return <Icon path={mdiWeightLifter} size={iconSize} color={iconColor} />;
+    if (name.includes('cable')) return <Icon path={mdiWeight} size={iconSize} color={iconColor} />;
+    if (name.includes('dumbbell')) return <Icon path={mdiDumbbell} size={iconSize} color={iconColor} />;
+    return <Icon path={mdiWeight} size={iconSize} color={iconColor} />; // Default strength
   }
 
   // Conditioning / Cardio
   if (category === 'Conditioning') {
-    if (name.includes('swim')) return <MdPool size={24} />;
-    if (name.includes('run') || name.includes('jog')) return <MdDirectionsRun size={24} />;
-    if (name.includes('cycl') || name.includes('bike') || name.includes('biking')) return <MdDirectionsBike size={24} />;
-    if (name.includes('walk')) return <FaWalking size={24} />;
-    if (name.includes('hik')) return <MdHiking size={24} />;
-    if (name.includes('jump') || name.includes('rope')) return <GiJumpingRope size={24} />;
-    if (name.includes('row')) return <FaHeartbeat size={24} />;
-    if (name.includes('elliptical') || name.includes('stair')) return <FaRunning size={24} />;
-    return <MdDirectionsRun size={24} />;
+    if (name.includes('swim')) return <Icon path={mdiSwim} size={iconSize} color={iconColor} />;
+    if (name.includes('pool')) return <Icon path={mdiPool} size={iconSize} color={iconColor} />;
+    if (name.includes('run') || name.includes('jog')) return <Icon path={mdiRun} size={iconSize} color={iconColor} />;
+    if (name.includes('sprint')) return <Icon path={mdiRunFast} size={iconSize} color={iconColor} />;
+    if (name.includes('walk')) return <Icon path={mdiWalk} size={iconSize} color={iconColor} />;
+    if (name.includes('hik')) return <Icon path={mdiHiking} size={iconSize} color={iconColor} />;
+    if (name.includes('cycl') || name.includes('bike') || name.includes('biking')) return <Icon path={mdiBike} size={iconSize} color={iconColor} />;
+    if (name.includes('jump') || name.includes('rope')) return <Icon path={mdiJumpRope} size={iconSize} color={iconColor} />;
+    if (name.includes('row') && !name.includes('barbell')) return <Icon path={mdiHeartPulse} size={iconSize} color={iconColor} />;
+    if (name.includes('elliptical') || name.includes('stair')) return <Icon path={mdiStairs} size={iconSize} color={iconColor} />;
+    return <Icon path={mdiHeartPulse} size={iconSize} color={iconColor} />; // Default cardio
   }
 
   // Speed
   if (category === 'Speed') {
-    if (name.includes('sprint')) return <GiRun size={24} />;
-    if (name.includes('dash') || name.includes('fly')) return <MdDirectionsRun size={24} />;
-    return <FaRunning size={24} />;
+    if (name.includes('sprint')) return <Icon path={mdiRunFast} size={iconSize} color={iconColor} />;
+    if (name.includes('dash') || name.includes('fly')) return <Icon path={mdiRunFast} size={iconSize} color={iconColor} />;
+    return <Icon path={mdiRun} size={iconSize} color={iconColor} />;
   }
 
   // Plyometrics
   if (category === 'Plyometrics') {
-    if (name.includes('jump')) return <GiJumpingRope size={24} />;
-    if (name.includes('box')) return <IoMdFitness size={24} />;
-    return <MdSportsGymnastics size={24} />;
+    if (name.includes('jump')) return <Icon path={mdiJumpRope} size={iconSize} color={iconColor} />;
+    if (name.includes('box')) return <Icon path={mdiHumanHandsup} size={iconSize} color={iconColor} />;
+    return <Icon path={mdiHumanHandsup} size={iconSize} color={iconColor} />;
   }
 
   // Mobility
   if (category === 'Mobility') {
-    if (name.includes('yoga') || name.includes('pilates')) return <MdSelfImprovement size={24} />;
-    if (name.includes('stretch')) return <MdSportsGymnastics size={24} />;
-    return <MdSelfImprovement size={24} />;
+    if (name.includes('yoga')) return <Icon path={mdiYoga} size={iconSize} color={iconColor} />;
+    if (name.includes('pilates')) return <Icon path={mdiHumanHandsup} size={iconSize} color={iconColor} />;
+    if (name.includes('stretch')) return <Icon path={mdiHumanHandsup} size={iconSize} color={iconColor} />;
+    return <Icon path={mdiYoga} size={iconSize} color={iconColor} />;
   }
 
   // Recovery
   if (category === 'Recovery') {
-    if (name.includes('meditat') || name.includes('breath')) return <GiMeditation size={24} />;
-    if (name.includes('foam') || name.includes('massage')) return <MdSelfImprovement size={24} />;
-    if (name.includes('walk')) return <FaWalking size={24} />;
-    return <MdSelfImprovement size={24} />;
+    if (name.includes('meditat') || name.includes('breath')) return <Icon path={mdiMeditation} size={iconSize} color={iconColor} />;
+    if (name.includes('foam') || name.includes('massage')) return <Icon path={mdiHumanHandsdown} size={iconSize} color={iconColor} />;
+    if (name.includes('walk')) return <Icon path={mdiWalk} size={iconSize} color={iconColor} />;
+    return <Icon path={mdiMeditation} size={iconSize} color={iconColor} />;
   }
 
   // COD (Change of Direction)
   if (category === 'COD') {
-    return <FaRunning size={24} />;
+    return <Icon path={mdiKarate} size={iconSize} color={iconColor} />;
   }
 
   // Technique
   if (category === 'Technique') {
-    return <MdSportsGymnastics size={24} />;
+    return <Icon path={mdiHumanHandsdown} size={iconSize} color={iconColor} />;
   }
 
   // Default fallback
-  return <FitnessCenterIcon style={{ fontSize: 24 }} />;
+  return <Icon path={mdiHumanMale} size={iconSize} color={iconColor} />;
 }
 
 /**
  * Get category icon for workout plans
  */
-export function getCategoryIcon(category: ExerciseCategory, size: number = 40): React.ReactNode {
+export function getCategoryIcon(category: ExerciseCategory, size: number = 1): React.ReactNode {
   switch (category) {
     case 'Strength':
-      return <GiWeightLiftingUp size={size} />;
+      return <Icon path={mdiWeightLifter} size={size} />;
     case 'Conditioning':
-      return <MdDirectionsRun size={size} />;
+      return <Icon path={mdiHeartPulse} size={size} />;
     case 'Speed':
-      return <FaRunning size={size} />;
+      return <Icon path={mdiRunFast} size={size} />;
     case 'Plyometrics':
-      return <GiJumpingRope size={size} />;
+      return <Icon path={mdiJumpRope} size={size} />;
     case 'Mobility':
-      return <MdSelfImprovement size={size} />;
+      return <Icon path={mdiYoga} size={size} />;
     case 'Recovery':
-      return <GiMeditation size={size} />;
+      return <Icon path={mdiMeditation} size={size} />;
     case 'COD':
-      return <MdDirectionsRun size={size} />;
+      return <Icon path={mdiKarate} size={size} />;
     case 'Technique':
-      return <MdSportsGymnastics size={size} />;
+      return <Icon path={mdiHumanHandsdown} size={size} />;
     default:
-      return <FitnessCenterIcon style={{ fontSize: size }} />;
+      return <Icon path={mdiWeight} size={size} />;
   }
 }
 

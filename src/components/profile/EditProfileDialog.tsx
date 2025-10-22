@@ -7,6 +7,10 @@ import {
   Button,
   TextField,
   Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { useI18n } from '../../i18n/I18nProvider';
 import { saveUser, calculateAge, type MockUser } from '../../services/mock';
@@ -30,6 +34,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   const [birthDate, setBirthDate] = useState(user.birthDate || '');
   const [weightKg, setWeightKg] = useState(user.weightKg);
   const [heightCm, setHeightCm] = useState(user.heightCm);
+  const [sex, setSex] = useState<'male' | 'female'>(user.sex || 'male');
   const [phone, setPhone] = useState(user.phone || '+43');
   const [instagram, setInstagram] = useState(user.instagram || '');
   const [snapchat, setSnapchat] = useState(user.snapchat || '');
@@ -77,6 +82,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
       age: birthDate ? calculateAge(birthDate) : user.age,
       weightKg: Number(weightKg),
       heightCm: Number(heightCm),
+      sex,
       phone: phone && phone !== '+43' ? phone : undefined,
       instagram: instagram || undefined,
       snapchat: snapchat || undefined,
@@ -123,6 +129,18 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
               min: new Date(new Date().setFullYear(new Date().getFullYear() - 100)).toISOString().split('T')[0]
             }}
           />
+
+          <FormControl fullWidth required>
+            <InputLabel>{t('auth.gender')}</InputLabel>
+            <Select
+              value={sex}
+              label={t('auth.gender')}
+              onChange={(e) => setSex(e.target.value as 'male' | 'female')}
+            >
+              <MenuItem value="male">{t('auth.male')}</MenuItem>
+              <MenuItem value="female">{t('auth.female')}</MenuItem>
+            </Select>
+          </FormControl>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
             <TextField

@@ -47,6 +47,7 @@ import {
   saveTrainingTypes,
   getTrainingAssignments,
   createTrainingAssignment,
+  updateTrainingAssignment,
   deleteAssignment,
   getMockPlayers,
 } from '../services/trainingBuilder';
@@ -183,9 +184,13 @@ export const Admin: React.FC = () => {
     positions: Position[];
     durationWeeks: number;
     frequencyPerWeek: string;
+    weeklyNotes?: string;
     blocks: {
       title: string;
       order: number;
+      dayOfWeek?: string;
+      dayNumber?: number;
+      sessionName?: string;
       exerciseIds: string[];
       globalSets?: number;
       exerciseConfigs?: { exerciseId: string; sets?: number }[];
@@ -195,17 +200,24 @@ export const Admin: React.FC = () => {
     positions: ['RB'],
     durationWeeks: 8,
     frequencyPerWeek: '2-3',
+    weeklyNotes: '',
     blocks: [],
   });
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
   const [currentBlock, setCurrentBlock] = useState<{
     title: string;
+    dayOfWeek?: string;
+    dayNumber?: number;
+    sessionName?: string;
     exerciseIds: string[];
     globalSets?: number;
     exerciseConfigs?: { exerciseId: string; sets?: number }[];
   }>({
     title: '',
+    dayOfWeek: undefined,
+    dayNumber: undefined,
+    sessionName: '',
     exerciseIds: [],
     globalSets: undefined,
     exerciseConfigs: [],
@@ -215,6 +227,7 @@ export const Admin: React.FC = () => {
   const [assignments, setAssignments] = useState<TrainingAssignment[]>(() => getTrainingAssignments());
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignToAllPlayers, setAssignToAllPlayers] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<TrainingAssignment | null>(null);
   const [newAssignment, setNewAssignment] = useState<{
     templateId: string;
     playerIds: string[];
@@ -447,9 +460,13 @@ export const Admin: React.FC = () => {
         positions: template.positions || ['RB'],
         durationWeeks: template.durationWeeks || 8,
         frequencyPerWeek: template.frequencyPerWeek || '2-3',
+        weeklyNotes: template.weeklyNotes || '',
         blocks: template.blocks?.map(b => ({
           title: b.title,
           order: b.order,
+          dayOfWeek: (b as any).dayOfWeek,
+          dayNumber: (b as any).dayNumber,
+          sessionName: (b as any).sessionName,
           exerciseIds: b.exercises.map(ex => ex.id),
           globalSets: (b as any).globalSets,
           exerciseConfigs: (b as any).exerciseConfigs,
@@ -462,6 +479,7 @@ export const Admin: React.FC = () => {
         positions: ['RB'],
         durationWeeks: 8,
         frequencyPerWeek: '2-3',
+        weeklyNotes: '',
         blocks: [],
       });
     }
@@ -490,6 +508,9 @@ export const Admin: React.FC = () => {
     setEditingBlockIndex(null);
     setCurrentBlock({
       title: '',
+      dayOfWeek: undefined,
+      dayNumber: undefined,
+      sessionName: '',
       exerciseIds: [],
       globalSets: undefined,
       exerciseConfigs: [],
@@ -502,6 +523,9 @@ export const Admin: React.FC = () => {
     const block = newTemplateData.blocks[index];
     setCurrentBlock({
       title: block.title,
+      dayOfWeek: block.dayOfWeek,
+      dayNumber: block.dayNumber,
+      sessionName: block.sessionName,
       exerciseIds: block.exerciseIds,
       globalSets: block.globalSets,
       exerciseConfigs: block.exerciseConfigs || [],
@@ -516,6 +540,9 @@ export const Admin: React.FC = () => {
       updatedBlocks[editingBlockIndex] = {
         ...updatedBlocks[editingBlockIndex],
         title: currentBlock.title,
+        dayOfWeek: currentBlock.dayOfWeek,
+        dayNumber: currentBlock.dayNumber,
+        sessionName: currentBlock.sessionName,
         exerciseIds: currentBlock.exerciseIds,
         globalSets: currentBlock.globalSets,
         exerciseConfigs: currentBlock.exerciseConfigs,
@@ -529,6 +556,9 @@ export const Admin: React.FC = () => {
       const newBlock = {
         title: currentBlock.title,
         order: newTemplateData.blocks.length + 1,
+        dayOfWeek: currentBlock.dayOfWeek,
+        dayNumber: currentBlock.dayNumber,
+        sessionName: currentBlock.sessionName,
         exerciseIds: currentBlock.exerciseIds,
         globalSets: currentBlock.globalSets,
         exerciseConfigs: currentBlock.exerciseConfigs,
@@ -560,6 +590,25 @@ export const Admin: React.FC = () => {
       .map(player => player.id);
   };
 
+  const handleOpenAssignDialog = (assignment?: TrainingAssignment) => {
+    if (assignment) {
+      setEditingAssignment(assignment);
+      setNewAssignment({
+        templateId: assignment.templateId,
+        playerIds: assignment.playerIds,
+        startDate: assignment.startDate,
+      });
+    } else {
+      setEditingAssignment(null);
+      setNewAssignment({
+        templateId: '',
+        playerIds: [],
+        startDate: new Date().toISOString().split('T')[0],
+      });
+    }
+    setAssignDialogOpen(true);
+  };
+
   const handleSaveAssignment = () => {
     const currentUser = getUser();
     if (currentUser) {
@@ -576,8 +625,13 @@ export const Admin: React.FC = () => {
       }
 
       // Check for duplicate assignments (same training type for the same player with overlapping dates)
+      // Skip conflict check if we're editing the same assignment
       const today = new Date().toISOString().split('T')[0];
-      const existingActiveAssignments = assignments.filter(a => a.active && a.endDate >= today);
+      const existingActiveAssignments = assignments.filter(a =>
+        a.active &&
+        a.endDate >= today &&
+        (!editingAssignment || a.id !== editingAssignment.id) // Exclude current assignment if editing
+      );
 
       const conflicts: string[] = [];
       assignmentData.playerIds.forEach(playerId => {
@@ -607,10 +661,17 @@ export const Admin: React.FC = () => {
         }
       }
 
-      createTrainingAssignment(assignmentData, currentUser.id);
+      // Update or create depending on mode
+      if (editingAssignment) {
+        updateTrainingAssignment(editingAssignment.id, assignmentData, currentUser.id);
+      } else {
+        createTrainingAssignment(assignmentData, currentUser.id);
+      }
+
       setAssignments(getTrainingAssignments());
       setAssignDialogOpen(false);
       setAssignToAllPlayers(false);
+      setEditingAssignment(null);
       setNewAssignment({
         templateId: '',
         playerIds: [],
@@ -632,6 +693,53 @@ export const Admin: React.FC = () => {
   ];
 
   const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
+
+  // Helper function to group blocks by session within a day
+  const groupBlocksBySession = (blocks: typeof newTemplateData.blocks) => {
+    const grouped = new Map<string, typeof newTemplateData.blocks>();
+
+    blocks.forEach(block => {
+      const sessionKey = block.sessionName || '_default';
+      if (!grouped.has(sessionKey)) {
+        grouped.set(sessionKey, []);
+      }
+      grouped.get(sessionKey)!.push(block);
+    });
+
+    return Array.from(grouped.entries()).map(([name, blocks]) => ({
+      name: name === '_default' ? '' : name,
+      blocks: blocks.sort((a, b) => a.order - b.order)
+    }));
+  };
+
+  // Helper function to group blocks by day
+  const groupBlocksByDay = (blocks: typeof newTemplateData.blocks) => {
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const grouped = new Map<number, typeof newTemplateData.blocks>();
+    const unscheduled: typeof newTemplateData.blocks = [];
+
+    blocks.forEach(block => {
+      const dayNum = block.dayNumber;
+      if (dayNum && dayNum >= 1 && dayNum <= 7) {
+        if (!grouped.has(dayNum)) {
+          grouped.set(dayNum, []);
+        }
+        grouped.get(dayNum)!.push(block);
+      } else {
+        unscheduled.push(block);
+      }
+    });
+
+    const dayGroups = Array.from(grouped.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([dayNum, dayBlocks]) => ({
+        dayNumber: dayNum,
+        dayName: `${dayNames[dayNum - 1]} / Day ${dayNum}`,
+        sessions: groupBlocksBySession(dayBlocks)
+      }));
+
+    return { dayGroups, unscheduled };
+  };
 
   // Filter exercises based on training type
   const getFilteredExercises = (trainingTypeId: string): Exercise[] => {
@@ -797,7 +905,7 @@ export const Admin: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setAssignDialogOpen(true)}
+              onClick={() => handleOpenAssignDialog()}
             >
               Assign Program
             </Button>
@@ -851,12 +959,20 @@ export const Admin: React.FC = () => {
                             color={assignment.active ? 'success' : 'default'}
                           />
                         </Box>
-                        <IconButton
-                          color="error"
-                          onClick={() => handleDeleteAssignment(assignment.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleOpenAssignDialog(assignment)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            onClick={() => handleDeleteAssignment(assignment.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
                       </Box>
                     </CardContent>
                   </Card>
@@ -1682,6 +1798,17 @@ export const Admin: React.FC = () => {
               helperText="Recommended training frequency per week (e.g., '2-3' or '3')"
             />
 
+            <TextField
+              label="Weekly Progression Notes (optional)"
+              value={newTemplateData.weeklyNotes}
+              onChange={(e) => setNewTemplateData({ ...newTemplateData, weeklyNotes: e.target.value })}
+              fullWidth
+              multiline
+              rows={4}
+              placeholder="Example: Weeks 1-2: 60-70% 1RM, 8-10 reps, tempo 3-1-1&#10;Weeks 3-4: 70-75% 1RM, 6-8 reps..."
+              helperText="Add progression notes for players (e.g., intensity by week, tempo changes, etc.)"
+            />
+
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="subtitle1" fontWeight={600}>
@@ -1702,38 +1829,117 @@ export const Admin: React.FC = () => {
                 </Alert>
               )}
 
-              {newTemplateData.blocks.map((block, index) => (
-                <Card key={index} sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Box>
-                        <Typography variant="body1" fontWeight={600}>
-                          {index + 1}. {block.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {block.exerciseIds.length} exercise(s)
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleEditBlock(index)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleRemoveBlock(index)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
+              {(() => {
+                const { dayGroups, unscheduled } = groupBlocksByDay(newTemplateData.blocks);
+
+                return (
+                  <>
+                    {/* Blocks grouped by day */}
+                    {dayGroups.map((dayGroup) => (
+                      <Card key={dayGroup.dayNumber} sx={{ mb: 2, bgcolor: 'primary.lighter' }}>
+                        <CardContent>
+                          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2, color: 'primary.main' }}>
+                            {dayGroup.dayName}
+                          </Typography>
+
+                          {dayGroup.sessions.map((session, sIdx) => (
+                            <Box key={sIdx} sx={{ ml: session.name ? 2 : 0, mb: session.name ? 2 : 0 }}>
+                              {session.name && (
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: 'text.secondary' }}>
+                                  {session.name}
+                                </Typography>
+                              )}
+
+                              {session.blocks.map((block) => {
+                                const blockIndex = newTemplateData.blocks.findIndex(b => b.order === block.order);
+                                return (
+                                  <Card key={block.order} sx={{ mb: 1, ml: session.name ? 2 : 0 }}>
+                                    <CardContent sx={{ py: 1, px: 2, '&:last-child': { pb: 1 } }}>
+                                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Box>
+                                          <Typography variant="body2" fontWeight={600}>
+                                            • {block.title}
+                                          </Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                            {block.exerciseIds.length} exercise(s)
+                                            {block.globalSets && ` • ${block.globalSets} sets`}
+                                          </Typography>
+                                        </Box>
+                                        <Box>
+                                          <IconButton
+                                            size="small"
+                                            color="primary"
+                                            onClick={() => handleEditBlock(blockIndex)}
+                                          >
+                                            <EditIcon fontSize="small" />
+                                          </IconButton>
+                                          <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={() => handleRemoveBlock(blockIndex)}
+                                          >
+                                            <DeleteIcon fontSize="small" />
+                                          </IconButton>
+                                        </Box>
+                                      </Box>
+                                    </CardContent>
+                                  </Card>
+                                );
+                              })}
+                            </Box>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    {/* Unscheduled blocks (no day assigned) */}
+                    {unscheduled.length > 0 && (
+                      <Card sx={{ mb: 2, bgcolor: 'warning.lighter' }}>
+                        <CardContent>
+                          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2, color: 'warning.dark' }}>
+                            ⚠️ Unscheduled Blocks (no day assigned)
+                          </Typography>
+                          {unscheduled.map((block) => {
+                            const blockIndex = newTemplateData.blocks.findIndex(b => b.order === block.order);
+                            return (
+                              <Card key={block.order} sx={{ mb: 1 }}>
+                                <CardContent sx={{ py: 1, px: 2, '&:last-child': { pb: 1 } }}>
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box>
+                                      <Typography variant="body2" fontWeight={600}>
+                                        {block.title}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {block.exerciseIds.length} exercise(s)
+                                      </Typography>
+                                    </Box>
+                                    <Box>
+                                      <IconButton
+                                        size="small"
+                                        color="primary"
+                                        onClick={() => handleEditBlock(blockIndex)}
+                                      >
+                                        <EditIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleRemoveBlock(blockIndex)}
+                                      >
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </Box>
+                                  </Box>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                );
+              })()}
             </Box>
           </Box>
         </DialogContent>
@@ -1766,6 +1972,47 @@ export const Admin: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Assign to Day</InputLabel>
+              <Select
+                value={currentBlock.dayNumber ?? ''}
+                label="Assign to Day"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const dayNum = value === '' ? undefined : Number(value);
+                  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                  setCurrentBlock({
+                    ...currentBlock,
+                    dayNumber: dayNum,
+                    dayOfWeek: dayNum ? `${dayNames[dayNum - 1]} / Day ${dayNum}` : undefined
+                  });
+                }}
+              >
+                <MenuItem value="">
+                  <em>No specific day (flexible)</em>
+                </MenuItem>
+                <MenuItem value={1}>Monday / Day 1</MenuItem>
+                <MenuItem value={2}>Tuesday / Day 2</MenuItem>
+                <MenuItem value={3}>Wednesday / Day 3</MenuItem>
+                <MenuItem value={4}>Thursday / Day 4</MenuItem>
+                <MenuItem value={5}>Friday / Day 5</MenuItem>
+                <MenuItem value={6}>Saturday / Day 6</MenuItem>
+                <MenuItem value={7}>Sunday / Day 7</MenuItem>
+              </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Select which day this block belongs to (optional)
+              </Typography>
+            </FormControl>
+
+            <TextField
+              label="Session Name (optional)"
+              value={currentBlock.sessionName || ''}
+              onChange={(e) => setCurrentBlock({ ...currentBlock, sessionName: e.target.value || undefined })}
+              fullWidth
+              placeholder="e.g., Morning Session, Evening Conditioning, Session 1"
+              helperText="Used to group multiple blocks in the same day (leave empty if only one session)"
+            />
+
             <FormControl fullWidth required>
               <InputLabel>{t('admin.blockTitle')}</InputLabel>
               <Select
@@ -1940,11 +2187,15 @@ export const Admin: React.FC = () => {
       {/* Assignment Dialog */}
       <Dialog
         open={assignDialogOpen}
-        onClose={() => setAssignDialogOpen(false)}
+        onClose={() => {
+          setAssignDialogOpen(false);
+          setEditingAssignment(null);
+          setAssignToAllPlayers(false);
+        }}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Assign Program to Players</DialogTitle>
+        <DialogTitle>{editingAssignment ? 'Edit Program Assignment' : 'Assign Program to Players'}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <FormControl fullWidth required>
@@ -2033,7 +2284,11 @@ export const Admin: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAssignDialogOpen(false)}>
+          <Button onClick={() => {
+            setAssignDialogOpen(false);
+            setEditingAssignment(null);
+            setAssignToAllPlayers(false);
+          }}>
             {t('common.cancel')}
           </Button>
           <Button
@@ -2044,7 +2299,7 @@ export const Admin: React.FC = () => {
               (!assignToAllPlayers && newAssignment.playerIds.length === 0)
             }
           >
-            Assign Program
+            {editingAssignment ? 'Update Assignment' : 'Assign Program'}
           </Button>
         </DialogActions>
       </Dialog>
