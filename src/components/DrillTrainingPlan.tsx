@@ -29,10 +29,12 @@ import {
   Info as InfoIcon,
   People as PeopleIcon,
   FitnessCenter as EquipmentIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nProvider';
 import { drillService } from '../services/drillService';
 import { equipmentService } from '../services/equipmentService';
+import { exportSessionToPDF } from '../services/drillSessionPdfExport';
 import { Drill, DrillTrainingSession, Equipment } from '../types/drill';
 import { getUser } from '../services/mock';
 
@@ -191,6 +193,14 @@ export const DrillTrainingPlan: React.FC = () => {
                       </Typography>
                     </Box>
                     <Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => exportSessionToPDF(session, t)}
+                        color="primary"
+                        title={t('drills.downloadSessionPDF')}
+                      >
+                        <DownloadIcon />
+                      </IconButton>
                       <IconButton size="small" onClick={() => handleOpenDialog(session)}>
                         <EditIcon />
                       </IconButton>
@@ -208,7 +218,7 @@ export const DrillTrainingPlan: React.FC = () => {
                         {t('drills.drillsIncluded')} ({session.drills.length})
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {session.drills.slice(0, 3).map(drillId => (
+                        {session.drills.slice(0, 3).map((drillId: string) => (
                           <Chip
                             key={drillId}
                             label={getDrillName(drillId)}
