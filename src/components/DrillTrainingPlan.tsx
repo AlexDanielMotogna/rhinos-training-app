@@ -195,7 +195,10 @@ export const DrillTrainingPlan: React.FC = () => {
                     <Box>
                       <IconButton
                         size="small"
-                        onClick={() => exportSessionToPDF(session, t)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          exportSessionToPDF(session, t);
+                        }}
                         color="primary"
                         title={t('drills.downloadSessionPDF')}
                       >
