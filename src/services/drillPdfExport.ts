@@ -11,6 +11,12 @@ export const exportDrillToPDF = (drill: Drill, t: (key: MessageKey, params?: Rec
   const contentWidth = pageWidth - 2 * margin;
   let yPosition = 15;
 
+  // Helper function to remove emojis and special characters that PDF doesn't support
+  const cleanTextForPDF = (text: string): string => {
+    // Remove emojis and other unicode characters that Helvetica doesn't support
+    return text.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+  };
+
   // Helper function to add text with word wrap (compact version)
   const addText = (text: string, fontSize: number = 10, isBold: boolean = false) => {
     doc.setFontSize(fontSize);
@@ -19,7 +25,8 @@ export const exportDrillToPDF = (drill: Drill, t: (key: MessageKey, params?: Rec
     } else {
       doc.setFont('helvetica', 'normal');
     }
-    const lines = doc.splitTextToSize(text, contentWidth);
+    const cleanedText = cleanTextForPDF(text);
+    const lines = doc.splitTextToSize(cleanedText, contentWidth);
     doc.text(lines, margin, yPosition);
     yPosition += lines.length * (fontSize * 0.35) + 3;
   };
