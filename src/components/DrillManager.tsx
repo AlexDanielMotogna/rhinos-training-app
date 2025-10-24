@@ -33,10 +33,12 @@ import {
   Upload as UploadIcon,
   SportsFootball as SportsIcon,
   Remove as RemoveIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nProvider';
 import { drillService } from '../services/drillService';
 import { equipmentService } from '../services/equipmentService';
+import { exportDrillToPDF } from '../services/drillPdfExport';
 import { Drill, DrillCategory, DrillDifficulty, Equipment, DrillEquipment } from '../types/drill';
 import { getUser } from '../services/mock';
 
@@ -296,6 +298,14 @@ export const DrillManager: React.FC = () => {
                     {drill.name}
                   </Typography>
                   <Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => exportDrillToPDF(drill, t)}
+                      color="primary"
+                      title={t('drills.downloadPDF')}
+                    >
+                      <DownloadIcon />
+                    </IconButton>
                     <IconButton size="small" onClick={() => handleOpenDialog(drill)}>
                       <EditIcon />
                     </IconButton>

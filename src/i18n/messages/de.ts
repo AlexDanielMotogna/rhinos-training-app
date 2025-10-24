@@ -764,6 +764,9 @@ export const messagesDE = {
   'drills.filterCategory': 'Nach Kategorie filtern',
   'drills.allCategories': 'Alle Kategorien',
   'drills.noEquipment': 'Kein Equipment',
+  'drills.downloadPDF': 'PDF herunterladen',
+  'drills.sketch': 'Drill-Skizze',
+  'drills.generatedBy': 'Erstellt von Rhinos Training App',
 
   // Drill Training Sessions
   'drills.trainingSessions': 'Drill-Trainingseinheiten',
