@@ -9,6 +9,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { getUser, initializeDemoProfiles } from './services/mock';
 import type { HardNotification as HardNotificationType } from './types/notification';
 import { getTeamBranding } from './services/teamSettings';
+import { initializeDrillData } from './services/drillDataInit';
 
 // Lazy load all page components
 const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
@@ -29,11 +30,13 @@ const VideosAdmin = lazy(() => import('./pages/VideosAdmin').then(m => ({ defaul
 const Team = lazy(() => import('./pages/Team').then(m => ({ default: m.Team })));
 const TrainingSessions = lazy(() => import('./pages/TrainingSessions').then(m => ({ default: m.TrainingSessions })));
 const Configuration = lazy(() => import('./pages/Configuration').then(m => ({ default: m.Configuration })));
+const DrillSessions = lazy(() => import('./components/DrillTrainingPlan').then(m => ({ default: m.DrillTrainingPlan })));
 
 function App() {
   // Initialize demo profiles on app startup
   useEffect(() => {
     initializeDemoProfiles();
+    initializeDrillData();
   }, []);
 
   // Initialize branding (favicon and title) on app startup
@@ -163,6 +166,14 @@ function App() {
                   element={
                     currentUser.role === 'coach'
                       ? <Configuration />
+                      : <Navigate to="/training" replace />
+                  }
+                />
+                <Route
+                  path="/drill-sessions"
+                  element={
+                    currentUser.role === 'coach'
+                      ? <DrillSessions />
                       : <Navigate to="/training" replace />
                   }
                 />

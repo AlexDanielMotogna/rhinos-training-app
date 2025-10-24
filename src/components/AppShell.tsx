@@ -27,6 +27,7 @@ import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import GroupIcon from '@mui/icons-material/Group';
 import GroupsIcon from '@mui/icons-material/Groups';
 import SettingsIcon from '@mui/icons-material/Settings';
+import SportsFootballIcon from '@mui/icons-material/SportsFootball';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -76,6 +77,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { key: 'trainingSessions', label: t('nav.trainingSessions'), icon: <GroupsIcon />, path: '/training-sessions', showForAll: true },
     { key: 'leaderboard', label: t('nav.leaderboard'), icon: <LeaderboardIcon />, path: '/leaderboard', showForAll: true },
     { key: 'videos', label: t('nav.videos'), icon: <OndemandVideoIcon />, path: '/videos', showForAll: true },
+    { key: 'drillSessions', label: t('nav.drillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions', showForAll: false, coachOnly: true },
     { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports', showForAll: false, coachOnly: true },
     { key: 'videosAdmin', label: t('nav.videosAdmin'), icon: <VideoLibraryIcon />, path: '/videos-admin', showForAll: false, coachOnly: true },
     { key: 'admin', label: t('nav.admin'), icon: <AdminPanelSettingsIcon />, path: '/admin', showForAll: false, coachOnly: true },

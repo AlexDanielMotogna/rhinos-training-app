@@ -55,6 +55,8 @@ import { getUser } from '../services/mock';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 import { PointsSystemManager } from '../components/admin/PointsSystemManager';
 import { getAllBlockInfo } from '../services/blockInfo';
+import { DrillManager } from '../components/DrillManager';
+import { EquipmentManager } from '../components/EquipmentManager';
 import { getTeamSettings, updateTeamSettings } from '../services/teamSettings';
 import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
 import { validateAPIKey } from '../services/aiInsights';
@@ -810,6 +812,8 @@ export const Admin: React.FC = () => {
         <Tab label={t('admin.teamSettingsTab')} />
         <Tab label={t('admin.aiCoachTab')} />
         <Tab label={t('admin.pointsSystemTab')} />
+        <Tab label={t('admin.drillbookTab')} />
+        <Tab label={t('admin.equipmentTab')} />
       </Tabs>
 
       {/* Training Builder Tab */}
@@ -2428,6 +2432,12 @@ export const Admin: React.FC = () => {
 
       {/* Points System Configuration Tab */}
       {activeTab === 9 && <PointsSystemManager />}
+
+      {/* Drillbook Tab */}
+      {activeTab === 10 && <DrillManager />}
+
+      {/* Equipment Tab */}
+      {activeTab === 11 && <EquipmentManager />}
     </Box>
   );
 };
