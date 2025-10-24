@@ -13,13 +13,23 @@ export const exportSessionToPDF = (
     .map((id: string) => allDrills.find(d => d.id === id))
     .filter(Boolean);
 
-  // Export each drill as a separate PDF
+  // Alert user about multiple downloads
+  if (sessionDrills.length > 1) {
+    alert(`Downloading ${sessionDrills.length} drill PDFs. Please allow multiple downloads in your browser if prompted.`);
+  }
+
+  // Export each drill as a separate PDF with increased delay
   sessionDrills.forEach((drill: any, index: number) => {
     if (!drill) return;
 
-    // Small delay between downloads to prevent browser blocking
+    // Increased delay to prevent browser blocking (800ms between each)
     setTimeout(() => {
-      exportDrillToPDF(drill, t);
-    }, index * 200); // 200ms delay between each download
+      try {
+        exportDrillToPDF(drill, t);
+        console.log(`Downloaded drill ${index + 1}/${sessionDrills.length}: ${drill.name}`);
+      } catch (error) {
+        console.error(`Failed to download drill: ${drill.name}`, error);
+      }
+    }, index * 800); // 800ms delay between each download
   });
 };
