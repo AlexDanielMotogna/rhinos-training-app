@@ -30,11 +30,13 @@ import {
   People as PeopleIcon,
   FitnessCenter as EquipmentIcon,
   Download as DownloadIcon,
+  HowToVote as PollIcon,
 } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nProvider';
 import { drillService } from '../services/drillService';
 import { equipmentService } from '../services/equipmentService';
 import { exportSessionToPDF } from '../services/drillSessionPdfExport';
+import { createPoll, getAllPolls } from '../services/attendancePollService';
 import { Drill, DrillTrainingSession, Equipment } from '../types/drill';
 import { getUser } from '../services/mock';
 
@@ -155,6 +157,41 @@ export const DrillTrainingPlan: React.FC = () => {
     return drills.find(d => d.id === drillId)?.name || 'Unknown';
   };
 
+  const handleCreatePoll = (session: DrillTrainingSession) => {
+    const currentUser = getUser();
+    if (!currentUser) return;
+
+    // Check if poll already exists for this session
+    const existingPolls = getAllPolls();
+    const existingPoll = existingPolls.find(p => p.sessionId === session.id && p.isActive);
+
+    if (existingPoll) {
+      alert(t('attendancePoll.alreadyExists'));
+      return;
+    }
+
+    // Set expiry to 1 hour before session
+    const sessionDate = new Date(session.date);
+    sessionDate.setHours(sessionDate.getHours() - 1);
+    const expiresAt = sessionDate.toISOString();
+
+    createPoll(
+      session.id,
+      session.name,
+      session.date,
+      currentUser.id,
+      expiresAt
+    );
+
+    alert(t('attendancePoll.created'));
+    loadData(); // Refresh to show poll indicator
+  };
+
+  const getSessionPoll = (sessionId: string) => {
+    const polls = getAllPolls();
+    return polls.find(p => p.sessionId === sessionId && p.isActive);
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -193,6 +230,17 @@ export const DrillTrainingPlan: React.FC = () => {
                       </Typography>
                     </Box>
                     <Box>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCreatePoll(session);
+                        }}
+                        color={getSessionPoll(session.id) ? 'success' : 'default'}
+                        title={t('attendancePoll.createPoll')}
+                      >
+                        <PollIcon />
+                      </IconButton>
                       <IconButton
                         size="small"
                         onClick={(e) => {

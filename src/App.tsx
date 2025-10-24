@@ -5,11 +5,14 @@ import { createDynamicTheme } from './theme';
 import { I18nProvider } from './i18n/I18nProvider';
 import { AppShell } from './components/AppShell';
 import { HardNotification } from './components/HardNotification';
+import { AttendancePollModal } from './components/AttendancePollModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { getUser, initializeDemoProfiles } from './services/mock';
 import type { HardNotification as HardNotificationType } from './types/notification';
+import type { AttendancePoll } from './types/attendancePoll';
 import { getTeamBranding } from './services/teamSettings';
 import { initializeDrillData } from './services/drillDataInit';
+import { getActivePoll, hasUserVoted } from './services/attendancePollService';
 
 // Lazy load all page components
 const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
@@ -60,6 +63,8 @@ function App() {
 
   const [currentUser, setCurrentUser] = useState(() => getUser());
   const [hardNotification, setHardNotification] = useState<HardNotificationType | null>(null);
+  const [activePoll, setActivePoll] = useState<AttendancePoll | null>(null);
+  const [showPollModal, setShowPollModal] = useState(false);
 
   useEffect(() => {
     // Check for user changes periodically (for same-tab updates only)
@@ -100,6 +105,42 @@ function App() {
   const handleAcknowledgeNotification = () => {
     localStorage.setItem('hardNotificationAcked', 'true');
     setHardNotification(null);
+  };
+
+  // Check for active attendance poll
+  useEffect(() => {
+    if (currentUser) {
+      const poll = getActivePoll();
+      if (poll && !hasUserVoted(poll.id, currentUser.id)) {
+        setActivePoll(poll);
+        setShowPollModal(true);
+      }
+    }
+  }, [currentUser]);
+
+  // Check periodically for new polls (every 30 seconds)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const checkForPolls = () => {
+      const poll = getActivePoll();
+      if (poll && !hasUserVoted(poll.id, currentUser.id)) {
+        setActivePoll(poll);
+        setShowPollModal(true);
+      }
+    };
+
+    const interval = setInterval(checkForPolls, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  const handleClosePollModal = () => {
+    setShowPollModal(false);
+    // Check if user has voted after closing
+    if (currentUser && activePoll && hasUserVoted(activePoll.id, currentUser.id)) {
+      setActivePoll(null);
+    }
   };
 
   // Create dynamic theme based on branding
@@ -188,6 +229,15 @@ function App() {
             notification={hardNotification}
             onAcknowledge={handleAcknowledgeNotification}
           />
+
+          {/* Attendance Poll Modal - Mandatory until voted */}
+          {showPollModal && activePoll && (
+            <AttendancePollModal
+              poll={activePoll}
+              onClose={handleClosePollModal}
+              canDismiss={false}
+            />
+          )}
         </BrowserRouter>
       </I18nProvider>
     </ThemeProvider>

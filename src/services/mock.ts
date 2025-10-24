@@ -26,6 +26,9 @@ export interface MockUser {
   tiktok?: string; // Optional TikTok handle
   hudl?: string; // Optional Hudl profile URL
 
+  // Privacy Settings
+  metricsPublic?: boolean; // Toggle to make metrics visible to other players (default: true)
+
   // AI Coach Configuration (personal - only used if team API not configured)
   aiCoachEnabled?: boolean; // Toggle to enable/disable AI coach
   aiApiKey?: string; // Personal OpenAI API key

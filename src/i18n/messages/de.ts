@@ -189,6 +189,13 @@ export const messagesDE = {
   'profile.attendanceStatus.no_recent_session': 'Keine aktuelle Einheit',
   'profile.previousTest': 'Vorheriger Test',
 
+  // Profile - Privacy Settings
+  'profile.privacySettings': 'Datenschutzeinstellungen',
+  'profile.makeMetricsPublic': 'Meine Metriken für andere Spieler sichtbar machen',
+  'profile.metricsPublicHelp': 'Wenn aktiviert, sind Ihre Metriken und Leistungstestergebnisse für andere Spieler sichtbar. Trainer können Ihre Daten immer einsehen.',
+  'profile.metricsPrivate': 'Metriken sind privat',
+  'profile.metricsPrivateMessage': 'Dieser Spieler hat sich entschieden, seine Metriken und Leistungstests privat zu halten.',
+
   // Labels
   'label.MACHINE': 'Maschine',
   'label.STEADY': 'Beständig',
@@ -207,6 +214,31 @@ export const messagesDE = {
   'attendance.checkedIn': 'Erfolgreich eingecheckt',
   'attendance.playerCanOnlyCheckIn': 'Sie können nur für Ihre eigene Anwesenheit einchecken. Sie können die Anwesenheit anderer Spieler nicht ändern.',
   'attendance.coachViewOnly': 'Als Trainer können Sie die Anwesenheit aller Spieler einsehen. Um die Anwesenheit zu ändern, wenden Sie sich an einen Admin.',
+
+  // Attendance Poll
+  'attendancePoll.title': 'Anwesenheits-Check',
+  'attendancePoll.question': 'Nimmst du an dieser Trainingseinheit teil?',
+  'attendancePoll.training': 'Trainiere mit',
+  'attendancePoll.trainingDesc': 'Ich werde mit dem Team trainieren',
+  'attendancePoll.present': 'bin dabei',
+  'attendancePoll.presentDesc': 'Ich bin dabei aber trainiere nicht',
+  'attendancePoll.absent': 'Abwesend',
+  'attendancePoll.absentDesc': 'Ich kann nicht teilnehmen',
+  'attendancePoll.submitVote': 'Antwort absenden',
+  'attendancePoll.thankYou': 'Danke!',
+  'attendancePoll.voteRecorded': 'Deine Antwort wurde aufgezeichnet',
+  'attendancePoll.results': 'Aktuelle Antworten',
+  'attendancePoll.totalVotes': 'Gesamtantworten',
+  'attendancePoll.mustVote': 'Bitte antworte, um die App weiter zu nutzen',
+  'attendancePoll.createPoll': 'Anwesenheitsumfrage erstellen',
+  'attendancePoll.created': 'Anwesenheitsumfrage erfolgreich erstellt! Spieler sehen sie, wenn sie die App öffnen.',
+  'attendancePoll.alreadyExists': 'Es existiert bereits eine aktive Umfrage für diese Einheit.',
+  'attendancePoll.pollResults': 'Umfrageergebnisse',
+  'attendancePoll.responses': 'Antworten',
+  'attendancePoll.players': 'Spieler',
+  'attendancePoll.offense': 'Offense',
+  'attendancePoll.defense': 'Defense',
+  'attendancePoll.specialTeams': 'Special Teams',
 
   // Leaderboard
   'leaderboard.title': 'Bestenliste',

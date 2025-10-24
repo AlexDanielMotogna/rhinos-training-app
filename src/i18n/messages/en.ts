@@ -199,6 +199,13 @@ export const messagesEN = {
   'profile.attendanceStatus.no_recent_session': 'No Recent Session',
   'profile.previousTest': 'Previous test',
 
+  // Profile - Privacy Settings
+  'profile.privacySettings': 'Privacy Settings',
+  'profile.makeMetricsPublic': 'Make my metrics visible to other players',
+  'profile.metricsPublicHelp': 'When enabled, your metrics and performance test results will be visible to other players. Coaches can always see your data.',
+  'profile.metricsPrivate': 'Metrics are Private',
+  'profile.metricsPrivateMessage': 'This player has chosen to keep their metrics and performance tests private.',
+
   // Labels
   'label.MACHINE': 'Machine',
   'label.STEADY': 'Steady',
@@ -217,6 +224,31 @@ export const messagesEN = {
   'attendance.checkedIn': 'Checked in successfully',
   'attendance.playerCanOnlyCheckIn': 'You can only check in for your own attendance. You cannot modify other players\' attendance.',
   'attendance.coachViewOnly': 'As a coach, you can view all players\' attendance. To modify attendance, contact an admin.',
+
+  // Attendance Poll
+  'attendancePoll.title': 'Attendance Check',
+  'attendancePoll.question': 'Will you attend this training session?',
+  'attendancePoll.training': 'Training with the team',
+  'attendancePoll.trainingDesc': 'I will train with the team',
+  'attendancePoll.present': 'Present (not training)',
+  'attendancePoll.presentDesc': 'I will be there but not training',
+  'attendancePoll.absent': 'Absent',
+  'attendancePoll.absentDesc': 'I cannot attend',
+  'attendancePoll.submitVote': 'Submit Response',
+  'attendancePoll.thankYou': 'Thank You!',
+  'attendancePoll.voteRecorded': 'Your response has been recorded',
+  'attendancePoll.results': 'Current Responses',
+  'attendancePoll.totalVotes': 'Total responses',
+  'attendancePoll.mustVote': 'Please respond to continue using the app',
+  'attendancePoll.createPoll': 'Create Attendance Poll',
+  'attendancePoll.created': 'Attendance poll created successfully! Players will see it when they open the app.',
+  'attendancePoll.alreadyExists': 'An active poll already exists for this session.',
+  'attendancePoll.pollResults': 'Poll Results',
+  'attendancePoll.responses': 'responses',
+  'attendancePoll.players': 'players',
+  'attendancePoll.offense': 'Offense',
+  'attendancePoll.defense': 'Defense',
+  'attendancePoll.specialTeams': 'Special Teams',
 
   // Leaderboard
   'leaderboard.title': 'Leaderboard',

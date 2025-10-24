@@ -30,8 +30,12 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import GroupsIcon from '@mui/icons-material/Groups';
 import PersonIcon from '@mui/icons-material/Person';
+import HowToVoteIcon from '@mui/icons-material/HowToVote';
+import CircleIcon from '@mui/icons-material/Circle';
+import CloseIcon from '@mui/icons-material/Close';
+import SportsFootballIcon from '@mui/icons-material/SportsFootball';
 import { useI18n } from '../i18n/I18nProvider';
-import { getUser } from '../services/mock';
+import { getUser, getAllUsers } from '../services/mock';
 import {
   getTeamSessions,
   getPrivateSessions,
@@ -42,7 +46,13 @@ import {
   checkInToSession,
   getCheckInStatus,
 } from '../services/trainingSessions';
+import { createPoll, getAllPolls, getPollResults } from '../services/attendancePollService';
 import type { TrainingSession, SessionType, RSVPStatus } from '../types/trainingSession';
+import type { Position } from '../types/exercise';
+
+// Position groupings for unit counts
+const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OL'];
+const DEFENSE_POSITIONS: Position[] = ['DL', 'LB', 'DB'];
 
 export const TrainingSessions: React.FC = () => {
   const { t } = useI18n();
@@ -125,6 +135,39 @@ export const TrainingSessions: React.FC = () => {
   const handleDeleteSession = (sessionId: string) => {
     deleteSession(sessionId);
     loadSessions();
+  };
+
+  const handleCreatePoll = (session: TrainingSession) => {
+    if (!currentUser) return;
+
+    // Check if poll already exists for this session
+    const existingPolls = getAllPolls();
+    const existingPoll = existingPolls.find(p => p.sessionId === session.id && p.isActive);
+
+    if (existingPoll) {
+      alert(t('attendancePoll.alreadyExists'));
+      return;
+    }
+
+    // Set expiry to 24 hours after creation (for easier testing)
+    // In production, you might want to set it to 1 hour before session
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    createPoll(
+      session.id,
+      session.title,
+      session.date,
+      currentUser.id,
+      expiresAt
+    );
+
+    setSuccessMessage(t('attendancePoll.created'));
+    setTimeout(() => setSuccessMessage(''), 4000);
+  };
+
+  const getSessionPoll = (sessionId: string) => {
+    const polls = getAllPolls();
+    return polls.find(p => p.sessionId === sessionId && p.isActive);
   };
 
   const getUserRSVP = (session: TrainingSession): RSVPStatus => {
@@ -230,13 +273,24 @@ export const TrainingSessions: React.FC = () => {
                       </Typography>
                     </Box>
                     {isCreator && currentUser?.role === 'coach' && (
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteSession(session.id)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Tooltip title={t('attendancePoll.createPoll')}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleCreatePoll(session)}
+                            color={getSessionPoll(session.id) ? 'success' : 'default'}
+                          >
+                            <HowToVoteIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteSession(session.id)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
                     )}
                   </Box>
 
@@ -313,6 +367,195 @@ export const TrainingSessions: React.FC = () => {
                       </Box>
                     </Box>
                   )}
+
+                  {/* Show poll results (for coaches) */}
+                  {currentUser?.role === 'coach' && (() => {
+                    const poll = getSessionPoll(session.id);
+                    if (!poll) return null;
+
+                    const results = getPollResults(poll.id);
+                    if (!results || results.totalVotes === 0) return null;
+
+                    // Calculate position counts for training voters
+                    const allUsers = getAllUsers();
+                    const positionCounts: Record<string, number> = {};
+                    let offenseCount = 0;
+                    let defenseCount = 0;
+                    let specialTeamsCount = 0;
+
+                    results.voters.training.forEach(vote => {
+                      const user = allUsers.find(u => u.id === vote.userId);
+                      if (user?.position) {
+                        positionCounts[user.position] = (positionCounts[user.position] || 0) + 1;
+
+                        // Count by unit
+                        if (OFFENSE_POSITIONS.includes(user.position)) {
+                          offenseCount++;
+                        } else if (DEFENSE_POSITIONS.includes(user.position)) {
+                          defenseCount++;
+                        } else if (user.position === 'K/P') {
+                          specialTeamsCount++;
+                        }
+                      }
+                    });
+
+                    return (
+                      <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(0,0,0,0.12)' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <HowToVoteIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                          <Typography variant="caption" color="text.secondary" fontWeight="bold">
+                            {t('attendancePoll.pollResults')} ({results.totalVotes} {t('attendancePoll.responses')})
+                          </Typography>
+                        </Box>
+
+                        {/* Unit breakdown (Offense/Defense) */}
+                        {(offenseCount > 0 || defenseCount > 0 || specialTeamsCount > 0) && (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
+                            {offenseCount > 0 && (
+                              <Chip
+                                icon={<CircleIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                                label={`${offenseCount} ${t('attendancePoll.offense')}`}
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#FF9800',
+                                  color: 'white',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.75rem'
+                                }}
+                              />
+                            )}
+                            {defenseCount > 0 && (
+                              <Chip
+                                icon={<CloseIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                                label={`${defenseCount} ${t('attendancePoll.defense')}`}
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#2196F3',
+                                  color: 'white',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.75rem'
+                                }}
+                              />
+                            )}
+                            {specialTeamsCount > 0 && (
+                              <Chip
+                                icon={<SportsFootballIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                                label={`${specialTeamsCount} ${t('attendancePoll.specialTeams')}`}
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#9C27B0',
+                                  color: 'white',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.75rem'
+                                }}
+                              />
+                            )}
+                          </Box>
+                        )}
+
+                        {/* Position breakdown for training voters */}
+                        {Object.keys(positionCounts).length > 0 && (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+                            {Object.entries(positionCounts)
+                              .sort((a, b) => b[1] - a[1]) // Sort by count descending
+                              .map(([position, count]) => (
+                                <Chip
+                                  key={position}
+                                  label={`${count}x ${position}`}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: '#e0e0e0',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              ))}
+                          </Box>
+                        )}
+
+                        {/* Training with team */}
+                        {results.training > 0 && (
+                          <Box sx={{ mb: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              <Chip
+                                label={`${results.training} ${t('attendancePoll.players')}`}
+                                size="small"
+                                sx={{ backgroundColor: '#4caf50', color: 'white', minWidth: 60, fontWeight: 'bold' }}
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {t('attendancePoll.training')}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 0.5 }}>
+                              {results.voters.training.map((vote) => (
+                                <Chip
+                                  key={vote.userId}
+                                  label={vote.userName}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ borderColor: '#4caf50', color: '#4caf50' }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+
+                        {/* Present (bin dabei) */}
+                        {results.present > 0 && (
+                          <Box sx={{ mb: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              <Chip
+                                label={`${results.present} ${t('attendancePoll.players')}`}
+                                size="small"
+                                sx={{ backgroundColor: '#2196f3', color: 'white', minWidth: 60, fontWeight: 'bold' }}
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {t('attendancePoll.present')}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 0.5 }}>
+                              {results.voters.present.map((vote) => (
+                                <Chip
+                                  key={vote.userId}
+                                  label={vote.userName}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ borderColor: '#2196f3', color: '#2196f3' }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+
+                        {/* Absent */}
+                        {results.absent > 0 && (
+                          <Box sx={{ mb: 0 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              <Chip
+                                label={`${results.absent} ${t('attendancePoll.players')}`}
+                                size="small"
+                                sx={{ backgroundColor: '#f44336', color: 'white', minWidth: 60, fontWeight: 'bold' }}
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {t('attendancePoll.absent')}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 0.5 }}>
+                              {results.voters.absent.map((vote) => (
+                                <Chip
+                                  key={vote.userId}
+                                  label={vote.userName}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ borderColor: '#f44336', color: '#f44336' }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+                      </Box>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </Grid>

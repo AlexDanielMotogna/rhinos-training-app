@@ -8,6 +8,8 @@ import {
   Chip,
   IconButton,
   Button,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -16,7 +18,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
-import { getUser, getAllUsers, type MockUser } from '../services/mock';
+import { getUser, getAllUsers, saveUser, type MockUser } from '../services/mock';
 import { calculateKPIs } from '../services/kpi';
 import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
 import { StrengthBars } from '../components/profile/StrengthBars';
@@ -367,12 +369,44 @@ export const Profile: React.FC = () => {
         />
       )}
 
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        {t('profile.metrics')}
-      </Typography>
+      {/* Privacy Settings - Only show for own profile */}
+      {!isViewingOtherPlayer && (
+        <Box sx={{ mb: 3 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                {t('profile.privacySettings')}
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={user.metricsPublic ?? true}
+                    onChange={(e) => {
+                      const updatedUser = { ...user, metricsPublic: e.target.checked };
+                      setUser(updatedUser);
+                      saveUser(updatedUser);
+                    }}
+                  />
+                }
+                label={t('profile.makeMetricsPublic')}
+              />
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                {t('profile.metricsPublicHelp')}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
 
-      {/* This Week Section */}
-      <Card sx={{ mb: 3 }}>
+      {/* Check if metrics should be shown */}
+      {(currentUser?.role === 'coach' || !isViewingOtherPlayer || user.metricsPublic !== false) ? (
+        <>
+          <Typography variant="h5" sx={{ mb: 2 }}>
+            {t('profile.metrics')}
+          </Typography>
+
+          {/* This Week Section */}
+          <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" sx={{ mb: 2 }}>
             {t('profile.thisWeek')} (Week {kpis.currentWeek}/{kpis.totalWeeks})
@@ -533,6 +567,19 @@ export const Profile: React.FC = () => {
           <AgilityProfileCard summary={agilitySummary} change={kpis.agilityScore.change} />
         </Grid>
       </Grid>
+        </>
+      ) : (
+        <Card sx={{ mb: 3 }}>
+          <CardContent sx={{ textAlign: 'center', py: 6 }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {t('profile.metricsPrivate')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('profile.metricsPrivateMessage')}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
 
       {/* AI Settings - Only show for own profile */}
       {!isViewingOtherPlayer && (
