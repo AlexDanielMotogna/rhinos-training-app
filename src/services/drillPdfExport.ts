@@ -51,7 +51,7 @@ export const exportDrillToPDF = (drill: Drill, t: (key: MessageKey, params?: Rec
   if (drill.sketchUrl) {
     try {
       const imgWidth = contentWidth;
-      const imgHeight = 55;
+      const imgHeight = 95; // Increased from 55 to 95 for better visibility
 
       // Add border around image
       doc.setDrawColor(packersGreen[0], packersGreen[1], packersGreen[2]);
@@ -59,7 +59,7 @@ export const exportDrillToPDF = (drill: Drill, t: (key: MessageKey, params?: Rec
       doc.rect(margin - 1, yPosition - 1, imgWidth + 2, imgHeight + 2);
 
       doc.addImage(drill.sketchUrl, 'PNG', margin, yPosition, imgWidth, imgHeight);
-      yPosition += imgHeight + 6;
+      yPosition += imgHeight + 5;
     } catch (error) {
       console.error('Error adding image to PDF:', error);
       doc.setTextColor(100, 100, 100);
@@ -74,70 +74,70 @@ export const exportDrillToPDF = (drill: Drill, t: (key: MessageKey, params?: Rec
 
   // Description Section with green header
   doc.setFillColor(packersGreen[0], packersGreen[1], packersGreen[2]);
-  doc.roundedRect(margin, yPosition - 2, contentWidth, 7, 1, 1, 'F');
+  doc.roundedRect(margin, yPosition - 2, contentWidth, 6, 1, 1, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(cleanTextForPDF(t('drills.description').toUpperCase()), margin + 2, yPosition + 3);
-  yPosition += 9;
+  doc.text(cleanTextForPDF(t('drills.description').toUpperCase()), margin + 2, yPosition + 2.5);
+  yPosition += 8;
 
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   const descLines = doc.splitTextToSize(cleanTextForPDF(drill.description), contentWidth - 4);
   doc.text(descLines, margin + 2, yPosition);
-  yPosition += descLines.length * 3.2 + 3;
+  yPosition += descLines.length * 2.8 + 2;
 
   // Coaching Points Section with green header
   doc.setFillColor(packersGreen[0], packersGreen[1], packersGreen[2]);
-  doc.roundedRect(margin, yPosition - 2, contentWidth, 7, 1, 1, 'F');
+  doc.roundedRect(margin, yPosition - 2, contentWidth, 6, 1, 1, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(cleanTextForPDF(t('drills.coachingPoints').toUpperCase()), margin + 2, yPosition + 3);
-  yPosition += 9;
+  doc.text(cleanTextForPDF(t('drills.coachingPoints').toUpperCase()), margin + 2, yPosition + 2.5);
+  yPosition += 8;
 
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   const coachLines = doc.splitTextToSize(cleanTextForPDF(drill.coachingPoints), contentWidth - 4);
   doc.text(coachLines, margin + 2, yPosition);
-  yPosition += coachLines.length * 3.2 + 3;
+  yPosition += coachLines.length * 2.8 + 2;
 
   // Training Context (if available)
   if (drill.trainingContext) {
     doc.setFillColor(packersGreen[0], packersGreen[1], packersGreen[2]);
-    doc.roundedRect(margin, yPosition - 2, contentWidth, 7, 1, 1, 'F');
+    doc.roundedRect(margin, yPosition - 2, contentWidth, 6, 1, 1, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(cleanTextForPDF(t('drills.trainingContext').toUpperCase()), margin + 2, yPosition + 3);
-    yPosition += 9;
+    doc.text(cleanTextForPDF(t('drills.trainingContext').toUpperCase()), margin + 2, yPosition + 2.5);
+    yPosition += 8;
 
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     const contextLines = doc.splitTextToSize(cleanTextForPDF(drill.trainingContext), contentWidth - 4);
     doc.text(contextLines, margin + 2, yPosition);
-    yPosition += contextLines.length * 3.2 + 3;
+    yPosition += contextLines.length * 2.8 + 2;
   }
 
   // Resources Needed Section with gold background
   doc.setFillColor(packersGold[0], packersGold[1], packersGold[2]);
-  doc.roundedRect(margin, yPosition - 2, contentWidth, 7, 1, 1, 'F');
+  doc.roundedRect(margin, yPosition - 2, contentWidth, 6, 1, 1, 'F');
   doc.setTextColor(packersGreen[0], packersGreen[1], packersGreen[2]);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(cleanTextForPDF(t('drills.resourcesNeeded').toUpperCase()), margin + 2, yPosition + 3);
-  yPosition += 9;
+  doc.text(cleanTextForPDF(t('drills.resourcesNeeded').toUpperCase()), margin + 2, yPosition + 2.5);
+  yPosition += 8;
 
   // Personnel with icons (simulated with text)
   doc.setTextColor(0, 0, 0);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   const personnelText = cleanTextForPDF(`${t('drills.coaches')}: ${drill.coaches}  |  ${t('drills.dummies')}: ${drill.dummies}  |  ${t('drills.players')}: ${drill.players}`);
   doc.text(personnelText, margin + 2, yPosition);
-  yPosition += 5;
+  yPosition += 4;
 
   // Equipment
   if (drill.equipment.length > 0) {
@@ -149,10 +149,10 @@ export const exportDrillToPDF = (drill: Drill, t: (key: MessageKey, params?: Rec
       .join(', ');
     const equipLines = doc.splitTextToSize(cleanTextForPDF(`${t('drills.equipment')}: ${equipmentText}`), contentWidth - 4);
     doc.text(equipLines, margin + 2, yPosition);
-    yPosition += equipLines.length * 3.2;
+    yPosition += equipLines.length * 2.8;
   } else {
     doc.text(cleanTextForPDF(`${t('drills.equipment')}: ${t('drills.noEquipment')}`), margin + 2, yPosition);
-    yPosition += 4;
+    yPosition += 3;
   }
 
   // Footer with green bar
