@@ -25,6 +25,8 @@ import {
   List,
   ListItem,
   ListItemText,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -39,6 +41,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import { drillService } from '../services/drillService';
 import { equipmentService } from '../services/equipmentService';
 import { exportDrillToPDF } from '../services/drillPdfExport';
+import { optimizeDrillSketch, validateImage } from '../services/imageOptimizer';
 import { Drill, DrillCategory, DrillDifficulty, Equipment, DrillEquipment } from '../types/drill';
 import { getUser } from '../services/mock';
 
@@ -67,6 +70,8 @@ export const DrillManager: React.FC = () => {
   const [sketchFile, setSketchFile] = useState<File | null>(null);
   const [sketchPreview, setSketchPreview] = useState<string>('');
   const [selectedEquipment, setSelectedEquipment] = useState<string>('');
+  const [imageError, setImageError] = useState<string>('');
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -133,15 +138,36 @@ export const DrillManager: React.FC = () => {
     setSketchFile(null);
     setSketchPreview('');
     setSelectedEquipment('');
+    setImageError('');
+    setIsOptimizing(false);
   };
 
-  const handleSketchUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSketchUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    // Reset errors
+    setImageError('');
+
+    // Validate image
+    const validation = validateImage(file);
+    if (!validation.valid) {
+      setImageError(validation.error || 'Invalid image');
+      return;
+    }
+
+    // Optimize image
+    setIsOptimizing(true);
+    try {
+      const optimizedBase64 = await optimizeDrillSketch(file);
       setSketchFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => setSketchPreview(e.target?.result as string);
-      reader.readAsDataURL(file);
+      setSketchPreview(optimizedBase64);
+      console.log(`Image optimized: ${(file.size / 1024).toFixed(0)}KB → ${((optimizedBase64.length * 3) / 4 / 1024).toFixed(0)}KB`);
+    } catch (error) {
+      setImageError((error as Error).message);
+      console.error('Image optimization error:', error);
+    } finally {
+      setIsOptimizing(false);
     }
   };
 
@@ -193,8 +219,10 @@ export const DrillManager: React.FC = () => {
   const handleSave = async () => {
     let sketchUrl = editingDrill?.sketchUrl;
 
-    if (sketchFile) {
-      sketchUrl = await drillService.uploadSketch(sketchFile);
+    // Use optimized preview if new image was uploaded
+    if (sketchFile && sketchPreview) {
+      // sketchPreview already contains the optimized base64
+      sketchUrl = sketchPreview;
     }
 
     const currentUser = getUser();
@@ -549,17 +577,28 @@ export const DrillManager: React.FC = () => {
               <Button
                 variant="outlined"
                 component="label"
-                startIcon={<UploadIcon />}
+                startIcon={isOptimizing ? <CircularProgress size={20} /> : <UploadIcon />}
                 fullWidth
+                disabled={isOptimizing}
               >
-                {t('drills.uploadSketch')}
+                {isOptimizing ? 'Optimizing image...' : t('drills.uploadSketch')}
                 <input
                   type="file"
                   hidden
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png"
                   onChange={handleSketchUpload}
                 />
               </Button>
+              <FormHelperText>
+                JPEG or PNG, max 5MB. Image will be optimized to 1600x1200px for best quality.
+              </FormHelperText>
+
+              {imageError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {imageError}
+                </Alert>
+              )}
+
               {sketchPreview && (
                 <Box sx={{ mt: 2, textAlign: 'center' }}>
                   <img
@@ -567,6 +606,9 @@ export const DrillManager: React.FC = () => {
                     alt="Sketch preview"
                     style={{ maxWidth: '100%', maxHeight: 200, objectFit: 'contain' }}
                   />
+                  <Typography variant="caption" color="success.main" display="block" sx={{ mt: 1 }}>
+                    ✓ Image optimized and ready
+                  </Typography>
                 </Box>
               )}
             </Box>
