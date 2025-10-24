@@ -14,10 +14,14 @@ import {
   Grid,
   Chip,
   CardMedia,
+  Alert,
+  CircularProgress,
+  FormHelperText,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Upload as UploadIcon } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nProvider';
 import { equipmentService } from '../services/equipmentService';
+import { optimizeEquipmentImage, validateImage } from '../services/imageOptimizer';
 import { Equipment } from '../types/drill';
 
 export const EquipmentManager: React.FC = () => {
@@ -28,6 +32,8 @@ export const EquipmentManager: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', quantity: '' });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageError, setImageError] = useState<string>('');
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   useEffect(() => {
     loadEquipment();
@@ -57,15 +63,36 @@ export const EquipmentManager: React.FC = () => {
     setFormData({ name: '', quantity: '' });
     setImageFile(null);
     setImagePreview('');
+    setImageError('');
+    setIsOptimizing(false);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    // Reset errors
+    setImageError('');
+
+    // Validate image
+    const validation = validateImage(file);
+    if (!validation.valid) {
+      setImageError(validation.error || 'Invalid image');
+      return;
+    }
+
+    // Optimize image
+    setIsOptimizing(true);
+    try {
+      const optimizedBase64 = await optimizeEquipmentImage(file);
       setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target?.result as string);
-      reader.readAsDataURL(file);
+      setImagePreview(optimizedBase64);
+      console.log(`Equipment image optimized: ${(file.size / 1024).toFixed(0)}KB → ${((optimizedBase64.length * 3) / 4 / 1024).toFixed(0)}KB`);
+    } catch (error) {
+      setImageError((error as Error).message);
+      console.error('Image optimization error:', error);
+    } finally {
+      setIsOptimizing(false);
     }
   };
 
@@ -73,9 +100,10 @@ export const EquipmentManager: React.FC = () => {
     const quantity = formData.quantity ? parseInt(formData.quantity) : undefined;
     let imageUrl = editingEquipment?.imageUrl;
 
-    // Upload new image if selected
-    if (imageFile) {
-      imageUrl = await equipmentService.uploadImage(imageFile);
+    // Use optimized preview if new image was uploaded
+    if (imageFile && imagePreview) {
+      // imagePreview already contains the optimized base64
+      imageUrl = imagePreview;
     }
 
     if (editingEquipment) {
@@ -185,20 +213,28 @@ export const EquipmentManager: React.FC = () => {
               <Button
                 variant="outlined"
                 component="label"
-                startIcon={<UploadIcon />}
+                startIcon={isOptimizing ? <CircularProgress size={20} /> : <UploadIcon />}
                 fullWidth
+                disabled={isOptimizing}
               >
-                {t('equipment.uploadImage')}
+                {isOptimizing ? 'Optimizing image...' : t('equipment.uploadImage')}
                 <input
                   type="file"
                   hidden
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png"
                   onChange={handleImageUpload}
                 />
               </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                {t('equipment.uploadImageHelp')}
-              </Typography>
+              <FormHelperText>
+                JPEG or PNG, max 5MB. Image will be optimized to 1200x1200px for best quality.
+              </FormHelperText>
+
+              {imageError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {imageError}
+                </Alert>
+              )}
+
               {imagePreview && (
                 <Box sx={{ mt: 2, textAlign: 'center', p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
                   <img
@@ -206,6 +242,9 @@ export const EquipmentManager: React.FC = () => {
                     alt="Equipment preview"
                     style={{ maxWidth: '100%', maxHeight: 200, objectFit: 'contain' }}
                   />
+                  <Typography variant="caption" color="success.main" display="block" sx={{ mt: 1 }}>
+                    ✓ Image optimized and ready
+                  </Typography>
                 </Box>
               )}
             </Box>
