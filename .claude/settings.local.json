@@ -6,7 +6,15 @@
       "Bash(git branch:*)",
       "Bash(npm run build:*)",
       "Bash(git push:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nAdd Block Info management system for coaches\n\nAllow coaches to customize informational tooltips for workout blocks.\n\nChanges:\n- Created blockInfo service with CRUD operations for block information\n- Created BlockInfo type with blockName, infoText, and trainingType fields\n- Created BlockInfoManager component for Admin panel\n  - Add/Edit/Delete block information\n  - Separate info by training type (Strength/Sprints)\n  - Visual card layout with training type badge\n- Added new \"Block Info\" tab to Admin panel\n- Updated WorkoutBlock component to display custom block info\n  - Falls back to default i18n messages if no custom info exists\n  - Passes trainingType prop for context-aware info lookup\n- Updated MyTraining to pass trainingType to WorkoutBlock\n- Added i18n translations (EN/DE) for block info management\n- Initialized default block info for Compound Lifts and Accessory Work\n\nNow coaches can customize the informational text that appears in the \ninfo icon (ⓘ) next to each workout block title, helping players \nbetter understand the purpose and execution of different block types.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd Block Info management system for coaches\n\nAllow coaches to customize informational tooltips for workout blocks.\n\nChanges:\n- Created blockInfo service with CRUD operations for block information\n- Created BlockInfo type with blockName, infoText, and trainingType fields\n- Created BlockInfoManager component for Admin panel\n  - Add/Edit/Delete block information\n  - Separate info by training type (Strength/Sprints)\n  - Visual card layout with training type badge\n- Added new \"Block Info\" tab to Admin panel\n- Updated WorkoutBlock component to display custom block info\n  - Falls back to default i18n messages if no custom info exists\n  - Passes trainingType prop for context-aware info lookup\n- Updated MyTraining to pass trainingType to WorkoutBlock\n- Added i18n translations (EN/DE) for block info management\n- Initialized default block info for Compound Lifts and Accessory Work\n\nNow coaches can customize the informational text that appears in the \ninfo icon (ⓘ) next to each workout block title, helping players \nbetter understand the purpose and execution of different block types.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma db push)",
+      "Bash(del nul)",
+      "Bash(del backendnul)"
     ],
     "deny": [],
     "ask": []

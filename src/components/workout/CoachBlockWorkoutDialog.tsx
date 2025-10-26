@@ -93,9 +93,18 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
 
   if (!block) return null;
 
-  const totalExercises = block.items.length;
+  // Check for items or exercises field (backward compatibility)
+  const exercises = (block as any).items || (block as any).exercises || [];
+  console.log('🔍 CoachBlockWorkoutDialog - block data:', {
+    hasItems: !!(block as any).items,
+    hasExercises: !!(block as any).exercises,
+    itemsLength: exercises.length,
+    block
+  });
+
+  const totalExercises = exercises.length;
   const progress = (completedEntries.length / totalExercises) * 100;
-  const selectedExercise = selectedExerciseIndex !== null ? block.items[selectedExerciseIndex] : null;
+  const selectedExercise = selectedExerciseIndex !== null ? exercises[selectedExerciseIndex] : null;
 
   const handleSaveExercise = (entry: WorkoutEntry) => {
     const exerciseName = selectedExercise?.name;
@@ -140,7 +149,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
     const elapsedMinutes = Math.round((Date.now() - startTime) / 1000 / 60);
 
     // Create entries for ALL exercises in the block, not just completed ones
-    const allEntries: WorkoutEntry[] = block.items.map((exercise, index) => {
+    const allEntries: WorkoutEntry[] = exercises.map((exercise: any, index: number) => {
       // Check if this exercise has logged data
       const existing = completedEntries.find(e => e.name === exercise.name);
 
@@ -186,8 +195,8 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
 
   // Get the logged entry for a specific exercise (if any)
   const getExerciseEntry = (index: number): WorkoutEntry | undefined => {
-    if (!block || !block.items[index]) return undefined;
-    const exerciseName = block.items[index].name;
+    if (!exercises[index]) return undefined;
+    const exerciseName = exercises[index].name;
     return completedEntries.find(entry => entry.name === exerciseName);
   };
 
@@ -199,10 +208,10 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
 
   // Get target sets for a specific exercise
   const getTargetSets = (index: number): number | undefined => {
-    if (!block) return undefined;
-    const exercise = block.items[index];
-    const exerciseConfig = block.exerciseConfigs?.find(c => c.exerciseId === exercise.id);
-    return exerciseConfig?.sets || block.globalSets;
+    if (!exercises[index]) return undefined;
+    const exercise = exercises[index];
+    const exerciseConfig = (block as any).exerciseConfigs?.find((c: any) => c.exerciseId === exercise.id);
+    return exerciseConfig?.sets || (block as any).globalSets;
   };
 
   // Convert Exercise to format for WorkoutForm
@@ -257,7 +266,7 @@ export const CoachBlockWorkoutDialog: React.FC<CoachBlockWorkoutDialogProps> = (
               Select an exercise to log:
             </Typography>
             <List>
-              {block.items.map((exercise, index) => {
+              {exercises.map((exercise: any, index: number) => {
                 const completedSets = getCompletedSetsCount(index);
                 const targetSets = getTargetSets(index);
                 const hasAnySets = completedSets > 0;

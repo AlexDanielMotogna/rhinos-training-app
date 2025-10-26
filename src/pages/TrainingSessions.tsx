@@ -76,15 +76,19 @@ export const TrainingSessions: React.FC = () => {
     loadSessions();
   }, []);
 
-  const loadSessions = () => {
-    setTeamSessions(getTeamSessions());
-    setPrivateSessions(getPrivateSessions());
+  const loadSessions = async () => {
+    const [team, private_] = await Promise.all([
+      getTeamSessions(),
+      getPrivateSessions(),
+    ]);
+    setTeamSessions(team);
+    setPrivateSessions(private_);
   };
 
-  const handleCreatePrivateSession = () => {
+  const handleCreatePrivateSession = async () => {
     if (!currentUser || !formData.title || !formData.location) return;
 
-    createSession({
+    await createSession({
       creatorId: currentUser.id,
       creatorName: currentUser.name,
       sessionCategory: 'private',
@@ -114,27 +118,27 @@ export const TrainingSessions: React.FC = () => {
       time: '19:00',
       description: '',
     });
-    loadSessions();
+    await loadSessions();
   };
 
-  const handleRSVP = (sessionId: string, status: RSVPStatus) => {
+  const handleRSVP = async (sessionId: string, status: RSVPStatus) => {
     if (!currentUser) return;
-    updateRSVP(sessionId, currentUser.id, currentUser.name, status);
-    loadSessions();
+    await updateRSVP(sessionId, currentUser.id, currentUser.name, status);
+    await loadSessions();
   };
 
-  const handleCheckIn = (session: TrainingSession) => {
+  const handleCheckIn = async (session: TrainingSession) => {
     if (!currentUser || !canCheckIn(session)) return;
 
-    checkInToSession(session.id, currentUser.id, currentUser.name);
+    await checkInToSession(session.id, currentUser.id, currentUser.name);
     setSuccessMessage(t('trainingSessions.checkedIn'));
     setTimeout(() => setSuccessMessage(''), 3000);
-    loadSessions();
+    await loadSessions();
   };
 
-  const handleDeleteSession = (sessionId: string) => {
-    deleteSession(sessionId);
-    loadSessions();
+  const handleDeleteSession = async (sessionId: string) => {
+    await deleteSession(sessionId);
+    await loadSessions();
   };
 
   const handleCreatePoll = (session: TrainingSession) => {

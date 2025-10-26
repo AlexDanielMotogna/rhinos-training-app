@@ -6,76 +6,7 @@ import type {
   PlayerPointsProgress,
   PointCategoryType,
 } from '../types/pointsSystem';
-
-/**
- * Default Points Configuration based on Rhinos Offseason System
- */
-const DEFAULT_POINTS_CONFIG: PointsConfig = {
-  weeklyTarget: 20,
-  categories: [
-    {
-      id: '1',
-      type: 'light',
-      nameEN: 'Light Sessions',
-      nameDE: 'Leichte Einheiten',
-      descriptionEN: 'Gentle mobility or low-intensity activities',
-      descriptionDE: 'Sanfte Mobilit\u00e4t oder niedrige Intensit\u00e4t',
-      points: 1,
-      examplesEN: ['Walking \u226530min', 'Yoga/Mobility \u226520min', 'Light Cycling <30min'],
-      examplesDE: ['Spazieren \u226530min', 'Yoga/Mobilit\u00e4t \u226520min', 'Leichtes Radfahren <30min'],
-      active: true,
-      color: '#90CAF9', // Light blue
-      minDuration: 20,
-    },
-    {
-      id: '2',
-      type: 'moderate',
-      nameEN: 'Moderate Sessions',
-      nameDE: 'Moderate Einheiten',
-      descriptionEN: 'Medium intensity activities',
-      descriptionDE: 'Aktivit\u00e4ten mittlerer Intensit\u00e4t',
-      points: 2,
-      examplesEN: ['Jogging \u226520min', 'Swimming', 'Gym strength <90min', 'Core training'],
-      examplesDE: ['Joggen \u226520min', 'Schwimmen', 'Krafttraining <90min', 'Core-Training'],
-      active: true,
-      color: '#FFB74D', // Orange
-      minDuration: 20,
-    },
-    {
-      id: '3',
-      type: 'team',
-      nameEN: 'Team Training',
-      nameDE: 'Teamtraining',
-      descriptionEN: 'Official team practice sessions',
-      descriptionDE: 'Offizielle Team-Trainingseinheiten',
-      points: 2.5,
-      examplesEN: ['Team practice', 'Team drills', 'Scrimmage'],
-      examplesDE: ['Teamtraining', 'Team-\u00dcbungen', 'Trainingsspiel'],
-      active: true,
-      color: '#66BB6A', // Green
-    },
-    {
-      id: '4',
-      type: 'intensive',
-      nameEN: 'Intensive Sessions',
-      nameDE: 'Intensive Einheiten',
-      descriptionEN: 'Long and demanding training',
-      descriptionDE: 'Lange und anspruchsvolle Einheiten',
-      points: 3,
-      examplesEN: ['Long run/bike/swim \u226560min', 'Strength training >90min', 'Mountain hiking'],
-      examplesDE: ['Ausdauer \u226560min', 'Krafttraining >90min', 'Bergwandern'],
-      active: true,
-      color: '#EF5350', // Red
-      minDuration: 60,
-    },
-  ],
-  maxDailyPoints: 3,
-  colorScale: {
-    low: '#ef5350',      // Red - below 50%
-    medium: '#ffa726',   // Orange - 50-80%
-    high: '#66bb6a',     // Green - above 80%
-  },
-};
+import { pointsConfigService } from './api';
 
 /**
  * Get ISO week string for a given date
@@ -91,38 +22,51 @@ function getISOWeek(date: Date): string {
 }
 
 /**
- * Get points configuration from localStorage
+ * Get points configuration from backend
  */
-export function getPointsConfig(): PointsConfig {
-  const stored = localStorage.getItem('pointsConfig');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error parsing points config:', e);
-    }
+export async function getPointsConfig(): Promise<PointsConfig> {
+  try {
+    return await pointsConfigService.get() as PointsConfig;
+  } catch (error) {
+    console.error('Error loading points config:', error);
+    // Return default if error
+    return {
+      weeklyTarget: 20,
+      maxDailyPoints: 3,
+      categories: [],
+      colorScale: {
+        low: '#ef5350',
+        medium: '#ffa726',
+        high: '#66bb6a',
+      },
+    };
   }
-  return DEFAULT_POINTS_CONFIG;
 }
 
 /**
  * Update points configuration (admin only)
  */
-export function updatePointsConfig(config: PointsConfig, updatedBy: string): PointsConfig {
+export async function updatePointsConfig(config: PointsConfig, updatedBy: string): Promise<PointsConfig> {
   const updated: PointsConfig = {
     ...config,
     updatedAt: new Date().toISOString(),
     updatedBy,
   };
-  localStorage.setItem('pointsConfig', JSON.stringify(updated));
-  return updated;
+  return await pointsConfigService.update(updated) as PointsConfig;
+}
+
+/**
+ * Reset points configuration to default (admin only)
+ */
+export async function resetPointsConfig(): Promise<void> {
+  await pointsConfigService.reset();
 }
 
 /**
  * Get all active point categories
  */
-export function getActiveCategories(): PointCategory[] {
-  const config = getPointsConfig();
+export async function getActiveCategories(): Promise<PointCategory[]> {
+  const config = await getPointsConfig();
   return config.categories.filter(cat => cat.active);
 }
 
@@ -159,14 +103,14 @@ export function determinePointCategory(
 /**
  * Calculate points for a workout
  */
-export function calculateWorkoutPoints(
+export async function calculateWorkoutPoints(
   duration: number,
   source: 'team' | 'coach' | 'personal',
   totalSets: number,
   totalVolume: number,
   totalDistance?: number,
-): { categoryType: PointCategoryType; points: number } {
-  const config = getPointsConfig();
+): Promise<{ categoryType: PointCategoryType; points: number }> {
+  const config = await getPointsConfig();
   const categoryType = determinePointCategory(duration, source, totalSets, totalVolume, totalDistance);
 
   const category = config.categories.find(c => c.type === categoryType);
@@ -178,7 +122,7 @@ export function calculateWorkoutPoints(
 /**
  * Add workout points to player's weekly total
  */
-export function addWorkoutPoints(
+export async function addWorkoutPoints(
   userId: string,
   workoutTitle: string,
   duration: number,
@@ -187,8 +131,8 @@ export function addWorkoutPoints(
   totalVolume: number,
   totalDistance?: number,
   notes?: string,
-): PlayerWeeklyPoints {
-  const config = getPointsConfig();
+): Promise<PlayerWeeklyPoints> {
+  const config = await getPointsConfig();
   const currentWeek = getISOWeek(new Date()); // "2025-W03"
   const today = new Date().toISOString().slice(0, 10); // "2025-01-19"
 
@@ -196,7 +140,7 @@ export function addWorkoutPoints(
   const existing = getPlayerWeeklyPoints(userId, currentWeek);
 
   // Calculate points for this workout
-  const { categoryType, points } = calculateWorkoutPoints(
+  const { categoryType, points } = await calculateWorkoutPoints(
     duration,
     source,
     totalSets,
@@ -246,7 +190,7 @@ export function addWorkoutPoints(
     updated.breakdown.filter(b => b.source === 'personal').map(b => b.date)
   ).size;
 
-  // Save to localStorage
+  // Save to localStorage (weekly points are still stored locally)
   savePlayerWeeklyPoints(userId, currentWeek, updated);
 
   return updated;
@@ -267,13 +211,12 @@ export function getPlayerWeeklyPoints(userId: string, week: string): PlayerWeekl
     }
   }
 
-  // Return empty structure
-  const config = getPointsConfig();
+  // Return empty structure with default target
   return {
     userId,
     week,
     totalPoints: 0,
-    targetPoints: config.weeklyTarget,
+    targetPoints: 20, // Default, should be loaded from backend config
     workoutDays: 0,
     teamTrainingDays: 0,
     coachWorkoutDays: 0,
@@ -294,14 +237,14 @@ function savePlayerWeeklyPoints(userId: string, week: string, points: PlayerWeek
 /**
  * Get all players' progress for a specific week
  */
-export function getAllPlayersProgress(week: string): PlayerPointsProgress[] {
+export async function getAllPlayersProgress(week: string): Promise<PlayerPointsProgress[]> {
   // Get all users from localStorage
   const usersStr = localStorage.getItem('users');
   if (!usersStr) return [];
 
   try {
     const users = JSON.parse(usersStr);
-    const config = getPointsConfig();
+    const config = await getPointsConfig();
 
     const progress: PlayerPointsProgress[] = users
       .filter((u: any) => u.role === 'player')
@@ -353,16 +296,8 @@ export function getAllPlayersProgress(week: string): PlayerPointsProgress[] {
 /**
  * Get player's progress for current week
  */
-export function getPlayerProgress(userId: string): PlayerPointsProgress | null {
+export async function getPlayerProgress(userId: string): Promise<PlayerPointsProgress | null> {
   const currentWeek = getISOWeek(new Date());
-  const allProgress = getAllPlayersProgress(currentWeek);
+  const allProgress = await getAllPlayersProgress(currentWeek);
   return allProgress.find(p => p.userId === userId) || null;
-}
-
-/**
- * Reset points configuration to default (admin only)
- */
-export function resetPointsConfig(): PointsConfig {
-  localStorage.setItem('pointsConfig', JSON.stringify(DEFAULT_POINTS_CONFIG));
-  return DEFAULT_POINTS_CONFIG;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -58,8 +58,14 @@ export const MyStats: React.FC = () => {
   }, [user]);
 
   // Get all training sessions (team + private)
-  const allSessions = useMemo(() => {
-    return getUpcomingSessions();
+  const [allSessions, setAllSessions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadSessions = async () => {
+      const sessions = await getUpcomingSessions();
+      setAllSessions(sessions);
+    };
+    loadSessions();
   }, []);
 
   // Generate calendar data for current month

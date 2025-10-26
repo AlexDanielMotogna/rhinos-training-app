@@ -1,21 +1,76 @@
+/**
+ * Training Sessions Service
+ * Manages team and private training sessions with backend + IndexedDB + localStorage support
+ */
+
 import type { TrainingSession, RSVPStatus, CheckInStatus } from '../types/trainingSession';
 import { addNotification } from './mock';
+import { trainingSessionService } from './api';
+import { db, addToOutbox } from './db';
+import { isOnline } from './sync';
 
 const SESSIONS_KEY = 'rhinos_training_sessions';
 
 /**
  * Get all training sessions
+ * Priority: Backend (if online) -> IndexedDB -> localStorage
  */
-export function getAllSessions(): TrainingSession[] {
-  const stored = localStorage.getItem(SESSIONS_KEY);
-  return stored ? JSON.parse(stored) : [];
+export async function getAllSessions(): Promise<TrainingSession[]> {
+  const online = isOnline();
+
+  try {
+    if (online) {
+      // Fetch from backend
+      console.log('🔄 Fetching training sessions from backend...');
+      const sessions = await trainingSessionService.getAll() as TrainingSession[];
+
+      // Update caches
+      await db.trainingSessions.clear();
+      await db.trainingSessions.bulkPut(sessions.map(s => ({
+        ...s,
+        version: 1,
+        updatedAt: new Date().toISOString(),
+      })));
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+
+      console.log(`✅ Loaded ${sessions.length} sessions from backend`);
+      return sessions;
+    } else {
+      // Load from IndexedDB cache
+      console.log('📦 Loading sessions from cache...');
+      const cached = await db.trainingSessions.toArray();
+
+      if (cached.length > 0) {
+        console.log(`📦 Loaded ${cached.length} sessions from IndexedDB`);
+        return cached as TrainingSession[];
+      }
+
+      // Fallback to localStorage
+      const stored = localStorage.getItem(SESSIONS_KEY);
+      const sessions = stored ? JSON.parse(stored) : [];
+      console.log(`📦 Loaded ${sessions.length} sessions from localStorage`);
+      return sessions;
+    }
+  } catch (error) {
+    console.error('❌ Failed to load sessions:', error);
+
+    // Fallback to IndexedDB
+    const cached = await db.trainingSessions.toArray();
+    if (cached.length > 0) {
+      return cached as TrainingSession[];
+    }
+
+    // Last resort: localStorage
+    const stored = localStorage.getItem(SESSIONS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  }
 }
 
 /**
  * Get upcoming training sessions (future dates)
  */
-export function getUpcomingSessions(): TrainingSession[] {
-  const sessions = getAllSessions();
+export async function getUpcomingSessions(): Promise<TrainingSession[]> {
+  const sessions = await getAllSessions();
   const now = new Date();
   return sessions
     .filter(session => new Date(`${session.date}T${session.time}`) >= now)
@@ -29,22 +84,25 @@ export function getUpcomingSessions(): TrainingSession[] {
 /**
  * Get team sessions only
  */
-export function getTeamSessions(): TrainingSession[] {
-  return getUpcomingSessions().filter(s => s.sessionCategory === 'team');
+export async function getTeamSessions(): Promise<TrainingSession[]> {
+  const sessions = await getUpcomingSessions();
+  return sessions.filter(s => s.sessionCategory === 'team');
 }
 
 /**
  * Get private sessions only
  */
-export function getPrivateSessions(): TrainingSession[] {
-  return getUpcomingSessions().filter(s => s.sessionCategory === 'private');
+export async function getPrivateSessions(): Promise<TrainingSession[]> {
+  const sessions = await getUpcomingSessions();
+  return sessions.filter(s => s.sessionCategory === 'private');
 }
 
 /**
  * Create a new training session
  */
-export function createSession(session: Omit<TrainingSession, 'id' | 'createdAt'>): TrainingSession {
-  const sessions = getAllSessions();
+export async function createSession(session: Omit<TrainingSession, 'id' | 'createdAt'>): Promise<TrainingSession> {
+  const online = isOnline();
+
   const newSession: TrainingSession = {
     ...session,
     id: `session-${Date.now()}`,
@@ -52,8 +110,51 @@ export function createSession(session: Omit<TrainingSession, 'id' | 'createdAt'>
     checkIns: session.sessionCategory === 'team' ? [] : undefined,
   };
 
+  // Save to localStorage first (immediate feedback)
+  const sessions = await getAllSessions();
   sessions.push(newSession);
   localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+
+  // Save to IndexedDB
+  await db.trainingSessions.put({
+    ...newSession,
+    updatedAt: new Date().toISOString(),
+  });
+
+  // Try to save to backend
+  if (online) {
+    try {
+      const created = await trainingSessionService.create({
+        creatorId: session.creatorId,
+        creatorName: session.creatorName,
+        sessionCategory: session.sessionCategory,
+        type: session.type,
+        title: session.title,
+        location: session.location,
+        address: session.address,
+        date: session.date,
+        time: session.time,
+        description: session.description,
+        attendees: session.attendees,
+      }) as TrainingSession;
+
+      console.log('✅ Session saved to backend:', created.id);
+
+      // Update local caches with backend ID
+      newSession.id = created.id;
+      await db.trainingSessions.put({
+        ...created,
+        updatedAt: created.updatedAt || new Date().toISOString(),
+      });
+    } catch (error) {
+      console.warn('⚠️ Failed to save session to backend, will sync later:', error);
+      await addToOutbox('trainingSession', 'create', newSession);
+    }
+  } else {
+    // Queue for sync when online
+    await addToOutbox('trainingSession', 'create', newSession);
+    console.log('📦 Session queued for sync when online');
+  }
 
   // Notify all players about the new session
   notifyNewSession(newSession);
@@ -64,8 +165,11 @@ export function createSession(session: Omit<TrainingSession, 'id' | 'createdAt'>
 /**
  * Update RSVP status for a session
  */
-export function updateRSVP(sessionId: string, userId: string, userName: string, status: RSVPStatus): void {
-  const sessions = getAllSessions();
+export async function updateRSVP(sessionId: string, userId: string, userName: string, status: RSVPStatus): Promise<void> {
+  const online = isOnline();
+
+  // Update local cache first
+  const sessions = await getAllSessions();
   const session = sessions.find(s => s.id === sessionId);
 
   if (!session) return;
@@ -79,16 +183,53 @@ export function updateRSVP(sessionId: string, userId: string, userName: string, 
     session.attendees.push({ userId, userName, status });
   }
 
+  // Update caches
   localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+  await db.trainingSessions.put({
+    ...session,
+    updatedAt: new Date().toISOString(),
+  });
+
+  // Try to update backend
+  if (online) {
+    try {
+      await trainingSessionService.updateRSVP(sessionId, userId, status);
+      console.log('✅ RSVP updated on backend');
+    } catch (error) {
+      console.warn('⚠️ Failed to update RSVP on backend, will sync later:', error);
+      await addToOutbox('trainingSession', 'rsvp', { sessionId, userId, status });
+    }
+  } else {
+    await addToOutbox('trainingSession', 'rsvp', { sessionId, userId, status });
+    console.log('📦 RSVP queued for sync when online');
+  }
 }
 
 /**
  * Delete a training session
  */
-export function deleteSession(sessionId: string): void {
-  const sessions = getAllSessions();
+export async function deleteSession(sessionId: string): Promise<void> {
+  const online = isOnline();
+
+  // Remove from caches
+  const sessions = await getAllSessions();
   const filtered = sessions.filter(s => s.id !== sessionId);
   localStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered));
+  await db.trainingSessions.delete(sessionId);
+
+  // Try to delete from backend
+  if (online) {
+    try {
+      await trainingSessionService.delete(sessionId);
+      console.log('✅ Session deleted from backend');
+    } catch (error) {
+      console.warn('⚠️ Failed to delete session from backend:', error);
+      await addToOutbox('trainingSession', 'delete', { sessionId });
+    }
+  } else {
+    await addToOutbox('trainingSession', 'delete', { sessionId });
+    console.log('📦 Delete queued for sync when online');
+  }
 }
 
 /**
@@ -108,8 +249,10 @@ export function canCheckIn(session: TrainingSession): boolean {
 /**
  * Check in user to a team session
  */
-export function checkInToSession(sessionId: string, userId: string, userName: string): void {
-  const sessions = getAllSessions();
+export async function checkInToSession(sessionId: string, userId: string, userName: string): Promise<void> {
+  const online = isOnline();
+
+  const sessions = await getAllSessions();
   const session = sessions.find(s => s.id === sessionId);
 
   if (!session || session.sessionCategory !== 'team') return;
@@ -135,7 +278,26 @@ export function checkInToSession(sessionId: string, userId: string, userName: st
     status,
   });
 
+  // Update caches
   localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+  await db.trainingSessions.put({
+    ...session,
+    updatedAt: new Date().toISOString(),
+  });
+
+  // Try to update backend
+  if (online) {
+    try {
+      await trainingSessionService.checkIn(sessionId, userId);
+      console.log('✅ Check-in saved to backend');
+    } catch (error) {
+      console.warn('⚠️ Failed to save check-in to backend, will sync later:', error);
+      await addToOutbox('trainingSession', 'checkin', { sessionId, userId });
+    }
+  } else {
+    await addToOutbox('trainingSession', 'checkin', { sessionId, userId });
+    console.log('📦 Check-in queued for sync when online');
+  }
 }
 
 /**

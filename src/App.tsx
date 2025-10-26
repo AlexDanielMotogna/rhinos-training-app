@@ -16,6 +16,7 @@ import { getActivePoll, hasUserVoted } from './services/attendancePollService';
 
 // Lazy load all page components
 const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const MyTraining = lazy(() => import('./pages/MyTraining').then(m => ({ default: m.MyTraining })));
 const MyStats = lazy(() => import('./pages/MyStats').then(m => ({ default: m.MyStats })));
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
@@ -160,6 +161,11 @@ function App() {
               element={
                 currentUser ? <Navigate to="/training" replace /> : <Suspense fallback={<LoadingSpinner />}><Auth /></Suspense>
               }
+            />
+
+            <Route
+              path="/reset-password"
+              element={<Suspense fallback={<LoadingSpinner />}><ResetPassword /></Suspense>}
             />
 
             {currentUser ? (

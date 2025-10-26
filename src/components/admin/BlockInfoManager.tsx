@@ -24,16 +24,27 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useI18n } from '../../i18n/I18nProvider';
 import {
   getAllBlockInfo,
-  saveBlockInfo,
+  createBlockInfo,
+  updateBlockInfo,
   deleteBlockInfo,
-  initializeDefaultBlockInfo,
   type BlockInfo,
   type BlockInfoPayload,
 } from '../../services/blockInfo';
+import { trainingTypeService } from '../../services/api';
+
+interface TrainingType {
+  id: string;
+  key: string;
+  nameEN: string;
+  nameDE: string;
+  season: string;
+  active: boolean;
+}
 
 export const BlockInfoManager: React.FC = () => {
   const { t } = useI18n();
   const [blockInfoList, setBlockInfoList] = useState<BlockInfo[]>([]);
+  const [trainingTypes, setTrainingTypes] = useState<TrainingType[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingInfo, setEditingInfo] = useState<BlockInfo | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -41,16 +52,34 @@ export const BlockInfoManager: React.FC = () => {
     blockName: '',
     infoText_en: '',
     infoText_de: '',
-    trainingType: 'strength_conditioning',
+    trainingType: '',
   });
 
   useEffect(() => {
-    initializeDefaultBlockInfo();
     loadBlockInfo();
+    loadTrainingTypes();
   }, []);
 
-  const loadBlockInfo = () => {
-    setBlockInfoList(getAllBlockInfo());
+  const loadTrainingTypes = async () => {
+    try {
+      const data = await trainingTypeService.getAll() as TrainingType[];
+      setTrainingTypes(data);
+      // Set first training type as default if form is empty
+      if (data.length > 0 && !formData.trainingType) {
+        setFormData(prev => ({ ...prev, trainingType: data[0].id }));
+      }
+    } catch (error) {
+      console.error('Error loading training types:', error);
+    }
+  };
+
+  const loadBlockInfo = async () => {
+    try {
+      const data = await getAllBlockInfo();
+      setBlockInfoList(data);
+    } catch (error) {
+      console.error('Error loading block info:', error);
+    }
   };
 
   const handleOpenDialog = (info?: BlockInfo) => {
@@ -68,26 +97,40 @@ export const BlockInfoManager: React.FC = () => {
         blockName: '',
         infoText_en: '',
         infoText_de: '',
-        trainingType: 'strength_conditioning',
+        trainingType: trainingTypes.length > 0 ? trainingTypes[0].id : '',
       });
     }
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
-    saveBlockInfo(formData);
-    loadBlockInfo();
-    setDialogOpen(false);
-    setSuccessMessage(t('admin.blockInfoSaved'));
-    setTimeout(() => setSuccessMessage(''), 3000);
+  const handleSave = async () => {
+    try {
+      if (editingInfo) {
+        await updateBlockInfo(editingInfo.id, formData);
+      } else {
+        await createBlockInfo(formData);
+      }
+      await loadBlockInfo();
+      setDialogOpen(false);
+      setSuccessMessage(t('admin.blockInfoSaved'));
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error saving block info:', error);
+      alert('Failed to save block info. Please try again.');
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('workout.confirmDelete'))) {
-      deleteBlockInfo(id);
-      loadBlockInfo();
-      setSuccessMessage(t('admin.blockInfoDeleted'));
-      setTimeout(() => setSuccessMessage(''), 3000);
+      try {
+        await deleteBlockInfo(id);
+        await loadBlockInfo();
+        setSuccessMessage(t('admin.blockInfoDeleted'));
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } catch (error) {
+        console.error('Error deleting block info:', error);
+        alert('Failed to delete block info. Please try again.');
+      }
     }
   };
 
@@ -134,15 +177,13 @@ export const BlockInfoManager: React.FC = () => {
                           px: 1,
                           py: 0.5,
                           borderRadius: 1,
-                          bgcolor: info.trainingType === 'strength_conditioning' ? 'primary.light' : 'secondary.light',
+                          bgcolor: 'primary.light',
                           color: 'white',
                           display: 'inline-block',
                           mb: 1,
                         }}
                       >
-                        {info.trainingType === 'strength_conditioning'
-                          ? t('training.strength')
-                          : t('training.sprints')}
+                        {trainingTypes.find(tt => tt.id === info.trainingType)?.nameEN || info.trainingType}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                         <strong>EN:</strong> {info.infoText_en.substring(0, 80)}...
@@ -199,12 +240,15 @@ export const BlockInfoManager: React.FC = () => {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    trainingType: e.target.value as 'strength_conditioning' | 'sprints_speed',
+                    trainingType: e.target.value,
                   })
                 }
               >
-                <MenuItem value="strength_conditioning">{t('training.strength')}</MenuItem>
-                <MenuItem value="sprints_speed">{t('training.sprints')}</MenuItem>
+                {trainingTypes.map((tt) => (
+                  <MenuItem key={tt.id} value={tt.id}>
+                    {tt.nameEN}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,10 +17,14 @@ import {
   Tab,
   IconButton,
   Avatar,
+  CircularProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { globalCatalog } from '../../services/catalog';
+import { exerciseService } from '../../services/api';
+import { db } from '../../services/db';
+import { isOnline } from '../../services/sync';
 import type { Exercise, ExerciseCategory } from '../../types/exercise';
 import { sanitizeYouTubeUrl } from '../../services/yt';
 import { getExerciseIcon, getCategoryGradient } from '../../utils/exerciseIcons';
@@ -38,6 +42,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory | 'All'>('All');
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(false);
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
 
   const categories: Array<ExerciseCategory | 'All'> = [
@@ -50,8 +56,68 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     'Conditioning',
   ];
 
+  // Load exercises from backend when dialog opens
+  useEffect(() => {
+    const loadExercises = async () => {
+      console.log('🔍 ExerciseSelector - open:', open, 'current exercises:', exercises.length);
+
+      if (!open) return;
+
+      setLoading(true);
+      const online = isOnline();
+      console.log('🌐 Online status:', online);
+
+      try {
+        if (online) {
+          // Always fetch from backend when online
+          console.log('🔄 Fetching exercises from backend...');
+          const backendExercises = await exerciseService.getAll() as Exercise[];
+          console.log('📥 Received from backend:', backendExercises.length, 'exercises');
+          console.log('📥 Backend exercises:', backendExercises.map(e => e.name));
+
+          // Cache in IndexedDB
+          await db.exercises.clear();
+          await db.exercises.bulkPut(backendExercises);
+
+          setExercises(backendExercises);
+          console.log(`✅ Loaded ${backendExercises.length} exercises from backend`);
+        } else {
+          // Load from IndexedDB cache when offline
+          console.log('📦 Loading from cache...');
+          const cachedExercises = await db.exercises.toArray();
+
+          if (cachedExercises.length > 0) {
+            setExercises(cachedExercises as Exercise[]);
+            console.log(`📦 Loaded ${cachedExercises.length} exercises from cache`);
+          } else {
+            // Fallback to hardcoded catalog only if offline AND no cache
+            console.warn('⚠️ Offline with no cache - using fallback catalog');
+            setExercises(globalCatalog);
+            console.log(`⚠️ Using fallback catalog (${globalCatalog.length} exercises)`);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to load exercises:', error);
+        // Try to use cache even if backend fails
+        const cachedExercises = await db.exercises.toArray();
+        if (cachedExercises.length > 0) {
+          console.log('📦 Falling back to cached exercises');
+          setExercises(cachedExercises as Exercise[]);
+        } else {
+          // Last resort: hardcoded catalog
+          console.warn('⚠️ Using fallback catalog due to error (${globalCatalog.length} exercises)');
+          setExercises(globalCatalog);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExercises();
+  }, [open]);
+
   // Filter exercises
-  const filteredExercises = globalCatalog.filter(exercise => {
+  const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || exercise.category === selectedCategory;
     return matchesSearch && matchesCategory;

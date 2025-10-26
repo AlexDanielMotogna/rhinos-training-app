@@ -1,107 +1,98 @@
 /**
  * Block Info Service
- * Manages block informational text in localStorage
+ * Manages block informational text via backend API
  */
 
-import type { BlockInfo, BlockInfoPayload } from '../types/blockInfo';
+import { apiCall } from './api';
 
-// Re-export types for convenience
-export type { BlockInfo, BlockInfoPayload };
+export interface BlockInfo {
+  id: string;
+  blockName: string;
+  trainingType: string; // MongoDB ID
+  trainingTypeKey?: string; // Training type key (e.g., 'strength_conditioning')
+  infoText_en: string;
+  infoText_de: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-const BLOCK_INFO_KEY = 'rhinos_block_info';
+export interface BlockInfoPayload {
+  blockName: string;
+  trainingType: string;
+  infoText_en: string;
+  infoText_de: string;
+}
 
 /**
- * Get all block info
+ * Get all block info from backend
  */
-export function getAllBlockInfo(): BlockInfo[] {
-  const data = localStorage.getItem(BLOCK_INFO_KEY);
-  return data ? JSON.parse(data) : [];
+export async function getAllBlockInfo(): Promise<BlockInfo[]> {
+  try {
+    return await apiCall('/block-info') as BlockInfo[];
+  } catch (error) {
+    console.error('Error loading block info:', error);
+    return [];
+  }
 }
 
 /**
  * Get block info by block name and training type
+ * @param blockName - The name of the block
+ * @param trainingType - Can be either the training type key (e.g., 'strength_conditioning') or MongoDB ID
  */
-export function getBlockInfo(blockName: string, trainingType: 'strength_conditioning' | 'sprints_speed'): BlockInfo | null {
-  const allInfo = getAllBlockInfo();
-  return allInfo.find(
-    (info) => info.blockName === blockName && info.trainingType === trainingType
-  ) || null;
+export async function getBlockInfo(blockName: string, trainingType: string): Promise<BlockInfo | null> {
+  const allInfo = await getAllBlockInfo();
+
+  // Debug logging
+  console.log('🔍 getBlockInfo - Searching for:', { blockName, trainingType });
+  console.log('📋 Available block info:', allInfo.map(info => ({
+    blockName: info.blockName,
+    trainingType: info.trainingType,
+    trainingTypeKey: info.trainingTypeKey
+  })));
+
+  const found = allInfo.find(
+    (info) =>
+      info.blockName === blockName &&
+      (info.trainingType === trainingType || info.trainingTypeKey === trainingType)
+  );
+
+  console.log('✅ Found block info:', found || 'NOT FOUND');
+
+  return found || null;
 }
 
 /**
- * Create or update block info
+ * Create new block info
  */
-export function saveBlockInfo(payload: BlockInfoPayload): BlockInfo {
-  const allInfo = getAllBlockInfo();
+export async function createBlockInfo(payload: BlockInfoPayload): Promise<BlockInfo> {
+  return await apiCall('/block-info', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as BlockInfo;
+}
 
-  // Check if this block info already exists
-  const existingIndex = allInfo.findIndex(
-    (info) => info.blockName === payload.blockName && info.trainingType === payload.trainingType
-  );
-
-  if (existingIndex !== -1) {
-    // Update existing
-    const updated: BlockInfo = {
-      ...allInfo[existingIndex],
-      infoText_en: payload.infoText_en,
-      infoText_de: payload.infoText_de,
-      updatedAt: new Date().toISOString(),
-    };
-    allInfo[existingIndex] = updated;
-    localStorage.setItem(BLOCK_INFO_KEY, JSON.stringify(allInfo));
-    return updated;
-  } else {
-    // Create new
-    const newInfo: BlockInfo = {
-      id: crypto.randomUUID(),
-      ...payload,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    allInfo.push(newInfo);
-    localStorage.setItem(BLOCK_INFO_KEY, JSON.stringify(allInfo));
-    return newInfo;
-  }
+/**
+ * Update block info
+ */
+export async function updateBlockInfo(id: string, payload: Partial<BlockInfoPayload>): Promise<BlockInfo> {
+  return await apiCall(`/block-info/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  }) as BlockInfo;
 }
 
 /**
  * Delete block info
  */
-export function deleteBlockInfo(id: string): boolean {
-  const allInfo = getAllBlockInfo();
-  const filtered = allInfo.filter((info) => info.id !== id);
-
-  if (filtered.length !== allInfo.length) {
-    localStorage.setItem(BLOCK_INFO_KEY, JSON.stringify(filtered));
+export async function deleteBlockInfo(id: string): Promise<boolean> {
+  try {
+    await apiCall(`/block-info/${id}`, {
+      method: 'DELETE',
+    });
     return true;
-  }
-
-  return false;
-}
-
-/**
- * Initialize default block info if none exists
- */
-export function initializeDefaultBlockInfo(): void {
-  const existing = getAllBlockInfo();
-
-  if (existing.length === 0) {
-    // Add default info for common blocks (multi-language)
-    const defaults: BlockInfoPayload[] = [
-      {
-        blockName: 'Compound Lifts',
-        trainingType: 'strength_conditioning',
-        infoText_en: 'Multi-joint exercises that work multiple muscle groups simultaneously. These are the foundation of your strength program (e.g., Squat, Bench Press, Deadlift). Use heavier weights and focus on proper form.',
-        infoText_de: 'Mehrgelenkübungen, die mehrere Muskelgruppen gleichzeitig trainieren. Diese bilden die Grundlage Ihres Kraftprogramms (z. B. Kniebeuge, Bankdrücken, Kreuzheben). Verwenden Sie schwerere Gewichte und konzentrieren Sie sich auf die richtige Form.',
-      },
-      {
-        blockName: 'Accessory Work',
-        trainingType: 'strength_conditioning',
-        infoText_en: 'Supplementary exercises that target specific muscle groups to support the main lifts. These help prevent injuries, correct muscle imbalances, and improve overall performance (e.g., Lunges, Rows, Pull-ups). Use moderate weights with controlled movements.',
-        infoText_de: 'Ergänzende Übungen, die spezifische Muskelgruppen ansprechen, um die Hauptübungen zu unterstützen. Diese helfen Verletzungen vorzubeugen, muskuläre Dysbalancen zu korrigieren und die Gesamtleistung zu verbessern (z. B. Ausfallschritte, Rudern, Klimmzüge). Verwenden Sie moderate Gewichte mit kontrollierten Bewegungen.',
-      },
-    ];
-
-    defaults.forEach((payload) => saveBlockInfo(payload));
+  } catch (error) {
+    console.error('Error deleting block info:', error);
+    return false;
   }
 }

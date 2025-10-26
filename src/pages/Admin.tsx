@@ -35,23 +35,11 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useI18n } from '../i18n/I18nProvider';
-import { globalCatalog } from '../services/catalog';
 import type { Exercise, ExerciseCategory, Position } from '../types/exercise';
 import type { TrainingTemplate, TrainingAssignment } from '../types/trainingBuilder';
-import {
-  getTrainingTemplates,
-  getTrainingTypes as getTrainingTypesFromService,
-  createTrainingTemplate,
-  updateTrainingTemplate,
-  deleteTrainingTemplate,
-  saveTrainingTypes,
-  getTrainingAssignments,
-  createTrainingAssignment,
-  updateTrainingAssignment,
-  deleteAssignment,
-  getMockPlayers,
-} from '../services/trainingBuilder';
+// Note: TrainingTypes now loaded from backend via trainingTypeService
 import { getUser } from '../services/mock';
+import { exerciseService, templateService, assignmentService, userService, trainingTypeService } from '../services/api';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 import { PointsSystemManager } from '../components/admin/PointsSystemManager';
 import { getAllBlockInfo } from '../services/blockInfo';
@@ -96,7 +84,7 @@ export const Admin: React.FC = () => {
   const user = getUser();
 
   // Exercise Management State
-  const [exercises, setExercises] = useState<Exercise[]>(globalCatalog);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [exercisePage, setExercisePage] = useState(0);
@@ -143,19 +131,68 @@ export const Admin: React.FC = () => {
     return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
   };
 
+  // Load exercises from backend on mount
+  React.useEffect(() => {
+    const loadExercises = async () => {
+      try {
+        const data = await exerciseService.getAll() as Exercise[];
+        setExercises(data);
+      } catch (error) {
+        console.error('Error loading exercises:', error);
+        // Start with empty array if API fails
+        setExercises([]);
+        alert('Failed to load exercises from server. Please refresh the page.');
+      }
+    };
+    loadExercises();
+  }, []);
+
+  // Load templates from backend on mount
+  React.useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const data = await templateService.getAll() as TrainingTemplate[];
+        setTemplates(data);
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        // Start with empty array - no localStorage fallback to avoid ID conflicts
+        setTemplates([]);
+      }
+    };
+    loadTemplates();
+  }, []);
+
+  // Load assignments from backend on mount
+  React.useEffect(() => {
+    const loadAssignments = async () => {
+      try {
+        const data = await assignmentService.getAll() as TrainingAssignment[];
+        setAssignments(data);
+      } catch (error) {
+        console.error('Error loading assignments:', error);
+        // Start with empty array if API fails
+        setAssignments([]);
+      }
+    };
+    loadAssignments();
+  }, []);
+
   // Load team sessions from service on mount
   React.useEffect(() => {
-    const teamSessions = getTeamSessions();
-    const adminSessions: TeamSession[] = teamSessions.map(ts => ({
-      id: ts.id,
-      date: ts.date,
-      startTime: ts.time,
-      endTime: calculateEndTime(ts.time, 120), // Default 2 hours
-      type: ts.title,
-      location: ts.location,
-      address: ts.address,
-    }));
-    setSessions(adminSessions);
+    const loadTeamSessions = async () => {
+      const teamSessions = await getTeamSessions();
+      const adminSessions: TeamSession[] = teamSessions.map(ts => ({
+        id: ts.id,
+        date: ts.date,
+        startTime: ts.time,
+        endTime: calculateEndTime(ts.time, 120), // Default 2 hours
+        type: ts.title,
+        location: ts.location,
+        address: ts.address,
+      }));
+      setSessions(adminSessions);
+    };
+    loadTeamSessions();
   }, []);
 
   // Policies Management State
@@ -167,8 +204,9 @@ export const Admin: React.FC = () => {
   const [policiesModified, setPoliciesModified] = useState(false);
 
   // Training Types Management State
-  const [trainingTypes, setTrainingTypes] = useState<TrainingType[]>(() => getTrainingTypesFromService());
+  const [trainingTypes, setTrainingTypes] = useState<TrainingType[]>([]);
   const [trainingTypeDialogOpen, setTrainingTypeDialogOpen] = useState(false);
+  const [editingTrainingType, setEditingTrainingType] = useState<TrainingType | null>(null);
   const [newTrainingType, setNewTrainingType] = useState<Partial<TrainingType>>({
     key: '',
     nameEN: '',
@@ -177,8 +215,22 @@ export const Admin: React.FC = () => {
     active: true,
   });
 
+  // Load training types from backend on mount
+  React.useEffect(() => {
+    const loadTrainingTypes = async () => {
+      try {
+        const data = await trainingTypeService.getAll() as TrainingType[];
+        setTrainingTypes(data);
+      } catch (error) {
+        console.error('Error loading training types:', error);
+        setTrainingTypes([]);
+      }
+    };
+    loadTrainingTypes();
+  }, []);
+
   // Training Builder State
-  const [templates, setTemplates] = useState<TrainingTemplate[]>(() => getTrainingTemplates());
+  const [templates, setTemplates] = useState<TrainingTemplate[]>([]);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<TrainingTemplate | null>(null);
   const [newTemplateData, setNewTemplateData] = useState<{
@@ -226,7 +278,7 @@ export const Admin: React.FC = () => {
   });
 
   // Assignment State
-  const [assignments, setAssignments] = useState<TrainingAssignment[]>(() => getTrainingAssignments());
+  const [assignments, setAssignments] = useState<TrainingAssignment[]>([]);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignToAllPlayers, setAssignToAllPlayers] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<TrainingAssignment | null>(null);
@@ -239,7 +291,40 @@ export const Admin: React.FC = () => {
     playerIds: [],
     startDate: new Date().toISOString().split('T')[0],
   });
-  const mockPlayers = getMockPlayers();
+  // Load users (players) from backend
+  const [users, setUsers] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const data = await userService.getAllUsers() as any[];
+        setUsers(data);
+      } catch (error) {
+        console.error('Error loading users:', error);
+        setUsers([]);
+      }
+    };
+    loadUsers();
+  }, []);
+
+  // Filter only players for assignments
+  const players = users.filter((u: any) => u.role === 'player');
+
+  // Load block info from backend
+  const [blockInfo, setBlockInfo] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const loadBlockInfo = async () => {
+      try {
+        const data = await getAllBlockInfo();
+        setBlockInfo(data);
+      } catch (error) {
+        console.error('Error loading block info:', error);
+        setBlockInfo([]);
+      }
+    };
+    loadBlockInfo();
+  }, []);
 
   // Exercise Management Handlers
   const handleOpenExerciseDialog = (exercise?: Exercise) => {
@@ -259,31 +344,53 @@ export const Admin: React.FC = () => {
     setExerciseDialogOpen(true);
   };
 
-  const handleSaveExercise = () => {
-    if (editingExercise) {
-      // Update existing
-      setExercises(exercises.map(ex =>
-        ex.id === editingExercise.id ? { ...ex, ...newExercise } as Exercise : ex
-      ));
-    } else {
-      // Create new
-      const exercise: Exercise = {
-        id: `ex-${Date.now()}`,
-        name: newExercise.name!,
-        category: newExercise.category!,
-        intensity: newExercise.intensity,
+  const handleSaveExercise = async () => {
+    try {
+      if (editingExercise) {
+        // Update existing
+        const updated = await exerciseService.update(editingExercise.id, newExercise) as Exercise;
+        setExercises(exercises.map(ex =>
+          ex.id === editingExercise.id ? updated : ex
+        ));
+      } else {
+        // Create new
+        const created = await exerciseService.create({
+          name: newExercise.name!,
+          category: newExercise.category!,
+          intensity: newExercise.intensity,
+          isGlobal: true,
+          positionTags: [], // Empty array - exercises are universal
+          youtubeUrl: newExercise.youtubeUrl,
+          descriptionEN: newExercise.descriptionEN,
+          descriptionDE: newExercise.descriptionDE,
+        }) as Exercise;
+        setExercises([...exercises, created]);
+      }
+      setExerciseDialogOpen(false);
+      setEditingExercise(null);
+      setNewExercise({
+        name: '',
+        category: 'Strength',
+        intensity: 'mod',
         isGlobal: true,
-        positionTags: newExercise.positionTags,
-        youtubeUrl: newExercise.youtubeUrl,
-      };
-      setExercises([...exercises, exercise]);
+        youtubeUrl: '',
+        trainingTypes: [],
+      });
+    } catch (error) {
+      console.error('Error saving exercise:', error);
+      alert('Failed to save exercise. Please try again.');
     }
-    setExerciseDialogOpen(false);
   };
 
-  const handleDeleteExercise = (id: string) => {
+  const handleDeleteExercise = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this exercise?')) {
-      setExercises(exercises.filter(ex => ex.id !== id));
+      try {
+        await exerciseService.delete(id);
+        setExercises(exercises.filter(ex => ex.id !== id));
+      } catch (error) {
+        console.error('Error deleting exercise:', error);
+        alert('Failed to delete exercise. Please try again.');
+      }
     }
   };
 
@@ -293,7 +400,7 @@ export const Admin: React.FC = () => {
     if (!currentUser) return;
 
     // Create team session in unified service
-    const createdSession = createSession({
+    const createdSession = await createSession({
       creatorId: currentUser.id,
       creatorName: currentUser.name,
       sessionCategory: 'team',
@@ -345,10 +452,10 @@ export const Admin: React.FC = () => {
     });
   };
 
-  const handleDeleteSession = (id: string) => {
+  const handleDeleteSession = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
       // Delete from unified service
-      deleteSession(id);
+      await deleteSession(id);
       // Update local admin state
       setSessions(sessions.filter(s => s.id !== id));
     }
@@ -419,37 +526,95 @@ export const Admin: React.FC = () => {
   };
 
   // Training Types Management Handlers
-  const handleSaveTrainingType = () => {
-    const trainingType: TrainingType = {
-      id: Date.now().toString(),
-      key: newTrainingType.key!.toLowerCase().replace(/\s+/g, '_'),
-      nameEN: newTrainingType.nameEN!,
-      nameDE: newTrainingType.nameDE!,
-      season: newTrainingType.season!,
-      active: newTrainingType.active!,
-    };
-    setTrainingTypes([...trainingTypes, trainingType]);
-    setTrainingTypeDialogOpen(false);
+  const handleSaveTrainingType = async () => {
+    try {
+      // Generate key from nameEN if key is empty
+      let generatedKey: string;
+      if (newTrainingType.key) {
+        // User provided a custom key - sanitize it
+        generatedKey = newTrainingType.key
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, '_')
+          .replace(/[^a-z0-9_]/g, '');
+      } else {
+        // Auto-generate from nameEN
+        generatedKey = newTrainingType.nameEN!
+          .toLowerCase()
+          .trim()
+          .replace(/\s*&\s*/g, '_') // Replace " & " with "_"
+          .replace(/\s+/g, '_')       // Replace spaces with "_"
+          .replace(/[^a-z0-9_]/g, '') // Remove special chars
+          .replace(/_+/g, '_');       // Remove duplicate underscores
+      }
+
+      const data = {
+        key: generatedKey,
+        nameEN: newTrainingType.nameEN!,
+        nameDE: newTrainingType.nameDE!,
+        season: newTrainingType.season!,
+        active: newTrainingType.active ?? true,
+      };
+
+      if (editingTrainingType) {
+        const updated = await trainingTypeService.update(editingTrainingType.id, data) as TrainingType;
+        setTrainingTypes(trainingTypes.map(tt => tt.id === editingTrainingType.id ? updated : tt));
+      } else {
+        const created = await trainingTypeService.create(data) as TrainingType;
+        setTrainingTypes([...trainingTypes, created]);
+      }
+
+      setTrainingTypeDialogOpen(false);
+      setEditingTrainingType(null);
+      setNewTrainingType({
+        key: '',
+        nameEN: '',
+        nameDE: '',
+        season: 'off-season',
+        active: true,
+      });
+    } catch (error) {
+      console.error('Error saving training type:', error);
+      alert('Failed to save training type. Please try again.');
+    }
+  };
+
+  const handleToggleTrainingType = async (id: string) => {
+    try {
+      const trainingType = trainingTypes.find(tt => tt.id === id);
+      if (!trainingType) return;
+
+      const updated = await trainingTypeService.update(id, {
+        active: !trainingType.active,
+      }) as TrainingType;
+      setTrainingTypes(trainingTypes.map(tt => tt.id === id ? updated : tt));
+    } catch (error) {
+      console.error('Error toggling training type:', error);
+      alert('Failed to update training type. Please try again.');
+    }
+  };
+
+  const handleEditTrainingType = (trainingType: TrainingType) => {
+    setEditingTrainingType(trainingType);
     setNewTrainingType({
-      key: '',
-      nameEN: '',
-      nameDE: '',
-      season: 'off-season',
-      active: true,
+      key: trainingType.key,
+      nameEN: trainingType.nameEN,
+      nameDE: trainingType.nameDE,
+      season: trainingType.season,
+      active: trainingType.active,
     });
+    setTrainingTypeDialogOpen(true);
   };
 
-  const handleToggleTrainingType = (id: string) => {
-    setTrainingTypes(trainingTypes.map(tt =>
-      tt.id === id ? { ...tt, active: !tt.active } : tt
-    ));
-  };
-
-  const handleDeleteTrainingType = (id: string) => {
+  const handleDeleteTrainingType = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this training type?')) {
-      const updated = trainingTypes.filter(tt => tt.id !== id);
-      setTrainingTypes(updated);
-      saveTrainingTypes(updated);
+      try {
+        await trainingTypeService.delete(id);
+        setTrainingTypes(trainingTypes.filter(tt => tt.id !== id));
+      } catch (error) {
+        console.error('Error deleting training type:', error);
+        alert('Failed to delete training type. Please try again.');
+      }
     }
   };
 
@@ -463,16 +628,20 @@ export const Admin: React.FC = () => {
         durationWeeks: template.durationWeeks || 8,
         frequencyPerWeek: template.frequencyPerWeek || '2-3',
         weeklyNotes: template.weeklyNotes || '',
-        blocks: template.blocks?.map(b => ({
-          title: b.title,
-          order: b.order,
-          dayOfWeek: (b as any).dayOfWeek,
-          dayNumber: (b as any).dayNumber,
-          sessionName: (b as any).sessionName,
-          exerciseIds: b.exercises.map(ex => ex.id),
-          globalSets: (b as any).globalSets,
-          exerciseConfigs: (b as any).exerciseConfigs,
-        })) || [],
+        blocks: template.blocks?.map(b => {
+          // Blocks can have 'exercises' or 'items' depending on the source
+          const exerciseList = (b as any).exercises || (b as any).items || [];
+          return {
+            title: b.title,
+            order: b.order,
+            dayOfWeek: (b as any).dayOfWeek,
+            dayNumber: (b as any).dayNumber,
+            sessionName: (b as any).sessionName,
+            exerciseIds: exerciseList.map((ex: any) => ex.id),
+            globalSets: (b as any).globalSets,
+            exerciseConfigs: (b as any).exerciseConfigs,
+          };
+        }) || [],
       });
     } else {
       setEditingTemplate(null);
@@ -488,21 +657,68 @@ export const Admin: React.FC = () => {
     setTemplateDialogOpen(true);
   };
 
-  const handleSaveTemplate = () => {
-    if (editingTemplate) {
-      updateTrainingTemplate(editingTemplate.id, newTemplateData);
-      setTemplates(getTrainingTemplates());
-    } else {
-      createTrainingTemplate(newTemplateData);
-      setTemplates(getTrainingTemplates());
+  const handleSaveTemplate = async () => {
+    try {
+      // Convert exerciseIds to full Exercise objects
+      const blocksWithItems = newTemplateData.blocks.map(block => {
+        const items = block.exerciseIds
+          .map(id => exercises.find(ex => ex.id === id))
+          .filter(Boolean) as Exercise[];
+
+        return {
+          order: block.order,
+          title: block.title,
+          items: items,
+          dayNumber: block.dayNumber,
+          dayOfWeek: block.dayOfWeek,
+          sessionName: block.sessionName,
+          globalSets: block.globalSets,
+          exerciseConfigs: block.exerciseConfigs,
+        };
+      });
+
+      // Find training type name for the template name
+      const selectedTrainingType = trainingTypes.find(tt => tt.id === newTemplateData.trainingTypeId);
+      const trainingTypeName = selectedTrainingType?.nameEN || 'Training';
+
+      // Convert local template structure to backend format
+      const templateData = {
+        name: `${newTemplateData.positions.join(', ')} - ${trainingTypeName}`,
+        trainingType: newTemplateData.trainingTypeId,
+        position: newTemplateData.positions.length === 1 ? newTemplateData.positions[0] : null, // Legacy
+        positions: newTemplateData.positions, // New: array of positions
+        season: 'off-season' as 'off-season' | 'in-season' | 'pre-season',
+        durationWeeks: newTemplateData.durationWeeks,
+        frequencyPerWeek: newTemplateData.frequencyPerWeek,
+        weeklyNotes: newTemplateData.weeklyNotes || '',
+        blocks: blocksWithItems,
+        isActive: true,
+      };
+
+      if (editingTemplate) {
+        const updated = await templateService.update(editingTemplate.id, templateData) as TrainingTemplate;
+        setTemplates(templates.map(t => t.id === editingTemplate.id ? updated : t));
+      } else {
+        const created = await templateService.create(templateData) as TrainingTemplate;
+        setTemplates([...templates, created]);
+      }
+      setTemplateDialogOpen(false);
+      setEditingTemplate(null);
+    } catch (error) {
+      console.error('Error saving template:', error);
+      alert('Failed to save template. Please try again.');
     }
-    setTemplateDialogOpen(false);
   };
 
-  const handleDeleteTemplate = (id: string) => {
+  const handleDeleteTemplate = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this template?')) {
-      deleteTrainingTemplate(id);
-      setTemplates(getTrainingTemplates());
+      try {
+        await templateService.delete(id);
+        setTemplates(templates.filter(t => t.id !== id));
+      } catch (error) {
+        console.error('Error deleting template:', error);
+        alert('Failed to delete template. Please try again.');
+      }
     }
   };
 
@@ -587,9 +803,9 @@ export const Admin: React.FC = () => {
     const template = templates.find(t => t.id === templateId);
     if (!template || !template.positions) return [];
 
-    return mockPlayers
-      .filter(player => template.positions?.includes(player.position))
-      .map(player => player.id);
+    return players
+      .filter((player: any) => template.positions?.includes(player.position))
+      .map((player: any) => player.id);
   };
 
   const handleOpenAssignDialog = (assignment?: TrainingAssignment) => {
@@ -611,66 +827,46 @@ export const Admin: React.FC = () => {
     setAssignDialogOpen(true);
   };
 
-  const handleSaveAssignment = () => {
+  const handleSaveAssignment = async () => {
     const currentUser = getUser();
-    if (currentUser) {
-      const assignmentData = {
-        ...newAssignment,
-        playerIds: assignToAllPlayers ? getPlayersForTemplate(newAssignment.templateId) : newAssignment.playerIds
-      };
+    if (!currentUser) return;
 
-      // Get the template to check its training type
-      const template = templates.find(t => t.id === assignmentData.templateId);
+    try {
+      const playerIds = assignToAllPlayers
+        ? getPlayersForTemplate(newAssignment.templateId)
+        : newAssignment.playerIds;
+
+      // Get the template
+      const template = templates.find(t => t.id === newAssignment.templateId);
       if (!template) {
         alert('Template not found!');
         return;
       }
 
-      // Check for duplicate assignments (same training type for the same player with overlapping dates)
-      // Skip conflict check if we're editing the same assignment
-      const today = new Date().toISOString().split('T')[0];
-      const existingActiveAssignments = assignments.filter(a =>
-        a.active &&
-        a.endDate >= today &&
-        (!editingAssignment || a.id !== editingAssignment.id) // Exclude current assignment if editing
-      );
+      // Calculate end date based on template duration
+      const startDate = new Date(newAssignment.startDate);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + (template.durationWeeks * 7));
 
-      const conflicts: string[] = [];
-      assignmentData.playerIds.forEach(playerId => {
-        const playerAssignments = existingActiveAssignments.filter(a => a.playerIds.includes(playerId));
+      // Create ONE assignment with multiple players
+      const assignmentData = {
+        templateId: newAssignment.templateId,
+        playerIds: playerIds,
+        startDate: newAssignment.startDate,
+        endDate: endDate.toISOString().split('T')[0],
+        active: true,
+      };
 
-        playerAssignments.forEach(existingAssignment => {
-          const existingTemplate = templates.find(t => t.id === existingAssignment.templateId);
-
-          // Check if same training type
-          if (existingTemplate && existingTemplate.trainingTypeId === template.trainingTypeId) {
-            const player = mockPlayers.find(p => p.id === playerId);
-            conflicts.push(`${player?.name || 'Player'} already has an active ${template.trainingTypeName} program (ends ${existingAssignment.endDate})`);
-          }
-        });
-      });
-
-      // If there are conflicts, show warning and ask for confirmation
-      if (conflicts.length > 0) {
-        const confirmMessage =
-          'WARNING: Duplicate program assignments detected:\n\n' +
-          conflicts.join('\n') +
-          '\n\nAssigning will create multiple active programs of the same type for these players.\n\n' +
-          'Do you want to proceed anyway?';
-
-        if (!window.confirm(confirmMessage)) {
-          return; // User cancelled
-        }
-      }
-
-      // Update or create depending on mode
       if (editingAssignment) {
-        updateTrainingAssignment(editingAssignment.id, assignmentData, currentUser.id);
+        await assignmentService.update(editingAssignment.id, assignmentData);
       } else {
-        createTrainingAssignment(assignmentData, currentUser.id);
+        await assignmentService.create(assignmentData);
       }
 
-      setAssignments(getTrainingAssignments());
+      // Reload assignments
+      const updatedAssignments = await assignmentService.getAll() as TrainingAssignment[];
+      setAssignments(updatedAssignments);
+
       setAssignDialogOpen(false);
       setAssignToAllPlayers(false);
       setEditingAssignment(null);
@@ -679,13 +875,21 @@ export const Admin: React.FC = () => {
         playerIds: [],
         startDate: new Date().toISOString().split('T')[0],
       });
+    } catch (error) {
+      console.error('Error saving assignment:', error);
+      alert('Failed to save assignment. Please try again.');
     }
   };
 
-  const handleDeleteAssignment = (id: string) => {
+  const handleDeleteAssignment = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this assignment?')) {
-      deleteAssignment(id);
-      setAssignments(getTrainingAssignments());
+      try {
+        await assignmentService.delete(id);
+        setAssignments(assignments.filter(a => a.id !== id));
+      } catch (error) {
+        console.error('Error deleting assignment:', error);
+        alert('Failed to delete assignment. Please try again.');
+      }
     }
   };
 
@@ -746,26 +950,26 @@ export const Admin: React.FC = () => {
   // Filter exercises based on training type
   const getFilteredExercises = (trainingTypeId: string): Exercise[] => {
     const trainingType = trainingTypes.find(tt => tt.id === trainingTypeId);
-    if (!trainingType) return globalCatalog;
+    if (!trainingType) return exercises;
 
     const key = trainingType.key.toLowerCase();
 
     // Strength & Conditioning: Strength, Plyometrics, Conditioning, Mobility, Recovery
     if (key.includes('strength') || key.includes('conditioning')) {
-      return globalCatalog.filter(ex =>
+      return exercises.filter(ex =>
         ['Strength', 'Plyometrics', 'Conditioning', 'Mobility', 'Recovery'].includes(ex.category)
       );
     }
 
     // Sprints / Speed: Speed, COD, Technique, Conditioning, Mobility, Recovery
     if (key.includes('sprint') || key.includes('speed')) {
-      return globalCatalog.filter(ex =>
+      return exercises.filter(ex =>
         ['Speed', 'COD', 'Technique', 'Conditioning', 'Mobility', 'Recovery'].includes(ex.category)
       );
     }
 
-    // Default: show all exercises
-    return globalCatalog;
+    // Default: show all exercises from backend
+    return exercises;
   };
 
   return (
@@ -869,7 +1073,7 @@ export const Admin: React.FC = () => {
                               {idx + 1}. {block.title}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {block.exercises.length} exercise(s)
+                              {((block as any).exercises?.length || (block as any).items?.length || 0)} exercise(s)
                             </Typography>
                           </Box>
                         ))}
@@ -918,7 +1122,9 @@ export const Admin: React.FC = () => {
           <Grid container spacing={2}>
             {assignments.map((assignment) => {
               const template = templates.find(t => t.id === assignment.templateId);
-              const assignedPlayers = mockPlayers.filter(p => assignment.playerIds.includes(p.id));
+              // Handle both playerIds array (new) and playerId singular (old)
+              const playerIdsArray = (assignment as any).playerIds || [(assignment as any).playerId];
+              const assignedPlayers = players.filter((p: any) => playerIdsArray && playerIdsArray.includes(p.id));
 
               return (
                 <Grid item xs={12} md={6} key={assignment.id}>
@@ -945,7 +1151,7 @@ export const Admin: React.FC = () => {
                               Players ({assignedPlayers.length}):
                             </Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                              {assignedPlayers.map((player) => (
+                              {assignedPlayers.map((player: any) => (
                                 <Chip
                                   key={player.id}
                                   label={`#${player.jerseyNumber} ${player.name}`}
@@ -1010,7 +1216,6 @@ export const Admin: React.FC = () => {
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Name</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Category</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Intensity</TableCell>
-                  <TableCell sx={{ color: 'white', fontWeight: 600 }}>Positions</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Video</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Actions</TableCell>
                 </TableRow>
@@ -1038,9 +1243,6 @@ export const Admin: React.FC = () => {
                             }
                           />
                         )}
-                      </TableCell>
-                      <TableCell>
-                        {exercise.positionTags?.join(', ') || 'All'}
                       </TableCell>
                       <TableCell>
                         {exercise.youtubeUrl ? (
@@ -1242,9 +1444,9 @@ export const Admin: React.FC = () => {
                       <Box>
                         <IconButton
                           size="small"
-                          color={trainingType.active ? 'warning' : 'success'}
-                          onClick={() => handleToggleTrainingType(trainingType.id)}
-                          title={trainingType.active ? 'Deactivate' : 'Activate'}
+                          color="primary"
+                          onClick={() => handleEditTrainingType(trainingType)}
+                          title="Edit"
                         >
                           <EditIcon />
                         </IconButton>
@@ -1252,6 +1454,7 @@ export const Admin: React.FC = () => {
                           size="small"
                           color="error"
                           onClick={() => handleDeleteTrainingType(trainingType.id)}
+                          title="Delete"
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -1536,31 +1739,6 @@ export const Admin: React.FC = () => {
               </Select>
             </FormControl>
 
-            <FormControl fullWidth>
-              <InputLabel>{t('admin.positions')}</InputLabel>
-              <Select
-                multiple
-                value={newExercise.positionTags || []}
-                label={t('admin.positions')}
-                onChange={(e) => setNewExercise({ ...newExercise, positionTags: e.target.value as Position[] })}
-                renderValue={(selected) => (selected as string[]).join(', ')}
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 300,
-                    },
-                  },
-                }}
-              >
-                {positions.map((pos) => (
-                  <MenuItem key={pos} value={pos}>{pos}</MenuItem>
-                ))}
-              </Select>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                Click outside or press ESC to close
-              </Typography>
-            </FormControl>
-
             <TextField
               label={t('admin.youtubeUrl')}
               value={newExercise.youtubeUrl || ''}
@@ -1670,7 +1848,7 @@ export const Admin: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>{t('admin.addTrainingType')}</DialogTitle>
+        <DialogTitle>{editingTrainingType ? 'Edit Training Type' : t('admin.addTrainingType')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
@@ -1691,6 +1869,15 @@ export const Admin: React.FC = () => {
               placeholder="Kraft & Kondition"
             />
 
+            <TextField
+              label="Key (for system integration)"
+              value={newTrainingType.key}
+              onChange={(e) => setNewTrainingType({ ...newTrainingType, key: e.target.value })}
+              fullWidth
+              placeholder="strength_conditioning"
+              helperText="Use lowercase, underscores instead of spaces. Leave empty to auto-generate."
+            />
+
             <FormControl fullWidth>
               <InputLabel>{t('admin.season')}</InputLabel>
               <Select
@@ -1705,7 +1892,9 @@ export const Admin: React.FC = () => {
             </FormControl>
 
             <Alert severity="info">
-              The training type key will be auto-generated from the English name (e.g., "Strength & Conditioning" → "strength_conditioning")
+              {newTrainingType.key
+                ? `Key will be: "${newTrainingType.key}"`
+                : 'The training type key will be auto-generated from the English name (e.g., "Strength & Conditioning" → "strength_conditioning")'}
             </Alert>
           </Box>
         </DialogContent>
@@ -2029,8 +2218,8 @@ export const Admin: React.FC = () => {
                   <MenuItem key="header-existing" disabled sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'primary.main' }}>
                     ── EXISTING BLOCKS ──
                   </MenuItem>,
-                  ...newTemplateData.blocks.map((block, idx) => (
-                    <MenuItem key={`existing-${idx}`} value={block.title}>
+                  ...newTemplateData.blocks.map((block) => (
+                    <MenuItem key={`existing-block-${block.order}`} value={block.title}>
                       {block.title} ({block.exerciseIds.length} exercises)
                     </MenuItem>
                   )),
@@ -2042,20 +2231,22 @@ export const Admin: React.FC = () => {
                 {/* Block Info - blocks with configured descriptions */}
                 {(() => {
                   const trainingType = trainingTypes.find(tt => tt.id === newTemplateData.trainingTypeId);
-                  const trainingTypeKey = trainingType?.key as 'strength_conditioning' | 'sprints_speed' | undefined;
-                  const allBlockInfo = getAllBlockInfo();
-                  const relevantBlocks = trainingTypeKey
-                    ? allBlockInfo.filter(bi => bi.trainingType === trainingTypeKey)
-                    : [];
+                  const trainingTypeKey = trainingType?.key;
+                  const trainingTypeId = trainingType?.id;
+
+                  // Filter by BOTH trainingTypeKey (for new records) AND trainingType ID (for compatibility)
+                  const relevantBlocks = blockInfo.filter((bi: any) =>
+                    bi.trainingTypeKey === trainingTypeKey || bi.trainingType === trainingTypeId
+                  );
 
                   if (relevantBlocks.length > 0) {
                     return [
                       <MenuItem key="header-blockinfo" disabled sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'info.main' }}>
                         ── CONFIGURED BLOCKS ──
                       </MenuItem>,
-                      ...relevantBlocks.map((blockInfo) => (
-                        <MenuItem key={`blockinfo-${blockInfo.id}`} value={blockInfo.blockName}>
-                          {blockInfo.blockName}
+                      ...relevantBlocks.map((bi: any) => (
+                        <MenuItem key={`blockinfo-${bi.id}`} value={bi.blockName}>
+                          {bi.blockName}
                         </MenuItem>
                       ))
                     ];
@@ -2209,11 +2400,17 @@ export const Admin: React.FC = () => {
                 label="Select Template"
                 onChange={(e) => setNewAssignment({ ...newAssignment, templateId: e.target.value })}
               >
-                {templates.filter(t => t.active).map((template) => (
-                  <MenuItem key={template.id} value={template.id}>
-                    {template.trainingTypeName} ({template.positions?.join(', ')}) - {template.durationWeeks}w
-                  </MenuItem>
-                ))}
+                {templates.filter((t: any) => t.active !== false).map((template: any) => {
+                  // Template is enriched by backend with trainingTypeName
+                  const displayName = template.trainingTypeName || 'Unknown';
+                  const positions = template.positions ? template.positions.join(', ') : 'All';
+
+                  return (
+                    <MenuItem key={template.id} value={template.id}>
+                      {displayName} - {positions}
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
 
@@ -2252,14 +2449,22 @@ export const Admin: React.FC = () => {
                   },
                 }}
               >
-                {mockPlayers
-                  .filter(player => {
+                {players
+                  .filter((player: any) => {
+                    // If no template selected, show all players
+                    if (!newAssignment.templateId) return true;
+
                     const template = templates.find(t => t.id === newAssignment.templateId);
-                    return template?.positions?.includes(player.position);
+
+                    // If template has no positions or player has no position, include player
+                    if (!template?.positions || template.positions.length === 0) return true;
+                    if (!player.position) return false;
+
+                    return template.positions.includes(player.position);
                   })
-                  .map((player) => (
+                  .map((player: any) => (
                     <MenuItem key={player.id} value={player.id}>
-                      #{player.jerseyNumber} {player.name} ({player.position})
+                      #{player.jerseyNumber || '?'} {player.name} ({player.position || 'No position'})
                     </MenuItem>
                   ))}
               </Select>
