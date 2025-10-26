@@ -25,6 +25,8 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:3001',
     'https://rhinos-training-app-git-main-alexdanielmotognas-projects.vercel.app',
+    'https://rhinos-training.at',
+    'https://www.rhinos-training.at',
     process.env.FRONTEND_URL || '',
     /\.railway\.app$/,
     /\.vercel\.app$/,
