@@ -69,7 +69,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Rhinos Training API running on http://localhost:${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+  console.log(`[SERVER] Rhinos Training API running on http://localhost:${PORT}`);
+  console.log(`[ENV] Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`[CONFIG] Frontend URL: ${process.env.FRONTEND_URL}`);
 });

@@ -106,9 +106,9 @@ export async function uploadTeamLogo(buffer: Buffer) {
 export async function deleteImage(publicId: string): Promise<void> {
   try {
     await cloudinary.uploader.destroy(publicId);
-    console.log(`✅ Deleted image: ${publicId}`);
+    console.log(`[CLOUDINARY] Deleted image: ${publicId}`);
   } catch (error) {
-    console.error('❌ Failed to delete image:', error);
+    console.error('[CLOUDINARY ERROR] Failed to delete image:', error);
     throw new Error('Failed to delete image');
   }
 }

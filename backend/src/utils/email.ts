@@ -26,9 +26,9 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
 
   try {
     await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log(`✅ Email sent to ${options.to}: ${options.subject}`);
+    console.log(`[EMAIL] Sent to ${options.to}: ${options.subject}`);
   } catch (error) {
-    console.error('❌ Failed to send email:', error);
+    console.error('[EMAIL ERROR] Failed to send email:', error);
     throw new Error('Failed to send email');
   }
 }
@@ -52,7 +52,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
     <body>
       <div class="container">
         <div class="header">
-          <h1>🏈 Rhinos Training</h1>
+          <h1>Rhinos Training</h1>
         </div>
         <div class="content">
           <h2>Password Reset Request</h2>
@@ -99,20 +99,20 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
     <body>
       <div class="container">
         <div class="header">
-          <h1>🏈 Welcome to Rhinos Training!</h1>
+          <h1>Welcome to Rhinos Training!</h1>
         </div>
         <div class="content">
-          <h2>Hey ${name}! 👋</h2>
+          <h2>Hey ${name}!</h2>
           <p>Welcome to the Rhinos Training family! Your account has been successfully created.</p>
           <p>You can now:</p>
           <ul>
-            <li>📊 Track your workouts and progress</li>
-            <li>🏃 Log training sessions</li>
-            <li>📈 View your performance stats</li>
-            <li>👥 Connect with your teammates</li>
-            <li>🎥 Access training videos</li>
+            <li>Track your workouts and progress</li>
+            <li>Log training sessions</li>
+            <li>View your performance stats</li>
+            <li>Connect with your teammates</li>
+            <li>Access training videos</li>
           </ul>
-          <p>Get ready to dominate the field! 💪</p>
+          <p>Get ready to dominate the field!</p>
         </div>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} Rhinos Training. All rights reserved.</p>

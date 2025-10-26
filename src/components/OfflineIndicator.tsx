@@ -15,6 +15,11 @@ import CloudOffIcon from '@mui/icons-material/CloudOff';
 import CloudDoneIcon from '@mui/icons-material/CloudDone';
 import SyncIcon from '@mui/icons-material/Sync';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+import EventIcon from '@mui/icons-material/Event';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import GroupIcon from '@mui/icons-material/Group';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import { useOffline } from '../hooks/useOffline';
 
 export const OfflineIndicator: React.FC = () => {
@@ -114,22 +119,37 @@ export const OfflineIndicator: React.FC = () => {
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                 Offline Cache
               </Typography>
-              <Typography variant="body2">
-                📅 {cacheStats.trainingSessions} sessions
-              </Typography>
-              <Typography variant="body2">
-                ✅ {cacheStats.attendance} attendance records
-              </Typography>
-              <Typography variant="body2">
-                💪 {cacheStats.workouts} workouts
-              </Typography>
-              <Typography variant="body2">
-                👥 {cacheStats.users} team members
-              </Typography>
-              {cacheStats.pendingSync > 0 && (
-                <Typography variant="body2" color="warning.main">
-                  ⏳ {cacheStats.pendingSync} pending sync
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <EventIcon fontSize="small" />
+                <Typography variant="body2">
+                  {cacheStats.trainingSessions} sessions
                 </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CheckCircleIcon fontSize="small" />
+                <Typography variant="body2">
+                  {cacheStats.attendance} attendance records
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <FitnessCenterIcon fontSize="small" />
+                <Typography variant="body2">
+                  {cacheStats.workouts} workouts
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <GroupIcon fontSize="small" />
+                <Typography variant="body2">
+                  {cacheStats.users} team members
+                </Typography>
+              </Box>
+              {cacheStats.pendingSync > 0 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HourglassEmptyIcon fontSize="small" color="warning" />
+                  <Typography variant="body2" color="warning.main">
+                    {cacheStats.pendingSync} pending sync
+                  </Typography>
+                </Box>
               )}
             </Box>
             <Divider />

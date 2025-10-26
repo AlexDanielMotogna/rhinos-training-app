@@ -263,11 +263,11 @@ router.post('/reports', authenticate, async (req, res) => {
       },
     });
 
-    console.log('✅ Report saved to DB:', report.id);
+    console.log('[WORKOUT] Report saved to DB:', report.id);
     res.status(201).json(report);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('❌ Validation error:', error.errors);
+      console.error('[VALIDATION ERROR] Validation error:', error.errors);
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
     console.error('Create report error:', error);
