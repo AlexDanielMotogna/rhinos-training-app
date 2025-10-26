@@ -431,3 +431,53 @@ export const pointsConfigService = {
     });
   },
 };
+
+// Attendance Poll endpoints
+export const attendancePollService = {
+  async getAll() {
+    return apiCall('/attendance-polls');
+  },
+
+  async getActive() {
+    return apiCall('/attendance-polls/active');
+  },
+
+  async getById(id: string) {
+    return apiCall(`/attendance-polls/${id}`);
+  },
+
+  async create(data: {
+    sessionId: string;
+    sessionName: string;
+    sessionDate: string;
+    expiresAt: string;
+  }) {
+    return apiCall('/attendance-polls', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async vote(pollId: string, option: 'training' | 'present' | 'absent') {
+    return apiCall(`/attendance-polls/${pollId}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ option }),
+    });
+  },
+
+  async getResults(pollId: string) {
+    return apiCall(`/attendance-polls/${pollId}/results`);
+  },
+
+  async close(pollId: string) {
+    return apiCall(`/attendance-polls/${pollId}/close`, {
+      method: 'PATCH',
+    });
+  },
+
+  async delete(pollId: string) {
+    return apiCall(`/attendance-polls/${pollId}`, {
+      method: 'DELETE',
+    });
+  },
+};

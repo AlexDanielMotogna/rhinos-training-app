@@ -12,6 +12,7 @@ import workoutRoutes from './routes/workouts.js';
 import trainingTypeRoutes from './routes/trainingTypes.js';
 import blockInfoRoutes from './routes/blockInfo.js';
 import pointsConfigRoutes from './routes/pointsConfig.js';
+import attendancePollRoutes from './routes/attendancePolls.js';
 
 // Load environment variables
 dotenv.config();
@@ -53,6 +54,7 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/training-types', trainingTypeRoutes);
 app.use('/api/block-info', blockInfoRoutes);
 app.use('/api/points-config', pointsConfigRoutes);
+app.use('/api/attendance-polls', attendancePollRoutes);
 
 // 404 handler
 app.use((req, res) => {

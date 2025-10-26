@@ -71,8 +71,8 @@ export interface LocalWorkout {
 
 export interface OutboxItem {
   id: string;
-  entity: 'training' | 'attendance' | 'workout' | 'user' | 'assignment' | 'trainingSession' | 'rsvp' | 'checkin';
-  action: 'create' | 'update' | 'delete' | 'rsvp' | 'checkin';
+  entity: 'training' | 'attendance' | 'workout' | 'user' | 'assignment' | 'trainingSession' | 'rsvp' | 'checkin' | 'attendancePoll';
+  action: 'create' | 'update' | 'delete' | 'rsvp' | 'checkin' | 'vote' | 'close';
   data: any;
   timestamp: number;
   retries: number;
@@ -133,6 +133,25 @@ export interface LocalTrainingAssignment {
   syncedAt?: string;
 }
 
+export interface LocalAttendancePoll {
+  id: string;
+  sessionId: string;
+  sessionName: string;
+  sessionDate: string;
+  createdBy: string;
+  createdAt: string;
+  expiresAt: string;
+  isActive: boolean;
+  votes: Array<{
+    userId: string;
+    userName: string;
+    option: 'training' | 'present' | 'absent';
+    timestamp: string;
+  }>;
+  // Metadata
+  updatedAt: string;
+}
+
 // ========================================
 // DEXIE DATABASE CLASS
 // ========================================
@@ -145,6 +164,7 @@ class RhinosDatabase extends Dexie {
   trainingTypes!: Table<LocalTrainingType, string>;
   trainingAssignments!: Table<LocalTrainingAssignment, string>;
   exercises!: Table<any, string>;
+  attendancePolls!: Table<LocalAttendancePoll, string>;
   outbox!: Table<OutboxItem, string>;
 
   constructor() {
@@ -179,6 +199,19 @@ class RhinosDatabase extends Dexie {
       trainingTypes: 'id, key, isActive, syncedAt',
       trainingAssignments: 'id, templateId, assignedBy, active, syncedAt, *playerIds',
       exercises: 'id, name, category, isGlobal',
+      outbox: 'id, entity, timestamp',
+    });
+
+    // Version 4: Add attendance polls for offline support
+    this.version(4).stores({
+      trainingSessions: 'id, date, sessionCategory, isPinned, updatedAt',
+      attendance: 'id, sessionId, userId, updatedAt',
+      workouts: 'id, userId, completedAt, syncedAt',
+      users: 'id, email, role',
+      trainingTypes: 'id, key, isActive, syncedAt',
+      trainingAssignments: 'id, templateId, assignedBy, active, syncedAt, *playerIds',
+      exercises: 'id, name, category, isGlobal',
+      attendancePolls: 'id, sessionId, isActive, expiresAt, updatedAt',
       outbox: 'id, entity, timestamp',
     });
   }
