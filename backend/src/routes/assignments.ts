@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { createNotificationsForUsers } from './notifications.js';
 
 const router = express.Router();
 
@@ -152,6 +153,21 @@ router.post('/', authenticate, async (req, res) => {
         template: true,
       },
     });
+
+    // Send notifications to assigned players
+    if (data.playerIds.length > 0) {
+      const title = 'Nuevo plan de entrenamiento';
+      const message = `El coach te ha asignado el plan: ${template.name}`;
+
+      await createNotificationsForUsers(
+        data.playerIds,
+        'new_plan',
+        title,
+        message,
+        '/training',
+        assignment.id
+      );
+    }
 
     res.status(201).json(assignment);
   } catch (error) {

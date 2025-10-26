@@ -110,22 +110,25 @@ function App() {
 
   // Check for active attendance poll
   useEffect(() => {
-    if (currentUser) {
-      const poll = getActivePoll();
-      if (poll && !hasUserVoted(poll.id, currentUser.id)) {
-        setActivePoll(poll);
-        setShowPollModal(true);
+    const checkActivePoll = async () => {
+      if (currentUser) {
+        const poll = await getActivePoll();
+        if (poll && !(await hasUserVoted(poll.id, currentUser.id))) {
+          setActivePoll(poll);
+          setShowPollModal(true);
+        }
       }
-    }
+    };
+    checkActivePoll();
   }, [currentUser]);
 
   // Check periodically for new polls (every 30 seconds)
   useEffect(() => {
     if (!currentUser) return;
 
-    const checkForPolls = () => {
-      const poll = getActivePoll();
-      if (poll && !hasUserVoted(poll.id, currentUser.id)) {
+    const checkForPolls = async () => {
+      const poll = await getActivePoll();
+      if (poll && !(await hasUserVoted(poll.id, currentUser.id))) {
         setActivePoll(poll);
         setShowPollModal(true);
       }
@@ -136,11 +139,14 @@ function App() {
     return () => clearInterval(interval);
   }, [currentUser]);
 
-  const handleClosePollModal = () => {
-    setShowPollModal(false);
-    // Check if user has voted after closing
-    if (currentUser && activePoll && hasUserVoted(activePoll.id, currentUser.id)) {
-      setActivePoll(null);
+  const handleClosePollModal = async () => {
+    // Only allow closing if user has voted
+    if (currentUser && activePoll) {
+      const hasVoted = await hasUserVoted(activePoll.id, currentUser.id);
+      if (hasVoted) {
+        setShowPollModal(false);
+        setActivePoll(null);
+      }
     }
   };
 

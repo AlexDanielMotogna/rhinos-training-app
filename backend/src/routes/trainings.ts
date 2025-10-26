@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { createNotificationsForUsers } from './notifications.js';
 
 const router = express.Router();
 
@@ -120,6 +121,31 @@ router.post('/', async (req, res) => {
         checkIns: [],
       },
     });
+
+    // Send notifications to all players
+    const allPlayers = await prisma.user.findMany({
+      where: { role: 'player' },
+      select: { id: true },
+    });
+
+    const playerIds = allPlayers.map(p => p.id).filter(id => id !== userId);
+
+    if (playerIds.length > 0) {
+      const notificationType = data.sessionCategory === 'team' ? 'new_session' : 'private_session';
+      const title = data.sessionCategory === 'team'
+        ? 'Nueva sesión de entrenamiento'
+        : `${user.name} creó una sesión privada`;
+      const message = `${data.title} - ${data.date} a las ${data.time} en ${data.location}`;
+
+      await createNotificationsForUsers(
+        playerIds,
+        notificationType,
+        title,
+        message,
+        '/training-sessions',
+        session.id
+      );
+    }
 
     res.status(201).json({
       ...session,

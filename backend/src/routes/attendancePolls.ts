@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { createNotificationsForUsers } from './notifications.js';
 
 const router = express.Router();
 
@@ -113,6 +114,27 @@ router.post('/', async (req, res) => {
         votes: true,
       },
     });
+
+    // Send notifications to all players
+    const allPlayers = await prisma.user.findMany({
+      where: { role: 'player' },
+      select: { id: true },
+    });
+
+    if (allPlayers.length > 0) {
+      const playerIds = allPlayers.map(p => p.id);
+      const title = 'Encuesta de asistencia';
+      const message = `Vota tu disponibilidad para ${data.sessionName} el ${data.sessionDate}`;
+
+      await createNotificationsForUsers(
+        playerIds,
+        'attendance_poll',
+        title,
+        message,
+        '/training-sessions',
+        poll.id
+      );
+    }
 
     res.status(201).json(poll);
   } catch (error) {
