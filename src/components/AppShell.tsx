@@ -32,6 +32,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { NotificationBell } from './NotificationBell';
+import { OfflineIndicator } from './OfflineIndicator';
 import {
   logout,
   getUser,
@@ -154,6 +155,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             onMarkAllAsRead={handleMarkAllAsRead}
             onNotificationClick={handleNotificationClick}
           />
+
+          <OfflineIndicator />
 
           <LanguageSwitcher />
 

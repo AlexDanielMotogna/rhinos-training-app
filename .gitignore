@@ -17,12 +17,31 @@ build/
 *.seed
 *.pid.lock
 
-# Environment
+# Environment Variables (SENSITIVE DATA - NEVER COMMIT)
 .env
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
+.env.*.local
+
+# Backend environment files
+backend/.env
+backend/.env.local
+backend/.env.development
+backend/.env.production
+
+# API Keys and Secrets (NEVER COMMIT)
+**/api-keys.json
+**/secrets.json
+**/credentials.json
+**/.credentials
+**/*.pem
+**/*.key
+**/*.cert
 
 # IDE
 .vscode/

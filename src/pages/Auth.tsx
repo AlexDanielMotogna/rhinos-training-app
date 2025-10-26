@@ -11,11 +11,15 @@ import {
   Select,
   MenuItem,
   Link,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { saveUser, calculateAge, type MockUser } from '../services/mock';
+import { ForgotPasswordDialog } from '../components/ForgotPasswordDialog';
+import { calculateAge } from '../services/mock';
+import { authService } from '../services/api';
 import type { Position } from '../types/exercise';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 
@@ -38,77 +42,64 @@ export const Auth: React.FC = () => {
   const [role, setRole] = useState<'player' | 'coach'>('player');
   const [sex, setSex] = useState<'male' | 'female'>('male');
   const [coachCode, setCoachCode] = useState('');
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const COACH_CODE = 'RHINOS2025'; // Code provided by you to coaches
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
 
-    if (isSignup) {
-      // Validate password confirmation
-      if (password !== confirmPassword) {
-        alert(t('auth.passwordMismatch'));
-        return;
+    try {
+      if (isSignup) {
+        // Validate password confirmation
+        if (password !== confirmPassword) {
+          setError(t('auth.passwordMismatch'));
+          setLoading(false);
+          return;
+        }
+
+        // Calculate age from birth date
+        const calculatedAge = birthDate ? calculateAge(birthDate) : 0;
+
+        // SIGNUP via backend API
+        await authService.signup({
+          email,
+          password,
+          name,
+          role,
+          coachCode: role === 'coach' ? coachCode : undefined,
+          jerseyNumber: role === 'player' && jerseyNumber && jerseyNumber !== '--'
+            ? Number(jerseyNumber)
+            : undefined,
+          birthDate: birthDate || undefined,
+          age: calculatedAge || undefined,
+          weightKg: weightKg ? Number(weightKg) : undefined,
+          heightCm: heightCm ? Number(heightCm) : undefined,
+          position: role === 'player' ? position : undefined,
+          sex,
+        });
+      } else {
+        // LOGIN via backend API
+        await authService.login({ email, password });
       }
 
-      // SIGNUP: Validate coach code if signing up as coach
-      if (role === 'coach' && coachCode !== COACH_CODE) {
-        alert('Invalid coach code. Please contact the administrator for the correct code.');
-        return;
-      }
-
-      // Calculate age from birth date
-      const calculatedAge = birthDate ? calculateAge(birthDate) : 0;
-
-      // Create new user
-      const user: MockUser = {
-        id: Date.now().toString(),
-        name: name,
-        email: email,
-        // Only jersey number and position are player-specific
-        jerseyNumber: role === 'player' && jerseyNumber && jerseyNumber !== '--' ? Number(jerseyNumber) : undefined,
-        birthDate: birthDate || undefined,
-        age: calculatedAge,
-        weightKg: Number(weightKg) || 0,
-        heightCm: Number(heightCm) || 0,
-        position: role === 'player' ? position : 'RB', // Default for coaches (not used)
-        role,
-        sex,
-      };
-
-      saveUser(user);
-    } else {
-      // LOGIN: Find existing user by email
-      const usersKey = 'rhinos_users';
-      const stored = localStorage.getItem(usersKey);
-
-      if (!stored) {
-        alert('No users found. Please sign up first.');
-        return;
-      }
-
-      const allUsers: MockUser[] = JSON.parse(stored);
-      const existingUser = allUsers.find(u => u.email === email);
-
-      if (!existingUser) {
-        alert('User not found. Please check your email or sign up.');
-        return;
-      }
-
-      // Set as current user
-      localStorage.setItem('currentUser', JSON.stringify(existingUser));
+      // Navigate to training page
+      navigate('/training');
+      // Force reload to update app state
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.message || (isSignup ? 'Failed to create account' : 'Failed to login'));
+    } finally {
+      setLoading(false);
     }
-
-    // Navigate to training page
-    navigate('/training');
-    // Force reload to update app state
-    window.location.reload();
   };
 
   const isValid = isSignup
     ? role === 'coach'
-      ? name && email && password && confirmPassword && password === confirmPassword && coachCode === COACH_CODE && birthDate && weightKg && heightCm
-      : name && email && password && confirmPassword && password === confirmPassword && birthDate && weightKg && heightCm
+      ? name && email && password.length >= 6 && confirmPassword && password === confirmPassword && coachCode && birthDate && weightKg && heightCm
+      : name && email && password.length >= 6 && confirmPassword && password === confirmPassword && birthDate && weightKg && heightCm
     : email && password;
 
   return (
@@ -149,6 +140,12 @@ export const Auth: React.FC = () => {
           <Typography variant="h6" align="center" sx={{ mb: 3 }}>
             {isSignup ? t('auth.createAccount') : t('auth.welcomeBack')}
           </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {isSignup && (
@@ -277,6 +274,15 @@ export const Auth: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               fullWidth
+              inputProps={{ minLength: 6 }}
+              error={isSignup && password.length > 0 && password.length < 6}
+              helperText={
+                isSignup
+                  ? password.length > 0 && password.length < 6
+                    ? "Password must be at least 6 characters"
+                    : "Minimum 6 characters"
+                  : ""
+              }
             />
 
             {isSignup && (
@@ -296,11 +302,25 @@ export const Auth: React.FC = () => {
               type="submit"
               variant="contained"
               size="large"
-              disabled={!isValid}
+              disabled={!isValid || loading}
               fullWidth
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : undefined}
             >
-              {isSignup ? t('auth.signup') : t('auth.login')}
+              {loading ? (isSignup ? 'Creating account...' : 'Logging in...') : (isSignup ? t('auth.signup') : t('auth.login'))}
             </Button>
+
+            {!isSignup && (
+              <Box sx={{ textAlign: 'center' }}>
+                <Link
+                  component="button"
+                  type="button"
+                  onClick={() => setForgotPasswordOpen(true)}
+                  sx={{ cursor: 'pointer', fontSize: '0.875rem' }}
+                >
+                  {t('auth.forgotPassword')}
+                </Link>
+              </Box>
+            )}
 
             <Box sx={{ textAlign: 'center', mt: 1 }}>
               <Typography variant="body2" color="text.secondary">
@@ -319,6 +339,11 @@ export const Auth: React.FC = () => {
           </Box>
         </CardContent>
       </Card>
+
+      <ForgotPasswordDialog
+        open={forgotPasswordOpen}
+        onClose={() => setForgotPasswordOpen(false)}
+      />
     </Box>
   );
 };

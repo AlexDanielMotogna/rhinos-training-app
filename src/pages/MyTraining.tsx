@@ -33,7 +33,14 @@ import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
 import { getUser } from '../services/mock';
-import { getActiveAssignmentsForPlayer, getTrainingTypes } from '../services/trainingBuilder';
+import { assignmentService, trainingTypeService, workoutService, workoutReportService } from '../services/api';
+import {
+  getCachedTrainingTypes,
+  getPlayerAssignments,
+  db,
+  addToOutbox,
+} from '../services/db';
+import { isOnline } from '../services/sync';
 import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, TemplateBlock } from '../types/template';
@@ -81,11 +88,89 @@ export const MyTraining: React.FC = () => {
   } | null>(null);
 
   const user = getUser();
-  const trainingTypes = getTrainingTypes();
-  const activeAssignments = user ? getActiveAssignmentsForPlayer(user.id) : [];
+  const [trainingTypes, setTrainingTypes] = useState<any[]>([]);
+  const [activeAssignments, setActiveAssignments] = useState<any[]>([]);
   const [workoutHistory, setWorkoutHistory] = useState(() =>
     user ? getWorkoutLogsByUser(user.id) : []
   );
+
+  // Load training types and assignments from backend (with offline support)
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user) return;
+
+      const online = isOnline();
+      console.log(`📡 Loading data - ${online ? 'ONLINE' : 'OFFLINE'} mode`);
+
+      try {
+        let types: any[] = [];
+        let playerAssignments: any[] = [];
+
+        if (online) {
+          // Online: Fetch from API and cache
+          try {
+            types = await trainingTypeService.getAll() as any[];
+
+            // Cache training types in IndexedDB
+            await db.trainingTypes.bulkPut(
+              types.map((tt: any) => ({
+                ...tt,
+                syncedAt: new Date().toISOString(),
+              }))
+            );
+
+            const allAssignments = await assignmentService.getAll() as any[];
+            const today = new Date().toISOString().split('T')[0];
+
+            // Filter active assignments for this player
+            playerAssignments = allAssignments.filter((a: any) =>
+              a.active &&
+              a.playerIds?.includes(user.id) &&
+              a.startDate <= today &&
+              (!a.endDate || a.endDate >= today)
+            );
+
+            // Cache assignments in IndexedDB
+            await db.trainingAssignments.bulkPut(
+              allAssignments.map((a: any) => ({
+                ...a,
+                syncedAt: new Date().toISOString(),
+              }))
+            );
+
+            console.log('✅ Loaded from API and cached');
+          } catch (apiError) {
+            console.warn('⚠️ API failed, falling back to cache:', apiError);
+            // If API fails but we're online, fall back to cache
+            types = await getCachedTrainingTypes();
+            playerAssignments = await getPlayerAssignments(user.id);
+            console.log('📦 Loaded from cache (API error)');
+          }
+        } else {
+          // Offline: Load from cache
+          types = await getCachedTrainingTypes();
+          playerAssignments = await getPlayerAssignments(user.id);
+          console.log('📦 Loaded from offline cache');
+        }
+
+        // Filter only active assignments with dates
+        const today = new Date().toISOString().split('T')[0];
+        const activeFiltered = playerAssignments.filter((a: any) =>
+          a.active &&
+          a.startDate <= today &&
+          (!a.endDate || a.endDate >= today)
+        );
+
+        setTrainingTypes(types);
+        setActiveAssignments(activeFiltered);
+        console.log('🎯 Loaded assignments:', activeFiltered);
+      } catch (error) {
+        console.error('❌ Error loading data:', error);
+      }
+    };
+
+    loadData();
+  }, [user?.id]);
 
   // Load user plans
   useEffect(() => {
@@ -376,9 +461,45 @@ export const MyTraining: React.FC = () => {
         completionPercentage,
       };
 
+      // Save to localStorage first (offline support)
       const allLogs = getWorkoutLogs();
       allLogs.push(workoutLog);
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
+
+      // Save to IndexedDB for offline persistence
+      await db.workouts.put({
+        ...workoutLog,
+        planId: workoutLog.planTemplateId,
+        trainingType: 'strength',
+        completedAt: workoutLog.createdAt,
+        exercises: workoutLog.entries,
+        syncedAt: new Date().toISOString(),
+      });
+
+      // Try to save to backend (will work if online)
+      const online = isOnline();
+      if (online) {
+        try {
+          await workoutService.create({
+            date: today,
+            entries: workoutLog.entries,
+            notes: workoutLog.notes,
+            source: 'player',
+            planTemplateId: workoutLog.planTemplateId,
+            planName: workoutLog.planName,
+            duration: workoutLog.duration,
+            planMetadata: workoutLog.planMetadata,
+            completionPercentage: workoutLog.completionPercentage,
+          });
+          console.log('✅ Player workout saved to backend');
+        } catch (error) {
+          console.warn('⚠️ Failed to save player workout to backend, will sync later:', error);
+          await addToOutbox('workout', 'create', workoutLog);
+        }
+      } else {
+        await addToOutbox('workout', 'create', workoutLog);
+        console.log('📦 Player workout queued for sync when online');
+      }
 
       markPlanAsUsed(startingPlan.id);
       refreshUserPlans();
@@ -391,7 +512,36 @@ export const MyTraining: React.FC = () => {
         startingPlan.name,
         notes
       );
+
+      // Save report to localStorage
       saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
+
+      // Try to save report to backend
+      if (online) {
+        try {
+          const reportData = {
+            workoutTitle: startingPlan.name,
+            duration,
+            source: 'player' as const,
+            intensityScore: report.intensityScore || 0,
+            workCapacityScore: report.workCapacityScore || 0,
+            athleticQualityScore: report.athleticQualityScore || 0,
+            positionRelevanceScore: report.positionRelevanceScore || 0,
+            recoveryDemand: report.recoveryDemand || 'medium',
+            sessionValid: report.sessionValid !== false,
+            keyInsights: report.keyInsights || [],
+            recommendations: report.recommendations || [],
+            personalObservations: notes || '',
+            aiGenerated: (report as any).aiGenerated || false,
+            workoutEntries: entries,
+          };
+          console.log('📊 Sending player report to backend:', reportData);
+          await workoutReportService.create(reportData);
+          console.log('✅ Player report saved to backend');
+        } catch (error) {
+          console.error('❌ Failed to save player report to backend:', error);
+        }
+      }
 
       // Add points to player's weekly total
       const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
@@ -482,9 +632,46 @@ export const MyTraining: React.FC = () => {
         completionPercentage,
       };
 
+      // Save to localStorage first (offline support)
       const allLogs = getWorkoutLogs();
       allLogs.push(workoutLog);
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
+
+      // Save to IndexedDB for offline persistence
+      await db.workouts.put({
+        ...workoutLog,
+        planId: workoutLog.planName,
+        trainingType: activeTab === 'strength_conditioning' ? 'strength' : 'sprints',
+        completedAt: workoutLog.createdAt,
+        exercises: workoutLog.entries,
+        syncedAt: new Date().toISOString(),
+      });
+
+      // Try to save to backend (will work if online)
+      const online = isOnline();
+      if (online) {
+        try {
+          await workoutService.create({
+            date: today,
+            entries: workoutLog.entries,
+            notes: workoutLog.notes,
+            source: 'coach',
+            planName: workoutLog.planName,
+            duration: workoutLog.duration,
+            planMetadata: workoutLog.planMetadata,
+            completionPercentage: workoutLog.completionPercentage,
+          });
+          console.log('✅ Workout saved to backend');
+        } catch (error) {
+          console.warn('⚠️ Failed to save workout to backend, will sync later:', error);
+          // Add to outbox for later sync
+          await addToOutbox('workout', 'create', workoutLog);
+        }
+      } else {
+        // Offline: add to outbox for later sync
+        await addToOutbox('workout', 'create', workoutLog);
+        console.log('📦 Workout queued for sync when online');
+      }
 
       refreshWorkoutHistory();
 
@@ -495,7 +682,36 @@ export const MyTraining: React.FC = () => {
         selectedBlock.title,
         notes
       );
+
+      // Save report to localStorage
       saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
+
+      // Try to save report to backend
+      if (online) {
+        try {
+          const reportData = {
+            workoutTitle: selectedBlock.title,
+            duration,
+            source: 'coach' as const,
+            intensityScore: report.intensityScore || 0,
+            workCapacityScore: report.workCapacityScore || 0,
+            athleticQualityScore: report.athleticQualityScore || 0,
+            positionRelevanceScore: report.positionRelevanceScore || 0,
+            recoveryDemand: report.recoveryDemand || 'medium',
+            sessionValid: report.sessionValid !== false,
+            keyInsights: report.keyInsights || [],
+            recommendations: report.recommendations || [],
+            personalObservations: notes || '',
+            aiGenerated: (report as any).aiGenerated || false,
+            workoutEntries: entries,
+          };
+          console.log('📊 Sending report to backend:', reportData);
+          await workoutReportService.create(reportData);
+          console.log('✅ Report saved to backend');
+        } catch (error) {
+          console.error('❌ Failed to save report to backend:', error);
+        }
+      }
 
       // Add points to player's weekly total
       const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
@@ -745,7 +961,17 @@ export const MyTraining: React.FC = () => {
 
                   {/* Coach Plan Exercises */}
                   {(() => {
-                    const assignment = activeAssignments.find(a => a.template && a.template.trainingTypeId === trainingTypes.find(tt => tt.key === activeTab)?.id);
+                    const activeTrainingType = trainingTypes.find(tt => tt.key === activeTab);
+                    console.log('🔍 Looking for assignment:', {
+                      activeTab,
+                      activeTrainingTypeId: activeTrainingType?.id,
+                      availableAssignments: activeAssignments.map(a => ({
+                        id: a.id,
+                        trainingTypeId: a.template?.trainingTypeId
+                      }))
+                    });
+
+                    const assignment = activeAssignments.find(a => a.template && a.template.trainingTypeId === activeTrainingType?.id);
 
                     if (!assignment || !assignment.template) {
                       return (
@@ -852,7 +1078,7 @@ export const MyTraining: React.FC = () => {
                                         const templateBlock = {
                                           order: block.order,
                                           title: block.title,
-                                          items: (block as any).exercises || [],
+                                          items: (block as any).items || (block as any).exercises || [],
                                           globalSets: (block as any).globalSets,
                                           exerciseConfigs: (block as any).exerciseConfigs,
                                         };
@@ -877,7 +1103,7 @@ export const MyTraining: React.FC = () => {
                                           const allExerciseConfigs: any[] = [];
 
                                           session.blocks.forEach(block => {
-                                            const blockExercises = (block as any).exercises || [];
+                                            const blockExercises = (block as any).items || (block as any).exercises || [];
                                             allExercises.push(...blockExercises);
 
                                             // Preserve exercise configs from each block
@@ -916,7 +1142,7 @@ export const MyTraining: React.FC = () => {
                                 const templateBlock = {
                                   order: block.order,
                                   title: block.title,
-                                  items: (block as any).exercises || [],
+                                  items: (block as any).items || (block as any).exercises || [],
                                   globalSets: (block as any).globalSets,
                                   exerciseConfigs: (block as any).exerciseConfigs,
                                 };

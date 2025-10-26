@@ -21,14 +21,15 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
-import { getPointsConfig, updatePointsConfig, resetPointsConfig } from '../../services/pointsSystem';
+import { pointsConfigService } from '../../services/api';
 import { getUser } from '../../services/mock';
 import type { PointsConfig, PointCategory, PointCategoryType } from '../../types/pointsSystem';
 import { pointsCategoryColors } from '../../theme';
 
 export const PointsSystemManager: React.FC = () => {
   const user = getUser();
-  const [config, setConfig] = useState<PointsConfig>(getPointsConfig());
+  const [config, setConfig] = useState<PointsConfig | null>(null);
+  const [loading, setLoading] = useState(true);
   const [editingCategory, setEditingCategory] = useState<PointCategory | null>(null);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -49,23 +50,54 @@ export const PointsSystemManager: React.FC = () => {
   });
 
   useEffect(() => {
-    setConfig(getPointsConfig());
+    loadConfig();
   }, []);
 
-  const handleSaveConfig = () => {
-    if (user) {
-      updatePointsConfig(config, user.name);
-      setSuccessMessage('Points configuration saved successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+  const loadConfig = async () => {
+    try {
+      setLoading(true);
+      const data = await pointsConfigService.get() as PointsConfig;
+      setConfig(data);
+    } catch (error) {
+      console.error('Error loading points config:', error);
+      alert('Failed to load points configuration. Please refresh the page.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleResetConfig = () => {
-    if (window.confirm('Are you sure you want to reset to default configuration? This cannot be undone.')) {
-      resetPointsConfig();
-      setConfig(getPointsConfig());
+  const handleSaveConfig = async () => {
+    if (!user || !config) return;
+
+    try {
+      const data = {
+        ...config,
+        updatedBy: user.name,
+      };
+
+      const updated = await pointsConfigService.update(data) as PointsConfig;
+      setConfig(updated);
+      setSuccessMessage('Points configuration saved successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error saving points config:', error);
+      alert('Failed to save points configuration. Please try again.');
+    }
+  };
+
+  const handleResetConfig = async () => {
+    if (!window.confirm('Are you sure you want to reset to default configuration? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await pointsConfigService.reset();
+      await loadConfig();
       setSuccessMessage('Configuration reset to defaults!');
       setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error resetting points config:', error);
+      alert('Failed to reset points configuration. Please try again.');
     }
   };
 
@@ -106,6 +138,7 @@ export const PointsSystemManager: React.FC = () => {
   };
 
   const handleDeleteCategory = (categoryId: string) => {
+    if (!config) return;
     if (window.confirm('Are you sure you want to delete this category?')) {
       setConfig({
         ...config,
@@ -115,6 +148,8 @@ export const PointsSystemManager: React.FC = () => {
   };
 
   const handleSaveCategory = () => {
+    if (!config) return;
+
     const newCategory: PointCategory = {
       id: editingCategory?.id || crypto.randomUUID(),
       type: categoryForm.type,
@@ -150,6 +185,14 @@ export const PointsSystemManager: React.FC = () => {
   const getCategoryTypeColor = (type: PointCategoryType) => {
     return pointsCategoryColors[type] || pointsCategoryColors.light;
   };
+
+  if (loading || !config) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <Typography>Loading points configuration...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box>
