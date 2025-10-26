@@ -60,6 +60,8 @@ export const TrainingSessions: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [teamSessions, setTeamSessions] = useState<TrainingSession[]>([]);
   const [privateSessions, setPrivateSessions] = useState<TrainingSession[]>([]);
+  const [sessionPolls, setSessionPolls] = useState<Map<string, any>>(new Map());
+  const [pollResults, setPollResults] = useState<Map<string, any>>(new Map());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [formData, setFormData] = useState({
@@ -74,7 +76,27 @@ export const TrainingSessions: React.FC = () => {
 
   useEffect(() => {
     loadSessions();
+    loadPolls();
   }, []);
+
+  const loadPolls = async () => {
+    const polls = await getAllPolls();
+    const pollMap = new Map();
+    const resultsMap = new Map();
+
+    for (const poll of polls) {
+      if (poll.isActive) {
+        pollMap.set(poll.sessionId, poll);
+        const results = await getPollResults(poll.id);
+        if (results) {
+          resultsMap.set(poll.id, results);
+        }
+      }
+    }
+
+    setSessionPolls(pollMap);
+    setPollResults(resultsMap);
+  };
 
   const loadSessions = async () => {
     const [team, private_] = await Promise.all([
@@ -141,14 +163,11 @@ export const TrainingSessions: React.FC = () => {
     await loadSessions();
   };
 
-  const handleCreatePoll = (session: TrainingSession) => {
+  const handleCreatePoll = async (session: TrainingSession) => {
     if (!currentUser) return;
 
     // Check if poll already exists for this session
-    const existingPolls = getAllPolls();
-    const existingPoll = existingPolls.find(p => p.sessionId === session.id && p.isActive);
-
-    if (existingPoll) {
+    if (sessionPolls.has(session.id)) {
       alert(t('attendancePoll.alreadyExists'));
       return;
     }
@@ -157,21 +176,23 @@ export const TrainingSessions: React.FC = () => {
     // In production, you might want to set it to 1 hour before session
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    createPoll(
+    await createPoll(
       session.id,
       session.title,
       session.date,
-      currentUser.id,
+      currentUser.name,
       expiresAt
     );
+
+    // Reload polls to update UI
+    await loadPolls();
 
     setSuccessMessage(t('attendancePoll.created'));
     setTimeout(() => setSuccessMessage(''), 4000);
   };
 
   const getSessionPoll = (sessionId: string) => {
-    const polls = getAllPolls();
-    return polls.find(p => p.sessionId === sessionId && p.isActive);
+    return sessionPolls.get(sessionId);
   };
 
   const getUserRSVP = (session: TrainingSession): RSVPStatus => {
@@ -377,7 +398,7 @@ export const TrainingSessions: React.FC = () => {
                     const poll = getSessionPoll(session.id);
                     if (!poll) return null;
 
-                    const results = getPollResults(poll.id);
+                    const results = pollResults.get(poll.id);
                     if (!results || results.totalVotes === 0) return null;
 
                     // Calculate position counts for training voters
