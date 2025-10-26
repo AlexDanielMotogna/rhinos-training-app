@@ -17,7 +17,6 @@ import {
   Tab,
   IconButton,
   Avatar,
-  CircularProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
@@ -43,7 +42,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory | 'All'>('All');
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(false);
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
 
   const categories: Array<ExerciseCategory | 'All'> = [
@@ -63,7 +61,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
       if (!open) return;
 
-      setLoading(true);
       const online = isOnline();
       console.log('🌐 Online status:', online);
 
@@ -108,8 +105,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           console.warn('⚠️ Using fallback catalog due to error (${globalCatalog.length} exercises)');
           setExercises(globalCatalog);
         }
-      } finally {
-        setLoading(false);
       }
     };
 
