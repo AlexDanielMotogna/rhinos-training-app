@@ -198,7 +198,7 @@ router.post('/:id/vote', async (req, res) => {
         where: { id: existingVote.id },
         data: {
           option: data.option,
-          // userPosition: fullUser?.position || undefined, // TODO: Enable after fixing Prisma generation
+          userPosition: fullUser?.position || undefined,
           timestamp: new Date().toISOString(),
         },
       });
@@ -209,7 +209,7 @@ router.post('/:id/vote', async (req, res) => {
           pollId: id,
           userId: userId,
           userName: fullUser?.name || user.name,
-          // userPosition: fullUser?.position || undefined, // TODO: Enable after fixing Prisma generation
+          userPosition: fullUser?.position || undefined,
           option: data.option,
           timestamp: new Date().toISOString(),
         },
