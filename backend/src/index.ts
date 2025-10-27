@@ -14,6 +14,7 @@ import blockInfoRoutes from './routes/blockInfo.js';
 import pointsConfigRoutes from './routes/pointsConfig.js';
 import attendancePollRoutes from './routes/attendancePolls.js';
 import notificationRoutes from './routes/notifications.js';
+import adminRoutes from './routes/admin.js';
 
 // Load environment variables
 dotenv.config();
@@ -57,6 +58,7 @@ app.use('/api/block-info', blockInfoRoutes);
 app.use('/api/points-config', pointsConfigRoutes);
 app.use('/api/attendance-polls', attendancePollRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {

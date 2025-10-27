@@ -198,18 +198,18 @@ router.post('/:id/vote', async (req, res) => {
         where: { id: existingVote.id },
         data: {
           option: data.option,
-          // userPosition: fullUser?.position || undefined, // TODO: Enable after DB migration
+          // userPosition: fullUser?.position || undefined, // TODO: Enable after fixing Prisma generation
           timestamp: new Date().toISOString(),
         },
       });
     } else {
-      // Create new vote
+      // Create new vote  
       vote = await prisma.attendancePollVote.create({
         data: {
           pollId: id,
           userId: userId,
           userName: fullUser?.name || user.name,
-          // userPosition: fullUser?.position || undefined, // TODO: Enable after DB migration
+          // userPosition: fullUser?.position || undefined, // TODO: Enable after fixing Prisma generation
           option: data.option,
           timestamp: new Date().toISOString(),
         },

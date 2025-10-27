@@ -122,6 +122,10 @@ export const Admin: React.FC = () => {
   const [apiKeyValidationResult, setApiKeyValidationResult] = useState<{ valid: boolean; error?: string } | null>(null);
   const [aiCoachSaved, setAiCoachSaved] = useState(false);
 
+  // User Population State
+  const [isPopulatingUsers, setIsPopulatingUsers] = useState(false);
+  const [populationResult, setPopulationResult] = useState<string | null>(null);
+
   // Helper function to calculate end time
   const calculateEndTime = (startTime: string, durationMinutes: number): string => {
     const [hours, minutes] = startTime.split(':').map(Number);
@@ -516,6 +520,43 @@ export const Admin: React.FC = () => {
     setTimeout(() => {
       setAiCoachSaved(false);
     }, 3000);
+  };
+
+  // User Population Handlers
+  const handlePopulateUsers = async () => {
+    if (!window.confirm('This will populate the database with mock users. Continue?')) {
+      return;
+    }
+
+    setIsPopulatingUsers(true);
+    setPopulationResult(null);
+
+    try {
+      const response = await fetch('/api/admin/populate-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setPopulationResult(`Success! Created/updated ${result.results.length} users. Total: ${result.summary.totalUsers} users (${result.summary.players} players, ${result.summary.coaches} coaches).`);
+      } else {
+        setPopulationResult(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Population error:', error);
+      setPopulationResult(`Error: Failed to populate users`);
+    } finally {
+      setIsPopulatingUsers(false);
+      
+      // Clear result after 10 seconds
+      setTimeout(() => {
+        setPopulationResult(null);
+      }, 10000);
+    }
   };
 
   // Policies Management Handlers
@@ -1667,16 +1708,33 @@ export const Admin: React.FC = () => {
 
                 {/* Save Button */}
                 <Grid item xs={12}>
-                  <Button
-                    variant="contained"
-                    onClick={handleSaveTeamSettings}
-                    disabled={
-                      seasonPhase === teamSettings.seasonPhase &&
-                      teamLevel === teamSettings.teamLevel
-                    }
-                  >
-                    {t('teamSettings.saveSettings')}
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleSaveTeamSettings}
+                      disabled={
+                        seasonPhase === teamSettings.seasonPhase &&
+                        teamLevel === teamSettings.teamLevel
+                      }
+                    >
+                      {t('teamSettings.saveSettings')}
+                    </Button>
+                    
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      onClick={handlePopulateUsers}
+                      disabled={isPopulatingUsers}
+                    >
+                      {isPopulatingUsers ? 'Populating Users...' : 'Populate Database Users'}
+                    </Button>
+                  </Box>
+                  
+                  {populationResult && (
+                    <Alert severity={populationResult.includes('Error') ? 'error' : 'success'} sx={{ mt: 2 }}>
+                      {populationResult}
+                    </Alert>
+                  )}
                 </Grid>
 
                 {/* Impact Info */}
