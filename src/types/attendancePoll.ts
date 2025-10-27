@@ -3,6 +3,7 @@ export interface AttendancePollVote {
   userName: string;
   option: 'training' | 'present' | 'absent'; // trainiere mit, bin dabei, abwesend
   timestamp: string;
+  userPosition?: string; // Position of the user who voted
 }
 
 export interface AttendancePoll {

@@ -105,12 +105,13 @@ model AttendancePoll {
 }
 
 model AttendancePollVote {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  pollId    String   @db.ObjectId
-  userId    String   @db.ObjectId
-  userName  String
-  option    String   // 'training' | 'present' | 'absent'
-  timestamp String
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  pollId       String   @db.ObjectId
+  userId       String   @db.ObjectId
+  userName     String
+  userPosition String?  // User's position (QB, RB, WR, etc.)
+  option       String   // 'training' | 'present' | 'absent'
+  timestamp    String
 
   poll      AttendancePoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)

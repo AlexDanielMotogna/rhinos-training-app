@@ -184,6 +184,12 @@ router.post('/:id/vote', async (req, res) => {
         },
       },
     });
+    
+    // Get fresh user data to include position
+    const fullUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, position: true }
+    });
 
     let vote;
     if (existingVote) {
@@ -192,6 +198,7 @@ router.post('/:id/vote', async (req, res) => {
         where: { id: existingVote.id },
         data: {
           option: data.option,
+          // userPosition: fullUser?.position || undefined, // TODO: Enable after DB migration
           timestamp: new Date().toISOString(),
         },
       });
@@ -201,7 +208,8 @@ router.post('/:id/vote', async (req, res) => {
         data: {
           pollId: id,
           userId: userId,
-          userName: user.name,
+          userName: fullUser?.name || user.name,
+          // userPosition: fullUser?.position || undefined, // TODO: Enable after DB migration
           option: data.option,
           timestamp: new Date().toISOString(),
         },

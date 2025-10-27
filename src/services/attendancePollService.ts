@@ -256,11 +256,23 @@ export const submitVote = async (
   // Check if user already voted
   const existingVoteIndex = poll.votes.findIndex(v => v.userId === userId);
 
+  // Get user position from current logged in user
+  // Note: userId should always be the current authenticated user's ID
+  const { getUser } = await import('./mock');
+  const currentUser = getUser();
+  
+  // Validate that the userId matches the current user (security check)
+  if (currentUser?.id !== userId) {
+    console.warn('[POLLS] UserId mismatch - security issue detected');
+    return false;
+  }
+  
   const newVote: AttendancePollVote = {
     userId,
     userName,
     option,
     timestamp: new Date().toISOString(),
+    userPosition: currentUser?.position || undefined,
   };
 
   if (existingVoteIndex !== -1) {

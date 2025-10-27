@@ -49,6 +49,7 @@ import {
 import { createPoll, getAllPolls, getPollResults } from '../services/attendancePollService';
 import type { TrainingSession, SessionType, RSVPStatus } from '../types/trainingSession';
 import type { Position } from '../types/exercise';
+import type { AttendancePollVote } from '../types/attendancePoll';
 
 // Position groupings for unit counts
 const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OL'];
@@ -411,22 +412,37 @@ export const TrainingSessions: React.FC = () => {
                     let defenseCount = 0;
                     let specialTeamsCount = 0;
 
-                    results.voters.training.forEach(vote => {
-                      const user = allUsers.find(u => u.id === vote.userId);
-                      if (user?.position) {
+                    console.log('[TRAINING DEBUG] Processing training voters:', results.voters.training);
+
+                    results.voters.training.forEach((vote: any) => {
+                      // Try to get position from vote first, then fallback to user lookup
+                      let userPosition = vote.userPosition;
+                      if (!userPosition) {
+                        // Fallback to looking up in all users (for backwards compatibility)
+                        const user = allUsers.find(u => u.id === vote.userId);
+                        userPosition = user?.position;
+                      }
+
+                      console.log(`[TRAINING DEBUG] User ${vote.userName} position: ${userPosition} (from vote: ${vote.userPosition})`);
+
+                      if (userPosition) {
                         // Count by unit and organize by position
-                        if (OFFENSE_POSITIONS.includes(user.position)) {
+                        if (OFFENSE_POSITIONS.includes(userPosition as Position)) {
                           offenseCount++;
-                          offensePositions[user.position] = (offensePositions[user.position] || 0) + 1;
-                        } else if (DEFENSE_POSITIONS.includes(user.position)) {
+                          offensePositions[userPosition] = (offensePositions[userPosition] || 0) + 1;
+                        } else if (DEFENSE_POSITIONS.includes(userPosition as Position)) {
                           defenseCount++;
-                          defensePositions[user.position] = (defensePositions[user.position] || 0) + 1;
-                        } else if (SPECIAL_TEAMS_POSITIONS.includes(user.position)) {
+                          defensePositions[userPosition] = (defensePositions[userPosition] || 0) + 1;
+                        } else if (SPECIAL_TEAMS_POSITIONS.includes(userPosition as Position)) {
                           specialTeamsCount++;
-                          specialTeamsPositions[user.position] = (specialTeamsPositions[user.position] || 0) + 1;
+                          specialTeamsPositions[userPosition] = (specialTeamsPositions[userPosition] || 0) + 1;
                         }
                       }
                     });
+
+                    console.log('[TRAINING DEBUG] Offense positions:', offensePositions);
+                    console.log('[TRAINING DEBUG] Defense positions:', defensePositions);
+                    console.log('[TRAINING DEBUG] Special Teams positions:', specialTeamsPositions);
 
                     return (
                       <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(0,0,0,0.12)' }}>
@@ -567,7 +583,7 @@ export const TrainingSessions: React.FC = () => {
                               </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 0.5 }}>
-                              {results.voters.training.map((vote) => (
+                              {results.voters.training.map((vote: any) => (
                                 <Chip
                                   key={vote.userId}
                                   label={vote.userName}
@@ -594,7 +610,7 @@ export const TrainingSessions: React.FC = () => {
                               </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 0.5 }}>
-                              {results.voters.present.map((vote) => (
+                              {results.voters.present.map((vote: any) => (
                                 <Chip
                                   key={vote.userId}
                                   label={vote.userName}
@@ -621,7 +637,7 @@ export const TrainingSessions: React.FC = () => {
                               </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 0.5 }}>
-                              {results.voters.absent.map((vote) => (
+                              {results.voters.absent.map((vote: any) => (
                                 <Chip
                                   key={vote.userId}
                                   label={vote.userName}
