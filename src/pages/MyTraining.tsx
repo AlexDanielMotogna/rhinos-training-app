@@ -297,7 +297,7 @@ export const MyTraining: React.FC = () => {
         duration,
         t('training.freeSessions')
       );
-      saveWorkoutReport(user.id, t('training.freeSessions'), report, 'player', payload.entries);
+      await saveWorkoutReport(user.id, t('training.freeSessions'), report, 'player', payload.entries);
 
       // Add points to player's weekly total
       const totalSets = payload.entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
@@ -513,8 +513,8 @@ export const MyTraining: React.FC = () => {
         notes
       );
 
-      // Save report to localStorage
-      saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
+      // Save report to localStorage and backend
+      await saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
 
       // Try to save report to backend
       if (online) {
@@ -683,8 +683,8 @@ export const MyTraining: React.FC = () => {
         notes
       );
 
-      // Save report to localStorage
-      saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
+      // Save report to localStorage and backend
+      await saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
 
       // Try to save report to backend
       if (online) {

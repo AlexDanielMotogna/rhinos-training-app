@@ -1,5 +1,7 @@
 import type { WorkoutReport } from './workoutAnalysis';
 import type { WorkoutSource, WorkoutEntry } from '../types/workout';
+import { workoutReportService } from './api';
+import { isOnline } from './sync';
 
 const REPORTS_KEY = 'rhinos_workout_reports';
 
@@ -58,13 +60,13 @@ export function getReportsByDateRange(
 /**
  * Save a workout report
  */
-export function saveWorkoutReport(
+export async function saveWorkoutReport(
   userId: string,
   workoutTitle: string,
   report: WorkoutReport,
   source: WorkoutSource,
   entries: WorkoutEntry[]
-): SavedWorkoutReport {
+): Promise<SavedWorkoutReport> {
   const allReports = getAllReports();
 
   const savedReport: SavedWorkoutReport = {
@@ -78,8 +80,48 @@ export function saveWorkoutReport(
     entries,
   };
 
+  // Save to localStorage first (immediate feedback)
   allReports.push(savedReport);
   localStorage.setItem(REPORTS_KEY, JSON.stringify(allReports));
+
+  // Try to save to backend if online
+  if (isOnline()) {
+    try {
+      console.log('🔄 Saving workout report to backend...');
+      const backendReport = await workoutReportService.create({
+        userId: savedReport.userId,
+        userName: savedReport.userId, // You might want to get actual user name
+        workoutTitle: savedReport.workoutTitle,
+        date: savedReport.dateISO,
+        source: savedReport.source,
+        duration: savedReport.duration,
+        intensityScore: savedReport.intensityScore,
+        workCapacityScore: savedReport.workCapacityScore,
+        athleticQualityScore: savedReport.athleticQualityScore,
+        positionRelevanceScore: savedReport.positionRelevanceScore,
+        workoutEntries: savedReport.entries,
+        sessionValid: savedReport.sessionValid || true,
+        createdAt: savedReport.createdAt,
+      });
+
+      console.log('✅ Workout report saved to backend:', backendReport);
+
+      // Update local report with backend ID if provided
+      if (backendReport && typeof backendReport === 'object' && 'id' in backendReport) {
+        savedReport.id = (backendReport as any).id;
+        // Update localStorage with backend ID
+        const updatedReports = allReports.map(r => 
+          r.createdAt === savedReport.createdAt ? savedReport : r
+        );
+        localStorage.setItem(REPORTS_KEY, JSON.stringify(updatedReports));
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to save workout report to backend:', error);
+      // Report is still saved locally, will sync later if needed
+    }
+  } else {
+    console.log('📦 Workout report saved locally, will sync when online');
+  }
 
   return savedReport;
 }
