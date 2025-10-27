@@ -115,7 +115,7 @@ export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary, cha
             </Typography>
             <Table size="small">
               <TableBody>
-                {summary.byTest.filter(result => !result.skipped).map(result => (
+                {summary.byTest && Array.isArray(summary.byTest) ? summary.byTest.filter(result => !result.skipped).map(result => (
                   <TableRow key={result.key}>
                     <TableCell><strong>{t(`tests.power.${result.key}`)}</strong></TableCell>
                     <TableCell align="right">
@@ -128,7 +128,7 @@ export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary, cha
                       </Typography>
                     </TableCell>
                   </TableRow>
-                ))}
+                )) : null}
               </TableBody>
             </Table>
 

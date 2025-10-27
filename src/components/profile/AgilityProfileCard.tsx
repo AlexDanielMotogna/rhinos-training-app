@@ -115,7 +115,7 @@ export const AgilityProfileCard: React.FC<AgilityProfileCardProps> = ({ summary,
             </Typography>
             <Table size="small">
               <TableBody>
-                {summary.byTest.filter(result => !result.skipped).map(result => (
+                {summary.byTest && Array.isArray(summary.byTest) ? summary.byTest.filter(result => !result.skipped).map(result => (
                   <TableRow key={result.key}>
                     <TableCell><strong>{t(`tests.agility.${result.key}`)}</strong></TableCell>
                     <TableCell align="right">
@@ -124,7 +124,7 @@ export const AgilityProfileCard: React.FC<AgilityProfileCardProps> = ({ summary,
                       </Typography>
                     </TableCell>
                   </TableRow>
-                ))}
+                )) : null}
               </TableBody>
             </Table>
 
