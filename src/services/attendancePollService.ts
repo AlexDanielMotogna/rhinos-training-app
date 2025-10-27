@@ -214,20 +214,42 @@ export const createPoll = async (
  */
 export const hasUserVoted = async (pollId: string, userId: string): Promise<boolean> => {
   const online = isOnline();
-  
-  try {
-    if (online) {
-      // Try to get fresh data from backend first
+
+  if (online) {
+    // When online, we MUST get fresh data from backend to avoid stale cache
+    try {
+      console.log('[POLLS] Checking vote status from backend...');
       const poll = await apiService.getById(pollId) as AttendancePoll;
-      if (poll && poll.votes) {
-        return poll.votes.some(v => v.userId === userId);
+
+      if (poll) {
+        // Update local cache with fresh backend data
+        await db.attendancePolls.put({
+          ...poll,
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Also update localStorage cache
+        const polls = await getAllPolls();
+        const pollIndex = polls.findIndex(p => p.id === pollId);
+        if (pollIndex !== -1) {
+          polls[pollIndex] = poll;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
+        }
+
+        const hasVoted = poll.votes?.some(v => v.userId === userId) || false;
+        console.log('[POLLS] User has voted (from backend):', hasVoted);
+        return hasVoted;
       }
+    } catch (error) {
+      console.error('[POLLS] CRITICAL: Failed to check vote status from backend while online:', error);
+      // When online but backend fails, we should NOT trust local cache
+      // Return false to be safe and show the poll again
+      return false;
     }
-  } catch (error) {
-    console.warn('[POLLS] Failed to check vote status from backend, using local cache:', error);
   }
-  
-  // Fallback to local cache
+
+  // Only use local cache when truly offline
+  console.log('[POLLS] Offline - checking vote status from local cache');
   const poll = await getPollById(pollId);
   if (!poll) return false;
 
@@ -314,15 +336,21 @@ export const submitVote = async (
 export const getPollResults = async (pollId: string): Promise<AttendancePollResults | null> => {
   const online = isOnline();
 
-  try {
-    if (online) {
-      return await apiService.getResults(pollId) as AttendancePollResults;
+  if (online) {
+    // When online, always fetch fresh results from backend
+    try {
+      console.log('[POLLS] Fetching results from backend...');
+      const results = await apiService.getResults(pollId) as AttendancePollResults;
+      console.log('[POLLS] Results from backend:', results);
+      return results;
+    } catch (error) {
+      console.error('[POLLS] Failed to get results from backend:', error);
+      // Continue to local calculation as fallback
     }
-  } catch (error) {
-    console.warn('[POLLS] Failed to get results from backend, using local cache:', error);
   }
 
-  // Calculate results from local poll data
+  // Calculate results from local poll data (offline or backend failed)
+  console.log('[POLLS] Calculating results from local cache...');
   const poll = await getPollById(pollId);
   if (!poll) return null;
 
@@ -351,6 +379,7 @@ export const getPollResults = async (pollId: string): Promise<AttendancePollResu
     }
   });
 
+  console.log('[POLLS] Results from local cache:', results);
   return results;
 };
 
@@ -428,20 +457,42 @@ export const deletePoll = async (pollId: string): Promise<boolean> => {
  */
 export const getUserVote = async (pollId: string, userId: string): Promise<AttendancePollVote | null> => {
   const online = isOnline();
-  
-  try {
-    if (online) {
-      // Try to get fresh data from backend first
+
+  if (online) {
+    // When online, we MUST get fresh data from backend to avoid stale cache
+    try {
+      console.log('[POLLS] Fetching user vote from backend...');
       const poll = await apiService.getById(pollId) as AttendancePoll;
-      if (poll && poll.votes) {
-        return poll.votes.find(v => v.userId === userId) || null;
+
+      if (poll) {
+        // Update local cache with fresh backend data
+        await db.attendancePolls.put({
+          ...poll,
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Also update localStorage cache
+        const polls = await getAllPolls();
+        const pollIndex = polls.findIndex(p => p.id === pollId);
+        if (pollIndex !== -1) {
+          polls[pollIndex] = poll;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
+        }
+
+        const userVote = poll.votes?.find(v => v.userId === userId) || null;
+        console.log('[POLLS] User vote from backend:', userVote ? userVote.option : 'no vote');
+        return userVote;
       }
+    } catch (error) {
+      console.error('[POLLS] CRITICAL: Failed to get user vote from backend while online:', error);
+      // When online but backend fails, we should NOT trust local cache
+      // Return null to be safe and show the poll again
+      return null;
     }
-  } catch (error) {
-    console.warn('[POLLS] Failed to get user vote from backend, using local cache:', error);
   }
-  
-  // Fallback to local cache
+
+  // Only use local cache when truly offline
+  console.log('[POLLS] Offline - using local cache');
   const poll = await getPollById(pollId);
   if (!poll) return null;
 

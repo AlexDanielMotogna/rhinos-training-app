@@ -46,15 +46,16 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
     const checkVote = async () => {
       console.log('[POLL DEBUG] Checking vote for user:', currentUser.id, 'poll:', poll.id);
       console.log('[POLL DEBUG] Poll data:', poll);
-      
+
+      // Always get fresh data from backend to avoid stale state
       const existingVote = await getUserVote(poll.id, currentUser.id);
       console.log('[POLL DEBUG] Existing vote found:', existingVote);
-      
-      // Load results
+
+      // Load results (this will also fetch from backend if online)
       const pollResults = await getPollResults(poll.id);
       console.log('[POLL DEBUG] Poll results:', pollResults);
       setResults(pollResults);
-      
+
       if (existingVote) {
         console.log('[POLL DEBUG] User has voted:', existingVote.option);
         setSelectedOption(existingVote.option);
@@ -62,9 +63,10 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
       } else {
         console.log('[POLL DEBUG] User has not voted yet');
         setHasVoted(false);
+        setSelectedOption(null);
       }
     };
-    
+
     checkVote();
   }, [poll.id, currentUser]);
 
@@ -76,14 +78,21 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
     console.log('[POLL DEBUG] Vote submission result:', success);
 
     if (success) {
-      setHasVoted(true);
+      // Refresh vote status from backend to ensure consistency
+      const existingVote = await getUserVote(poll.id, currentUser.id);
+      if (existingVote) {
+        setSelectedOption(existingVote.option);
+        setHasVoted(true);
+      }
+
+      // Get fresh results from backend
       const newResults = await getPollResults(poll.id);
       setResults(newResults);
 
-      // Auto-close after voting if canDismiss is true
-      if (canDismiss) {
-        setTimeout(() => onClose(), 1500);
-      }
+      // Auto-close after voting
+      // For mandatory polls (canDismiss=false), close after a short delay
+      // For optional polls (canDismiss=true), close immediately
+      setTimeout(() => onClose(), canDismiss ? 1500 : 2000);
     }
   };
 
