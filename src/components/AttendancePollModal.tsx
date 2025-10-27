@@ -36,28 +36,49 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
   const { t } = useI18n();
   const currentUser = getUser();
   const [selectedOption, setSelectedOption] = useState<'training' | 'present' | 'absent' | null>(null);
-  const [results, setResults] = useState(getPollResults(poll.id));
+  const [results, setResults] = useState<any>(null);
   const [hasVoted, setHasVoted] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
 
     // Check if user has already voted
-    const existingVote = getUserVote(poll.id, currentUser.id);
-    if (existingVote) {
-      setSelectedOption(existingVote.option);
-      setHasVoted(true);
-    }
+    const checkVote = async () => {
+      console.log('[POLL DEBUG] Checking vote for user:', currentUser.id, 'poll:', poll.id);
+      console.log('[POLL DEBUG] Poll data:', poll);
+      
+      const existingVote = await getUserVote(poll.id, currentUser.id);
+      console.log('[POLL DEBUG] Existing vote found:', existingVote);
+      
+      // Load results
+      const pollResults = await getPollResults(poll.id);
+      console.log('[POLL DEBUG] Poll results:', pollResults);
+      setResults(pollResults);
+      
+      if (existingVote) {
+        console.log('[POLL DEBUG] User has voted:', existingVote.option);
+        setSelectedOption(existingVote.option);
+        setHasVoted(true);
+      } else {
+        console.log('[POLL DEBUG] User has not voted yet');
+        setHasVoted(false);
+      }
+    };
+    
+    checkVote();
   }, [poll.id, currentUser]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!currentUser || !selectedOption) return;
 
-    const success = submitVote(poll.id, currentUser.id, currentUser.name, selectedOption);
+    console.log('[POLL DEBUG] Submitting vote:', selectedOption);
+    const success = await submitVote(poll.id, currentUser.id, currentUser.name, selectedOption);
+    console.log('[POLL DEBUG] Vote submission result:', success);
 
     if (success) {
       setHasVoted(true);
-      setResults(getPollResults(poll.id));
+      const newResults = await getPollResults(poll.id);
+      setResults(newResults);
 
       // Auto-close after voting if canDismiss is true
       if (canDismiss) {

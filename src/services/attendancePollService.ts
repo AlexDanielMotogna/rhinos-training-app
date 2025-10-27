@@ -210,8 +210,24 @@ export const createPoll = async (
 
 /**
  * Check if user has voted in a poll
+ * Priority: Backend (if online) -> Local cache
  */
 export const hasUserVoted = async (pollId: string, userId: string): Promise<boolean> => {
+  const online = isOnline();
+  
+  try {
+    if (online) {
+      // Try to get fresh data from backend first
+      const poll = await apiService.getById(pollId) as AttendancePoll;
+      if (poll && poll.votes) {
+        return poll.votes.some(v => v.userId === userId);
+      }
+    }
+  } catch (error) {
+    console.warn('[POLLS] Failed to check vote status from backend, using local cache:', error);
+  }
+  
+  // Fallback to local cache
   const poll = await getPollById(pollId);
   if (!poll) return false;
 
@@ -396,8 +412,24 @@ export const deletePoll = async (pollId: string): Promise<boolean> => {
 
 /**
  * Get user's vote in a poll
+ * Priority: Backend (if online) -> Local cache
  */
 export const getUserVote = async (pollId: string, userId: string): Promise<AttendancePollVote | null> => {
+  const online = isOnline();
+  
+  try {
+    if (online) {
+      // Try to get fresh data from backend first
+      const poll = await apiService.getById(pollId) as AttendancePoll;
+      if (poll && poll.votes) {
+        return poll.votes.find(v => v.userId === userId) || null;
+      }
+    }
+  } catch (error) {
+    console.warn('[POLLS] Failed to get user vote from backend, using local cache:', error);
+  }
+  
+  // Fallback to local cache
   const poll = await getPollById(pollId);
   if (!poll) return null;
 
