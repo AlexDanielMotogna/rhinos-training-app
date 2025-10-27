@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -8,14 +8,16 @@ import {
   Chip,
   IconButton,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useI18n } from '../../i18n/I18nProvider';
-import { getReportsByUser, deleteWorkoutReport, type SavedWorkoutReport } from '../../services/workoutReports';
+import { getReportsByUser, deleteWorkoutReport, syncWorkoutReportsFromBackend, type SavedWorkoutReport } from '../../services/workoutReports';
 import { WorkoutReportDialog } from './WorkoutReportDialog';
 import type { WorkoutSource } from '../../types/workout';
+import { isOnline } from '../../services/sync';
 
 interface ReportsHistoryProps {
   userId: string;
@@ -24,9 +26,31 @@ interface ReportsHistoryProps {
 
 export const ReportsHistory: React.FC<ReportsHistoryProps> = ({ userId, source }) => {
   const { t } = useI18n();
-  const [reports, setReports] = useState<SavedWorkoutReport[]>(() => getReportsByUser(userId, source));
+  const [reports, setReports] = useState<SavedWorkoutReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<SavedWorkoutReport | null>(null);
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Sync from backend on mount
+  useEffect(() => {
+    const loadReports = async () => {
+      setLoading(true);
+
+      // If online, sync from backend first
+      if (isOnline()) {
+        console.log('[REPORTS] Syncing reports from backend...');
+        await syncWorkoutReportsFromBackend(userId);
+      }
+
+      // Then load from localStorage (which now has synced data)
+      const loadedReports = getReportsByUser(userId, source);
+      console.log('[REPORTS] Loaded reports:', loadedReports.length);
+      setReports(loadedReports);
+      setLoading(false);
+    };
+
+    loadReports();
+  }, [userId, source]);
 
   const refreshReports = () => {
     setReports(getReportsByUser(userId, source));
@@ -49,6 +73,14 @@ export const ReportsHistory: React.FC<ReportsHistoryProps> = ({ userId, source }
     if (score >= 60) return 'warning.main';
     return 'error.main';
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (reports.length === 0) {
     return (
