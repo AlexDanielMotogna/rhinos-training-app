@@ -33,7 +33,7 @@ import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
 import { getUser } from '../services/mock';
-import { assignmentService, trainingTypeService, workoutService, workoutReportService } from '../services/api';
+import { assignmentService, trainingTypeService, workoutService } from '../services/api';
 import {
   getCachedTrainingTypes,
   getPlayerAssignments,
@@ -516,33 +516,6 @@ export const MyTraining: React.FC = () => {
       // Save report to localStorage and backend
       await saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
 
-      // Try to save report to backend
-      if (online) {
-        try {
-          const reportData = {
-            workoutTitle: startingPlan.name,
-            duration,
-            source: 'player' as const,
-            intensityScore: report.intensityScore || 0,
-            workCapacityScore: report.workCapacityScore || 0,
-            athleticQualityScore: report.athleticQualityScore || 0,
-            positionRelevanceScore: report.positionRelevanceScore || 0,
-            recoveryDemand: report.recoveryDemand || 'medium',
-            sessionValid: report.sessionValid !== false,
-            keyInsights: report.keyInsights || [],
-            recommendations: report.recommendations || [],
-            personalObservations: notes || '',
-            aiGenerated: (report as any).aiGenerated || false,
-            workoutEntries: entries,
-          };
-          console.log('📊 Sending player report to backend:', reportData);
-          await workoutReportService.create(reportData);
-          console.log('✅ Player report saved to backend');
-        } catch (error) {
-          console.error('❌ Failed to save player report to backend:', error);
-        }
-      }
-
       // Add points to player's weekly total
       const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
       const totalVolume = entries.reduce((sum, e) => {
@@ -685,33 +658,6 @@ export const MyTraining: React.FC = () => {
 
       // Save report to localStorage and backend
       await saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
-
-      // Try to save report to backend
-      if (online) {
-        try {
-          const reportData = {
-            workoutTitle: selectedBlock.title,
-            duration,
-            source: 'coach' as const,
-            intensityScore: report.intensityScore || 0,
-            workCapacityScore: report.workCapacityScore || 0,
-            athleticQualityScore: report.athleticQualityScore || 0,
-            positionRelevanceScore: report.positionRelevanceScore || 0,
-            recoveryDemand: report.recoveryDemand || 'medium',
-            sessionValid: report.sessionValid !== false,
-            keyInsights: report.keyInsights || [],
-            recommendations: report.recommendations || [],
-            personalObservations: notes || '',
-            aiGenerated: (report as any).aiGenerated || false,
-            workoutEntries: entries,
-          };
-          console.log('📊 Sending report to backend:', reportData);
-          await workoutReportService.create(reportData);
-          console.log('✅ Report saved to backend');
-        } catch (error) {
-          console.error('❌ Failed to save report to backend:', error);
-        }
-      }
 
       // Add points to player's weekly total
       const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
