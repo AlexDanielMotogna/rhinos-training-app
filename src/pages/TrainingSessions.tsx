@@ -53,6 +53,7 @@ import type { Position } from '../types/exercise';
 // Position groupings for unit counts
 const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OL'];
 const DEFENSE_POSITIONS: Position[] = ['DL', 'LB', 'DB'];
+const SPECIAL_TEAMS_POSITIONS: Position[] = ['K/P'];
 
 export const TrainingSessions: React.FC = () => {
   const { t } = useI18n();
@@ -403,7 +404,9 @@ export const TrainingSessions: React.FC = () => {
 
                     // Calculate position counts for training voters
                     const allUsers = getAllUsers();
-                    const positionCounts: Record<string, number> = {};
+                    const offensePositions: Record<string, number> = {};
+                    const defensePositions: Record<string, number> = {};
+                    const specialTeamsPositions: Record<string, number> = {};
                     let offenseCount = 0;
                     let defenseCount = 0;
                     let specialTeamsCount = 0;
@@ -411,15 +414,16 @@ export const TrainingSessions: React.FC = () => {
                     results.voters.training.forEach(vote => {
                       const user = allUsers.find(u => u.id === vote.userId);
                       if (user?.position) {
-                        positionCounts[user.position] = (positionCounts[user.position] || 0) + 1;
-
-                        // Count by unit
+                        // Count by unit and organize by position
                         if (OFFENSE_POSITIONS.includes(user.position)) {
                           offenseCount++;
+                          offensePositions[user.position] = (offensePositions[user.position] || 0) + 1;
                         } else if (DEFENSE_POSITIONS.includes(user.position)) {
                           defenseCount++;
-                        } else if (user.position === 'K/P') {
+                          defensePositions[user.position] = (defensePositions[user.position] || 0) + 1;
+                        } else if (SPECIAL_TEAMS_POSITIONS.includes(user.position)) {
                           specialTeamsCount++;
+                          specialTeamsPositions[user.position] = (specialTeamsPositions[user.position] || 0) + 1;
                         }
                       }
                     });
@@ -433,68 +437,119 @@ export const TrainingSessions: React.FC = () => {
                           </Typography>
                         </Box>
 
-                        {/* Unit breakdown (Offense/Defense) */}
+                        {/* Training Attendance by Teams and Positions */}
                         {(offenseCount > 0 || defenseCount > 0 || specialTeamsCount > 0) && (
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
+                          <Box sx={{ mb: 2 }}>
+                            {/* Offense */}
                             {offenseCount > 0 && (
-                              <Chip
-                                icon={<CircleIcon sx={{ fontSize: 16, color: 'white !important' }} />}
-                                label={`${offenseCount} ${t('attendancePoll.offense')}`}
-                                size="small"
-                                sx={{
-                                  backgroundColor: '#FF9800',
-                                  color: 'white',
-                                  fontWeight: 'bold',
-                                  fontSize: '0.75rem'
-                                }}
-                              />
+                              <Box sx={{ mb: 1.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                  <Chip
+                                    icon={<CircleIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                                    label={`Offense (${offenseCount})`}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: '#FF9800',
+                                      color: 'white',
+                                      fontWeight: 'bold',
+                                      fontSize: '0.75rem'
+                                    }}
+                                  />
+                                </Box>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
+                                  {Object.entries(offensePositions)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .map(([position, count]) => (
+                                      <Chip
+                                        key={`offense-${position}`}
+                                        label={`${count}x ${position}`}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                          borderColor: '#FF9800',
+                                          color: '#FF9800',
+                                          fontWeight: 'bold',
+                                          fontSize: '0.7rem'
+                                        }}
+                                      />
+                                    ))}
+                                </Box>
+                              </Box>
                             )}
-                            {defenseCount > 0 && (
-                              <Chip
-                                icon={<CloseIcon sx={{ fontSize: 16, color: 'white !important' }} />}
-                                label={`${defenseCount} ${t('attendancePoll.defense')}`}
-                                size="small"
-                                sx={{
-                                  backgroundColor: '#2196F3',
-                                  color: 'white',
-                                  fontWeight: 'bold',
-                                  fontSize: '0.75rem'
-                                }}
-                              />
-                            )}
-                            {specialTeamsCount > 0 && (
-                              <Chip
-                                icon={<SportsFootballIcon sx={{ fontSize: 16, color: 'white !important' }} />}
-                                label={`${specialTeamsCount} ${t('attendancePoll.specialTeams')}`}
-                                size="small"
-                                sx={{
-                                  backgroundColor: '#9C27B0',
-                                  color: 'white',
-                                  fontWeight: 'bold',
-                                  fontSize: '0.75rem'
-                                }}
-                              />
-                            )}
-                          </Box>
-                        )}
 
-                        {/* Position breakdown for training voters */}
-                        {Object.keys(positionCounts).length > 0 && (
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
-                            {Object.entries(positionCounts)
-                              .sort((a, b) => b[1] - a[1]) // Sort by count descending
-                              .map(([position, count]) => (
-                                <Chip
-                                  key={position}
-                                  label={`${count}x ${position}`}
-                                  size="small"
-                                  sx={{
-                                    backgroundColor: '#e0e0e0',
-                                    fontWeight: 'bold',
-                                    fontSize: '0.7rem'
-                                  }}
-                                />
-                              ))}
+                            {/* Defense */}
+                            {defenseCount > 0 && (
+                              <Box sx={{ mb: 1.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                  <Chip
+                                    icon={<CloseIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                                    label={`Defense (${defenseCount})`}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: '#2196F3',
+                                      color: 'white',
+                                      fontWeight: 'bold',
+                                      fontSize: '0.75rem'
+                                    }}
+                                  />
+                                </Box>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
+                                  {Object.entries(defensePositions)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .map(([position, count]) => (
+                                      <Chip
+                                        key={`defense-${position}`}
+                                        label={`${count}x ${position}`}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                          borderColor: '#2196F3',
+                                          color: '#2196F3',
+                                          fontWeight: 'bold',
+                                          fontSize: '0.7rem'
+                                        }}
+                                      />
+                                    ))}
+                                </Box>
+                              </Box>
+                            )}
+
+                            {/* Special Teams */}
+                            {specialTeamsCount > 0 && (
+                              <Box sx={{ mb: 1.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                  <Chip
+                                    icon={<SportsFootballIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                                    label={`Special Teams (${specialTeamsCount})`}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: '#9C27B0',
+                                      color: 'white',
+                                      fontWeight: 'bold',
+                                      fontSize: '0.75rem'
+                                    }}
+                                  />
+                                </Box>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
+                                  {Object.entries(specialTeamsPositions)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .map(([position, count]) => (
+                                      <Chip
+                                        key={`st-${position}`}
+                                        label={`${count}x ${position}`}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                          borderColor: '#9C27B0',
+                                          color: '#9C27B0',
+                                          fontWeight: 'bold',
+                                          fontSize: '0.7rem'
+                                        }}
+                                      />
+                                    ))}
+                                </Box>
+                              </Box>
+                            )}
                           </Box>
                         )}
 
