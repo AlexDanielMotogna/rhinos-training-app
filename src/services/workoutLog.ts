@@ -1,4 +1,6 @@
 import type { WorkoutEntry, WorkoutPayload } from '../types/workout';
+import { workoutService } from './api';
+import { isOnline } from './sync';
 
 const WORKOUTS_KEY = 'rhinos_workouts';
 
@@ -178,6 +180,66 @@ export function restoreWorkoutLog(logId: string): void {
   delete allLogs[index].deletedAt;
 
   localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
+}
+
+/**
+ * Sync workout logs from backend to localStorage
+ */
+export async function syncWorkoutLogsFromBackend(userId: string): Promise<void> {
+  if (!isOnline()) {
+    console.log('📦 Offline - skipping workout logs sync');
+    return;
+  }
+
+  try {
+    console.log('🔄 Syncing workout logs from backend...');
+    const backendLogs = await workoutService.getAll({ userId }) as WorkoutLog[];
+
+    if (!backendLogs || backendLogs.length === 0) {
+      console.log('ℹ️ No workout logs found in backend');
+      return;
+    }
+
+    // Get existing local logs
+    const localLogs = getWorkoutLogs();
+
+    // Create a map of existing local logs by ID for quick lookup
+    const localLogsMap = new Map(localLogs.map(log => [log.id, log]));
+
+    // Merge backend logs with local logs
+    const mergedLogs = [...localLogs];
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    for (const backendLog of backendLogs) {
+      const existingLog = localLogsMap.get(backendLog.id);
+
+      if (!existingLog) {
+        // New log from backend - add it
+        mergedLogs.push(backendLog);
+        addedCount++;
+      } else {
+        // Log exists - check if backend version is newer
+        const backendDate = new Date(backendLog.createdAt || 0);
+        const localDate = new Date(existingLog.createdAt || 0);
+
+        if (backendDate > localDate) {
+          // Backend version is newer - update it
+          const index = mergedLogs.findIndex(l => l.id === backendLog.id);
+          if (index !== -1) {
+            mergedLogs[index] = backendLog;
+            updatedCount++;
+          }
+        }
+      }
+    }
+
+    // Save merged logs to localStorage
+    localStorage.setItem(WORKOUTS_KEY, JSON.stringify(mergedLogs));
+    console.log(`✅ Synced workout logs: ${addedCount} added, ${updatedCount} updated`);
+  } catch (error) {
+    console.error('❌ Failed to sync workout logs from backend:', error);
+  }
 }
 
 /**

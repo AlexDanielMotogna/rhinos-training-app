@@ -308,13 +308,35 @@ model WorkoutReport {
   athleticQualityScore    Int
   positionRelevanceScore  Int
 
+  // Breakdown
+  totalVolume             Int      @default(0)    // kg
+  totalDistance           Float?                   // km (for cardio workouts)
+  avgRPE                  Float    @default(5)    // 1-10
+  setsCompleted           Int      @default(0)
+  setsPlanned             Int      @default(0)
+
+  // Athletic focus (percentages)
+  powerWork               Int      @default(0)
+  strengthWork            Int      @default(0)
+  speedWork               Int      @default(0)
+
+  // Highlights (auto-generated)
+  strengths               Json     @default("[]")  // Array of strings
+  warnings                Json     @default("[]")  // Array of strings
+
+  // Progress comparison
+  volumeChange            Int?                     // % vs last week
+  intensityChange         Int?                     // % vs last week
+
   // Recovery & Validation
-  recoveryDemand          String   // 'low' | 'medium' | 'high' | 'insufficient'
+  recoveryDemand          String   // 'low' | 'medium' | 'high' | 'very-high' | 'insufficient'
+  recommendedRestHours    Int      @default(24)
   sessionValid            Boolean  @default(true)
 
   // AI Insights
-  keyInsights             Json     // Array of strings
-  recommendations         Json     // Array of strings
+  coachInsights           String   @default("")
+  keyInsights             Json     @default("[]")  // Array of strings (legacy)
+  recommendations         Json     @default("[]")  // Array of strings (legacy)
   personalObservations    String?  // Player's notes
 
   // Metadata

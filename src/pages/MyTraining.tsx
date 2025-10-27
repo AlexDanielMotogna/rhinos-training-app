@@ -41,14 +41,14 @@ import {
   addToOutbox,
 } from '../services/db';
 import { isOnline } from '../services/sync';
-import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
+import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, syncWorkoutLogsFromBackend, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, TemplateBlock } from '../types/template';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
 import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
 import { sanitizeYouTubeUrl } from '../services/yt';
 import { analyzeWorkout, estimateWorkoutDuration, type WorkoutReport } from '../services/workoutAnalysis';
-import { saveWorkoutReport } from '../services/workoutReports';
+import { saveWorkoutReport, syncWorkoutReportsFromBackend } from '../services/workoutReports';
 import { generateAIWorkoutReport, getAPIKey } from '../services/aiInsights';
 import { addWorkoutPoints } from '../services/pointsSystem';
 
@@ -139,6 +139,13 @@ export const MyTraining: React.FC = () => {
             );
 
             console.log('✅ Loaded from API and cached');
+
+            // Sync workout logs and reports from backend
+            await syncWorkoutLogsFromBackend(user.id);
+            await syncWorkoutReportsFromBackend(user.id);
+
+            // Refresh local state after sync
+            refreshWorkoutHistory();
           } catch (apiError) {
             console.warn('⚠️ API failed, falling back to cache:', apiError);
             // If API fails but we're online, fall back to cache

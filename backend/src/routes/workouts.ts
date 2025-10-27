@@ -26,8 +26,34 @@ const workoutReportSchema = z.object({
   workCapacityScore: z.number().default(0),
   athleticQualityScore: z.number().default(0),
   positionRelevanceScore: z.number().default(0),
-  recoveryDemand: z.enum(['low', 'medium', 'high', 'insufficient']).default('medium'),
+
+  // Breakdown
+  totalVolume: z.number().default(0),
+  totalDistance: z.number().optional().nullable(),
+  avgRPE: z.number().default(5),
+  setsCompleted: z.number().default(0),
+  setsPlanned: z.number().default(0),
+
+  // Athletic focus
+  powerWork: z.number().default(0),
+  strengthWork: z.number().default(0),
+  speedWork: z.number().default(0),
+
+  // Highlights
+  strengths: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+
+  // Progress comparison
+  volumeChange: z.number().optional().nullable(),
+  intensityChange: z.number().optional().nullable(),
+
+  // Recovery
+  recoveryDemand: z.enum(['low', 'medium', 'high', 'very-high', 'insufficient']).default('medium'),
+  recommendedRestHours: z.number().default(24),
   sessionValid: z.boolean().optional().default(true),
+
+  // AI Insights
+  coachInsights: z.string().default(''),
   keyInsights: z.array(z.string()).default([]),
   recommendations: z.array(z.string()).default([]),
   personalObservations: z.string().optional().nullable(),
