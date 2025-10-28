@@ -19,7 +19,12 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { getUser, getAllUsers, saveUser, type MockUser } from '../services/mock';
-import { getCurrentUser, syncUserProfileFromBackend, syncAllUsersFromBackend } from '../services/userProfile';
+import {
+  getCurrentUser,
+  getAllUsers as getAllUsersFromProfile,
+  syncUserProfileFromBackend,
+  syncAllUsersFromBackend
+} from '../services/userProfile';
 import { calculateKPIs } from '../services/kpi';
 import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
 import { StrengthBars } from '../components/profile/StrengthBars';
@@ -70,7 +75,7 @@ export const Profile: React.FC = () => {
       } else if (playerId) {
         // Sync all users to get latest data for other players
         await syncAllUsersFromBackend();
-        const allUsers = getAllUsers();
+        const allUsers = getAllUsersFromProfile();
         const updatedPlayer = allUsers.find(u => u.id === playerId);
         if (updatedPlayer) {
           setUser(updatedPlayer);
