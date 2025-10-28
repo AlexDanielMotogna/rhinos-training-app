@@ -69,6 +69,9 @@ const workoutReportSchema = z.object({
 // WORKOUT LOGS
 // ========================================
 
+// NOTE: Specific routes (/reports, /plans) must come BEFORE dynamic routes (/:id)
+// to prevent Express from treating "reports" or "plans" as an ID parameter
+
 // GET /api/workouts - Get workout logs (filtered by user role)
 router.get('/', authenticate, async (req, res) => {
   try {
@@ -114,130 +117,6 @@ router.get('/', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Get workouts error:', error);
     res.status(500).json({ error: 'Failed to fetch workouts' });
-  }
-});
-
-// GET /api/workouts/:id - Get single workout
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const workout = await prisma.workoutLog.findUnique({
-      where: { id },
-    });
-
-    if (!workout) {
-      return res.status(404).json({ error: 'Workout not found' });
-    }
-
-    // Players can only view their own workouts
-    if (req.user.role === 'player' && workout.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    res.json(workout);
-  } catch (error) {
-    console.error('Get workout error:', error);
-    res.status(500).json({ error: 'Failed to fetch workout' });
-  }
-});
-
-// POST /api/workouts - Create new workout log
-router.post('/', authenticate, async (req, res) => {
-  try {
-    const data = workoutLogSchema.parse(req.body);
-
-    // Get user info
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
-      select: { name: true },
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const workout = await prisma.workoutLog.create({
-      data: {
-        ...data,
-        userId: req.user.userId,
-        userName: user.name,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    res.status(201).json(workout);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
-    }
-    console.error('Create workout error:', error);
-    res.status(500).json({ error: 'Failed to create workout' });
-  }
-});
-
-// PATCH /api/workouts/:id - Update workout log
-router.patch('/:id', authenticate, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const data = workoutLogSchema.partial().parse(req.body);
-
-    // Check if workout exists
-    const existing = await prisma.workoutLog.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      return res.status(404).json({ error: 'Workout not found' });
-    }
-
-    // Players can only update their own workouts
-    if (req.user.role === 'player' && existing.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    const workout = await prisma.workoutLog.update({
-      where: { id },
-      data,
-    });
-
-    res.json(workout);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
-    }
-    console.error('Update workout error:', error);
-    res.status(500).json({ error: 'Failed to update workout' });
-  }
-});
-
-// DELETE /api/workouts/:id - Delete workout log
-router.delete('/:id', authenticate, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check if workout exists
-    const existing = await prisma.workoutLog.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      return res.status(404).json({ error: 'Workout not found' });
-    }
-
-    // Players can only delete their own workouts
-    if (req.user.role === 'player' && existing.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    await prisma.workoutLog.delete({
-      where: { id },
-    });
-
-    res.json({ message: 'Workout deleted successfully' });
-  } catch (error) {
-    console.error('Delete workout error:', error);
-    res.status(500).json({ error: 'Failed to delete workout' });
   }
 });
 
@@ -499,6 +378,105 @@ router.delete('/plans/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('[BACKEND ERROR] Delete user plan error:', error);
     res.status(500).json({ error: 'Failed to delete user plan' });
+  }
+});
+
+// POST /api/workouts - Create new workout log
+router.post('/', authenticate, async (req, res) => {
+  try {
+    const data = workoutLogSchema.parse(req.body);
+
+    // Get user info
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { name: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const workout = await prisma.workoutLog.create({
+      data: {
+        ...data,
+        userId: req.user.userId,
+        userName: user.name,
+        createdAt: new Date().toISOString(),
+      },
+    });
+
+    res.status(201).json(workout);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.errors });
+    }
+    console.error('Create workout error:', error);
+    res.status(500).json({ error: 'Failed to create workout' });
+  }
+});
+
+// PATCH /api/workouts/:id - Update workout log
+router.patch('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = workoutLogSchema.partial().parse(req.body);
+
+    // Check if workout exists
+    const existing = await prisma.workoutLog.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Workout not found' });
+    }
+
+    // Players can only update their own workouts
+    if (req.user.role === 'player' && existing.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const workout = await prisma.workoutLog.update({
+      where: { id },
+      data,
+    });
+
+    res.json(workout);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.errors });
+    }
+    console.error('Update workout error:', error);
+    res.status(500).json({ error: 'Failed to update workout' });
+  }
+});
+
+// DELETE /api/workouts/:id - Delete workout log
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if workout exists
+    const existing = await prisma.workoutLog.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Workout not found' });
+    }
+
+    // Players can only delete their own workouts
+    if (req.user.role === 'player' && existing.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    await prisma.workoutLog.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Workout deleted successfully' });
+  } catch (error) {
+    console.error('Delete workout error:', error);
+    res.status(500).json({ error: 'Failed to delete workout' });
   }
 });
 
