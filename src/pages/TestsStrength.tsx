@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import { Box, Typography, Button } from '@mui/material';
 import { useI18n } from '../i18n/I18nProvider';
 import { StrengthWizard } from '../components/tests/StrengthWizard';
 import { StrengthSummary as StrengthSummaryComponent } from '../components/tests/StrengthSummary';
@@ -28,7 +28,6 @@ export const TestsStrength: React.FC = () => {
   const [testResults, setTestResults] = useState<StrengthResult[] | null>(null);
   const [selectedTier, setSelectedTier] = useState<Tier>('semi');
   const [summary, setSummary] = useState<StrengthSummary | null>(null);
-  const [saved, setSaved] = useState(false);
 
   // Sync test results from backend on mount
   useEffect(() => {
@@ -49,10 +48,10 @@ export const TestsStrength: React.FC = () => {
 
   const handleWizardFinish = (results: StrengthResult[]) => {
     setTestResults(results);
-    computeSummary(results, selectedTier);
+    computeSummary(results, selectedTier, true); // Save on wizard finish
   };
 
-  const computeSummary = (results: StrengthResult[], tier: Tier) => {
+  const computeSummary = (results: StrengthResult[], tier: Tier, shouldSave: boolean = false) => {
     const benchmarks = getBenchmarks(position, sex);
 
     const bySegment: Record<Segment, { score: number; detail: string }> = {} as any;
@@ -97,6 +96,11 @@ export const TestsStrength: React.FC = () => {
     };
 
     setSummary(newSummary);
+
+    // Only save to backend when explicitly requested (not on tier change)
+    if (shouldSave) {
+      saveTestResult('strength', newSummary, index, label);
+    }
   };
 
   const handleTierChange = (tier: Tier) => {
@@ -106,14 +110,9 @@ export const TestsStrength: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
-    if (summary) {
-      // Use the new sync service that handles backend sync
-      await saveTestResult('strength', summary, summary.strengthIndex, summary.label);
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    }
+  const handleReset = () => {
+    setTestResults(null);
+    setSummary(null);
   };
 
   return (
@@ -122,20 +121,20 @@ export const TestsStrength: React.FC = () => {
         {t('tests.strengthSolo')}
       </Typography>
 
-      {saved && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {t('tests.resultsSaved')}
-        </Alert>
-      )}
-
       {!summary ? (
         <StrengthWizard bodyWeightKg={bodyWeightKg} onFinish={handleWizardFinish} />
       ) : (
-        <StrengthSummaryComponent
-          summary={summary}
-          onTierChange={handleTierChange}
-          onSave={handleSave}
-        />
+        <>
+          <StrengthSummaryComponent
+            summary={summary}
+            onTierChange={handleTierChange}
+          />
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Button variant="outlined" onClick={handleReset}>
+              {t('tests.retake')}
+            </Button>
+          </Box>
+        </>
       )}
     </Box>
   );

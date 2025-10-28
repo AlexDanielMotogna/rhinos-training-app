@@ -22,7 +22,6 @@ import type { StrengthSummary as StrengthSummaryType, Tier, Segment } from '../.
 interface StrengthSummaryProps {
   summary: StrengthSummaryType;
   onTierChange: (tier: Tier) => void;
-  onSave: () => void;
 }
 
 const segments: Segment[] = ['legs', 'arms', 'back', 'shoulders', 'core'];
@@ -30,7 +29,6 @@ const segments: Segment[] = ['legs', 'arms', 'back', 'shoulders', 'core'];
 export const StrengthSummary: React.FC<StrengthSummaryProps> = ({
   summary,
   onTierChange,
-  onSave,
 }) => {
   const { t } = useI18n();
 
@@ -166,16 +164,6 @@ export const StrengthSummary: React.FC<StrengthSummaryProps> = ({
             </TableBody>
           </Table>
         </TableContainer>
-
-        <Button
-          variant="contained"
-          color="success"
-          fullWidth
-          sx={{ mt: 3 }}
-          onClick={onSave}
-        >
-          {t('tests.saveResults')}
-        </Button>
       </Paper>
     </Box>
   );
