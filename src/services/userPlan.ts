@@ -242,6 +242,16 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
     // Add local-only plans (not yet synced to backend)
     for (const localPlan of localPlans) {
       if (!processedIds.has(localPlan.id)) {
+        // Check if this plan has a MongoDB ID (24 hex chars)
+        const isMongoId = /^[0-9a-f]{24}$/i.test(localPlan.id);
+
+        if (isMongoId) {
+          // This plan was deleted from backend, don't re-upload it
+          console.log('[USER PLANS] Plan was deleted from backend, removing from local cache:', localPlan.id, localPlan.name);
+          // Don't add to mergedPlans - this will remove it from localStorage
+          continue;
+        }
+
         // Check if already syncing this plan
         const planKey = `${localPlan.name}-${localPlan.createdAt}`;
         if (syncingPlans.has(planKey)) {
@@ -249,7 +259,7 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
           continue;
         }
 
-        console.log('[USER PLANS] Found local-only plan, will sync to backend:', localPlan.id);
+        console.log('[USER PLANS] Found local-only plan (new), will sync to backend:', localPlan.id);
 
         // Mark as syncing
         syncingPlans.add(planKey);
