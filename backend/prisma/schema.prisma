@@ -292,6 +292,26 @@ model WorkoutLog {
 }
 
 // ========================================
+// USER PLANS (Player-Created Workout Plans)
+// ========================================
+
+model UserPlan {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  name          String
+  trainingType  String   // 'strength_conditioning' | 'sprints_speed' | etc.
+  exercises     Json     // Array of PlanExercise objects
+  notes         String?
+  timesCompleted Int     @default(0)
+
+  createdAt     String   // ISO datetime
+  updatedAt     String   // ISO datetime
+  syncedAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ========================================
 // WORKOUT REPORTS (AI-Generated Analysis)
 // ========================================
 

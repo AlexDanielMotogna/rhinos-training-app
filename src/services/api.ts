@@ -77,17 +77,24 @@ export const apiCall = async <T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  console.log(`[API REQUEST] ${options.method || 'GET'} ${API_URL}${endpoint}`);
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
   });
 
+  console.log(`[API RESPONSE] ${endpoint} - Status: ${response.status} ${response.statusText}`);
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    console.error(`[API ERROR] ${endpoint}:`, error);
     throw new Error(error.error || `HTTP ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log(`[API DATA] ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'single item', data);
+  return data;
 };
 
 // Auth endpoints
@@ -477,6 +484,33 @@ export const attendancePollService = {
 
   async delete(pollId: string) {
     return apiCall(`/attendance-polls/${pollId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// User Plans endpoints
+export const userPlanService = {
+  async getAll() {
+    return apiCall('/workouts/plans');
+  },
+
+  async create(data: any) {
+    return apiCall('/workouts/plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: any) {
+    return apiCall(`/workouts/plans/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string) {
+    return apiCall(`/workouts/plans/${id}`, {
       method: 'DELETE',
     });
   },

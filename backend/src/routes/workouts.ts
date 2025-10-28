@@ -250,6 +250,9 @@ router.get('/reports', authenticate, async (req, res) => {
   try {
     const { userId, source } = req.query;
 
+    console.log('[BACKEND] GET /workouts/reports - User:', req.user.userId, 'Role:', req.user.role);
+    console.log('[BACKEND] Query params - userId:', userId, 'source:', source);
+
     const where: any = {};
 
     // If player, only show their reports
@@ -266,14 +269,27 @@ router.get('/reports', authenticate, async (req, res) => {
       where.source = source as string;
     }
 
+    console.log('[BACKEND] Query where:', JSON.stringify(where));
+
     const reports = await prisma.workoutReport.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     });
 
+    console.log('[BACKEND] Found reports:', reports.length);
+    console.log('[BACKEND] Sample report:', reports[0] ? {
+      id: reports[0].id,
+      workoutTitle: reports[0].workoutTitle,
+      date: reports[0].date,
+      hasDate: !!reports[0].date,
+      hasWorkoutEntries: !!reports[0].workoutEntries,
+      source: reports[0].source,
+      createdAt: reports[0].createdAt
+    } : 'none');
+
     res.json(reports);
   } catch (error) {
-    console.error('Get reports error:', error);
+    console.error('[BACKEND ERROR] Get reports error:', error);
     res.status(500).json({ error: 'Failed to fetch reports' });
   }
 });
@@ -334,6 +350,131 @@ router.delete('/reports/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Delete report error:', error);
     res.status(500).json({ error: 'Failed to delete report' });
+  }
+});
+
+// ========================================
+// USER PLANS (Player-Created Workout Plans)
+// ========================================
+
+const userPlanSchema = z.object({
+  name: z.string(),
+  trainingType: z.string(),
+  exercises: z.array(z.any()), // Array of PlanExercise
+  notes: z.string().optional().nullable(),
+  timesCompleted: z.number().default(0),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+// GET /api/workouts/plans - Get user plans
+router.get('/plans', authenticate, async (req, res) => {
+  try {
+    console.log('[BACKEND] GET /workouts/plans - User:', req.user.userId);
+
+    const plans = await prisma.userPlan.findMany({
+      where: { userId: req.user.userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    console.log('[BACKEND] Found user plans:', plans.length);
+    res.json(plans);
+  } catch (error) {
+    console.error('[BACKEND ERROR] Get user plans error:', error);
+    res.status(500).json({ error: 'Failed to fetch user plans' });
+  }
+});
+
+// POST /api/workouts/plans - Create user plan
+router.post('/plans', authenticate, async (req, res) => {
+  try {
+    console.log('[BACKEND] POST /workouts/plans - User:', req.user.userId);
+    const data = userPlanSchema.parse(req.body);
+
+    const now = new Date().toISOString();
+    const plan = await prisma.userPlan.create({
+      data: {
+        ...data,
+        userId: req.user.userId,
+        createdAt: data.createdAt || now,
+        updatedAt: data.updatedAt || now,
+      },
+    });
+
+    console.log('[BACKEND] User plan created:', plan.id);
+    res.status(201).json(plan);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.errors });
+    }
+    console.error('[BACKEND ERROR] Create user plan error:', error);
+    res.status(500).json({ error: 'Failed to create user plan' });
+  }
+});
+
+// PATCH /api/workouts/plans/:id - Update user plan
+router.patch('/plans/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = userPlanSchema.partial().parse(req.body);
+
+    // Check if plan exists and belongs to user
+    const existing = await prisma.userPlan.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Plan not found' });
+    }
+
+    if (existing.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const plan = await prisma.userPlan.update({
+      where: { id },
+      data: {
+        ...data,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    res.json(plan);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.errors });
+    }
+    console.error('[BACKEND ERROR] Update user plan error:', error);
+    res.status(500).json({ error: 'Failed to update user plan' });
+  }
+});
+
+// DELETE /api/workouts/plans/:id - Delete user plan
+router.delete('/plans/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if plan exists and belongs to user
+    const existing = await prisma.userPlan.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Plan not found' });
+    }
+
+    if (existing.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    await prisma.userPlan.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Plan deleted successfully' });
+  } catch (error) {
+    console.error('[BACKEND ERROR] Delete user plan error:', error);
+    res.status(500).json({ error: 'Failed to delete user plan' });
   }
 });
 
