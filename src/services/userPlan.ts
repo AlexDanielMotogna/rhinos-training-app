@@ -8,6 +8,7 @@ import { userPlanService } from './api';
 import { isOnline } from './sync';
 
 const USER_PLANS_KEY = 'rhinos_user_plans';
+const SYNCING_PLANS_KEY = 'rhinos_syncing_plans';
 
 /**
  * Get all plans for a user
@@ -234,11 +235,25 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
       processedIds.add(transformedPlan.id);
     }
 
+    // Get currently syncing plans to prevent duplicates
+    const syncingData = localStorage.getItem(SYNCING_PLANS_KEY);
+    const syncingPlans = new Set<string>(syncingData ? JSON.parse(syncingData) : []);
+
     // Add local-only plans (not yet synced to backend)
     for (const localPlan of localPlans) {
       if (!processedIds.has(localPlan.id)) {
+        // Check if already syncing this plan
+        const planKey = `${localPlan.name}-${localPlan.createdAt}`;
+        if (syncingPlans.has(planKey)) {
+          console.warn('[USER PLANS] Plan already being synced, skipping:', planKey);
+          continue;
+        }
+
         console.log('[USER PLANS] Found local-only plan, will sync to backend:', localPlan.id);
-        mergedPlans.push(localPlan);
+
+        // Mark as syncing
+        syncingPlans.add(planKey);
+        localStorage.setItem(SYNCING_PLANS_KEY, JSON.stringify(Array.from(syncingPlans)));
 
         // Try to sync to backend
         try {
@@ -252,9 +267,26 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
             updatedAt: localPlan.updatedAt,
           });
           console.log('[USER PLANS] Local plan synced to backend:', backendPlan);
+
+          // Update local plan with backend ID to prevent future duplicates
+          const updatedPlan: UserPlanTemplate = {
+            ...localPlan,
+            id: backendPlan.id, // Use backend ID from now on
+          };
+          mergedPlans.push(updatedPlan);
+          processedIds.add(backendPlan.id);
+
+          // Remove from syncing set (success)
+          syncingPlans.delete(planKey);
         } catch (error) {
           console.warn('[USER PLANS] Failed to sync local plan to backend:', error);
+          // If sync failed, keep local plan as-is
+          mergedPlans.push(localPlan);
+          // Remove from syncing set (failed, can retry later)
+          syncingPlans.delete(planKey);
         }
+
+        localStorage.setItem(SYNCING_PLANS_KEY, JSON.stringify(Array.from(syncingPlans)));
       }
     }
 
