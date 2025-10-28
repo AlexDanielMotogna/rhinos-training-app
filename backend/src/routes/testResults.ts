@@ -65,6 +65,66 @@ router.get('/latest/:testType', authenticate, async (req, res) => {
 });
 
 /**
+ * GET /api/test-results/latest/:testType/:userId
+ * Get the latest test result for a specific test type and user
+ */
+router.get('/latest/:testType/:userId', authenticate, async (req, res) => {
+  try {
+    const { testType, userId } = req.params;
+
+    const result = await prisma.testResult.findFirst({
+      where: {
+        userId,
+        testType,
+        isCurrent: true,
+      },
+      orderBy: {
+        dateISO: 'desc',
+      },
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: 'No test result found' });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Get latest test result by user error:', error);
+    res.status(500).json({ error: 'Failed to fetch latest test result' });
+  }
+});
+
+/**
+ * GET /api/test-results/latest/:testType/:userId
+ * Get the latest test result for a specific test type and user
+ */
+router.get('/latest/:testType/:userId', authenticate, async (req, res) => {
+  try {
+    const { testType, userId } = req.params;
+
+    const result = await prisma.testResult.findFirst({
+      where: {
+        userId,
+        testType,
+        isCurrent: true,
+      },
+      orderBy: {
+        dateISO: 'desc',
+      },
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: 'No test result found' });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Get latest test result by user error:', error);
+    res.status(500).json({ error: 'Failed to fetch latest test result' });
+  }
+});
+
+/**
  * POST /api/test-results
  * Create a new test result
  */

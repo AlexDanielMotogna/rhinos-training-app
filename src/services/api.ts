@@ -535,6 +535,10 @@ export const testResultService = {
     return apiCall(`/test-results/latest/${testType}`);
   },
 
+  async getLatestForUser(testType: string, userId: string) {
+    return apiCall(`/test-results/latest/${testType}/${userId}`);
+  },
+
   async create(data: {
     testType: string;
     dateISO: string;

@@ -8,9 +8,10 @@ import type { PowerSummary } from '../../types/testing';
 interface PowerProfileCardProps {
   summary: PowerSummary | null;
   change: number | null;
+  isViewingOtherPlayer?: boolean;
 }
 
-export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary, change }) => {
+export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary, change, isViewingOtherPlayer = false }) => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -42,14 +43,16 @@ export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary, cha
         <Typography variant="h6">
           {t('profile.power.title')}
         </Typography>
-        <Link
-          component="button"
-          variant="caption"
-          onClick={() => navigate('/testing/power')}
-          sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-        >
-          {summary ? t('profile.testAgain') : t('profile.testNow')}
-        </Link>
+        {!isViewingOtherPlayer && (
+          <Link
+            component="button"
+            variant="caption"
+            onClick={() => navigate('/testing/power')}
+            sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+          >
+            {summary ? t('profile.testAgain') : t('profile.testNow')}
+          </Link>
+        )}
       </Box>
 
       {!summary ? (
@@ -149,9 +152,11 @@ export const PowerProfileCard: React.FC<PowerProfileCardProps> = ({ summary, cha
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)}>{t('common.close')}</Button>
-            <Button variant="contained" onClick={() => { setDialogOpen(false); navigate('/testing/power'); }}>
-              {t('profile.testAgain')}
-            </Button>
+            {!isViewingOtherPlayer && (
+              <Button variant="contained" onClick={() => { setDialogOpen(false); navigate('/testing/power'); }}>
+                {t('profile.testAgain')}
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       )}

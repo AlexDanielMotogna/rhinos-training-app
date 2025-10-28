@@ -8,9 +8,10 @@ import type { AgilitySummary } from '../../types/testing';
 interface AgilityProfileCardProps {
   summary: AgilitySummary | null;
   change: number | null;
+  isViewingOtherPlayer?: boolean;
 }
 
-export const AgilityProfileCard: React.FC<AgilityProfileCardProps> = ({ summary, change }) => {
+export const AgilityProfileCard: React.FC<AgilityProfileCardProps> = ({ summary, change, isViewingOtherPlayer = false }) => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -42,14 +43,16 @@ export const AgilityProfileCard: React.FC<AgilityProfileCardProps> = ({ summary,
         <Typography variant="h6">
           {t('profile.agility.title')}
         </Typography>
-        <Link
-          component="button"
-          variant="caption"
-          onClick={() => navigate('/testing/agility')}
-          sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-        >
-          {summary ? t('profile.testAgain') : t('profile.testNow')}
-        </Link>
+        {!isViewingOtherPlayer && (
+          <Link
+            component="button"
+            variant="caption"
+            onClick={() => navigate('/testing/agility')}
+            sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+          >
+            {summary ? t('profile.testAgain') : t('profile.testNow')}
+          </Link>
+        )}
       </Box>
 
       {!summary ? (
@@ -145,9 +148,11 @@ export const AgilityProfileCard: React.FC<AgilityProfileCardProps> = ({ summary,
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)}>{t('common.close')}</Button>
-            <Button variant="contained" onClick={() => { setDialogOpen(false); navigate('/testing/agility'); }}>
-              {t('profile.testAgain')}
-            </Button>
+            {!isViewingOtherPlayer && (
+              <Button variant="contained" onClick={() => { setDialogOpen(false); navigate('/testing/agility'); }}>
+                {t('profile.testAgain')}
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       )}

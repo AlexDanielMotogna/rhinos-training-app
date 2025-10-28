@@ -8,9 +8,14 @@ import type { StrengthSummary, Segment } from '../../types/testing';
 interface StrengthProfileCardProps {
   summary: StrengthSummary | null;
   change: number | null;
+  isViewingOtherPlayer?: boolean;
 }
 
-export const StrengthProfileCard: React.FC<StrengthProfileCardProps> = ({ summary, change }) => {
+export const StrengthProfileCard: React.FC<StrengthProfileCardProps> = ({ 
+  summary, 
+  change, 
+  isViewingOtherPlayer = false 
+}) => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -59,14 +64,16 @@ export const StrengthProfileCard: React.FC<StrengthProfileCardProps> = ({ summar
         <Typography variant="h6">
           {t('profile.strength.title')}
         </Typography>
-        <Link
-          component="button"
-          variant="caption"
-          onClick={() => navigate('/testing/strength')}
-          sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-        >
-          {summary ? t('profile.testAgain') : t('profile.testNow')}
-        </Link>
+        {!isViewingOtherPlayer && (
+          <Link
+            component="button"
+            variant="caption"
+            onClick={() => navigate('/testing/strength')}
+            sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+          >
+            {summary ? t('profile.testAgain') : t('profile.testNow')}
+          </Link>
+        )}
       </Box>
 
       {!summary ? (
@@ -241,9 +248,11 @@ export const StrengthProfileCard: React.FC<StrengthProfileCardProps> = ({ summar
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)}>{t('common.close')}</Button>
-            <Button variant="contained" onClick={() => { setDialogOpen(false); navigate('/testing/strength'); }}>
-              {t('profile.testAgain')}
-            </Button>
+            {!isViewingOtherPlayer && (
+              <Button variant="contained" onClick={() => { setDialogOpen(false); navigate('/testing/strength'); }}>
+                {t('profile.testAgain')}
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       )}

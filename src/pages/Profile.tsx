@@ -133,32 +133,47 @@ export const Profile: React.FC = () => {
     try {
       // Try to load from backend first
       console.log(`[PROFILE] Loading ${testType} test from backend...`);
-      const backendResult = await testResultService.getLatest(testType);
+      
+      let backendResult;
+      if (isViewingOtherPlayer && user) {
+        // Loading for another user - use the new endpoint
+        console.log(`[PROFILE] Loading ${testType} test for user ${user.id}...`);
+        backendResult = await testResultService.getLatestForUser(testType, user.id);
+      } else {
+        // Loading for current user - use existing endpoint
+        backendResult = await testResultService.getLatest(testType);
+      }
       
       if (backendResult && typeof backendResult === 'object' && 'testData' in backendResult) {
         const testData = (backendResult as any).testData;
         console.log(`[PROFILE] ✅ Loaded ${testType} test from backend:`, testData);
         setSummary(testData);
         
-        // Update localStorage cache
-        localStorage.setItem(localStorageKey, JSON.stringify(testData));
+        // Only update localStorage cache for current user's own data
+        if (!isViewingOtherPlayer) {
+          localStorage.setItem(localStorageKey, JSON.stringify(testData));
+        }
         return;
       }
     } catch (error) {
       console.warn(`[PROFILE] ⚠️ Failed to load ${testType} test from backend:`, error);
     }
 
-    // Fallback to localStorage
-    const localData = localStorage.getItem(localStorageKey);
-    if (localData) {
-      try {
-        console.log(`[PROFILE] 📦 Loading ${testType} test from localStorage`);
-        setSummary(JSON.parse(localData));
-      } catch (e) {
-        console.error(`[PROFILE] ❌ Failed to parse ${testType} test data from localStorage:`, e);
+    // Fallback to localStorage (only for current user's own profile)
+    if (!isViewingOtherPlayer) {
+      const localData = localStorage.getItem(localStorageKey);
+      if (localData) {
+        try {
+          console.log(`[PROFILE] 📦 Loading ${testType} test from localStorage`);
+          setSummary(JSON.parse(localData));
+        } catch (e) {
+          console.error(`[PROFILE] ❌ Failed to parse ${testType} test data from localStorage:`, e);
+        }
+      } else {
+        console.log(`[PROFILE] 📭 No ${testType} test data found in backend or localStorage`);
       }
     } else {
-      console.log(`[PROFILE] 📭 No ${testType} test data found in backend or localStorage`);
+      console.log(`[PROFILE] 📭 No ${testType} test data found in backend for visited user`);
     }
   };
 
@@ -592,7 +607,7 @@ export const Profile: React.FC = () => {
       {/* Strength */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
-          <StrengthProfileCard summary={strengthSummary} change={kpis.strengthScore.change} />
+          <StrengthProfileCard summary={strengthSummary} change={kpis.strengthScore.change} isViewingOtherPlayer={!!isViewingOtherPlayer} />
         </Grid>
         <Grid item xs={12} md={6}>
           {strengthSummary && (
@@ -619,13 +634,13 @@ export const Profile: React.FC = () => {
       {/* Speed, Power, Agility */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={4}>
-          <SpeedProfileCard summary={speedSummary} change={kpis.speedScore.change} />
+          <SpeedProfileCard summary={speedSummary} change={kpis.speedScore.change} isViewingOtherPlayer={!!isViewingOtherPlayer} />
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
-          <PowerProfileCard summary={powerSummary} change={kpis.powerScore.change} />
+          <PowerProfileCard summary={powerSummary} change={kpis.powerScore.change} isViewingOtherPlayer={!!isViewingOtherPlayer} />
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
-          <AgilityProfileCard summary={agilitySummary} change={kpis.agilityScore.change} />
+          <AgilityProfileCard summary={agilitySummary} change={kpis.agilityScore.change} isViewingOtherPlayer={!!isViewingOtherPlayer} />
         </Grid>
       </Grid>
         </>
