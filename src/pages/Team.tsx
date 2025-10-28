@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -14,15 +14,24 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
-import { getAllUsers } from '../services/userProfile';
+import { getAllUsers, syncAllUsersFromBackend } from '../services/userProfile';
 
 export const Team: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState(getAllUsers());
 
-  const allUsers = getAllUsers();
-  const players = allUsers.filter(user => user.role === 'player');
+  // Sync users from backend on mount
+  useEffect(() => {
+    const syncUsers = async () => {
+      await syncAllUsersFromBackend();
+      setUsers(getAllUsers()); // Refresh after sync
+    };
+    syncUsers();
+  }, []);
+
+  const players = users.filter(user => user.role === 'player');
 
   const filteredPlayers = players.filter(player =>
     player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
