@@ -24,22 +24,28 @@ export function getUserPlans(userId: string): UserPlanTemplate[] {
  * Get all plans for a user (async - tries backend first, falls back to localStorage)
  */
 export async function getUserPlansFromBackend(userId: string): Promise<UserPlanTemplate[]> {
+  console.log('[USER PLANS] 🚀 Starting getUserPlansFromBackend for user:', userId);
   const online = isOnline();
+  console.log('[USER PLANS] 🌐 Online status:', online);
   
   if (online) {
     try {
-      console.log('[USER PLANS] Loading plans from backend for user:', userId);
+      console.log('[USER PLANS] 📡 Loading plans from backend for user:', userId);
       await syncUserPlansFromBackend(userId);
-      console.log('[USER PLANS] ✅ Synced plans from backend');
+      console.log('[USER PLANS] ✅ Synced plans from backend successfully');
     } catch (error) {
-      console.warn('[USER PLANS] ⚠️ Failed to load from backend, falling back to localStorage:', error);
+      console.error('[USER PLANS] ❌ Failed to load from backend:', error);
+      console.warn('[USER PLANS] ⚠️ Falling back to localStorage');
     }
   } else {
     console.log('[USER PLANS] 📱 Offline - using localStorage only');
   }
   
   // Return from localStorage (which now contains backend data if sync succeeded)
-  return getUserPlans(userId);
+  const localPlans = getUserPlans(userId);
+  console.log('[USER PLANS] 📦 Returning plans from localStorage:', localPlans.length, 'plans');
+  console.log('[USER PLANS] 📋 Plan details:', localPlans.map(p => ({ id: p.id, name: p.name, userId: p.userId })));
+  return localPlans;
 }
 
 /**
@@ -229,9 +235,10 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
   }
 
   try {
-    console.log('[USER PLANS] Syncing plans from backend for user:', userId);
+    console.log('[USER PLANS] 📡 Starting sync from backend for user:', userId);
     const backendPlans = await userPlanService.getAll() as any[];
-    console.log(`[USER PLANS] Loaded ${backendPlans.length} plans from backend`);
+    console.log(`[USER PLANS] 📥 API response: ${backendPlans.length} plans from backend`);
+    console.log('[USER PLANS] 🔍 Raw backend data:', backendPlans);
 
     // Get current local plans
     const data = localStorage.getItem(USER_PLANS_KEY);
