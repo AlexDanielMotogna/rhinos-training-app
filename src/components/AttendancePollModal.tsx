@@ -38,37 +38,43 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
   const [selectedOption, setSelectedOption] = useState<'training' | 'present' | 'absent' | null>(null);
   const [results, setResults] = useState<any>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || isLoading) return;
 
-    // Check if user has already voted
+    // Check if user has already voted - only run once on mount
     const checkVote = async () => {
-      console.log('[POLL DEBUG] Checking vote for user:', currentUser.id, 'poll:', poll.id);
-      console.log('[POLL DEBUG] Poll data:', poll);
+      setIsLoading(true);
+      try {
+        console.log('[POLL DEBUG] Checking vote for user:', currentUser.id, 'poll:', poll.id);
 
-      // Always get fresh data from backend to avoid stale state
-      const existingVote = await getUserVote(poll.id, currentUser.id);
-      console.log('[POLL DEBUG] Existing vote found:', existingVote);
+        // Always get fresh data from backend to avoid stale state
+        const existingVote = await getUserVote(poll.id, currentUser.id);
+        console.log('[POLL DEBUG] Existing vote found:', existingVote);
 
-      // Load results (this will also fetch from backend if online)
-      const pollResults = await getPollResults(poll.id);
-      console.log('[POLL DEBUG] Poll results:', pollResults);
-      setResults(pollResults);
+        // Load results (this will also fetch from backend if online)
+        const pollResults = await getPollResults(poll.id);
+        console.log('[POLL DEBUG] Poll results:', pollResults);
+        setResults(pollResults);
 
-      if (existingVote) {
-        console.log('[POLL DEBUG] User has voted:', existingVote.option);
-        setSelectedOption(existingVote.option);
-        setHasVoted(true);
-      } else {
-        console.log('[POLL DEBUG] User has not voted yet');
-        setHasVoted(false);
-        setSelectedOption(null);
+        if (existingVote) {
+          console.log('[POLL DEBUG] User has voted:', existingVote.option);
+          setSelectedOption(existingVote.option);
+          setHasVoted(true);
+        } else {
+          console.log('[POLL DEBUG] User has not voted yet');
+          setHasVoted(false);
+          setSelectedOption(null);
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
     checkVote();
-  }, [poll.id, currentUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poll.id]); // Only re-run if poll changes, not on currentUser changes
 
   const handleSubmit = async () => {
     if (!currentUser || !selectedOption) return;

@@ -76,7 +76,8 @@ function App() {
       }
     };
 
-    const interval = setInterval(checkUser, 100);
+    // Check every 5 seconds instead of 100ms to reduce performance impact
+    const interval = setInterval(checkUser, 5000);
 
     return () => {
       clearInterval(interval);
