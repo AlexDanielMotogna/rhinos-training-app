@@ -5,6 +5,7 @@ import { isOnline } from './sync';
 
 const REPORTS_KEY = 'rhinos_workout_reports';
 const SAVING_REPORTS_KEY = 'rhinos_saving_reports'; // Track reports being saved to prevent duplicates
+const DELETED_REPORTS_KEY = 'rhinos_deleted_reports'; // Track reports deleted by user
 
 export interface SavedWorkoutReport extends WorkoutReport {
   id: string;
@@ -242,10 +243,29 @@ export async function saveWorkoutReport(
 /**
  * Delete a workout report
  */
-export function deleteWorkoutReport(reportId: string): void {
+export async function deleteWorkoutReport(reportId: string): Promise<void> {
   const allReports = getAllReports();
   const filtered = allReports.filter(report => report.id !== reportId);
   localStorage.setItem(REPORTS_KEY, JSON.stringify(filtered));
+
+  // Mark report as deleted to prevent re-sync
+  const deletedData = localStorage.getItem(DELETED_REPORTS_KEY);
+  const deletedReports = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
+  deletedReports.add(reportId);
+  localStorage.setItem(DELETED_REPORTS_KEY, JSON.stringify(Array.from(deletedReports)));
+  console.log('[WORKOUT REPORTS] Marked report as deleted:', reportId);
+
+  // Try to delete from backend if online
+  const online = isOnline();
+  if (online) {
+    try {
+      console.log('[WORKOUT REPORTS] Deleting report from backend:', reportId);
+      await workoutReportService.delete(reportId);
+      console.log('[WORKOUT REPORTS] Report deleted from backend');
+    } catch (error) {
+      console.warn('[WORKOUT REPORTS] Failed to delete report from backend:', error);
+    }
+  }
 }
 
 /**
@@ -279,15 +299,25 @@ export async function syncWorkoutReportsFromBackend(userId: string): Promise<voi
     // Get existing local reports
     const localReports = getAllReports();
 
+    // Get list of deleted reports to filter them out
+    const deletedData = localStorage.getItem(DELETED_REPORTS_KEY);
+    const deletedReports = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
+
     // Create a map of existing local reports by ID for quick lookup
     const localReportsMap = new Map(localReports.map(report => [report.id, report]));
 
     // Merge backend reports with local reports
-    const mergedReports = [...localReports];
+    const mergedReports: SavedWorkoutReport[] = [];
     let addedCount = 0;
     let updatedCount = 0;
 
     for (const backendReport of backendReports) {
+      // Skip reports that were marked as deleted by user
+      if (deletedReports.has(backendReport.id)) {
+        console.log('[WORKOUT REPORTS] Skipping report marked as deleted:', backendReport.id, backendReport.workoutTitle);
+        continue;
+      }
+
       // Transform backend format to frontend format
       const transformedReport: SavedWorkoutReport = {
         ...backendReport,
@@ -312,13 +342,36 @@ export async function syncWorkoutReportsFromBackend(userId: string): Promise<voi
 
         if (backendDate > localDate) {
           // Backend version is newer - update it
-          const index = mergedReports.findIndex(r => r.id === transformedReport.id);
-          if (index !== -1) {
-            console.log(`🔄 Updating report: ${transformedReport.workoutTitle} (${transformedReport.id})`);
-            mergedReports[index] = transformedReport;
-            updatedCount++;
-          }
+          console.log(`🔄 Updating report: ${transformedReport.workoutTitle} (${transformedReport.id})`);
+          mergedReports.push(transformedReport);
+          updatedCount++;
+        } else {
+          // Keep existing local version
+          mergedReports.push(existingReport);
         }
+      }
+    }
+
+    // Add local-only reports (not yet synced to backend)
+    for (const localReport of localReports) {
+      if (!backendReports.find(r => r.id === localReport.id)) {
+        // Skip reports that were marked as deleted
+        if (deletedReports.has(localReport.id)) {
+          console.log('[WORKOUT REPORTS] Report was deleted by user, removing from local cache:', localReport.id, localReport.workoutTitle);
+          continue;
+        }
+
+        // Check if this report has a MongoDB ID (24 hex chars)
+        const isMongoId = /^[0-9a-f]{24}$/i.test(localReport.id);
+
+        if (isMongoId) {
+          // This report was deleted from backend, don't re-add it
+          console.log('[WORKOUT REPORTS] Report was deleted from backend, removing from local cache:', localReport.id, localReport.workoutTitle);
+          continue;
+        }
+
+        console.log('[WORKOUT REPORTS] Found local-only report (not yet synced):', localReport.id);
+        mergedReports.push(localReport);
       }
     }
 

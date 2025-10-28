@@ -56,9 +56,9 @@ export const ReportsHistory: React.FC<ReportsHistoryProps> = ({ userId, source }
     setReports(getReportsByUser(userId, source));
   };
 
-  const handleDelete = (reportId: string) => {
+  const handleDelete = async (reportId: string) => {
     if (window.confirm(t('workout.confirmDelete'))) {
-      deleteWorkoutReport(reportId);
+      await deleteWorkoutReport(reportId);
       refreshReports();
     }
   };

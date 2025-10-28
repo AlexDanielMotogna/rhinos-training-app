@@ -20,6 +20,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { validateAPIKey } from '../../services/aiInsights';
 import { getUser } from '../../services/mock';
 import { getTeamSettings } from '../../services/teamSettings';
+import { updateUserProfile } from '../../services/userProfile';
 import type { MockUser } from '../../services/mock';
 
 export const AISettings: React.FC = () => {
@@ -72,20 +73,22 @@ export const AISettings: React.FC = () => {
       }
     }
 
-    // Update user settings
-    const updatedUser = {
-      ...user,
+    // Update user settings with backend sync
+    const updates = {
       aiCoachEnabled: enabled,
       aiApiKey: enabled ? apiKey.trim() : user.aiApiKey, // Keep API key even when disabled
     };
 
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    setAiCoachEnabled(enabled);
-    setError('');
-    setSaved(true);
+    const updatedUser = await updateUserProfile(updates);
 
-    setTimeout(() => setSaved(false), 3000);
+    if (updatedUser) {
+      setUser(updatedUser);
+      setAiCoachEnabled(enabled);
+      setError('');
+      setSaved(true);
+
+      setTimeout(() => setSaved(false), 3000);
+    }
   };
 
   const handleSave = async () => {
@@ -107,37 +110,42 @@ export const AISettings: React.FC = () => {
       return;
     }
 
-    // Update user settings
-    const updatedUser = {
-      ...user,
+    // Update user settings with backend sync
+    const updates = {
       aiApiKey: apiKey.trim(),
       aiCoachEnabled: aiCoachEnabled, // Preserve enabled state
     };
 
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    setSaved(true);
-    setError('');
+    const updatedUser = await updateUserProfile(updates);
 
-    setTimeout(() => setSaved(false), 3000);
+    if (updatedUser) {
+      setUser(updatedUser);
+      setSaved(true);
+      setError('');
+
+      setTimeout(() => setSaved(false), 3000);
+    }
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
     if (!user) return;
 
     if (window.confirm('Are you sure you want to remove your API key? AI Coach will be disabled.')) {
-      const updatedUser = {
-        ...user,
+      // Update user settings with backend sync
+      const updates = {
         aiApiKey: undefined,
         aiCoachEnabled: false,
       };
 
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      setApiKey('');
-      setAiCoachEnabled(false);
-      setSaved(false);
-      setValidationResult(null);
+      const updatedUser = await updateUserProfile(updates);
+
+      if (updatedUser) {
+        setUser(updatedUser);
+        setApiKey('');
+        setAiCoachEnabled(false);
+        setSaved(false);
+        setValidationResult(null);
+      }
     }
   };
 

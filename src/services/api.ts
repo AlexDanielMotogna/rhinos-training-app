@@ -146,12 +146,20 @@ export const authService = {
 
 // User endpoints
 export const userService = {
+  async getProfile() {
+    return apiCall('/users/me');
+  },
+
   async getMe() {
     return apiCall('/users/me');
   },
 
   async getAllUsers() {
     return apiCall('/users');
+  },
+
+  async getUserById(id: string) {
+    return apiCall(`/users/${id}`);
   },
 
   async updateProfile(data: any) {

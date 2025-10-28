@@ -3,6 +3,7 @@ import { workoutService } from './api';
 import { isOnline } from './sync';
 
 const WORKOUTS_KEY = 'rhinos_workouts';
+const DELETED_LOGS_KEY = 'rhinos_deleted_logs'; // Track logs deleted by user
 
 export interface WorkoutLog {
   id: string;
@@ -143,7 +144,7 @@ export function updateWorkoutLog(logId: string, updates: Partial<Omit<WorkoutLog
 /**
  * Soft delete a workout log (marks as deleted but keeps in database for stats)
  */
-export function deleteWorkoutLog(logId: string): void {
+export async function deleteWorkoutLog(logId: string): Promise<void> {
   const allLogs = getWorkoutLogs();
   const index = allLogs.findIndex(log => log.id === logId);
 
@@ -154,16 +155,54 @@ export function deleteWorkoutLog(logId: string): void {
   allLogs[index].deletedAt = new Date().toISOString();
 
   localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
+
+  // Mark log as deleted to prevent re-sync
+  const deletedData = localStorage.getItem(DELETED_LOGS_KEY);
+  const deletedLogs = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
+  deletedLogs.add(logId);
+  localStorage.setItem(DELETED_LOGS_KEY, JSON.stringify(Array.from(deletedLogs)));
+  console.log('[WORKOUT LOGS] Marked log as deleted:', logId);
+
+  // Try to delete from backend if online
+  const online = isOnline();
+  if (online) {
+    try {
+      console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
+      await workoutService.delete(logId);
+      console.log('[WORKOUT LOGS] Log deleted from backend');
+    } catch (error) {
+      console.warn('[WORKOUT LOGS] Failed to delete log from backend:', error);
+    }
+  }
 }
 
 /**
  * Hard delete a workout log (permanently removes from database)
  * This should only be used by admins or for data cleanup
  */
-export function hardDeleteWorkoutLog(logId: string): void {
+export async function hardDeleteWorkoutLog(logId: string): Promise<void> {
   const allLogs = getWorkoutLogs();
   const filtered = allLogs.filter(log => log.id !== logId);
   localStorage.setItem(WORKOUTS_KEY, JSON.stringify(filtered));
+
+  // Mark log as deleted to prevent re-sync
+  const deletedData = localStorage.getItem(DELETED_LOGS_KEY);
+  const deletedLogs = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
+  deletedLogs.add(logId);
+  localStorage.setItem(DELETED_LOGS_KEY, JSON.stringify(Array.from(deletedLogs)));
+  console.log('[WORKOUT LOGS] Marked log as hard deleted:', logId);
+
+  // Try to delete from backend if online
+  const online = isOnline();
+  if (online) {
+    try {
+      console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
+      await workoutService.delete(logId);
+      console.log('[WORKOUT LOGS] Log deleted from backend');
+    } catch (error) {
+      console.warn('[WORKOUT LOGS] Failed to delete log from backend:', error);
+    }
+  }
 }
 
 /**
@@ -203,19 +242,30 @@ export async function syncWorkoutLogsFromBackend(userId: string): Promise<void> 
     // Get existing local logs
     const localLogs = getWorkoutLogs();
 
+    // Get list of deleted logs to filter them out
+    const deletedData = localStorage.getItem(DELETED_LOGS_KEY);
+    const deletedLogs = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
+
     // Create a map of existing local logs by ID for quick lookup
     const localLogsMap = new Map(localLogs.map(log => [log.id, log]));
 
     // Merge backend logs with local logs
-    const mergedLogs = [...localLogs];
+    const mergedLogs: WorkoutLog[] = [];
     let addedCount = 0;
     let updatedCount = 0;
 
     for (const backendLog of backendLogs) {
+      // Skip logs that were marked as deleted by user
+      if (deletedLogs.has(backendLog.id)) {
+        console.log('[WORKOUT LOGS] Skipping log marked as deleted:', backendLog.id);
+        continue;
+      }
+
       const existingLog = localLogsMap.get(backendLog.id);
 
       if (!existingLog) {
         // New log from backend - add it
+        console.log('[WORKOUT LOGS] Adding new log:', backendLog.id);
         mergedLogs.push(backendLog);
         addedCount++;
       } else {
@@ -225,12 +275,36 @@ export async function syncWorkoutLogsFromBackend(userId: string): Promise<void> 
 
         if (backendDate > localDate) {
           // Backend version is newer - update it
-          const index = mergedLogs.findIndex(l => l.id === backendLog.id);
-          if (index !== -1) {
-            mergedLogs[index] = backendLog;
-            updatedCount++;
-          }
+          console.log('[WORKOUT LOGS] Updating log:', backendLog.id);
+          mergedLogs.push(backendLog);
+          updatedCount++;
+        } else {
+          // Keep existing local version
+          mergedLogs.push(existingLog);
         }
+      }
+    }
+
+    // Add local-only logs (not yet synced to backend)
+    for (const localLog of localLogs) {
+      if (!backendLogs.find(l => l.id === localLog.id)) {
+        // Skip logs that were marked as deleted
+        if (deletedLogs.has(localLog.id)) {
+          console.log('[WORKOUT LOGS] Log was deleted by user, removing from local cache:', localLog.id);
+          continue;
+        }
+
+        // Check if this log has a MongoDB ID (24 hex chars)
+        const isMongoId = /^[0-9a-f]{24}$/i.test(localLog.id);
+
+        if (isMongoId) {
+          // This log was deleted from backend, don't re-add it
+          console.log('[WORKOUT LOGS] Log was deleted from backend, removing from local cache:', localLog.id);
+          continue;
+        }
+
+        console.log('[WORKOUT LOGS] Found local-only log (not yet synced):', localLog.id);
+        mergedLogs.push(localLog);
       }
     }
 

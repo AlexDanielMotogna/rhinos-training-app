@@ -19,6 +19,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { getUser, getAllUsers, saveUser, type MockUser } from '../services/mock';
+import { getCurrentUser, syncUserProfileFromBackend, syncAllUsersFromBackend } from '../services/userProfile';
 import { calculateKPIs } from '../services/kpi';
 import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
 import { StrengthBars } from '../components/profile/StrengthBars';
@@ -54,6 +55,31 @@ export const Profile: React.FC = () => {
   const [agilitySummary, setAgilitySummary] = useState<AgilitySummary | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [teamSettings] = useState(() => getTeamSettings());
+
+  // Sync user profile from backend on mount
+  useEffect(() => {
+    const syncProfile = async () => {
+      if (!isViewingOtherPlayer) {
+        // Only sync current user's profile
+        await syncUserProfileFromBackend();
+        // Refresh user data after sync
+        const updatedUser = getCurrentUser();
+        if (updatedUser) {
+          setUser(updatedUser);
+        }
+      } else if (playerId) {
+        // Sync all users to get latest data for other players
+        await syncAllUsersFromBackend();
+        const allUsers = getAllUsers();
+        const updatedPlayer = allUsers.find(u => u.id === playerId);
+        if (updatedPlayer) {
+          setUser(updatedPlayer);
+        }
+      }
+    };
+
+    syncProfile();
+  }, [playerId, isViewingOtherPlayer]);
 
   useEffect(() => {
     if (user) {

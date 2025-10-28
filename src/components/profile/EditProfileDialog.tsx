@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useI18n } from '../../i18n/I18nProvider';
 import { saveUser, calculateAge, type MockUser } from '../../services/mock';
+import { updateUserProfile } from '../../services/userProfile';
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -68,14 +69,13 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     validatePhone(value);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validate phone before saving
     if (!validatePhone(phone)) {
       return;
     }
 
-    const updatedUser: MockUser = {
-      ...user,
+    const updates: Partial<MockUser> = {
       name,
       jerseyNumber: jerseyNumber && jerseyNumber !== '--' ? Number(jerseyNumber) : undefined,
       birthDate,
@@ -90,8 +90,15 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
       hudl: hudl || undefined,
     };
 
-    saveUser(updatedUser);
-    onSave(updatedUser);
+    // Use the new sync service that handles backend sync
+    const updatedUser = await updateUserProfile(updates);
+
+    if (updatedUser) {
+      // Also save to mock service for backward compatibility
+      saveUser(updatedUser);
+      onSave(updatedUser);
+    }
+
     onClose();
   };
 

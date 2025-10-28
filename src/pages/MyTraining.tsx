@@ -338,10 +338,10 @@ export const MyTraining: React.FC = () => {
     }
   };
 
-  const handleDeleteWorkout = (logId: string) => {
+  const handleDeleteWorkout = async (logId: string) => {
     if (window.confirm(t('workout.confirmDelete'))) {
       // Soft delete - hides from history but keeps for stats
-      deleteWorkoutLog(logId);
+      await deleteWorkoutLog(logId);
       refreshWorkoutHistory();
       setSuccessMessage(t('workout.workoutDeleted'));
       setTimeout(() => setSuccessMessage(''), 3000);
