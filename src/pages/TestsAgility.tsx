@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { AgilityWizard } from '../components/tests/AgilityWizard';
 import { AgilitySummary } from '../components/tests/AgilitySummary';
@@ -7,6 +7,7 @@ import type { AgilityResult, AgilitySummary as AgilitySummaryType, Tier, Agility
 import { agilityScore, agilityIndex, labelFromAgilityIndex } from '../services/agilityCalc';
 import { getAgilityBenchmarks } from '../services/agilityBenchmarks';
 import { getUser } from '../services/userProfile';
+import { saveTestResult, syncTestResultsFromBackend } from '../services/testResults';
 
 export const TestsAgility: React.FC = () => {
   const { t } = useI18n();
@@ -17,12 +18,17 @@ export const TestsAgility: React.FC = () => {
   const user = getUser()!;
   const position = user.position;
 
+  // Sync test results from backend on mount
+  useEffect(() => {
+    syncTestResultsFromBackend();
+  }, []);
+
   const handleWizardFinish = (results: AgilityResult[]) => {
     setTestResults(results);
     computeSummary(results, selectedTier);
   };
 
-  const computeSummary = (results: AgilityResult[], tier: Tier) => {
+  const computeSummary = async (results: AgilityResult[], tier: Tier) => {
     const benchmarks = getAgilityBenchmarks(position);
     const scores: Record<AgilityTestKey, number> = {} as any;
 
@@ -49,14 +55,8 @@ export const TestsAgility: React.FC = () => {
 
     setSummary(newSummary);
 
-    // Save previous test before overwriting
-    const previousTest = localStorage.getItem('lastAgilityTest');
-    if (previousTest) {
-      localStorage.setItem('lastAgilityTest_previous', previousTest);
-    }
-
-    // Save to localStorage
-    localStorage.setItem('lastAgilityTest', JSON.stringify(newSummary));
+    // Use the new sync service that handles backend sync
+    await saveTestResult('agility', newSummary, index, label);
   };
 
   const handleTierChange = (tier: Tier) => {

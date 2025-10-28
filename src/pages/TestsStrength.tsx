@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Alert } from '@mui/material';
 import { useI18n } from '../i18n/I18nProvider';
 import { StrengthWizard } from '../components/tests/StrengthWizard';
@@ -11,6 +11,7 @@ import {
   strengthIndex,
   labelFromIndex,
 } from '../services/strengthCalc';
+import { saveTestResult, getTestResultLocal, syncTestResultsFromBackend } from '../services/testResults';
 import type {
   StrengthResult,
   StrengthSummary,
@@ -28,6 +29,11 @@ export const TestsStrength: React.FC = () => {
   const [selectedTier, setSelectedTier] = useState<Tier>('semi');
   const [summary, setSummary] = useState<StrengthSummary | null>(null);
   const [saved, setSaved] = useState(false);
+
+  // Sync test results from backend on mount
+  useEffect(() => {
+    syncTestResultsFromBackend();
+  }, []);
 
   if (!user) {
     return (
@@ -100,16 +106,11 @@ export const TestsStrength: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (summary) {
-      // Save previous test before overwriting
-      const previousTest = localStorage.getItem('lastStrengthTest');
-      if (previousTest) {
-        localStorage.setItem('lastStrengthTest_previous', previousTest);
-      }
+      // Use the new sync service that handles backend sync
+      await saveTestResult('strength', summary, summary.strengthIndex, summary.label);
 
-      // Save new test
-      localStorage.setItem('lastStrengthTest', JSON.stringify(summary));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { PowerWizard } from '../components/tests/PowerWizard';
 import { PowerSummary } from '../components/tests/PowerSummary';
@@ -7,6 +7,7 @@ import type { PowerResult, PowerSummary as PowerSummaryType, Tier, PowerTestKey 
 import { powerScore, powerIndex, labelFromPowerIndex } from '../services/powerCalc';
 import { getPowerBenchmarks } from '../services/powerBenchmarks';
 import { getUser } from '../services/userProfile';
+import { saveTestResult, syncTestResultsFromBackend } from '../services/testResults';
 
 export const TestsPower: React.FC = () => {
   const { t } = useI18n();
@@ -17,12 +18,17 @@ export const TestsPower: React.FC = () => {
   const user = getUser()!;
   const position = user.position;
 
+  // Sync test results from backend on mount
+  useEffect(() => {
+    syncTestResultsFromBackend();
+  }, []);
+
   const handleWizardFinish = (results: PowerResult[]) => {
     setTestResults(results);
     computeSummary(results, selectedTier);
   };
 
-  const computeSummary = (results: PowerResult[], tier: Tier) => {
+  const computeSummary = async (results: PowerResult[], tier: Tier) => {
     const benchmarks = getPowerBenchmarks(position);
     const scores: Record<PowerTestKey, number> = {} as any;
 
@@ -57,14 +63,8 @@ export const TestsPower: React.FC = () => {
 
     setSummary(newSummary);
 
-    // Save previous test before overwriting
-    const previousTest = localStorage.getItem('lastPowerTest');
-    if (previousTest) {
-      localStorage.setItem('lastPowerTest_previous', previousTest);
-    }
-
-    // Save to localStorage
-    localStorage.setItem('lastPowerTest', JSON.stringify(newSummary));
+    // Use the new sync service that handles backend sync
+    await saveTestResult('power', newSummary, index, label);
   };
 
   const handleTierChange = (tier: Tier) => {

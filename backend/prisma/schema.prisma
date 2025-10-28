@@ -423,3 +423,40 @@ model Notification {
 
   @@index([userId, read, createdAt])
 }
+
+// ========================================
+// TEST RESULTS (Strength, Speed, Power, Agility)
+// ========================================
+
+model TestResult {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+
+  // Test type: 'strength' | 'speed' | 'power' | 'agility'
+  testType  String
+
+  // Test date
+  dateISO   String   // ISO date string (YYYY-MM-DD)
+
+  // Test data stored as JSON (different structure per test type)
+  // For strength: { byTest: [], bySegment: {}, strengthIndex: number, label: string, tier: string }
+  // For speed: { byTest: [], speedScore: number, label: string, tier: string }
+  // For power: { byTest: [], powerScore: number, label: string, tier: string }
+  // For agility: { byTest: [], agilityScore: number, label: string, tier: string }
+  testData  Json
+
+  // Overall score (0-100) for quick filtering/sorting
+  score     Int
+
+  // Tier: 'ELITE' | 'ADVANCED' | 'INTERMEDIATE' | 'BEGINNER'
+  tier      String
+
+  // Whether this is the current/latest test for this user+type
+  isCurrent Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, testType, isCurrent])
+  @@index([userId, dateISO])
+}

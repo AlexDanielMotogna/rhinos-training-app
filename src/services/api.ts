@@ -523,3 +523,34 @@ export const userPlanService = {
     });
   },
 };
+
+// Test Results endpoints
+export const testResultService = {
+  async getAll(testType?: string) {
+    const query = testType ? `?testType=${testType}` : '';
+    return apiCall(`/test-results${query}`);
+  },
+
+  async getLatest(testType: string) {
+    return apiCall(`/test-results/latest/${testType}`);
+  },
+
+  async create(data: {
+    testType: string;
+    dateISO: string;
+    testData: any;
+    score: number;
+    tier: string;
+  }) {
+    return apiCall('/test-results', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string) {
+    return apiCall(`/test-results/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
