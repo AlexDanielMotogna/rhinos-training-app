@@ -167,6 +167,7 @@ export async function saveWorkoutReport(
         const backendReport = await workoutReportService.create({
           userId: savedReport.userId,
           workoutTitle: savedReport.workoutTitle,
+          date: savedReport.dateISO, // Send as 'date' for backend
           source: savedReport.source,
           duration: savedReport.duration,
 
@@ -266,12 +267,14 @@ export async function syncWorkoutReportsFromBackend(userId: string): Promise<voi
 
   try {
     console.log('🔄 Syncing workout reports from backend...');
-    const backendReports = await workoutReportService.getAll({ userId }) as SavedWorkoutReport[];
+    const backendReports = await workoutReportService.getAll({ userId }) as any[];
 
     if (!backendReports || backendReports.length === 0) {
       console.log('ℹ️ No workout reports found in backend');
       return;
     }
+
+    console.log(`📥 Received ${backendReports.length} reports from backend`);
 
     // Get existing local reports
     const localReports = getAllReports();
@@ -285,28 +288,32 @@ export async function syncWorkoutReportsFromBackend(userId: string): Promise<voi
     let updatedCount = 0;
 
     for (const backendReport of backendReports) {
-      const existingReport = localReportsMap.get(backendReport.id);
+      // Transform backend format to frontend format
+      const transformedReport: SavedWorkoutReport = {
+        ...backendReport,
+        dateISO: backendReport.date || backendReport.dateISO, // Backend uses 'date', frontend uses 'dateISO'
+        entries: backendReport.workoutEntries || backendReport.entries || [], // Backend uses 'workoutEntries', frontend uses 'entries'
+        backendSynced: true,
+      };
+
+      const existingReport = localReportsMap.get(transformedReport.id);
 
       if (!existingReport) {
         // New report from backend - add it
-        mergedReports.push({
-          ...backendReport,
-          backendSynced: true,
-        });
+        console.log(`➕ Adding new report: ${transformedReport.workoutTitle} (${transformedReport.id})`);
+        mergedReports.push(transformedReport);
         addedCount++;
       } else {
         // Report exists - check if backend version is newer
-        const backendDate = new Date(backendReport.createdAt || 0);
+        const backendDate = new Date(transformedReport.createdAt || 0);
         const localDate = new Date(existingReport.createdAt || 0);
 
         if (backendDate > localDate) {
           // Backend version is newer - update it
-          const index = mergedReports.findIndex(r => r.id === backendReport.id);
+          const index = mergedReports.findIndex(r => r.id === transformedReport.id);
           if (index !== -1) {
-            mergedReports[index] = {
-              ...backendReport,
-              backendSynced: true,
-            };
+            console.log(`🔄 Updating report: ${transformedReport.workoutTitle} (${transformedReport.id})`);
+            mergedReports[index] = transformedReport;
             updatedCount++;
           }
         }

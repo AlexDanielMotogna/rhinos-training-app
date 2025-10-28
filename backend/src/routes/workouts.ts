@@ -20,6 +20,7 @@ const workoutLogSchema = z.object({
 
 const workoutReportSchema = z.object({
   workoutTitle: z.string(),
+  date: z.string().optional(), // ISO date string (YYYY-MM-DD), backend will generate if not provided
   duration: z.number(),
   source: z.enum(['coach', 'player']),
   intensityScore: z.number().default(0),
@@ -283,12 +284,14 @@ router.post('/reports', authenticate, async (req, res) => {
     console.log('📊 Received report data:', JSON.stringify(req.body, null, 2));
     const data = workoutReportSchema.parse(req.body);
 
+    const now = new Date();
     const report = await prisma.workoutReport.create({
       data: {
         ...data,
         userId: req.user.userId,
+        date: data.date || now.toISOString().split('T')[0], // Generate date if not provided
         sessionValid: data.sessionValid !== false,
-        createdAt: new Date().toISOString(),
+        createdAt: data.createdAt || now.toISOString(), // Use provided createdAt or generate new
       },
     });
 

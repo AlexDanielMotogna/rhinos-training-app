@@ -299,6 +299,7 @@ model WorkoutReport {
   id                      String   @id @default(auto()) @map("_id") @db.ObjectId
   userId                  String   @db.ObjectId
   workoutTitle            String
+  date                    String   // ISO date string (YYYY-MM-DD)
   duration                Int      // Duration in minutes
   source                  String   // 'coach' | 'player'
 
