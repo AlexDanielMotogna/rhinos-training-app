@@ -6,7 +6,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import type { SpeedResult, SpeedSummary as SpeedSummaryType, Tier, SpeedTestKey } from '../types/testing';
 import { speedScore, speedIndex, labelFromSpeedIndex } from '../services/speedCalc';
 import { getSpeedBenchmarks } from '../services/speedBenchmarks';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 
 export const TestsSpeed: React.FC = () => {
   const { t } = useI18n();

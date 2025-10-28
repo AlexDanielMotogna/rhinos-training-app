@@ -19,7 +19,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import { useI18n } from '../i18n/I18nProvider';
 import { submitVote, getPollResults, getUserVote } from '../services/attendancePollService';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 import type { AttendancePoll } from '../types/attendancePoll';
 
 interface AttendancePollModalProps {

@@ -18,12 +18,14 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
-import { getUser, getAllUsers, saveUser, type MockUser } from '../services/mock';
 import {
+  getUser,
+  getAllUsers,
+  saveUser,
   getCurrentUser,
-  getAllUsers as getAllUsersFromProfile,
   syncUserProfileFromBackend,
-  syncAllUsersFromBackend
+  syncAllUsersFromBackend,
+  type MockUser
 } from '../services/userProfile';
 import { calculateKPIs } from '../services/kpi';
 import { StrengthProfileCard } from '../components/profile/StrengthProfileCard';
@@ -75,7 +77,7 @@ export const Profile: React.FC = () => {
       } else if (playerId) {
         // Sync all users to get latest data for other players
         await syncAllUsersFromBackend();
-        const allUsers = getAllUsersFromProfile();
+        const allUsers = getAllUsers();
         const updatedPlayer = allUsers.find(u => u.id === playerId);
         if (updatedPlayer) {
           setUser(updatedPlayer);

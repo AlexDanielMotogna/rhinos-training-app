@@ -6,7 +6,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import type { AgilityResult, AgilitySummary as AgilitySummaryType, Tier, AgilityTestKey } from '../types/testing';
 import { agilityScore, agilityIndex, labelFromAgilityIndex } from '../services/agilityCalc';
 import { getAgilityBenchmarks } from '../services/agilityBenchmarks';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 
 export const TestsAgility: React.FC = () => {
   const { t } = useI18n();

@@ -13,7 +13,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { useI18n } from '../../i18n/I18nProvider';
-import { saveUser, calculateAge, type MockUser } from '../../services/mock';
+import { saveUser, calculateAge, type MockUser } from '../../services/userProfile';
 import { updateUserProfile } from '../../services/userProfile';
 
 interface EditProfileDialogProps {

@@ -22,7 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import { pointsConfigService } from '../../services/api';
-import { getUser } from '../../services/mock';
+import { getUser } from '../../services/userProfile';
 import type { PointsConfig, PointCategory, PointCategoryType } from '../../types/pointsSystem';
 import { pointsCategoryColors } from '../../theme';
 

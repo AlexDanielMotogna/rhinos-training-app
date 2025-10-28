@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 import { getWorkoutLogsByUser } from '../services/workoutLog';
 import { getYouTubeThumbnail } from '../services/yt';
 import { useI18n } from '../i18n/I18nProvider';

@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { getUser } from '../../services/mock';
+import { getUser } from '../../services/userProfile';
 import { getTeamBranding, updateTeamBranding } from '../../services/teamSettings';
 import type { TeamBranding } from '../../types/teamSettings';
 import { DEFAULT_TEAM_BRANDING } from '../../types/teamSettings';

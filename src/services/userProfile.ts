@@ -2,9 +2,35 @@ import type { MockUser } from './mock';
 import { userService } from './api';
 import { isOnline } from './sync';
 
+// Re-export MockUser as User (keeping backward compatibility for now)
+export type { MockUser };
+export type User = MockUser;
+
 const CURRENT_USER_KEY = 'currentUser';
 const ALL_USERS_KEY = 'rhinos_users';
 const SYNCING_PROFILE_KEY = 'rhinos_syncing_profile';
+
+/**
+ * Calculate age from birth date
+ */
+export function calculateAge(birthDate: string): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+/**
+ * Get current user - alias for backward compatibility
+ * Use getCurrentUser() instead
+ */
+export function getUser(): MockUser | null {
+  return getCurrentUser();
+}
 
 /**
  * Get current user from localStorage
@@ -18,8 +44,17 @@ export function getCurrentUser(): MockUser | null {
  * Get all users from localStorage
  */
 export function getAllUsers(): MockUser[] {
-  const stored = localStorage.getItem(ALL_USERS_KEY);
-  return stored ? JSON.parse(stored) : [];
+  try {
+    const stored = localStorage.getItem(ALL_USERS_KEY);
+    if (!stored) return [];
+
+    const parsed = JSON.parse(stored);
+    // Ensure we always return an array
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('[USER PROFILE] Error parsing users from localStorage:', error);
+    return [];
+  }
 }
 
 /**
@@ -42,6 +77,14 @@ export function saveUserLocal(user: MockUser): void {
   }
 
   localStorage.setItem(ALL_USERS_KEY, JSON.stringify(allUsers));
+}
+
+/**
+ * Save user - alias for backward compatibility
+ * Use updateUserProfile() for backend sync instead
+ */
+export function saveUser(user: MockUser): void {
+  saveUserLocal(user);
 }
 
 /**
@@ -167,9 +210,14 @@ export async function syncAllUsersFromBackend(): Promise<void> {
 
   try {
     console.log('🔄 Syncing all users from backend...');
-    const backendUsers = await userService.getAllUsers() as any[];
+    const backendUsersResponse = await userService.getAllUsers();
 
-    if (!backendUsers || backendUsers.length === 0) {
+    // Ensure we have an array
+    const backendUsers = Array.isArray(backendUsersResponse)
+      ? backendUsersResponse
+      : [];
+
+    if (backendUsers.length === 0) {
       console.log('ℹ️ No users found in backend');
       return;
     }

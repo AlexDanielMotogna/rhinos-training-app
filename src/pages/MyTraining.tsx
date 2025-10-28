@@ -32,7 +32,7 @@ import { FinishWorkoutDialog } from '../components/workout/FinishWorkoutDialog';
 import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 import { assignmentService, trainingTypeService, workoutService } from '../services/api';
 import {
   getCachedTrainingTypes,

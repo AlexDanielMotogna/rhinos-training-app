@@ -6,7 +6,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import type { PowerResult, PowerSummary as PowerSummaryType, Tier, PowerTestKey } from '../types/testing';
 import { powerScore, powerIndex, labelFromPowerIndex } from '../services/powerCalc';
 import { getPowerBenchmarks } from '../services/powerBenchmarks';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 
 export const TestsPower: React.FC = () => {
   const { t } = useI18n();

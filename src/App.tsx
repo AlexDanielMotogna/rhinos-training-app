@@ -7,7 +7,7 @@ import { AppShell } from './components/AppShell';
 import { HardNotification } from './components/HardNotification';
 import { AttendancePollModal } from './components/AttendancePollModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { getUser, initializeDemoProfiles } from './services/mock';
+import { getUser } from './services/userProfile';
 import type { HardNotification as HardNotificationType } from './types/notification';
 import type { AttendancePoll } from './types/attendancePoll';
 import { getTeamBranding } from './services/teamSettings';
@@ -37,9 +37,8 @@ const Configuration = lazy(() => import('./pages/Configuration').then(m => ({ de
 const DrillSessions = lazy(() => import('./components/DrillTrainingPlan').then(m => ({ default: m.DrillTrainingPlan })));
 
 function App() {
-  // Initialize demo profiles on app startup
+  // Initialize drill data on app startup
   useEffect(() => {
-    initializeDemoProfiles();
     initializeDrillData();
   }, []);
 

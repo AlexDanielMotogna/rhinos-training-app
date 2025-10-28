@@ -11,7 +11,7 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useI18n } from '../i18n/I18nProvider';
 import { getUpcomingTeamSessions, sessionsToAttendanceRows, canCheckIn } from '../services/schedule';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 import type { AttendanceRow, TeamSession } from '../types/attendance';
 
 export const Attendance: React.FC = () => {

@@ -35,7 +35,7 @@ import {
   updateVideo,
   deleteVideo,
 } from '../services/videos';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 import type {
   Video,
   VideoType,

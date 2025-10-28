@@ -18,10 +18,10 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { validateAPIKey } from '../../services/aiInsights';
-import { getUser } from '../../services/mock';
+import { getUser } from '../../services/userProfile';
 import { getTeamSettings } from '../../services/teamSettings';
 import { updateUserProfile } from '../../services/userProfile';
-import type { MockUser } from '../../services/mock';
+import type { MockUser } from '../../services/userProfile';
 
 export const AISettings: React.FC = () => {
   const [user, setUser] = useState<MockUser | null>(getUser());

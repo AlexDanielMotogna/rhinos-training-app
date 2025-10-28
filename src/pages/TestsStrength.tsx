@@ -3,7 +3,7 @@ import { Box, Typography, Alert } from '@mui/material';
 import { useI18n } from '../i18n/I18nProvider';
 import { StrengthWizard } from '../components/tests/StrengthWizard';
 import { StrengthSummary as StrengthSummaryComponent } from '../components/tests/StrengthSummary';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 import { getBenchmarks } from '../services/benchmarks';
 import {
   getSegmentMetric,

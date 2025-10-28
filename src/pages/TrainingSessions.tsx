@@ -35,7 +35,7 @@ import CircleIcon from '@mui/icons-material/Circle';
 import CloseIcon from '@mui/icons-material/Close';
 import SportsFootballIcon from '@mui/icons-material/SportsFootball';
 import { useI18n } from '../i18n/I18nProvider';
-import { getUser, getAllUsers } from '../services/mock';
+import { getUser, getAllUsers } from '../services/userProfile';
 import {
   getTeamSessions,
   getPrivateSessions,

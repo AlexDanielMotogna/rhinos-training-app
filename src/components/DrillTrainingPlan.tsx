@@ -38,7 +38,7 @@ import { equipmentService } from '../services/equipmentService';
 import { exportSessionToPDF } from '../services/drillSessionPdfExport';
 import { createPoll, getAllPolls } from '../services/attendancePollService';
 import { Drill, DrillTrainingSession, Equipment } from '../types/drill';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 
 const DRILLS_TRAINING_SESSIONS_KEY = 'rhinos_drill_training_sessions';
 

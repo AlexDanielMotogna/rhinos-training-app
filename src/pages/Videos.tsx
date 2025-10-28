@@ -21,7 +21,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { getPublishedVideos, getPlayerProgressForAllVideos, isYouTubeShort, getYouTubeVideoId } from '../services/videos';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 import type { Video, VideoType, PositionTag, RouteTag, CoverageTag, VideoLevel, WatchStatus } from '../types/video';
 
 export const Videos: React.FC = () => {

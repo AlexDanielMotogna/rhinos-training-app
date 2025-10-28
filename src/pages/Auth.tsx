@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { ForgotPasswordDialog } from '../components/ForgotPasswordDialog';
-import { calculateAge } from '../services/mock';
+import { calculateAge } from '../services/userProfile';
 import { authService } from '../services/api';
 import type { Position } from '../types/exercise';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';

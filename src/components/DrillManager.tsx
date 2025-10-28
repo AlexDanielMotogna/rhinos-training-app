@@ -43,7 +43,7 @@ import { equipmentService } from '../services/equipmentService';
 import { exportDrillToPDF } from '../services/drillPdfExport';
 import { optimizeDrillSketch, validateImage } from '../services/imageOptimizer';
 import { Drill, DrillCategory, DrillDifficulty, Equipment, DrillEquipment } from '../types/drill';
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 
 const CATEGORY_COLORS: Record<DrillCategory, string> = {
   athletik: '#FFB300',

@@ -38,7 +38,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import type { Exercise, ExerciseCategory, Position } from '../types/exercise';
 import type { TrainingTemplate, TrainingAssignment } from '../types/trainingBuilder';
 // Note: TrainingTypes now loaded from backend via trainingTypeService
-import { getUser } from '../services/mock';
+import { getUser } from '../services/userProfile';
 import { exerciseService, templateService, assignmentService, userService, trainingTypeService } from '../services/api';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 import { PointsSystemManager } from '../components/admin/PointsSystemManager';
