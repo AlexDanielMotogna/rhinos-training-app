@@ -36,6 +36,7 @@ import { AgilityProfileCard } from '../components/profile/AgilityProfileCard';
 import { EditProfileDialog } from '../components/profile/EditProfileDialog';
 import { AISettings } from '../components/profile/AISettings';
 import { getTeamSettings } from '../services/teamSettings';
+import { testResultService } from '../services/api';
 import type { KPISnapshot } from '../types/kpi';
 import type { StrengthSummary, SpeedSummary, PowerSummary, AgilitySummary } from '../types/testing';
 
@@ -107,48 +108,59 @@ export const Profile: React.FC = () => {
       }
     };
 
+    const loadTestResults = async () => {
+      if (!user) return;
+
+      console.log('[PROFILE] Loading test results for user:', user.id);
+
+      // Load test results from backend first, fallback to localStorage
+      await loadTestResult('strength', setStrengthSummary, 'lastStrengthTest');
+      await loadTestResult('speed', setSpeedSummary, 'lastSpeedTest');
+      await loadTestResult('power', setPowerSummary, 'lastPowerTest');
+      await loadTestResult('agility', setAgilitySummary, 'lastAgilityTest');
+    };
+
     loadKPIs();
-
-    // Load last strength test from localStorage
-    const lastStrengthTest = localStorage.getItem('lastStrengthTest');
-    if (lastStrengthTest) {
-      try {
-        setStrengthSummary(JSON.parse(lastStrengthTest));
-      } catch (e) {
-        console.error('Failed to parse strength test data', e);
-      }
-    }
-
-    // Load last speed test from localStorage
-    const lastSpeedTest = localStorage.getItem('lastSpeedTest');
-    if (lastSpeedTest) {
-      try {
-        setSpeedSummary(JSON.parse(lastSpeedTest));
-      } catch (e) {
-        console.error('Failed to parse speed test data', e);
-      }
-    }
-
-    // Load last power test from localStorage
-    const lastPowerTest = localStorage.getItem('lastPowerTest');
-    if (lastPowerTest) {
-      try {
-        setPowerSummary(JSON.parse(lastPowerTest));
-      } catch (e) {
-        console.error('Failed to parse power test data', e);
-      }
-    }
-
-    // Load last agility test from localStorage
-    const lastAgilityTest = localStorage.getItem('lastAgilityTest');
-    if (lastAgilityTest) {
-      try {
-        setAgilitySummary(JSON.parse(lastAgilityTest));
-      } catch (e) {
-        console.error('Failed to parse agility test data', e);
-      }
-    }
+    loadTestResults();
   }, [user]);
+
+  // Helper function to load test result from backend or localStorage
+  const loadTestResult = async (
+    testType: string,
+    setSummary: (summary: any) => void,
+    localStorageKey: string
+  ) => {
+    try {
+      // Try to load from backend first
+      console.log(`[PROFILE] Loading ${testType} test from backend...`);
+      const backendResult = await testResultService.getLatest(testType);
+      
+      if (backendResult && typeof backendResult === 'object' && 'testData' in backendResult) {
+        const testData = (backendResult as any).testData;
+        console.log(`[PROFILE] ✅ Loaded ${testType} test from backend:`, testData);
+        setSummary(testData);
+        
+        // Update localStorage cache
+        localStorage.setItem(localStorageKey, JSON.stringify(testData));
+        return;
+      }
+    } catch (error) {
+      console.warn(`[PROFILE] ⚠️ Failed to load ${testType} test from backend:`, error);
+    }
+
+    // Fallback to localStorage
+    const localData = localStorage.getItem(localStorageKey);
+    if (localData) {
+      try {
+        console.log(`[PROFILE] 📦 Loading ${testType} test from localStorage`);
+        setSummary(JSON.parse(localData));
+      } catch (e) {
+        console.error(`[PROFILE] ❌ Failed to parse ${testType} test data from localStorage:`, e);
+      }
+    } else {
+      console.log(`[PROFILE] 📭 No ${testType} test data found in backend or localStorage`);
+    }
+  };
 
   if (!user || !kpis) {
     return (
