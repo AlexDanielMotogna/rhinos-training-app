@@ -100,9 +100,14 @@ export const Profile: React.FC = () => {
   }, [playerId, isViewingOtherPlayer]);
 
   useEffect(() => {
-    if (user) {
-      setKpis(calculateKPIs(user.id));
-    }
+    const loadKPIs = async () => {
+      if (user) {
+        const kpisData = await calculateKPIs(user.id);
+        setKpis(kpisData);
+      }
+    };
+
+    loadKPIs();
 
     // Load last strength test from localStorage
     const lastStrengthTest = localStorage.getItem('lastStrengthTest');

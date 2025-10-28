@@ -6,7 +6,7 @@ import { getTeamSessions } from './trainingSessions';
 /**
  * Calculate KPIs for a user
  */
-export function calculateKPIs(userId: string): KPISnapshot {
+export async function calculateKPIs(userId: string): Promise<KPISnapshot> {
   const now = new Date();
   const currentWeek = getWeekNumber(now);
 
@@ -34,7 +34,8 @@ export function calculateKPIs(userId: string): KPISnapshot {
   const coachPlansCompleted = thisWeekLogs.filter(log => log.source === 'coach').length;
 
   // Calculate team session attendance for this week
-  const teamSessionsThisWeek = getTeamSessions().filter(session => {
+  const allTeamSessions = await getTeamSessions();
+  const teamSessionsThisWeek = allTeamSessions.filter(session => {
     const sessionDate = new Date(session.date);
     return sessionDate >= weekStart && sessionDate <= weekEnd;
   });
@@ -80,8 +81,7 @@ export function calculateKPIs(userId: string): KPISnapshot {
   const powerScore = getPerformanceScore('lastPowerTest');
   const agilityScore = getPerformanceScore('lastAgilityTest');
 
-  // Overall attendance stats (all time)
-  const allTeamSessions = getTeamSessions();
+  // Overall attendance stats (all time) - reuse allTeamSessions from above
   const totalTeamSessionsScheduled = allTeamSessions.length;
   let totalTeamSessionsAttended = 0;
 
