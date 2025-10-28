@@ -46,11 +46,20 @@ export function getCurrentUser(): MockUser | null {
 export function getAllUsers(): MockUser[] {
   try {
     const stored = localStorage.getItem(ALL_USERS_KEY);
-    if (!stored) return [];
+    console.log('[USER PROFILE] getAllUsers() - stored value:', stored);
+
+    if (!stored) {
+      console.log('[USER PROFILE] getAllUsers() - no stored data, returning []');
+      return [];
+    }
 
     const parsed = JSON.parse(stored);
+    console.log('[USER PROFILE] getAllUsers() - parsed:', parsed, 'Type:', typeof parsed, 'Is Array:', Array.isArray(parsed));
+
     // Ensure we always return an array
-    return Array.isArray(parsed) ? parsed : [];
+    const result = Array.isArray(parsed) ? parsed : [];
+    console.log('[USER PROFILE] getAllUsers() - returning:', result);
+    return result;
   } catch (error) {
     console.error('[USER PROFILE] Error parsing users from localStorage:', error);
     return [];

@@ -48,8 +48,19 @@ export const Profile: React.FC = () => {
   // If playerId is provided, show that player's profile, otherwise show current user
   const [user, setUser] = useState<MockUser | null>(() => {
     if (playerId) {
+      console.log('[PROFILE] Looking for player:', playerId);
       const allUsers = getAllUsers();
-      return allUsers.find(u => u.id === playerId) || null;
+      console.log('[PROFILE] getAllUsers() returned:', allUsers, 'Type:', typeof allUsers, 'Is Array:', Array.isArray(allUsers));
+
+      // Ensure allUsers is an array
+      if (!Array.isArray(allUsers)) {
+        console.error('[PROFILE] getAllUsers() did not return an array!', allUsers);
+        return null;
+      }
+
+      const foundUser = allUsers.find(u => u.id === playerId);
+      console.log('[PROFILE] Found user:', foundUser);
+      return foundUser || null;
     }
     return currentUser;
   });
