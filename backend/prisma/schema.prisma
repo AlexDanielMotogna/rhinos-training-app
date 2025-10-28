@@ -318,53 +318,53 @@ model UserPlan {
 model WorkoutReport {
   id                      String   @id @default(auto()) @map("_id") @db.ObjectId
   userId                  String   @db.ObjectId
-  workoutTitle            String
-  date                    String   // ISO date string (YYYY-MM-DD)
-  duration                Int      @default(0) // Duration in minutes
-  source                  String   // 'coach' | 'player'
+  workoutTitle            String?  @default("")
+  date                    String?  @default("")  // ISO date string (YYYY-MM-DD)
+  duration                Int?     @default(0)   // Duration in minutes
+  source                  String?  @default("player")  // 'coach' | 'player'
 
   // Performance Scores (0-100)
-  intensityScore          Int      @default(50)
-  workCapacityScore       Int      @default(50)
-  athleticQualityScore    Int      @default(50)
-  positionRelevanceScore  Int      @default(50)
+  intensityScore          Int?     @default(50)
+  workCapacityScore       Int?     @default(50)
+  athleticQualityScore    Int?     @default(50)
+  positionRelevanceScore  Int?     @default(50)
 
   // Breakdown
-  totalVolume             Int      @default(0)    // kg
-  totalDistance           Float?                   // km (for cardio workouts)
-  avgRPE                  Float    @default(5)    // 1-10
-  setsCompleted           Int      @default(0)
-  setsPlanned             Int      @default(0)
+  totalVolume             Int?     @default(0)    // kg
+  totalDistance           Float?                  // km (for cardio workouts)
+  avgRPE                  Float?   @default(5)    // 1-10
+  setsCompleted           Int?     @default(0)
+  setsPlanned             Int?     @default(0)
 
   // Athletic focus (percentages)
-  powerWork               Int      @default(0)
-  strengthWork            Int      @default(0)
-  speedWork               Int      @default(0)
+  powerWork               Int?     @default(0)
+  strengthWork            Int?     @default(0)
+  speedWork               Int?     @default(0)
 
   // Highlights (auto-generated)
-  strengths               Json     @default("[]")  // Array of strings
-  warnings                Json     @default("[]")  // Array of strings
+  strengths               Json?    @default("[]")  // Array of strings
+  warnings                Json?    @default("[]")  // Array of strings
 
   // Progress comparison
   volumeChange            Int?                     // % vs last week
   intensityChange         Int?                     // % vs last week
 
   // Recovery & Validation
-  recoveryDemand          String   // 'low' | 'medium' | 'high' | 'very-high' | 'insufficient'
-  recommendedRestHours    Int      @default(24)
-  sessionValid            Boolean  @default(true)
+  recoveryDemand          String?  @default("medium")  // 'low' | 'medium' | 'high' | 'very-high' | 'insufficient'
+  recommendedRestHours    Int?     @default(24)
+  sessionValid            Boolean? @default(true)
 
   // AI Insights
-  coachInsights           String   @default("")
-  keyInsights             Json     @default("[]")  // Array of strings (legacy)
-  recommendations         Json     @default("[]")  // Array of strings (legacy)
+  coachInsights           String?  @default("")
+  keyInsights             Json?    @default("[]")  // Array of strings (legacy)
+  recommendations         Json?    @default("[]")  // Array of strings (legacy)
   personalObservations    String?  // Player's notes
 
   // Metadata
-  aiGenerated             Boolean  @default(false)
-  workoutEntries          Json     // Complete workout data for reference
+  aiGenerated             Boolean? @default(false)
+  workoutEntries          Json?    @default("[]")  // Complete workout data for reference
 
-  createdAt               String   // ISO datetime
+  createdAt               String?  @default("")  // ISO datetime
   syncedAt                DateTime @default(now())
 
   @@index([userId, createdAt])
