@@ -126,6 +126,9 @@ function App() {
     if (!currentUser) return;
 
     const checkForPolls = async () => {
+      // Don't check if modal is already open (prevents resetting user's selection)
+      if (showPollModal) return;
+
       const poll = await getActivePoll();
       if (poll && !(await hasUserVoted(poll.id, currentUser.id))) {
         setActivePoll(poll);
@@ -136,7 +139,7 @@ function App() {
     const interval = setInterval(checkForPolls, 30000); // Check every 30 seconds
 
     return () => clearInterval(interval);
-  }, [currentUser]);
+  }, [currentUser, showPollModal]);
 
   const handleClosePollModal = async () => {
     // Only allow closing if user has voted
