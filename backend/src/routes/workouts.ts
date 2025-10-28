@@ -290,7 +290,15 @@ router.get('/reports', authenticate, async (req, res) => {
     res.json(reports);
   } catch (error) {
     console.error('[BACKEND ERROR] Get reports error:', error);
-    res.status(500).json({ error: 'Failed to fetch reports' });
+    console.error('[BACKEND ERROR] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    res.status(500).json({
+      error: 'Failed to fetch reports',
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 
@@ -381,7 +389,23 @@ router.get('/plans', authenticate, async (req, res) => {
     res.json(plans);
   } catch (error) {
     console.error('[BACKEND ERROR] Get user plans error:', error);
-    res.status(500).json({ error: 'Failed to fetch user plans' });
+    console.error('[BACKEND ERROR] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
+    // If table doesn't exist yet, return empty array
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('does not exist') || errorMessage.includes('UserPlan')) {
+      console.warn('[BACKEND WARNING] UserPlan table may not exist yet, returning empty array');
+      return res.json([]);
+    }
+
+    res.status(500).json({
+      error: 'Failed to fetch user plans',
+      details: errorMessage
+    });
   }
 });
 
