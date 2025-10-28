@@ -42,7 +42,7 @@ import {
 } from '../services/db';
 import { isOnline } from '../services/sync';
 import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, syncWorkoutLogsFromBackend, type WorkoutLog } from '../services/workoutLog';
-import { getUserPlans, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed, syncUserPlansFromBackend } from '../services/userPlan';
+import { getUserPlans, getUserPlansFromBackend, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, TemplateBlock } from '../types/template';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
 import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
@@ -140,10 +140,10 @@ export const MyTraining: React.FC = () => {
 
             console.log('✅ Loaded from API and cached');
 
-            // Sync workout logs, reports, and user plans from backend
+            // Sync workout logs and reports from backend
             await syncWorkoutLogsFromBackend(user.id);
             await syncWorkoutReportsFromBackend(user.id);
-            await syncUserPlansFromBackend(user.id);
+            // Note: User plans sync is now handled automatically by getUserPlansFromBackend
 
             // Refresh local state after sync
             refreshWorkoutHistory();
@@ -182,14 +182,22 @@ export const MyTraining: React.FC = () => {
 
   // Load user plans
   useEffect(() => {
-    if (user) {
-      setUserPlans(getUserPlans(user.id));
-    }
+    const loadUserPlans = async () => {
+      if (user) {
+        console.log('[MY TRAINING] Loading user plans...');
+        const plans = await getUserPlansFromBackend(user.id);
+        setUserPlans(plans);
+      }
+    };
+    
+    loadUserPlans();
   }, [user?.id]);
 
-  const refreshUserPlans = () => {
+  const refreshUserPlans = async () => {
     if (user) {
-      setUserPlans(getUserPlans(user.id));
+      console.log('[MY TRAINING] Refreshing user plans...');
+      const plans = await getUserPlansFromBackend(user.id);
+      setUserPlans(plans);
     }
   };
 
@@ -376,7 +384,7 @@ export const MyTraining: React.FC = () => {
         exercises,
         warmupMinutes,
       });
-      refreshUserPlans();
+      await refreshUserPlans();
       setSuccessMessage('Plan created successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
     }
@@ -389,7 +397,7 @@ export const MyTraining: React.FC = () => {
         exercises,
         warmupMinutes,
       });
-      refreshUserPlans();
+      await refreshUserPlans();
       setEditingPlan(null);
       setSuccessMessage('Plan updated successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -399,7 +407,7 @@ export const MyTraining: React.FC = () => {
   const handleDeletePlan = async (planId: string) => {
     if (window.confirm('Are you sure you want to delete this plan?')) {
       await deleteUserPlan(planId);
-      refreshUserPlans();
+      await refreshUserPlans();
       setSuccessMessage('Plan deleted successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
     }
@@ -407,7 +415,7 @@ export const MyTraining: React.FC = () => {
 
   const handleDuplicatePlan = async (planId: string) => {
     await duplicateUserPlan(planId);
-    refreshUserPlans();
+    await refreshUserPlans();
     setSuccessMessage('Plan duplicated successfully!');
     setTimeout(() => setSuccessMessage(''), 3000);
   };
@@ -510,7 +518,7 @@ export const MyTraining: React.FC = () => {
       }
 
       markPlanAsUsed(startingPlan.id);
-      refreshUserPlans();
+      await refreshUserPlans();
       refreshWorkoutHistory();
 
       // Generate and save workout report

@@ -12,12 +12,34 @@ const SYNCING_PLANS_KEY = 'rhinos_syncing_plans';
 const DELETED_PLANS_KEY = 'rhinos_deleted_plans'; // Track plans deleted by user
 
 /**
- * Get all plans for a user
+ * Get all plans for a user (synchronous - localStorage only)
  */
 export function getUserPlans(userId: string): UserPlanTemplate[] {
   const data = localStorage.getItem(USER_PLANS_KEY);
   const allPlans: UserPlanTemplate[] = data ? JSON.parse(data) : [];
   return allPlans.filter(plan => plan.userId === userId);
+}
+
+/**
+ * Get all plans for a user (async - tries backend first, falls back to localStorage)
+ */
+export async function getUserPlansFromBackend(userId: string): Promise<UserPlanTemplate[]> {
+  const online = isOnline();
+  
+  if (online) {
+    try {
+      console.log('[USER PLANS] Loading plans from backend for user:', userId);
+      await syncUserPlansFromBackend(userId);
+      console.log('[USER PLANS] ✅ Synced plans from backend');
+    } catch (error) {
+      console.warn('[USER PLANS] ⚠️ Failed to load from backend, falling back to localStorage:', error);
+    }
+  } else {
+    console.log('[USER PLANS] 📱 Offline - using localStorage only');
+  }
+  
+  // Return from localStorage (which now contains backend data if sync succeeded)
+  return getUserPlans(userId);
 }
 
 /**
