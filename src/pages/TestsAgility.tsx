@@ -25,10 +25,10 @@ export const TestsAgility: React.FC = () => {
 
   const handleWizardFinish = (results: AgilityResult[]) => {
     setTestResults(results);
-    computeSummary(results, selectedTier);
+    computeSummary(results, selectedTier, true); // Save on wizard finish
   };
 
-  const computeSummary = async (results: AgilityResult[], tier: Tier) => {
+  const computeSummary = (results: AgilityResult[], tier: Tier, shouldSave: boolean = false) => {
     const benchmarks = getAgilityBenchmarks(position);
     const scores: Record<AgilityTestKey, number> = {} as any;
 
@@ -55,8 +55,10 @@ export const TestsAgility: React.FC = () => {
 
     setSummary(newSummary);
 
-    // Use the new sync service that handles backend sync
-    await saveTestResult('agility', newSummary, index, label);
+    // Only save to backend when explicitly requested (not on tier change)
+    if (shouldSave) {
+      saveTestResult('agility', newSummary, index, label);
+    }
   };
 
   const handleTierChange = (tier: Tier) => {

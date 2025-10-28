@@ -25,10 +25,10 @@ export const TestsPower: React.FC = () => {
 
   const handleWizardFinish = (results: PowerResult[]) => {
     setTestResults(results);
-    computeSummary(results, selectedTier);
+    computeSummary(results, selectedTier, true); // Save on wizard finish
   };
 
-  const computeSummary = async (results: PowerResult[], tier: Tier) => {
+  const computeSummary = (results: PowerResult[], tier: Tier, shouldSave: boolean = false) => {
     const benchmarks = getPowerBenchmarks(position);
     const scores: Record<PowerTestKey, number> = {} as any;
 
@@ -63,8 +63,10 @@ export const TestsPower: React.FC = () => {
 
     setSummary(newSummary);
 
-    // Use the new sync service that handles backend sync
-    await saveTestResult('power', newSummary, index, label);
+    // Only save to backend when explicitly requested (not on tier change)
+    if (shouldSave) {
+      saveTestResult('power', newSummary, index, label);
+    }
   };
 
   const handleTierChange = (tier: Tier) => {
