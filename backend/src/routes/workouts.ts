@@ -59,6 +59,9 @@ const workoutReportSchema = z.object({
   personalObservations: z.string().optional().nullable(),
   aiGenerated: z.boolean().optional().default(false),
   workoutEntries: z.array(z.any()).default([]),
+
+  // Timestamps (optional in request, backend will set if not provided)
+  createdAt: z.string().optional(),
 });
 
 // ========================================
