@@ -108,7 +108,7 @@ function App() {
     setHardNotification(null);
   };
 
-  // Check for active attendance poll
+  // Check for active attendance poll - only once on mount
   useEffect(() => {
     const checkActivePoll = async () => {
       if (currentUser) {
@@ -120,7 +120,8 @@ function App() {
       }
     };
     checkActivePoll();
-  }, [currentUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount, not on currentUser changes
 
   // Check periodically for new polls (every 30 seconds)
   useEffect(() => {
@@ -131,7 +132,8 @@ function App() {
       if (showPollModal) return;
 
       const poll = await getActivePoll();
-      if (poll && !(await hasUserVoted(poll.id, currentUser.id))) {
+      const user = getUser(); // Get fresh user data
+      if (poll && user && !(await hasUserVoted(poll.id, user.id))) {
         setActivePoll(poll);
         setShowPollModal(true);
       }
@@ -140,7 +142,8 @@ function App() {
     const interval = setInterval(checkForPolls, 30000); // Check every 30 seconds
 
     return () => clearInterval(interval);
-  }, [currentUser, showPollModal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPollModal]); // Only depend on showPollModal, not currentUser
 
   const handleClosePollModal = async () => {
     // Only allow closing if user has voted
