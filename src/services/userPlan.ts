@@ -9,6 +9,7 @@ import { isOnline } from './sync';
 
 const USER_PLANS_KEY = 'rhinos_user_plans';
 const SYNCING_PLANS_KEY = 'rhinos_syncing_plans';
+const DELETED_PLANS_KEY = 'rhinos_deleted_plans'; // Track plans deleted by user
 
 /**
  * Get all plans for a user
@@ -139,6 +140,13 @@ export async function deleteUserPlan(planId: string): Promise<boolean> {
   // Delete from localStorage first
   localStorage.setItem(USER_PLANS_KEY, JSON.stringify(filtered));
 
+  // Mark plan as deleted to prevent re-sync
+  const deletedData = localStorage.getItem(DELETED_PLANS_KEY);
+  const deletedPlans = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
+  deletedPlans.add(planId);
+  localStorage.setItem(DELETED_PLANS_KEY, JSON.stringify(Array.from(deletedPlans)));
+  console.log('[USER PLANS] Marked plan as deleted:', planId);
+
   // Try to delete from backend if online
   const online = isOnline();
   if (online) {
@@ -213,12 +221,22 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
       backendPlanMap.set(plan.id, plan);
     });
 
+    // Get list of deleted plans to filter them out
+    const deletedData = localStorage.getItem(DELETED_PLANS_KEY);
+    const deletedPlans = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
+
     // Merge: backend plans take precedence
     const mergedPlans: UserPlanTemplate[] = [];
     const processedIds = new Set<string>();
 
     // Add backend plans (they're the source of truth)
     for (const backendPlan of backendPlans) {
+      // Skip plans that were marked as deleted by user
+      if (deletedPlans.has(backendPlan.id)) {
+        console.log('[USER PLANS] Skipping plan marked as deleted:', backendPlan.id, backendPlan.name);
+        continue;
+      }
+
       const transformedPlan: UserPlanTemplate = {
         id: backendPlan.id,
         userId: backendPlan.userId,
@@ -242,6 +260,12 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
     // Add local-only plans (not yet synced to backend)
     for (const localPlan of localPlans) {
       if (!processedIds.has(localPlan.id)) {
+        // Skip plans that were marked as deleted
+        if (deletedPlans.has(localPlan.id)) {
+          console.log('[USER PLANS] Plan was deleted by user, removing from local cache:', localPlan.id, localPlan.name);
+          continue;
+        }
+
         // Check if this plan has a MongoDB ID (24 hex chars)
         const isMongoId = /^[0-9a-f]{24}$/i.test(localPlan.id);
 
