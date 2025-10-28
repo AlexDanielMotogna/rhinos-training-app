@@ -291,8 +291,10 @@ export async function syncWorkoutReportsFromBackend(userId: string): Promise<voi
       // Transform backend format to frontend format
       const transformedReport: SavedWorkoutReport = {
         ...backendReport,
-        dateISO: backendReport.date || backendReport.dateISO, // Backend uses 'date', frontend uses 'dateISO'
-        entries: backendReport.workoutEntries || backendReport.entries || [], // Backend uses 'workoutEntries', frontend uses 'entries'
+        // Handle date field (old reports might not have it, generate from createdAt)
+        dateISO: backendReport.date || backendReport.dateISO || (backendReport.createdAt ? backendReport.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
+        // Handle entries field (backend uses workoutEntries)
+        entries: backendReport.workoutEntries || backendReport.entries || [],
         backendSynced: true,
       };
 
