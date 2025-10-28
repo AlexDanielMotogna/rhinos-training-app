@@ -320,14 +320,14 @@ model WorkoutReport {
   userId                  String   @db.ObjectId
   workoutTitle            String
   date                    String   // ISO date string (YYYY-MM-DD)
-  duration                Int      // Duration in minutes
+  duration                Int      @default(0) // Duration in minutes
   source                  String   // 'coach' | 'player'
 
   // Performance Scores (0-100)
-  intensityScore          Int
-  workCapacityScore       Int
-  athleticQualityScore    Int
-  positionRelevanceScore  Int
+  intensityScore          Int      @default(50)
+  workCapacityScore       Int      @default(50)
+  athleticQualityScore    Int      @default(50)
+  positionRelevanceScore  Int      @default(50)
 
   // Breakdown
   totalVolume             Int      @default(0)    // kg
