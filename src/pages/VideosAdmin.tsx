@@ -133,9 +133,25 @@ export const VideosAdmin: React.FC = () => {
     setEditingVideo(null);
   };
 
+  const isValidYouTubeUrl = (url: string): boolean => {
+    const patterns = [
+      /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]+/,
+      /^https?:\/\/youtu\.be\/[\w-]+/,
+      /^https?:\/\/(www\.)?youtube\.com\/shorts\/[\w-]+/,
+      /^https?:\/\/(www\.)?youtube\.com\/embed\/[\w-]+/,
+    ];
+    return patterns.some(pattern => pattern.test(url));
+  };
+
   const handleSave = async () => {
     if (!formData.title.trim() || !formData.youtubeUrl.trim()) {
       setError('Please fill in title and YouTube URL');
+      return;
+    }
+
+    // Validate YouTube URL
+    if (!isValidYouTubeUrl(formData.youtubeUrl)) {
+      setError('Invalid YouTube URL. Please use a valid format like: https://www.youtube.com/watch?v=VIDEO_ID or https://youtu.be/VIDEO_ID');
       return;
     }
 
@@ -365,6 +381,7 @@ export const VideosAdmin: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
               fullWidth
               placeholder="https://www.youtube.com/watch?v=..."
+              helperText="Paste a valid YouTube video URL (regular video or Short)"
             />
 
             {/* Status */}
