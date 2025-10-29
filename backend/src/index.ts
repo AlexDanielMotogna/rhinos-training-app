@@ -27,33 +27,33 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://rhinos-training-app-git-main-alexdanielmotognas-projects.vercel.app',
-    'https://rhinos-training.at',
-    'https://www.rhinos-training.at',
-    process.env.FRONTEND_URL || '',
-    /\.railway\.app$/,
-    /\.vercel\.app$/,
-  ].filter(Boolean),
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://rhinos-training-app-git-main-alexdanielmotognas-projects.vercel.app',
+      'https://rhinos-training.at',
+      'https://www.rhinos-training.at'
+    ];
+    
+    // Check if origin is in allowed list or matches patterns
+    if (allowedOrigins.includes(origin) || 
+        origin.includes('.vercel.app') || 
+        origin.includes('.railway.app')) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Handle preflight requests explicitly
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.status(204).send();
-});
 
 // Health check
 app.get('/health', (req, res) => {
