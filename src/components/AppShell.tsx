@@ -100,8 +100,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   const handleLogout = () => {
     setDrawerOpen(false);
+    // Clear all user data
     logout();
-    navigate('/');
+    // Force immediate navigation to login page
+    // Use replace to prevent going back to authenticated pages
+    navigate('/', { replace: true });
   };
 
   const handleMarkAsRead = (id: string) => {

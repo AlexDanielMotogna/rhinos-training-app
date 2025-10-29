@@ -87,7 +87,17 @@ export function getUser(): MockUser | null {
 }
 
 export function logout(): void {
+  // Remove all auth-related data from localStorage
   localStorage.removeItem('currentUser');
+  localStorage.removeItem('auth_token');
+
+  // Dispatch a custom event to notify all components of the logout
+  // This allows immediate UI updates without polling
+  window.dispatchEvent(new CustomEvent('user-logout'));
+
+  // Also clear any cached data that should be user-specific
+  // This ensures a clean logout experience
+  console.log('🔓 User logged out successfully');
 }
 
 /**

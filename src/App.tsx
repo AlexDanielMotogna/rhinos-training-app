@@ -76,10 +76,18 @@ function App() {
       }
     };
 
-    // Check every 5 seconds instead of 100ms to reduce performance impact
-    const interval = setInterval(checkUser, 5000);
+    // Listen for immediate logout events
+    const handleLogout = () => {
+      setCurrentUser(null);
+    };
+
+    window.addEventListener('user-logout', handleLogout);
+
+    // Check every 1 second for faster logout response (fallback)
+    const interval = setInterval(checkUser, 1000);
 
     return () => {
+      window.removeEventListener('user-logout', handleLogout);
       clearInterval(interval);
     };
   }, [currentUser]);
