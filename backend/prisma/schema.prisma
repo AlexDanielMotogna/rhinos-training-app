@@ -128,7 +128,7 @@ model Video {
   title       String
   description String   @default("")
   youtubeUrl  String
-  type        String   // 'position' | 'route' | 'coverage'
+  type        String   // 'position' | 'route' | 'coverage' | 'run'
   status      String   @default("draft") // 'draft' | 'published'
   level       String?  // 'intro' | 'intermediate' | 'advanced'
   unit        String?  // 'Offense' | 'Defense' | 'Special Teams'
@@ -137,6 +137,7 @@ model Video {
   positions   String[] @default([])
   routes      String[] @default([])
   coverages   String[] @default([])
+  runs        String[] @default([])
 
   // Metadata
   createdBy   String   @db.ObjectId
@@ -178,8 +179,8 @@ model VideoProgress {
 
 model VideoTag {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  type      String   // 'position' | 'route' | 'coverage'
-  name      String   // 'QB', 'Slant', 'Cover 2'
+  type      String   // 'position' | 'route' | 'coverage' | 'run'
+  name      String   // 'QB', 'Slant', 'Cover 2', 'Inside Zone'
   order     Int      @default(0) // For custom ordering
   isDefault Boolean  @default(false) // System defaults vs coach custom
   createdBy String?  @db.ObjectId

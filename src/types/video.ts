@@ -1,4 +1,4 @@
-export type VideoType = 'position' | 'route' | 'coverage';
+export type VideoType = 'position' | 'route' | 'coverage' | 'run';
 export type VideoStatus = 'draft' | 'published';
 export type VideoLevel = 'intro' | 'intermediate' | 'advanced';
 export type Unit = 'Offense' | 'Defense' | 'Special Teams';
@@ -39,6 +39,21 @@ export type CoverageTag =
   | 'Zone'
   | 'Match';
 
+// Run concept tags
+export type RunConceptTag =
+  | 'Inside Zone'
+  | 'Outside Zone'
+  | 'Counter'
+  | 'Power'
+  | 'Trap'
+  | 'Stretch'
+  | 'Toss'
+  | 'Sweep'
+  | 'Draw'
+  | 'Iso'
+  | 'Wham'
+  | 'Dart';
+
 export interface Video {
   id: string;
   type: VideoType;
@@ -53,6 +68,7 @@ export interface Video {
   positions?: PositionTag[];
   routes?: RouteTag[];
   coverages?: CoverageTag[];
+  runs?: RunConceptTag[];
 
   // Metadata
   createdAt: string;

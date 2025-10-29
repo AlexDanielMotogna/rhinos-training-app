@@ -49,11 +49,12 @@ import type {
   PositionTag,
   RouteTag,
   CoverageTag,
+  RunConceptTag,
 } from '../types/video';
 
 interface VideoTag {
   id: string;
-  type: 'position' | 'route' | 'coverage';
+  type: 'position' | 'route' | 'coverage' | 'run';
   name: string;
   order: number;
 }
@@ -70,6 +71,7 @@ export const VideosAdmin: React.FC = () => {
   const [positionTags, setPositionTags] = useState<string[]>([]);
   const [routeTags, setRouteTags] = useState<string[]>([]);
   const [coverageTags, setCoverageTags] = useState<string[]>([]);
+  const [runTags, setRunTags] = useState<string[]>([]);
 
   // Sync videos on mount
   useEffect(() => {
@@ -84,14 +86,16 @@ export const VideosAdmin: React.FC = () => {
   useEffect(() => {
     const loadTags = async () => {
       try {
-        const [positions, routes, coverages] = await Promise.all([
+        const [positions, routes, coverages, runs] = await Promise.all([
           videoTagsService.getAll('position'),
           videoTagsService.getAll('route'),
           videoTagsService.getAll('coverage'),
+          videoTagsService.getAll('run'),
         ]);
         setPositionTags(positions.map((t: VideoTag) => t.name));
         setRouteTags(routes.map((t: VideoTag) => t.name));
         setCoverageTags(coverages.map((t: VideoTag) => t.name));
+        setRunTags(runs.map((t: VideoTag) => t.name));
       } catch (err) {
         console.error('Failed to load tags:', err);
         // Fallback to empty arrays - coach can initialize tags from Admin > Video Tags
@@ -112,6 +116,7 @@ export const VideosAdmin: React.FC = () => {
     positions: PositionTag[];
     routes: RouteTag[];
     coverages: CoverageTag[];
+    runs: RunConceptTag[];
     isPinned: boolean;
   }>({
     type: 'position',
@@ -124,6 +129,7 @@ export const VideosAdmin: React.FC = () => {
     positions: [],
     routes: [],
     coverages: [],
+    runs: [],
     isPinned: false,
   });
 
@@ -141,6 +147,7 @@ export const VideosAdmin: React.FC = () => {
         positions: video.positions || [],
         routes: video.routes || [],
         coverages: video.coverages || [],
+        runs: video.runs || [],
         isPinned: video.isPinned || false,
       });
     } else {
@@ -156,6 +163,7 @@ export const VideosAdmin: React.FC = () => {
         positions: [],
         routes: [],
         coverages: [],
+        runs: [],
         isPinned: false,
       });
     }
@@ -248,7 +256,7 @@ export const VideosAdmin: React.FC = () => {
     setFormData({ ...formData, [field]: event.target.value });
   };
 
-  const handleMultiSelectChange = (field: 'positions' | 'routes' | 'coverages') => (event: SelectChangeEvent<string[]>) => {
+  const handleMultiSelectChange = (field: 'positions' | 'routes' | 'coverages' | 'runs') => (event: SelectChangeEvent<string[]>) => {
     setFormData({ ...formData, [field]: event.target.value as any[] });
   };
 
@@ -267,7 +275,7 @@ export const VideosAdmin: React.FC = () => {
       </Box>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        Manage training videos for positions, routes, and coverages. Add YouTube URLs and categorize with tags.
+        Manage training videos for positions, routes, coverages, and run concepts. Add YouTube URLs and categorize with tags.
       </Alert>
 
       <TableContainer component={Paper}>
@@ -381,6 +389,7 @@ export const VideosAdmin: React.FC = () => {
                 <MenuItem value="position">Position</MenuItem>
                 <MenuItem value="route">Route</MenuItem>
                 <MenuItem value="coverage">Coverage</MenuItem>
+                <MenuItem value="run">Run Concept</MenuItem>
               </Select>
             </FormControl>
 
@@ -545,6 +554,38 @@ export const VideosAdmin: React.FC = () => {
                     coverageTags.map((coverage) => (
                       <MenuItem key={coverage} value={coverage}>
                         {coverage}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+            )}
+
+            {/* Run Concepts (for run type) */}
+            {formData.type === 'run' && (
+              <FormControl fullWidth>
+                <InputLabel>Run Concepts</InputLabel>
+                <Select
+                  multiple
+                  value={formData.runs}
+                  label="Run Concepts"
+                  onChange={handleMultiSelectChange('runs')}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (
+                        <Chip key={value} label={value} size="small" />
+                      ))}
+                    </Box>
+                  )}
+                >
+                  {runTags.length === 0 ? (
+                    <MenuItem disabled>
+                      No run concepts available. Go to Admin {'>'} Video Tags to add them.
+                    </MenuItem>
+                  ) : (
+                    runTags.map((run) => (
+                      <MenuItem key={run} value={run}>
+                        {run}
                       </MenuItem>
                     ))
                   )}

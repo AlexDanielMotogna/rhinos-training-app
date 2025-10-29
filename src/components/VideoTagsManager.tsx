@@ -23,14 +23,14 @@ import { videoTagsService } from '../services/api';
 
 interface VideoTag {
   id: string;
-  type: 'position' | 'route' | 'coverage';
+  type: 'position' | 'route' | 'coverage' | 'run';
   name: string;
   order: number;
   isDefault: boolean;
 }
 
 export const VideoTagsManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'position' | 'route' | 'coverage'>('position');
+  const [activeTab, setActiveTab] = useState<'position' | 'route' | 'coverage' | 'run'>('position');
   const [tags, setTags] = useState<VideoTag[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export const VideoTagsManager: React.FC = () => {
     loadTags(activeTab);
   }, [activeTab]);
 
-  const loadTags = async (type: 'position' | 'route' | 'coverage') => {
+  const loadTags = async (type: 'position' | 'route' | 'coverage' | 'run') => {
     setLoading(true);
     setError(null);
     try {
@@ -155,6 +155,7 @@ export const VideoTagsManager: React.FC = () => {
       case 'position': return 'Positions';
       case 'route': return 'Routes';
       case 'coverage': return 'Coverages';
+      case 'run': return 'Run Concepts';
       default: return type;
     }
   };
@@ -205,6 +206,7 @@ export const VideoTagsManager: React.FC = () => {
           <Tab label="Positions" value="position" />
           <Tab label="Routes" value="route" />
           <Tab label="Coverages" value="coverage" />
+          <Tab label="Run Concepts" value="run" />
         </Tabs>
 
         <Box sx={{ p: 3 }}>

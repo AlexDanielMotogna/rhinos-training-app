@@ -7,7 +7,7 @@ const router = express.Router();
 
 // Validation schemas
 const createTagSchema = z.object({
-  type: z.enum(['position', 'route', 'coverage']),
+  type: z.enum(['position', 'route', 'coverage', 'run']),
   name: z.string().min(1, 'Tag name is required'),
   order: z.number().default(0),
   isDefault: z.boolean().default(false),
@@ -238,6 +238,12 @@ router.post('/initialize', authenticate, async (req, res) => {
       'Quarters', 'Palms', 'Tampa 2', 'Man', 'Zone', 'Match'
     ];
 
+    // Default run concepts
+    const defaultRunConcepts = [
+      'Inside Zone', 'Outside Zone', 'Counter', 'Power', 'Trap', 'Stretch',
+      'Toss', 'Sweep', 'Draw', 'Iso', 'Wham', 'Dart'
+    ];
+
     const tags = [];
 
     // Create position tags
@@ -267,6 +273,17 @@ router.post('/initialize', authenticate, async (req, res) => {
       tags.push({
         type: 'coverage',
         name: defaultCoverages[i],
+        order: i,
+        isDefault: true,
+        createdBy: user.userId,
+      });
+    }
+
+    // Create run concept tags
+    for (let i = 0; i < defaultRunConcepts.length; i++) {
+      tags.push({
+        type: 'run',
+        name: defaultRunConcepts[i],
         order: i,
         isDefault: true,
         createdBy: user.userId,
