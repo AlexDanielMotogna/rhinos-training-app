@@ -39,6 +39,7 @@ import {
 } from '../services/videos';
 import { getUser } from '../services/userProfile';
 import { videoTagsService } from '../services/api';
+import { extractYouTubeVideoId } from '../services/yt';
 import type {
   Video,
   VideoType,
@@ -167,13 +168,9 @@ export const VideosAdmin: React.FC = () => {
   };
 
   const isValidYouTubeUrl = (url: string): boolean => {
-    const patterns = [
-      /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]+/,
-      /^https?:\/\/youtu\.be\/[\w-]+/,
-      /^https?:\/\/(www\.)?youtube\.com\/shorts\/[\w-]+/,
-      /^https?:\/\/(www\.)?youtube\.com\/embed\/[\w-]+/,
-    ];
-    return patterns.some(pattern => pattern.test(url));
+    // Use the robust extractYouTubeVideoId function from yt.ts
+    // which handles URLs with extra query parameters correctly
+    return extractYouTubeVideoId(url) !== undefined;
   };
 
   const handleSave = async () => {
@@ -268,12 +265,6 @@ export const VideosAdmin: React.FC = () => {
           Add New Video
         </Button>
       </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
 
       <Alert severity="info" sx={{ mb: 3 }}>
         Manage training videos for positions, routes, and coverages. Add YouTube URLs and categorize with tags.
@@ -373,6 +364,11 @@ export const VideosAdmin: React.FC = () => {
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>{editingVideo ? 'Edit Video' : 'Add New Video'}</DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             {/* Type */}
             <FormControl fullWidth>

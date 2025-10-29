@@ -1,5 +1,5 @@
 import type { Video, VideoProgress } from '../types/video';
-import { sanitizeYouTubeUrl } from './yt';
+import { sanitizeYouTubeUrl, extractYouTubeVideoId } from './yt';
 import { videoService } from './api';
 import { isOnline } from './sync';
 
@@ -11,15 +11,9 @@ export function isYouTubeShort(url: string): boolean {
   return url.includes('/shorts/') || url.includes('youtube.com/shorts');
 }
 
-// Extract video ID from YouTube URL (works for regular videos and Shorts)
+// Export the robust extractYouTubeVideoId from yt.ts for backwards compatibility
 export function getYouTubeVideoId(url: string): string | null {
-  // Handle Shorts URLs
-  const shortsMatch = url.match(/youtube\.com\/shorts\/([^?&\/]+)/);
-  if (shortsMatch) return shortsMatch[1];
-
-  // Handle regular YouTube URLs
-  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/ |.*[?&]v=)|youtu\.be\/)([^"&?\/ \s]{11})/);
-  return match ? match[1] : null;
+  return extractYouTubeVideoId(url) || null;
 }
 
 /**
