@@ -38,6 +38,7 @@ import {
   syncVideosFromBackend,
 } from '../services/videos';
 import { getUser } from '../services/userProfile';
+import { videoTagsService } from '../services/api';
 import type {
   Video,
   VideoType,
@@ -49,6 +50,13 @@ import type {
   CoverageTag,
 } from '../types/video';
 
+interface VideoTag {
+  id: string;
+  type: 'position' | 'route' | 'coverage';
+  name: string;
+  order: number;
+}
+
 export const VideosAdmin: React.FC = () => {
   const user = getUser();
   const [videos, setVideos] = useState<Video[]>(getAllVideos());
@@ -56,6 +64,11 @@ export const VideosAdmin: React.FC = () => {
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Dynamic tags from backend
+  const [positionTags, setPositionTags] = useState<string[]>([]);
+  const [routeTags, setRouteTags] = useState<string[]>([]);
+  const [coverageTags, setCoverageTags] = useState<string[]>([]);
 
   // Sync videos on mount
   useEffect(() => {
@@ -65,6 +78,26 @@ export const VideosAdmin: React.FC = () => {
       });
     }
   }, [user]);
+
+  // Load tags on mount
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const [positions, routes, coverages] = await Promise.all([
+          videoTagsService.getAll('position'),
+          videoTagsService.getAll('route'),
+          videoTagsService.getAll('coverage'),
+        ]);
+        setPositionTags(positions.map((t: VideoTag) => t.name));
+        setRouteTags(routes.map((t: VideoTag) => t.name));
+        setCoverageTags(coverages.map((t: VideoTag) => t.name));
+      } catch (err) {
+        console.error('Failed to load tags:', err);
+        // Fallback to empty arrays - coach can initialize tags from Admin > Video Tags
+      }
+    };
+    loadTags();
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState<{
@@ -444,15 +477,17 @@ export const VideosAdmin: React.FC = () => {
                     </Box>
                   )}
                 >
-                  <MenuItem value="QB">QB</MenuItem>
-                  <MenuItem value="RB">RB</MenuItem>
-                  <MenuItem value="WR">WR</MenuItem>
-                  <MenuItem value="TE">TE</MenuItem>
-                  <MenuItem value="OL">OL</MenuItem>
-                  <MenuItem value="DL">DL</MenuItem>
-                  <MenuItem value="LB">LB</MenuItem>
-                  <MenuItem value="DB">DB</MenuItem>
-                  <MenuItem value="K/P">K/P</MenuItem>
+                  {positionTags.length === 0 ? (
+                    <MenuItem disabled>
+                      No positions available. Go to Admin {'>'} Video Tags to add them.
+                    </MenuItem>
+                  ) : (
+                    positionTags.map((position) => (
+                      <MenuItem key={position} value={position}>
+                        {position}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
             )}
@@ -474,21 +509,17 @@ export const VideosAdmin: React.FC = () => {
                     </Box>
                   )}
                 >
-                  <MenuItem value="Slant">Slant</MenuItem>
-                  <MenuItem value="Out">Out</MenuItem>
-                  <MenuItem value="Curl">Curl</MenuItem>
-                  <MenuItem value="Post">Post</MenuItem>
-                  <MenuItem value="Wheel">Wheel</MenuItem>
-                  <MenuItem value="Dig">Dig</MenuItem>
-                  <MenuItem value="Corner">Corner</MenuItem>
-                  <MenuItem value="Comeback">Comeback</MenuItem>
-                  <MenuItem value="Screen">Screen</MenuItem>
-                  <MenuItem value="Go/Fade">Go/Fade</MenuItem>
-                  <MenuItem value="Hitch">Hitch</MenuItem>
-                  <MenuItem value="Cross">Cross</MenuItem>
-                  <MenuItem value="Drag">Drag</MenuItem>
-                  <MenuItem value="Seam">Seam</MenuItem>
-                  <MenuItem value="Flag">Flag</MenuItem>
+                  {routeTags.length === 0 ? (
+                    <MenuItem disabled>
+                      No routes available. Go to Admin {'>'} Video Tags to add them.
+                    </MenuItem>
+                  ) : (
+                    routeTags.map((route) => (
+                      <MenuItem key={route} value={route}>
+                        {route}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
             )}
@@ -510,18 +541,17 @@ export const VideosAdmin: React.FC = () => {
                     </Box>
                   )}
                 >
-                  <MenuItem value="Cover 0">Cover 0</MenuItem>
-                  <MenuItem value="Cover 1">Cover 1</MenuItem>
-                  <MenuItem value="Cover 2">Cover 2</MenuItem>
-                  <MenuItem value="Cover 3">Cover 3</MenuItem>
-                  <MenuItem value="Cover 4">Cover 4</MenuItem>
-                  <MenuItem value="Cover 6">Cover 6</MenuItem>
-                  <MenuItem value="Quarters">Quarters</MenuItem>
-                  <MenuItem value="Palms">Palms</MenuItem>
-                  <MenuItem value="Tampa 2">Tampa 2</MenuItem>
-                  <MenuItem value="Man">Man</MenuItem>
-                  <MenuItem value="Zone">Zone</MenuItem>
-                  <MenuItem value="Match">Match</MenuItem>
+                  {coverageTags.length === 0 ? (
+                    <MenuItem disabled>
+                      No coverages available. Go to Admin {'>'} Video Tags to add them.
+                    </MenuItem>
+                  ) : (
+                    coverageTags.map((coverage) => (
+                      <MenuItem key={coverage} value={coverage}>
+                        {coverage}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
             )}

@@ -173,6 +173,24 @@ model VideoProgress {
 }
 
 // ========================================
+// VIDEO TAGS (Dynamic tags for positions, routes, coverages)
+// ========================================
+
+model VideoTag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  type      String   // 'position' | 'route' | 'coverage'
+  name      String   // 'QB', 'Slant', 'Cover 2'
+  order     Int      @default(0) // For custom ordering
+  isDefault Boolean  @default(false) // System defaults vs coach custom
+  createdBy String?  @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, name])
+  @@index([type, order])
+}
+
+// ========================================
 // WORKOUT SYNC (Offline → Online)
 // ========================================
 

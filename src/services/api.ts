@@ -638,3 +638,49 @@ export const videoService = {
     return apiCall(`/videos/progress/user/${userId}`);
   },
 };
+
+// Video Tags Service
+export const videoTagsService = {
+  async getAll(type?: 'position' | 'route' | 'coverage') {
+    const query = type ? `?type=${type}` : '';
+    return apiCall(`/video-tags${query}`);
+  },
+
+  async getById(id: string) {
+    return apiCall(`/video-tags/${id}`);
+  },
+
+  async create(data: {
+    type: 'position' | 'route' | 'coverage';
+    name: string;
+    order?: number;
+    isDefault?: boolean;
+  }) {
+    return apiCall('/video-tags', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: {
+    name?: string;
+    order?: number;
+  }) {
+    return apiCall(`/video-tags/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string) {
+    return apiCall(`/video-tags/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async initialize() {
+    return apiCall('/video-tags/initialize', {
+      method: 'POST',
+    });
+  },
+};
