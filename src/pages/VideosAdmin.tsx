@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -23,6 +23,7 @@ import {
   Chip,
   Alert,
   SelectChangeEvent,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -34,6 +35,7 @@ import {
   createVideo,
   updateVideo,
   deleteVideo,
+  syncVideosFromBackend,
 } from '../services/videos';
 import { getUser } from '../services/userProfile';
 import type {
@@ -52,6 +54,17 @@ export const VideosAdmin: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>(getAllVideos());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Sync videos on mount
+  useEffect(() => {
+    if (user) {
+      syncVideosFromBackend().then(() => {
+        setVideos(getAllVideos());
+      });
+    }
+  }, [user]);
 
   // Form state
   const [formData, setFormData] = useState<{
@@ -120,39 +133,69 @@ export const VideosAdmin: React.FC = () => {
     setEditingVideo(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.title.trim() || !formData.youtubeUrl.trim()) {
-      alert('Please fill in title and YouTube URL');
+      setError('Please fill in title and YouTube URL');
       return;
     }
 
-    if (editingVideo) {
-      // Update existing
-      updateVideo(editingVideo.id, formData);
-    } else {
-      // Create new
-      if (!user) return;
-      createVideo({
-        ...formData,
-        createdBy: user.id,
-      });
-    }
+    setLoading(true);
+    setError(null);
 
-    setVideos(getAllVideos());
-    handleCloseDialog();
-  };
+    try {
+      if (editingVideo) {
+        // Update existing
+        await updateVideo(editingVideo.id, formData);
+      } else {
+        // Create new
+        if (!user) return;
+        await createVideo({
+          ...formData,
+          createdBy: user.id,
+        });
+      }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this video?')) {
-      deleteVideo(id);
       setVideos(getAllVideos());
+      handleCloseDialog();
+    } catch (err: any) {
+      setError(err.message || 'Failed to save video');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleToggleStatus = (video: Video) => {
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this video?')) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await deleteVideo(id);
+      setVideos(getAllVideos());
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete video');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (video: Video) => {
     const newStatus: VideoStatus = video.status === 'draft' ? 'published' : 'draft';
-    updateVideo(video.id, { status: newStatus });
-    setVideos(getAllVideos());
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await updateVideo(video.id, { status: newStatus });
+      setVideos(getAllVideos());
+    } catch (err: any) {
+      setError(err.message || 'Failed to toggle status');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSelectChange = (field: string) => (event: SelectChangeEvent<any>) => {
@@ -171,10 +214,17 @@ export const VideosAdmin: React.FC = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
+          disabled={loading}
         >
           Add New Video
         </Button>
       </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
       <Alert severity="info" sx={{ mb: 3 }}>
         Manage training videos for positions, routes, and coverages. Add YouTube URLs and categorize with tags.
@@ -461,9 +511,9 @@ export const VideosAdmin: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained">
-            {editingVideo ? 'Update' : 'Create'}
+          <Button onClick={handleCloseDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : (editingVideo ? 'Update' : 'Create')}
           </Button>
         </DialogActions>
       </Dialog>

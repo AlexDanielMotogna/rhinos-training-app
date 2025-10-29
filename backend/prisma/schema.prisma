@@ -126,14 +126,50 @@ model AttendancePollVote {
 model Video {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
-  description String?
+  description String   @default("")
   youtubeUrl  String
-  category    String   // 'strength' | 'speed' | 'technique' | etc.
-  tags        String[]
-  isPublic    Boolean  @default(true)
+  type        String   // 'position' | 'route' | 'coverage'
+  status      String   @default("draft") // 'draft' | 'published'
+  level       String?  // 'intro' | 'intermediate' | 'advanced'
+  unit        String?  // 'Offense' | 'Defense' | 'Special Teams'
+
+  // Tags based on type
+  positions   String[] @default([])
+  routes      String[] @default([])
+  coverages   String[] @default([])
+
+  // Metadata
+  createdBy   String   @db.ObjectId
+  order       Int      @default(0)
+  isPinned    Boolean  @default(false)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([createdBy])
+}
+
+// ========================================
+// VIDEO PROGRESS (Track player progress)
+// ========================================
+
+model VideoProgress {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  videoId       String   @db.ObjectId
+  lastTimestamp Int      // Last watched position in seconds
+  totalDuration Int      // Total video duration in seconds
+  percentWatched Int     // 0-100
+  completed     Boolean  @default(false)
+  lastWatchedAt DateTime @updatedAt
+
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@index([videoId])
 }
 
 // ========================================

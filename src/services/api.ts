@@ -558,3 +558,83 @@ export const testResultService = {
     });
   },
 };
+
+// Videos Service
+export const videoService = {
+  async getAll(type?: string) {
+    const query = type ? `?type=${type}` : '';
+    return apiCall(`/videos${query}`);
+  },
+
+  async getById(id: string) {
+    return apiCall(`/videos/${id}`);
+  },
+
+  async create(data: {
+    title: string;
+    description?: string;
+    youtubeUrl: string;
+    type: 'position' | 'route' | 'coverage';
+    status?: 'draft' | 'published';
+    level?: 'intro' | 'intermediate' | 'advanced';
+    unit?: 'Offense' | 'Defense' | 'Special Teams';
+    positions?: string[];
+    routes?: string[];
+    coverages?: string[];
+    createdBy: string;
+    order?: number;
+    isPinned?: boolean;
+  }) {
+    return apiCall('/videos', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: {
+    title?: string;
+    description?: string;
+    youtubeUrl?: string;
+    type?: 'position' | 'route' | 'coverage';
+    status?: 'draft' | 'published';
+    level?: 'intro' | 'intermediate' | 'advanced' | null;
+    unit?: 'Offense' | 'Defense' | 'Special Teams' | null;
+    positions?: string[];
+    routes?: string[];
+    coverages?: string[];
+    order?: number;
+    isPinned?: boolean;
+  }) {
+    return apiCall(`/videos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string) {
+    return apiCall(`/videos/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Progress tracking
+  async saveProgress(id: string, progress: {
+    lastTimestamp: number;
+    totalDuration: number;
+    percentWatched: number;
+    completed: boolean;
+  }) {
+    return apiCall(`/videos/${id}/progress`, {
+      method: 'POST',
+      body: JSON.stringify(progress),
+    });
+  },
+
+  async getProgress(id: string) {
+    return apiCall(`/videos/${id}/progress`);
+  },
+
+  async getUserProgress(userId: string) {
+    return apiCall(`/videos/progress/user/${userId}`);
+  },
+};

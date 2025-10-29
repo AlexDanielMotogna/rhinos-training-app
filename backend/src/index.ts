@@ -16,6 +16,7 @@ import attendancePollRoutes from './routes/attendancePolls.js';
 import notificationRoutes from './routes/notifications.js';
 import adminRoutes from './routes/admin.js';
 import testResultRoutes from './routes/testResults.js';
+import videoRoutes from './routes/videos.js';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,7 @@ app.use('/api/attendance-polls', attendancePollRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/test-results', testResultRoutes);
+app.use('/api/videos', videoRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -20,12 +20,19 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { getPublishedVideos, getPlayerProgressForAllVideos, isYouTubeShort, getYouTubeVideoId } from '../services/videos';
+import { getPublishedVideos, getPlayerProgressForAllVideos, isYouTubeShort, getYouTubeVideoId, syncVideosFromBackend } from '../services/videos';
 import { getUser } from '../services/userProfile';
 import type { Video, VideoType, PositionTag, RouteTag, CoverageTag, VideoLevel, WatchStatus } from '../types/video';
 
 export const Videos: React.FC = () => {
   const user = getUser();
+
+  // Sync videos from backend on mount
+  useEffect(() => {
+    if (user) {
+      syncVideosFromBackend();
+    }
+  }, [user]);
   const [activeTab, setActiveTab] = useState<VideoType>('position');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPosition, setSelectedPosition] = useState<PositionTag | 'all'>('all');
