@@ -1,8 +1,11 @@
 # 🎯 PLAN DE INTEGRACIÓN BACKEND - RHINOS TRAINING APP
 
 **Fecha de creación:** 2025-10-29
+**Última actualización:** 2025-10-30
 **Duración estimada:** 6 semanas
 **Basado en:** BACKEND_AUDIT_REPORT.md
+
+**📌 ESTADO ACTUAL:** Semana 1 (Videos Backend) ✅ COMPLETADA
 
 ---
 
@@ -22,55 +25,55 @@ Seguir el enfoque **"Opción C: Progresivo"** - Implementar Fase 1 (Infraestruct
 
 ---
 
-## 🗓️ SEMANA 1: VIDEOS BACKEND
+## 🗓️ SEMANA 1: VIDEOS BACKEND ✅ COMPLETADO
 
 ### Objetivo
 Migrar sistema de videos educativos de localStorage a MongoDB, permitiendo progreso sincronizado entre dispositivos.
 
-### 📌 DÍA 1-2: Backend Setup
+### 📌 DÍA 1-2: Backend Setup ✅
 
 **Tareas:**
 ```bash
-□ Verificar modelo Video en backend/prisma/schema.prisma
+✅ Verificar modelo Video en backend/prisma/schema.prisma
   - El modelo ya existe ✅
-  - Confirmar campos necesarios
+  - Confirmar campos necesarios ✅
+  - Agregado campo runs[] para Run Concepts ✅
 
-□ Crear archivo backend/src/routes/videos.ts
+✅ Crear archivo backend/src/routes/videos.ts
 
-□ Implementar endpoints:
-  - GET    /api/videos              # Listar todos los videos
-  - GET    /api/videos/:id          # Obtener video específico
-  - POST   /api/videos              # Crear video (coach only)
-  - PUT    /api/videos/:id          # Actualizar video (coach only)
-  - DELETE /api/videos/:id          # Eliminar video (coach only)
-  - GET    /api/videos/category/:cat # Filtrar por categoría
+✅ Implementar endpoints:
+  - GET    /api/videos              # Listar todos los videos ✅
+  - GET    /api/videos/:id          # Obtener video específico ✅
+  - POST   /api/videos              # Crear video (coach only) ✅
+  - PUT    /api/videos/:id          # Actualizar video (coach only) ✅
+  - DELETE /api/videos/:id          # Eliminar video (coach only) ✅
 
-□ Agregar autenticación con middleware authenticate
+✅ Agregar autenticación con middleware authenticate
 
-□ Implementar autorización:
-  - Coaches: CRUD completo
-  - Players: Solo lectura
+✅ Implementar autorización:
+  - Coaches: CRUD completo ✅
+  - Players: Solo lectura ✅
 
-□ Registrar routes en backend/src/index.ts:
+✅ Registrar routes en backend/src/index.ts:
   import videoRoutes from './routes/videos.js';
   app.use('/api/videos', videoRoutes);
 ```
 
-**Testing Backend:**
+**Testing Backend:** ✅
 ```bash
-# Usar Thunder Client o Postman
-POST /api/videos (como coach)
-GET  /api/videos
-GET  /api/videos/:id
-PUT  /api/videos/:id
-DELETE /api/videos/:id
+# Testeado y funcionando
+✅ POST /api/videos (como coach)
+✅ GET  /api/videos
+✅ GET  /api/videos/:id
+✅ PUT  /api/videos/:id
+✅ DELETE /api/videos/:id
 ```
 
-### 📌 DÍA 3: Video Progress Tracking
+### 📌 DÍA 3: Video Progress Tracking ✅
 
 **Tareas:**
 ```bash
-□ Agregar modelo VideoProgress a schema.prisma:
+✅ Agregar modelo VideoProgress a schema.prisma:
   model VideoProgress {
     id            String   @id @default(auto()) @map("_id") @db.ObjectId
     userId        String   @db.ObjectId
@@ -87,20 +90,20 @@ DELETE /api/videos/:id
     @@index([videoId])
   }
 
-□ npx prisma generate
-□ npx prisma db push
+✅ npx prisma generate
+✅ npx prisma db push
 
-□ Agregar endpoints de progreso en videos.ts:
-  - POST /api/videos/:id/progress     # Guardar progreso
-  - GET  /api/videos/:id/progress     # Obtener progreso usuario actual
-  - GET  /api/videos/progress/user/:userId # Progreso de un player (coach only)
+✅ Agregar endpoints de progreso en videos.ts:
+  - POST /api/videos/:id/progress     # Guardar progreso ✅
+  - GET  /api/videos/:id/progress     # Obtener progreso usuario actual ✅
+  - GET  /api/videos/progress/user/:userId # Progreso de un player (coach only) ✅
 ```
 
-### 📌 DÍA 4-5: Frontend Migration
+### 📌 DÍA 4-5: Frontend Migration ✅
 
 **Tareas:**
 ```bash
-□ Crear API client en src/services/api.ts:
+✅ Crear API client en src/services/api.ts:
   export const videoService = {
     getAll: () => api.get('/videos'),
     getById: (id) => api.get(`/videos/${id}`),
@@ -111,23 +114,23 @@ DELETE /api/videos/:id
     getProgress: (id) => api.get(`/videos/${id}/progress`),
   };
 
-□ Actualizar src/services/videos.ts:
-  - Mantener funciones actuales
-  - Agregar syncVideosFromBackend()
-  - Modificar getAllVideos() para intentar backend primero
-  - Fallback a localStorage si offline
-  - Guardar respuesta backend en localStorage (cache)
+✅ Actualizar src/services/videos.ts:
+  - Mantener funciones actuales ✅
+  - Agregar syncVideosFromBackend() ✅
+  - Modificar getAllVideos() para intentar backend primero ✅
+  - Fallback a localStorage si offline ✅
+  - Guardar respuesta backend en localStorage (cache) ✅
 
-□ Implementar sync en src/App.tsx:
+✅ Implementar sync en src/App.tsx:
   useEffect(() => {
     if (currentUser) {
       syncVideosFromBackend();
     }
   }, [currentUser]);
 
-□ Actualizar componentes:
-  - src/pages/Videos.tsx
-  - src/pages/Admin.tsx (VideosAdmin)
+✅ Actualizar componentes:
+  - src/pages/Videos.tsx ✅
+  - src/pages/Admin.tsx (VideosAdmin) ✅
 ```
 
 **Código de ejemplo:**
@@ -175,18 +178,65 @@ export async function createVideo(video: Omit<Video, 'id'>): Promise<Video> {
 }
 ```
 
-### 📌 Testing Semana 1
+### 📌 Testing Semana 1 ✅
 
 ```bash
-□ Verificar coach puede crear/editar/eliminar videos
-□ Verificar player solo puede ver videos
-□ Verificar progreso se guarda correctamente
-□ Verificar sync funciona al iniciar app
-□ Verificar fallback a localStorage funciona offline
-□ Verificar no hay errores en consola
+✅ Verificar coach puede crear/editar/eliminar videos
+✅ Verificar player solo puede ver videos
+✅ Verificar progreso se guarda correctamente
+✅ Verificar sync funciona al iniciar app
+✅ Verificar fallback a localStorage funciona offline
+✅ Verificar no hay errores en consola
 ```
 
 **Resultado esperado:** ✅ Videos sincronizados con backend, progreso compartido entre dispositivos
+
+### 🎉 EXTRAS IMPLEMENTADOS EN SEMANA 1:
+
+**Dynamic Video Tags System** (Commit 9b6cdbb)
+```bash
+✅ Creado modelo VideoTag en Prisma
+✅ Implementado backend CRUD routes en /api/video-tags
+  - GET, POST, PUT, DELETE endpoints
+  - Filtro por tipo (position/route/coverage/run)
+  - Initialize endpoint con tags por defecto
+  - Validación con Zod
+  - Previene eliminación de tags default
+✅ Creado VideoTagsManager component en Admin panel
+  - Tabs para cada tipo de tag
+  - Add/Edit/Delete functionality
+  - Visual chips con color para defaults
+  - Click-to-edit tag names
+✅ Actualizado VideosAdmin para usar tags dinámicos
+  - Carga tags desde backend
+  - Dropdowns dinámicos en lugar de hardcoded
+  - Guidance cuando tags están vacíos
+```
+
+**Run Concepts Video Type** (Commit 5e891a8)
+```bash
+✅ Agregado tipo 'run' a VideoType
+✅ Agregado campo runs[] al modelo Video
+✅ Actualizado VideoTag model para soportar tipo 'run'
+✅ 12 Run Concepts por defecto:
+  - Inside Zone, Outside Zone, Counter, Power
+  - Trap, Stretch, Toss, Sweep
+  - Draw, Iso, Wham, Dart
+✅ Frontend completo:
+  - Tab "Run Concepts" en Videos player view
+  - Filtros por run concept
+  - Run tags en Admin
+  - VideoTagsManager soporta runs
+```
+
+**YouTube URL Fixes** (Commit 75c0c63)
+```bash
+✅ Fix: Error Alert ahora dentro del Dialog modal
+✅ Fix: YouTube URL parsing mejorado
+  - Usa extractYouTubeVideoId de yt.ts
+  - Maneja URLs con parámetros extra (source_ve_path, etc.)
+  - Mismo parsing que exercise videos
+```
 
 ---
 
@@ -1186,11 +1236,14 @@ Mover cálculos KPI al backend y realizar testing completo end-to-end.
 
 ### Checklist General
 
-**Semana 1: Videos** ✅
-- [ ] Backend routes implementados
-- [ ] Frontend migration completa
-- [ ] Testing passed
-- [ ] Deployed
+**Semana 1: Videos** ✅ COMPLETADO
+- [x] Backend routes implementados
+- [x] Frontend migration completa
+- [x] Testing passed
+- [x] Deployed
+- [x] EXTRAS: Dynamic tags system
+- [x] EXTRAS: Run Concepts type
+- [x] EXTRAS: YouTube URL fixes
 
 **Semana 2: Drills & Equipment** ✅
 - [ ] Drills backend implementado

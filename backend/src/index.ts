@@ -18,6 +18,8 @@ import adminRoutes from './routes/admin.js';
 import testResultRoutes from './routes/testResults.js';
 import videoRoutes from './routes/videos.js';
 import videoTagRoutes from './routes/videoTags.js';
+import drillRoutes from './routes/drills.js';
+import equipmentRoutes from './routes/equipment.js';
 
 // Load environment variables
 dotenv.config();
@@ -78,6 +80,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/test-results', testResultRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/video-tags', videoTagRoutes);
+app.use('/api/drills', drillRoutes);
+app.use('/api/equipment', equipmentRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -515,3 +515,58 @@ model TestResult {
   @@index([userId, testType, isCurrent])
   @@index([userId, dateISO])
 }
+
+// ========================================
+// DRILLS (Training drills library)
+// ========================================
+
+model Drill {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  category      String   // 'athletik' | 'fundamentals' | 'offense' | 'defense' | 'team' | 'cooldown'
+  description   String
+  coachingPoints String
+
+  // Personnel requirements
+  players       Int      @default(0)  // Number of players needed
+  coaches       Int      @default(0)  // Number of coaches needed
+  dummies       Int      @default(0)  // Number of dummies needed
+
+  // Equipment needed (stored as JSON array)
+  // [{equipmentId: string, quantity: number}]
+  equipment     Json     @default("[]")
+
+  // Resources
+  sketchUrl     String?  // Cloudinary URL for drill diagram/sketch
+  sketchPublicId String? // Cloudinary public_id for deletion
+
+  // Organization
+  difficulty    String   // 'basic' | 'advanced' | 'complex'
+  trainingContext String? // 'Warm-up' | 'Individual' | 'Team Period' | etc.
+
+  // Metadata
+  createdBy     String   @db.ObjectId
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category, difficulty])
+  @@index([createdBy])
+}
+
+// ========================================
+// EQUIPMENT (Equipment catalog)
+// ========================================
+
+model Equipment {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique
+  quantity    Int?     // Total quantity available (optional)
+
+  // Image
+  imageUrl    String?  // Cloudinary URL for equipment photo
+  imagePublicId String? // Cloudinary public_id for deletion
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
