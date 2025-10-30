@@ -227,6 +227,14 @@ model TeamSettings {
   logoUrl        String?
   faviconUrl     String?
 
+  // Season and team configuration
+  seasonPhase    String   @default("off-season") // 'off-season' | 'pre-season' | 'in-season'
+  teamLevel      String   @default("varsity") // 'jv' | 'varsity' | 'elite'
+
+  // Optional AI API key for team-wide AI features
+  aiApiKey       String?
+
+  updatedBy      String?  @db.ObjectId // Coach who last updated
   updatedAt      DateTime @updatedAt
 }
 

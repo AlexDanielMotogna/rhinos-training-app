@@ -47,7 +47,7 @@ import { DrillManager } from '../components/DrillManager';
 import { EquipmentManager } from '../components/EquipmentManager';
 import { DrillCategoryManager } from '../components/DrillCategoryManager';
 import { VideoTagsManager } from '../components/VideoTagsManager';
-import { getTeamSettings, updateTeamSettings } from '../services/teamSettings';
+import { getTeamSettings, updateTeamSettings, syncTeamSettingsFromBackend } from '../services/teamSettings';
 import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
 import { validateAPIKey } from '../services/aiInsights';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
@@ -127,6 +127,19 @@ export const Admin: React.FC = () => {
   // User Population State
   const [isPopulatingUsers, setIsPopulatingUsers] = useState(false);
   const [populationResult, setPopulationResult] = useState<string | null>(null);
+
+  // Sync team settings from backend on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      await syncTeamSettingsFromBackend();
+      const settings = getTeamSettings();
+      setTeamSettings(settings);
+      setSeasonPhase(settings.seasonPhase);
+      setTeamLevel(settings.teamLevel);
+      setTeamApiKey(settings.aiApiKey || '');
+    };
+    loadSettings();
+  }, []);
 
   // Helper function to calculate end time
   const calculateEndTime = (startTime: string, durationMinutes: number): string => {
@@ -468,17 +481,22 @@ export const Admin: React.FC = () => {
   };
 
   // Team Settings Handlers
-  const handleSaveTeamSettings = () => {
+  const handleSaveTeamSettings = async () => {
     if (!user) return;
 
-    const updated = updateTeamSettings(seasonPhase, teamLevel, user.name);
-    setTeamSettings(updated);
-    setSettingsSaved(true);
+    try {
+      const updated = await updateTeamSettings(seasonPhase, teamLevel, user.name);
+      setTeamSettings(updated);
+      setSettingsSaved(true);
 
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setSettingsSaved(false);
-    }, 3000);
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSettingsSaved(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to save team settings:', error);
+      alert('Failed to save team settings');
+    }
   };
 
   // AI Coach Configuration Handlers

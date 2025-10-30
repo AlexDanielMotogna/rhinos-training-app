@@ -951,3 +951,50 @@ export const drillTrainingSessionService = {
     });
   },
 };
+
+// ========================================
+// TEAM SETTINGS API
+// ========================================
+
+export const teamSettingsService = {
+  async get() {
+    return apiCall('/team-settings');
+  },
+
+  async update(data: {
+    teamName?: string;
+    appName?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    seasonPhase?: string;
+    teamLevel?: string;
+    aiApiKey?: string;
+  }) {
+    return apiCall('/team-settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async uploadLogo(file: File) {
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    return apiCall('/team-settings/logo', {
+      method: 'POST',
+      body: formData,
+      headers: {}, // Let browser set Content-Type for FormData
+    });
+  },
+
+  async uploadFavicon(file: File) {
+    const formData = new FormData();
+    formData.append('favicon', file);
+
+    return apiCall('/team-settings/favicon', {
+      method: 'POST',
+      body: formData,
+      headers: {}, // Let browser set Content-Type for FormData
+    });
+  },
+};

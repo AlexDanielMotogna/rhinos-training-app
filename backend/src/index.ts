@@ -22,6 +22,7 @@ import drillRoutes from './routes/drills.js';
 import equipmentRoutes from './routes/equipment.js';
 import drillCategoryRoutes from './routes/drillCategories.js';
 import drillTrainingSessionRoutes from './routes/drillTrainingSessions.js';
+import teamSettingsRoutes from './routes/teamSettings.js';
 
 // Load environment variables
 dotenv.config();
@@ -86,6 +87,7 @@ app.use('/api/drills', drillRoutes);
 app.use('/api/equipment', equipmentRoutes);
 app.use('/api/drill-categories', drillCategoryRoutes);
 app.use('/api/drill-training-sessions', drillTrainingSessionRoutes);
+app.use('/api/team-settings', teamSettingsRoutes);
 
 // 404 handler
 app.use((req, res) => {

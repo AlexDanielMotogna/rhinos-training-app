@@ -1,10 +1,64 @@
 import type { TeamSettings, SeasonPhase, TeamLevel, TeamBranding } from '../types/teamSettings';
 import { DEFAULT_TEAM_SETTINGS, DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
+import { teamSettingsService as teamSettingsApi } from './api';
+import { isOnline } from './sync';
 
 const STORAGE_KEY = 'rhinos_team_settings';
 
+// ========================================
+// SYNC FUNCTIONS
+// ========================================
+
 /**
- * Get current team settings
+ * Sync team settings from backend
+ */
+export async function syncTeamSettingsFromBackend(): Promise<void> {
+  if (!isOnline()) {
+    console.log('📦 Offline - skipping team settings sync');
+    return;
+  }
+
+  try {
+    console.log('🔄 Syncing team settings from backend...');
+    const backendSettings = await teamSettingsApi.get();
+
+    // Convert backend format to frontend format
+    const settings: TeamSettings = {
+      seasonPhase: backendSettings.seasonPhase as SeasonPhase,
+      teamLevel: backendSettings.teamLevel as TeamLevel,
+      aiApiKey: backendSettings.aiApiKey,
+      branding: {
+        teamName: backendSettings.teamName,
+        appName: backendSettings.appName || 'Rhinos Training',
+        logoUrl: backendSettings.logoUrl,
+        faviconUrl: backendSettings.faviconUrl,
+        primaryColor: backendSettings.primaryColor,
+        secondaryColor: backendSettings.secondaryColor,
+      },
+      updatedAt: backendSettings.updatedAt,
+      updatedBy: backendSettings.updatedBy,
+    };
+
+    // Save in localStorage as cache
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    console.log('✅ Team settings synced successfully');
+
+    // Apply branding changes
+    if (settings.branding) {
+      if (settings.branding.faviconUrl) {
+        updateFavicon(settings.branding.faviconUrl);
+      }
+      if (settings.branding.appName) {
+        document.title = settings.branding.appName;
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to sync team settings:', error);
+  }
+}
+
+/**
+ * Get current team settings (from cache)
  */
 export function getTeamSettings(): TeamSettings {
   try {
@@ -19,24 +73,31 @@ export function getTeamSettings(): TeamSettings {
 }
 
 /**
- * Update team settings
+ * Update team settings (with backend sync)
  */
-export function updateTeamSettings(
+export async function updateTeamSettings(
   seasonPhase: SeasonPhase,
   teamLevel: TeamLevel,
-  updatedBy: string
-): TeamSettings {
-  const current = getTeamSettings();
-  const settings: TeamSettings = {
-    ...current,
-    seasonPhase,
-    teamLevel,
-    updatedAt: new Date().toISOString(),
-    updatedBy,
-  };
+  updatedBy?: string
+): Promise<TeamSettings> {
+  if (isOnline()) {
+    try {
+      const backendSettings = await teamSettingsApi.update({
+        seasonPhase,
+        teamLevel,
+      });
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  return settings;
+      // Sync to update cache
+      await syncTeamSettingsFromBackend();
+
+      return getTeamSettings();
+    } catch (error) {
+      console.error('Failed to update team settings on backend:', error);
+      throw error;
+    }
+  } else {
+    throw new Error('Cannot update team settings while offline');
+  }
 }
 
 /**
@@ -48,38 +109,79 @@ export function getTeamBranding(): TeamBranding {
 }
 
 /**
- * Update team branding
+ * Update team branding (with backend sync)
  */
-export function updateTeamBranding(
+export async function updateTeamBranding(
   branding: Partial<TeamBranding>,
-  updatedBy: string
-): TeamSettings {
-  const current = getTeamSettings();
-  const currentBranding = current.branding || DEFAULT_TEAM_BRANDING;
+  updatedBy?: string
+): Promise<TeamSettings> {
+  if (isOnline()) {
+    try {
+      const updateData: any = {};
 
-  const settings: TeamSettings = {
-    ...current,
-    branding: {
-      ...currentBranding,
-      ...branding,
-    },
-    updatedAt: new Date().toISOString(),
-    updatedBy,
-  };
+      if (branding.teamName) updateData.teamName = branding.teamName;
+      if (branding.appName) updateData.appName = branding.appName;
+      if (branding.primaryColor) updateData.primaryColor = branding.primaryColor;
+      if (branding.secondaryColor) updateData.secondaryColor = branding.secondaryColor;
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      await teamSettingsApi.update(updateData);
 
-  // Update favicon if provided
-  if (branding.faviconUrl) {
-    updateFavicon(branding.faviconUrl);
+      // Sync to update cache
+      await syncTeamSettingsFromBackend();
+
+      return getTeamSettings();
+    } catch (error) {
+      console.error('Failed to update team branding on backend:', error);
+      throw error;
+    }
+  } else {
+    throw new Error('Cannot update team branding while offline');
   }
+}
 
-  // Update document title if app name changed
-  if (branding.appName) {
-    document.title = branding.appName;
+/**
+ * Upload team logo
+ */
+export async function uploadTeamLogo(file: File): Promise<string> {
+  if (isOnline()) {
+    try {
+      const result = await teamSettingsApi.uploadLogo(file);
+
+      // Sync to update cache
+      await syncTeamSettingsFromBackend();
+
+      return result.logoUrl;
+    } catch (error) {
+      console.error('Failed to upload team logo:', error);
+      throw error;
+    }
+  } else {
+    throw new Error('Cannot upload logo while offline');
   }
+}
 
-  return settings;
+/**
+ * Upload favicon
+ */
+export async function uploadFavicon(file: File): Promise<string> {
+  if (isOnline()) {
+    try {
+      const result = await teamSettingsApi.uploadFavicon(file);
+
+      // Sync to update cache
+      await syncTeamSettingsFromBackend();
+
+      // Apply favicon immediately
+      updateFavicon(result.faviconUrl);
+
+      return result.faviconUrl;
+    } catch (error) {
+      console.error('Failed to upload favicon:', error);
+      throw error;
+    }
+  } else {
+    throw new Error('Cannot upload favicon while offline');
+  }
 }
 
 /**
