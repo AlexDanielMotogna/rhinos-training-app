@@ -30,13 +30,11 @@ import {
   People as PeopleIcon,
   FitnessCenter as EquipmentIcon,
   Download as DownloadIcon,
-  HowToVote as PollIcon,
 } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nProvider';
 import { drillService, syncDrillsFromBackend } from '../services/drillService';
 import { equipmentService, syncEquipmentFromBackend } from '../services/equipmentService';
 import { exportSessionToPDF } from '../services/drillSessionPdfExport';
-import { createPoll, getAllPolls } from '../services/attendancePollService';
 import { Drill, DrillTrainingSession, Equipment } from '../types/drill';
 import { getUser } from '../services/userProfile';
 
@@ -47,7 +45,6 @@ export const DrillTrainingPlan: React.FC = () => {
   const [sessions, setSessions] = useState<DrillTrainingSession[]>([]);
   const [drills, setDrills] = useState<Drill[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [polls, setPolls] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<DrillTrainingSession | null>(null);
 
@@ -72,18 +69,14 @@ export const DrillTrainingPlan: React.FC = () => {
     // Then load from cache
     const loadedDrills = drillService.getAllDrills();
     const loadedEquipment = equipmentService.getAllEquipment();
-    const loadedPolls = await getAllPolls();
 
     console.log('[DrillTrainingPlan] Loaded drills:', loadedDrills);
     console.log('[DrillTrainingPlan] Drills is array:', Array.isArray(loadedDrills));
     console.log('[DrillTrainingPlan] Loaded equipment:', loadedEquipment);
     console.log('[DrillTrainingPlan] Equipment is array:', Array.isArray(loadedEquipment));
-    console.log('[DrillTrainingPlan] Loaded polls:', loadedPolls);
-    console.log('[DrillTrainingPlan] Polls is array:', Array.isArray(loadedPolls));
 
     setDrills(Array.isArray(loadedDrills) ? loadedDrills : []);
     setEquipment(Array.isArray(loadedEquipment) ? loadedEquipment : []);
-    setPolls(Array.isArray(loadedPolls) ? loadedPolls : []);
     loadSessions();
   };
 
@@ -185,39 +178,6 @@ export const DrillTrainingPlan: React.FC = () => {
     return drills.find(d => d.id === drillId)?.name || 'Unknown';
   };
 
-  const handleCreatePoll = async (session: DrillTrainingSession) => {
-    const currentUser = getUser();
-    if (!currentUser) return;
-
-    // Check if poll already exists for this session
-    const existingPoll = polls.find(p => p.sessionId === session.id && p.isActive);
-
-    if (existingPoll) {
-      alert(t('attendancePoll.alreadyExists'));
-      return;
-    }
-
-    // Set expiry to 1 hour before session
-    const sessionDate = new Date(session.date);
-    sessionDate.setHours(sessionDate.getHours() - 1);
-    const expiresAt = sessionDate.toISOString();
-
-    createPoll(
-      session.id,
-      session.name,
-      session.date,
-      currentUser.id,
-      expiresAt
-    );
-
-    alert(t('attendancePoll.created'));
-    loadData(); // Refresh to show poll indicator
-  };
-
-  const getSessionPoll = (sessionId: string) => {
-    return polls.find(p => p.sessionId === sessionId && p.isActive);
-  };
-
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -256,17 +216,6 @@ export const DrillTrainingPlan: React.FC = () => {
                       </Typography>
                     </Box>
                     <Box>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCreatePoll(session);
-                        }}
-                        color={getSessionPoll(session.id) ? 'success' : 'default'}
-                        title={t('attendancePoll.createPoll')}
-                      >
-                        <PollIcon />
-                      </IconButton>
                       <IconButton
                         size="small"
                         onClick={(e) => {

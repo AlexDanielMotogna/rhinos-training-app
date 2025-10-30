@@ -20,8 +20,10 @@ export const messagesEN = {
   // Common
   'common.language': 'Language',
   'common.save': 'Save',
+  'common.saving': 'Saving...',
   'common.cancel': 'Cancel',
   'common.delete': 'Delete',
+  'common.deleting': 'Deleting...',
   'common.edit': 'Edit',
   'common.add': 'Add',
   'common.search': 'Search',

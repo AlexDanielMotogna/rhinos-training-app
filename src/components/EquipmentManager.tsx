@@ -34,6 +34,8 @@ export const EquipmentManager: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [imageError, setImageError] = useState<string>('');
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     loadEquipment();
@@ -99,6 +101,7 @@ export const EquipmentManager: React.FC = () => {
   const handleSave = async () => {
     const quantity = formData.quantity ? parseInt(formData.quantity) : undefined;
 
+    setIsSaving(true);
     try {
       let equipmentId: string;
 
@@ -126,13 +129,23 @@ export const EquipmentManager: React.FC = () => {
     } catch (error) {
       console.error('Failed to save equipment:', error);
       alert(t('equipment.saveError'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('equipment.confirmDelete'))) {
-      equipmentService.deleteEquipment(id);
-      loadEquipment();
+      setIsDeleting(id);
+      try {
+        await equipmentService.deleteEquipment(id);
+        loadEquipment();
+      } catch (error) {
+        console.error('Failed to delete equipment:', error);
+        alert(t('equipment.deleteError'));
+      } finally {
+        setIsDeleting(null);
+      }
     }
   };
 
@@ -178,11 +191,11 @@ export const EquipmentManager: React.FC = () => {
                     )}
                   </Box>
                   <Box>
-                    <IconButton size="small" onClick={() => handleOpenDialog(eq)}>
+                    <IconButton size="small" onClick={() => handleOpenDialog(eq)} disabled={isDeleting === eq.id}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleDelete(eq.id)} color="error">
-                      <DeleteIcon />
+                    <IconButton size="small" onClick={() => handleDelete(eq.id)} color="error" disabled={isDeleting === eq.id}>
+                      {isDeleting === eq.id ? <CircularProgress size={20} /> : <DeleteIcon />}
                     </IconButton>
                   </Box>
                 </Box>
@@ -264,13 +277,14 @@ export const EquipmentManager: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
+          <Button onClick={handleCloseDialog} disabled={isSaving}>{t('common.cancel')}</Button>
           <Button
             onClick={handleSave}
             variant="contained"
-            disabled={!formData.name.trim()}
+            disabled={isSaving || !formData.name.trim()}
+            startIcon={isSaving ? <CircularProgress size={20} /> : null}
           >
-            {t('common.save')}
+            {isSaving ? t('common.saving') : t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>

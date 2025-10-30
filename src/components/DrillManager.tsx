@@ -18,6 +18,7 @@ import {
   Select,
   MenuItem,
   FormHelperText,
+  Autocomplete,
   CardMedia,
   Stack,
   Divider,
@@ -72,6 +73,8 @@ export const DrillManager: React.FC = () => {
   const [selectedEquipment, setSelectedEquipment] = useState<string>('');
   const [imageError, setImageError] = useState<string>('');
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -227,6 +230,7 @@ export const DrillManager: React.FC = () => {
     const currentUser = getUser();
     if (!currentUser) return;
 
+    setIsSaving(true);
     const drillData = {
       name: formData.name,
       category: formData.category,
@@ -268,17 +272,22 @@ export const DrillManager: React.FC = () => {
     } catch (error) {
       console.error('Failed to save drill:', error);
       alert(t('drills.saveError'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (window.confirm(t('drills.confirmDelete'))) {
+      setIsDeleting(id);
       try {
         await drillService.deleteDrill(id);
         await loadData();
       } catch (error) {
         console.error('Failed to delete drill:', error);
         alert(t('drills.deleteError'));
+      } finally {
+        setIsDeleting(null);
       }
     }
   };
@@ -286,6 +295,13 @@ export const DrillManager: React.FC = () => {
   const filteredDrills = filterCategory === 'all'
     ? drills
     : drills.filter(d => d.category === filterCategory);
+
+  // Get unique categories from existing drills
+  const getAvailableCategories = (): string[] => {
+    const categories = drills.map(d => d.category);
+    const uniqueCategories = Array.from(new Set(categories));
+    return uniqueCategories.sort();
+  };
 
   const getEquipmentName = (equipmentId: string): string => {
     return equipment.find(e => e.id === equipmentId)?.name || 'Unknown';
@@ -357,11 +373,11 @@ export const DrillManager: React.FC = () => {
                     >
                       <DownloadIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleOpenDialog(drill)}>
+                    <IconButton size="small" onClick={() => handleOpenDialog(drill)} disabled={isDeleting === drill.id}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleDelete(drill.id)} color="error">
-                      <DeleteIcon />
+                    <IconButton size="small" onClick={() => handleDelete(drill.id)} color="error" disabled={isDeleting === drill.id}>
+                      {isDeleting === drill.id ? <CircularProgress size={20} /> : <DeleteIcon />}
                     </IconButton>
                   </Box>
                 </Box>
@@ -443,21 +459,20 @@ export const DrillManager: React.FC = () => {
               required
             />
 
-            <FormControl fullWidth required>
-              <InputLabel>{t('drills.category.label')}</InputLabel>
-              <Select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as DrillCategory })}
-                label={t('drills.category.label')}
-              >
-                <MenuItem value="athletik">{t('drills.category.athletik')}</MenuItem>
-                <MenuItem value="fundamentals">{t('drills.category.fundamentals')}</MenuItem>
-                <MenuItem value="offense">{t('drills.category.offense')}</MenuItem>
-                <MenuItem value="defense">{t('drills.category.defense')}</MenuItem>
-                <MenuItem value="team">{t('drills.category.team')}</MenuItem>
-                <MenuItem value="cooldown">{t('drills.category.cooldown')}</MenuItem>
-              </Select>
-            </FormControl>
+            <Autocomplete
+              freeSolo
+              options={getAvailableCategories()}
+              value={formData.category}
+              onChange={(e, newValue) => setFormData({ ...formData, category: (newValue || 'fundamentals') as DrillCategory })}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t('drills.category.label')}
+                  required
+                  helperText={t('drills.categoryHelp')}
+                />
+              )}
+            />
 
             {/* Equipment Selection with Quantities */}
             <Box>
@@ -666,17 +681,19 @@ export const DrillManager: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
+          <Button onClick={handleCloseDialog} disabled={isSaving}>{t('common.cancel')}</Button>
           <Button
             onClick={handleSave}
             variant="contained"
             disabled={
+              isSaving ||
               !formData.name.trim() ||
               !formData.description.trim() ||
               !formData.coachingPoints.trim()
             }
+            startIcon={isSaving ? <CircularProgress size={20} /> : null}
           >
-            {t('common.save')}
+            {isSaving ? t('common.saving') : t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>

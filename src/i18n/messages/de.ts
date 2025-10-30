@@ -20,8 +20,10 @@ export const messagesDE = {
   // Common
   'common.language': 'Sprache',
   'common.save': 'Speichern',
+  'common.saving': 'Wird gespeichert...',
   'common.cancel': 'Abbrechen',
   'common.delete': 'Löschen',
+  'common.deleting': 'Wird gelöscht...',
   'common.edit': 'Bearbeiten',
   'common.add': 'Hinzufügen',
   'common.search': 'Suchen',
@@ -793,6 +795,7 @@ export const messagesDE = {
   'drills.editDrill': 'Drill bearbeiten',
   'drills.name': 'Drill-Name',
   'drills.category.label': 'Kategorie',
+  'drills.categoryHelp': 'Wählen Sie vorhandene oder geben Sie neue Kategorie ein',
   'drills.category.athletik': 'Athletik / Kondition',
   'drills.category.fundamentals': 'Grundlagen',
   'drills.category.offense': 'Offense',
