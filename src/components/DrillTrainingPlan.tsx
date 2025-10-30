@@ -47,6 +47,7 @@ export const DrillTrainingPlan: React.FC = () => {
   const [sessions, setSessions] = useState<DrillTrainingSession[]>([]);
   const [drills, setDrills] = useState<Drill[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [polls, setPolls] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<DrillTrainingSession | null>(null);
 
@@ -71,14 +72,18 @@ export const DrillTrainingPlan: React.FC = () => {
     // Then load from cache
     const loadedDrills = drillService.getAllDrills();
     const loadedEquipment = equipmentService.getAllEquipment();
+    const loadedPolls = await getAllPolls();
 
     console.log('[DrillTrainingPlan] Loaded drills:', loadedDrills);
     console.log('[DrillTrainingPlan] Drills is array:', Array.isArray(loadedDrills));
     console.log('[DrillTrainingPlan] Loaded equipment:', loadedEquipment);
     console.log('[DrillTrainingPlan] Equipment is array:', Array.isArray(loadedEquipment));
+    console.log('[DrillTrainingPlan] Loaded polls:', loadedPolls);
+    console.log('[DrillTrainingPlan] Polls is array:', Array.isArray(loadedPolls));
 
     setDrills(Array.isArray(loadedDrills) ? loadedDrills : []);
     setEquipment(Array.isArray(loadedEquipment) ? loadedEquipment : []);
+    setPolls(Array.isArray(loadedPolls) ? loadedPolls : []);
     loadSessions();
   };
 
@@ -180,13 +185,12 @@ export const DrillTrainingPlan: React.FC = () => {
     return drills.find(d => d.id === drillId)?.name || 'Unknown';
   };
 
-  const handleCreatePoll = (session: DrillTrainingSession) => {
+  const handleCreatePoll = async (session: DrillTrainingSession) => {
     const currentUser = getUser();
     if (!currentUser) return;
 
     // Check if poll already exists for this session
-    const existingPolls = getAllPolls();
-    const existingPoll = existingPolls.find(p => p.sessionId === session.id && p.isActive);
+    const existingPoll = polls.find(p => p.sessionId === session.id && p.isActive);
 
     if (existingPoll) {
       alert(t('attendancePoll.alreadyExists'));
@@ -211,7 +215,6 @@ export const DrillTrainingPlan: React.FC = () => {
   };
 
   const getSessionPoll = (sessionId: string) => {
-    const polls = getAllPolls();
     return polls.find(p => p.sessionId === sessionId && p.isActive);
   };
 
