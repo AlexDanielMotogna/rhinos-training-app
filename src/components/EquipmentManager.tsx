@@ -98,22 +98,35 @@ export const EquipmentManager: React.FC = () => {
 
   const handleSave = async () => {
     const quantity = formData.quantity ? parseInt(formData.quantity) : undefined;
-    let imageUrl = editingEquipment?.imageUrl;
 
-    // Use optimized preview if new image was uploaded
-    if (imageFile && imagePreview) {
-      // imagePreview already contains the optimized base64
-      imageUrl = imagePreview;
+    try {
+      let equipmentId: string;
+
+      // Create or update equipment first (without image)
+      if (editingEquipment) {
+        await equipmentService.updateEquipment(editingEquipment.id, formData.name, quantity);
+        equipmentId = editingEquipment.id;
+      } else {
+        const newEquipment = await equipmentService.createEquipment(formData.name, quantity);
+        equipmentId = newEquipment.id;
+      }
+
+      // Upload image to Cloudinary if a new file was selected
+      if (imageFile) {
+        try {
+          await equipmentService.uploadImage(equipmentId, imageFile);
+        } catch (uploadError) {
+          console.error('Failed to upload image:', uploadError);
+          alert(t('equipment.uploadImageError'));
+        }
+      }
+
+      loadEquipment();
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Failed to save equipment:', error);
+      alert(t('equipment.saveError'));
     }
-
-    if (editingEquipment) {
-      equipmentService.updateEquipment(editingEquipment.id, formData.name, quantity, imageUrl);
-    } else {
-      equipmentService.createEquipment(formData.name, quantity, imageUrl);
-    }
-
-    loadEquipment();
-    handleCloseDialog();
   };
 
   const handleDelete = (id: string) => {

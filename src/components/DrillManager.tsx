@@ -224,14 +224,6 @@ export const DrillManager: React.FC = () => {
   };
 
   const handleSave = async () => {
-    let sketchUrl = editingDrill?.sketchUrl;
-
-    // Use optimized preview if new image was uploaded
-    if (sketchFile && sketchPreview) {
-      // sketchPreview already contains the optimized base64
-      sketchUrl = sketchPreview;
-    }
-
     const currentUser = getUser();
     if (!currentUser) return;
 
@@ -246,15 +238,29 @@ export const DrillManager: React.FC = () => {
       description: formData.description,
       coachingPoints: formData.coachingPoints,
       trainingContext: formData.trainingContext || undefined,
-      sketchUrl,
       createdBy: currentUser.id,
     };
 
     try {
+      let drillId: string;
+
+      // Create or update drill first (without image)
       if (editingDrill) {
         await drillService.updateDrill(editingDrill.id, drillData);
+        drillId = editingDrill.id;
       } else {
-        await drillService.createDrill(drillData);
+        const newDrill = await drillService.createDrill(drillData);
+        drillId = newDrill.id;
+      }
+
+      // Upload image to Cloudinary if a new file was selected
+      if (sketchFile) {
+        try {
+          await drillService.uploadSketch(drillId, sketchFile);
+        } catch (uploadError) {
+          console.error('Failed to upload sketch:', uploadError);
+          alert(t('drills.uploadSketchError'));
+        }
       }
 
       await loadData();
