@@ -23,6 +23,7 @@ import equipmentRoutes from './routes/equipment.js';
 import drillCategoryRoutes from './routes/drillCategories.js';
 import drillTrainingSessionRoutes from './routes/drillTrainingSessions.js';
 import teamSettingsRoutes from './routes/teamSettings.js';
+import { startCronJobs } from './utils/cronJobs.js';
 
 // Load environment variables
 dotenv.config();
@@ -35,7 +36,7 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, postman, etc.)
     if (!origin) return callback(null, true);
-    
+
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
@@ -43,19 +44,22 @@ app.use(cors({
       'https://rhinos-training.at',
       'https://www.rhinos-training.at'
     ];
-    
+
     // Check if origin is in allowed list or matches patterns
-    if (allowedOrigins.includes(origin) || 
-        origin.includes('.vercel.app') || 
+    if (allowedOrigins.includes(origin) ||
+        origin.includes('.vercel.app') ||
         origin.includes('.railway.app')) {
       return callback(null, true);
     }
-    
+
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -107,4 +111,7 @@ app.listen(PORT, () => {
   console.log(`[SERVER] Rhinos Training API running on http://localhost:${PORT}`);
   console.log(`[ENV] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`[CONFIG] Frontend URL: ${process.env.FRONTEND_URL}`);
+
+  // Start cron jobs
+  startCronJobs();
 });
