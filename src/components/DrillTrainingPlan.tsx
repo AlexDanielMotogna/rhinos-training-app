@@ -69,8 +69,16 @@ export const DrillTrainingPlan: React.FC = () => {
     ]);
 
     // Then load from cache
-    setDrills(drillService.getAllDrills());
-    setEquipment(equipmentService.getAllEquipment());
+    const loadedDrills = drillService.getAllDrills();
+    const loadedEquipment = equipmentService.getAllEquipment();
+
+    console.log('[DrillTrainingPlan] Loaded drills:', loadedDrills);
+    console.log('[DrillTrainingPlan] Drills is array:', Array.isArray(loadedDrills));
+    console.log('[DrillTrainingPlan] Loaded equipment:', loadedEquipment);
+    console.log('[DrillTrainingPlan] Equipment is array:', Array.isArray(loadedEquipment));
+
+    setDrills(Array.isArray(loadedDrills) ? loadedDrills : []);
+    setEquipment(Array.isArray(loadedEquipment) ? loadedEquipment : []);
     loadSessions();
   };
 
@@ -157,10 +165,18 @@ export const DrillTrainingPlan: React.FC = () => {
   };
 
   const getEquipmentName = (equipmentId: string): string => {
+    if (!Array.isArray(equipment)) {
+      console.error('[DrillTrainingPlan] equipment is not an array:', equipment);
+      return 'Unknown';
+    }
     return equipment.find(e => e.id === equipmentId)?.name || 'Unknown';
   };
 
   const getDrillName = (drillId: string): string => {
+    if (!Array.isArray(drills)) {
+      console.error('[DrillTrainingPlan] drills is not an array:', drills);
+      return 'Unknown';
+    }
     return drills.find(d => d.id === drillId)?.name || 'Unknown';
   };
 

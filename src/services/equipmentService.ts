@@ -32,8 +32,20 @@ export async function syncEquipmentFromBackend(): Promise<void> {
 
 export const equipmentService = {
   getAllEquipment(): Equipment[] {
-    const data = localStorage.getItem(EQUIPMENT_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(EQUIPMENT_STORAGE_KEY);
+      if (!data) return [];
+
+      const parsed = JSON.parse(data);
+      if (!Array.isArray(parsed)) {
+        console.error('[equipmentService] getAllEquipment: parsed data is not an array:', parsed);
+        return [];
+      }
+      return parsed;
+    } catch (error) {
+      console.error('[equipmentService] getAllEquipment: error parsing data:', error);
+      return [];
+    }
   },
 
   getEquipmentById(id: string): Equipment | undefined {

@@ -42,8 +42,20 @@ export async function syncDrillsFromBackend(): Promise<void> {
 
 export const drillService = {
   getAllDrills(): Drill[] {
-    const data = localStorage.getItem(DRILLS_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(DRILLS_STORAGE_KEY);
+      if (!data) return [];
+
+      const parsed = JSON.parse(data);
+      if (!Array.isArray(parsed)) {
+        console.error('[drillService] getAllDrills: parsed data is not an array:', parsed);
+        return [];
+      }
+      return parsed;
+    } catch (error) {
+      console.error('[drillService] getAllDrills: error parsing data:', error);
+      return [];
+    }
   },
 
   getDrillById(id: string): Drill | undefined {
