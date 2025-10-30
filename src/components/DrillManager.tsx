@@ -463,7 +463,16 @@ export const DrillManager: React.FC = () => {
               freeSolo
               options={getAvailableCategories()}
               value={formData.category}
-              onChange={(e, newValue) => setFormData({ ...formData, category: (newValue || 'fundamentals') as DrillCategory })}
+              onChange={(e, newValue) => {
+                if (newValue) {
+                  setFormData({ ...formData, category: newValue as DrillCategory });
+                }
+              }}
+              onInputChange={(e, newInputValue) => {
+                if (newInputValue) {
+                  setFormData({ ...formData, category: newInputValue as DrillCategory });
+                }
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
