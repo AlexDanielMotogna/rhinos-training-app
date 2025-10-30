@@ -2,11 +2,9 @@ import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
-import multer from 'multer';
-import { uploadToCloudinary } from '../utils/cloudinary.js';
+import { upload, uploadTeamLogo, uploadImage } from '../utils/cloudinary.js';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
 // Validation schemas
 const updateTeamSettingsSchema = z.object({
@@ -111,8 +109,8 @@ router.post('/logo', authenticate, upload.single('logo'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Upload to Cloudinary
-    const result = await uploadToCloudinary(req.file.buffer, 'team-logos');
+    // Upload to Cloudinary using uploadTeamLogo
+    const result = await uploadTeamLogo(req.file.buffer);
 
     // Update team settings with new logo URL
     let settings = await prisma.teamSettings.findFirst();
@@ -123,7 +121,7 @@ router.post('/logo', authenticate, upload.single('logo'), async (req, res) => {
           teamName: 'Rhinos',
           primaryColor: '#1976d2',
           secondaryColor: '#dc004e',
-          logoUrl: result.secure_url,
+          logoUrl: result.url,
           updatedBy: user.userId,
         },
       });
@@ -131,14 +129,14 @@ router.post('/logo', authenticate, upload.single('logo'), async (req, res) => {
       settings = await prisma.teamSettings.update({
         where: { id: settings.id },
         data: {
-          logoUrl: result.secure_url,
+          logoUrl: result.url,
           updatedBy: user.userId,
         },
       });
     }
 
-    console.log(`[TEAM SETTINGS] Logo uploaded by ${user.email}: ${result.secure_url}`);
-    res.json({ logoUrl: result.secure_url, settings });
+    console.log(`[TEAM SETTINGS] Logo uploaded by ${user.email}: ${result.url}`);
+    res.json({ logoUrl: result.url, settings });
   } catch (error) {
     console.error('[TEAM SETTINGS] Logo upload error:', error);
     res.status(500).json({ error: 'Failed to upload logo' });
@@ -159,8 +157,8 @@ router.post('/favicon', authenticate, upload.single('favicon'), async (req, res)
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Upload to Cloudinary
-    const result = await uploadToCloudinary(req.file.buffer, 'team-favicons');
+    // Upload to Cloudinary with custom folder for favicons
+    const result = await uploadImage(req.file.buffer, { folder: 'rhinos-training/favicons' });
 
     // Update team settings with new favicon URL
     let settings = await prisma.teamSettings.findFirst();
@@ -171,7 +169,7 @@ router.post('/favicon', authenticate, upload.single('favicon'), async (req, res)
           teamName: 'Rhinos',
           primaryColor: '#1976d2',
           secondaryColor: '#dc004e',
-          faviconUrl: result.secure_url,
+          faviconUrl: result.url,
           updatedBy: user.userId,
         },
       });
@@ -179,14 +177,14 @@ router.post('/favicon', authenticate, upload.single('favicon'), async (req, res)
       settings = await prisma.teamSettings.update({
         where: { id: settings.id },
         data: {
-          faviconUrl: result.secure_url,
+          faviconUrl: result.url,
           updatedBy: user.userId,
         },
       });
     }
 
-    console.log(`[TEAM SETTINGS] Favicon uploaded by ${user.email}: ${result.secure_url}`);
-    res.json({ faviconUrl: result.secure_url, settings });
+    console.log(`[TEAM SETTINGS] Favicon uploaded by ${user.email}: ${result.url}`);
+    res.json({ faviconUrl: result.url, settings });
   } catch (error) {
     console.error('[TEAM SETTINGS] Favicon upload error:', error);
     res.status(500).json({ error: 'Failed to upload favicon' });
