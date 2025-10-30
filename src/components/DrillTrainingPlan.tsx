@@ -33,8 +33,8 @@ import {
   HowToVote as PollIcon,
 } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nProvider';
-import { drillService } from '../services/drillService';
-import { equipmentService } from '../services/equipmentService';
+import { drillService, syncDrillsFromBackend } from '../services/drillService';
+import { equipmentService, syncEquipmentFromBackend } from '../services/equipmentService';
 import { exportSessionToPDF } from '../services/drillSessionPdfExport';
 import { createPoll, getAllPolls } from '../services/attendancePollService';
 import { Drill, DrillTrainingSession, Equipment } from '../types/drill';
@@ -61,7 +61,14 @@ export const DrillTrainingPlan: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
+    // Sync drills and equipment from backend first
+    await Promise.all([
+      syncDrillsFromBackend(),
+      syncEquipmentFromBackend(),
+    ]);
+
+    // Then load from cache
     setDrills(drillService.getAllDrills());
     setEquipment(equipmentService.getAllEquipment());
     loadSessions();
