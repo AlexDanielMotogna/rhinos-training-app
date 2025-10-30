@@ -781,6 +781,11 @@ export const messagesDE = {
   'equipment.uploadImageHelp': 'Laden Sie ein Bild hoch, das zeigt, wie dieses Equipment in Drill-Skizzen aussieht (z.B. gelbes Hütchen-Symbol, Medizinball-Icon, etc.)',
   'equipment.confirmDelete': 'Möchten Sie dieses Equipment wirklich löschen?',
   'equipment.noEquipment': 'Noch kein Equipment konfiguriert. Fügen Sie Equipment hinzu, das Sie für Übungen verwenden.',
+  'equipment.uploadImageError': 'Fehler beim Hochladen des Bildes. Bitte versuchen Sie es erneut.',
+  'equipment.uploadImageOffline': 'Bild kann nicht offline hochgeladen werden. Bitte Internetverbindung herstellen.',
+  'equipment.saveError': 'Fehler beim Speichern des Equipments. Bitte versuchen Sie es erneut.',
+  'equipment.deleteError': 'Fehler beim Löschen des Equipments. Bitte versuchen Sie es erneut.',
+  'equipment.optimizingImage': 'Bild wird optimiert...',
 
   // Drills
   'drills.title': 'Drillbook',
@@ -819,6 +824,11 @@ export const messagesDE = {
   'drills.downloadSessionPDF': 'Einheit-PDF herunterladen',
   'drills.sketch': 'Drill-Skizze',
   'drills.generatedBy': 'Erstellt von Rhinos Training App',
+  'drills.uploadSketchError': 'Fehler beim Hochladen der Skizze. Bitte versuchen Sie es erneut.',
+  'drills.uploadSketchOffline': 'Skizze kann nicht offline hochgeladen werden. Bitte Internetverbindung herstellen.',
+  'drills.saveError': 'Fehler beim Speichern des Drills. Bitte versuchen Sie es erneut.',
+  'drills.deleteError': 'Fehler beim Löschen des Drills. Bitte versuchen Sie es erneut.',
+  'drills.optimizingImage': 'Bild wird optimiert...',
 
   // Drill Training Sessions
   'drills.trainingSessions': 'Drill-Trainingseinheiten',

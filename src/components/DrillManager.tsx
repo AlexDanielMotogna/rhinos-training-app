@@ -261,7 +261,7 @@ export const DrillManager: React.FC = () => {
       handleCloseDialog();
     } catch (error) {
       console.error('Failed to save drill:', error);
-      alert('Failed to save drill. Please try again.');
+      alert(t('drills.saveError'));
     }
   };
 
@@ -272,7 +272,7 @@ export const DrillManager: React.FC = () => {
         await loadData();
       } catch (error) {
         console.error('Failed to delete drill:', error);
-        alert('Failed to delete drill. Please try again.');
+        alert(t('drills.deleteError'));
       }
     }
   };
@@ -598,7 +598,7 @@ export const DrillManager: React.FC = () => {
                 fullWidth
                 disabled={isOptimizing}
               >
-                {isOptimizing ? 'Optimizing image...' : t('drills.uploadSketch')}
+                {isOptimizing ? t('drills.optimizingImage') : t('drills.uploadSketch')}
                 <input
                   type="file"
                   hidden

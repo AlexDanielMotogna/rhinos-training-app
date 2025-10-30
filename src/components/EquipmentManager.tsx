@@ -217,7 +217,7 @@ export const EquipmentManager: React.FC = () => {
                 fullWidth
                 disabled={isOptimizing}
               >
-                {isOptimizing ? 'Optimizing image...' : t('equipment.uploadImage')}
+                {isOptimizing ? t('equipment.optimizingImage') : t('equipment.uploadImage')}
                 <input
                   type="file"
                   hidden
