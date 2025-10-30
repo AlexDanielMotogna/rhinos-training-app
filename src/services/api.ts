@@ -907,3 +907,47 @@ export const drillCategoryService = {
     });
   },
 };
+
+// ========================================
+// DRILL TRAINING SESSIONS API
+// ========================================
+
+export const drillTrainingSessionService = {
+  async getAll() {
+    return apiCall('/drill-training-sessions');
+  },
+
+  async getById(id: string) {
+    return apiCall(`/drill-training-sessions/${id}`);
+  },
+
+  async create(data: {
+    name: string;
+    date: string;
+    drills: string[];
+    notes?: string;
+  }) {
+    return apiCall('/drill-training-sessions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: {
+    name?: string;
+    date?: string;
+    drills?: string[];
+    notes?: string;
+  }) {
+    return apiCall(`/drill-training-sessions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string) {
+    return apiCall(`/drill-training-sessions/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};

@@ -855,6 +855,8 @@ export const messagesEN = {
   'drills.notes': 'Notes',
   'drills.notesPlaceholder': 'Add any notes about this training session...',
   'drills.confirmDeleteSession': 'Are you sure you want to delete this training session?',
+  'drills.saveSessionError': 'Failed to save training session',
+  'drills.deleteSessionError': 'Failed to delete training session',
   'drills.noSessions': 'No training sessions planned yet. Create your first drill session!',
   'drills.drillsIncluded': 'Drills Included',
   'drills.resourcesNeeded': 'Resources Needed',

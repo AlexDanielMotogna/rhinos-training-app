@@ -844,6 +844,8 @@ export const messagesDE = {
   'drills.notes': 'Notizen',
   'drills.notesPlaceholder': 'Fügen Sie Notizen zu dieser Trainingseinheit hinzu...',
   'drills.confirmDeleteSession': 'Möchten Sie diese Trainingseinheit wirklich löschen?',
+  'drills.saveSessionError': 'Trainingseinheit konnte nicht gespeichert werden',
+  'drills.deleteSessionError': 'Trainingseinheit konnte nicht gelöscht werden',
   'drills.noSessions': 'Noch keine Trainingseinheiten geplant. Erstellen Sie Ihre erste Drill-Einheit!',
   'drills.drillsIncluded': 'Enthaltene Drills',
   'drills.resourcesNeeded': 'Benötigte Ressourcen',

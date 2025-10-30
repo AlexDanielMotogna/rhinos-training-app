@@ -34,11 +34,11 @@ import {
 import { useI18n } from '../i18n/I18nProvider';
 import { drillService, syncDrillsFromBackend } from '../services/drillService';
 import { equipmentService, syncEquipmentFromBackend } from '../services/equipmentService';
+import { drillTrainingSessionService, syncDrillTrainingSessionsFromBackend } from '../services/drillTrainingSessionService';
 import { exportSessionToPDF } from '../services/drillSessionPdfExport';
-import { Drill, DrillTrainingSession, Equipment } from '../types/drill';
+import { Drill, Equipment } from '../types/drill';
+import { DrillTrainingSession } from '../services/drillTrainingSessionService';
 import { getUser } from '../services/userProfile';
-
-const DRILLS_TRAINING_SESSIONS_KEY = 'rhinos_drill_training_sessions';
 
 export const DrillTrainingPlan: React.FC = () => {
   const { t } = useI18n();
@@ -60,15 +60,17 @@ export const DrillTrainingPlan: React.FC = () => {
   }, []);
 
   const loadData = async () => {
-    // Sync drills and equipment from backend first
+    // Sync from backend first
     await Promise.all([
       syncDrillsFromBackend(),
       syncEquipmentFromBackend(),
+      syncDrillTrainingSessionsFromBackend(),
     ]);
 
     // Then load from cache
     const loadedDrills = drillService.getAllDrills();
     const loadedEquipment = equipmentService.getAllEquipment();
+    const loadedSessions = drillTrainingSessionService.getAllSessions();
 
     console.log('[DrillTrainingPlan] Loaded drills:', loadedDrills);
     console.log('[DrillTrainingPlan] Drills is array:', Array.isArray(loadedDrills));
@@ -77,17 +79,7 @@ export const DrillTrainingPlan: React.FC = () => {
 
     setDrills(Array.isArray(loadedDrills) ? loadedDrills : []);
     setEquipment(Array.isArray(loadedEquipment) ? loadedEquipment : []);
-    loadSessions();
-  };
-
-  const loadSessions = () => {
-    const data = localStorage.getItem(DRILLS_TRAINING_SESSIONS_KEY);
-    setSessions(data ? JSON.parse(data) : []);
-  };
-
-  const saveSessions = (updatedSessions: DrillTrainingSession[]) => {
-    localStorage.setItem(DRILLS_TRAINING_SESSIONS_KEY, JSON.stringify(updatedSessions));
-    setSessions(updatedSessions);
+    setSessions(loadedSessions);
   };
 
   const handleOpenDialog = (session?: DrillTrainingSession) => {
@@ -116,36 +108,47 @@ export const DrillTrainingPlan: React.FC = () => {
     setEditingSession(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const currentUser = getUser();
     if (!currentUser) return;
 
-    if (editingSession) {
-      const updated = sessions.map(s =>
-        s.id === editingSession.id
-          ? { ...s, ...formData }
-          : s
-      );
-      saveSessions(updated);
-    } else {
-      const newSession: DrillTrainingSession = {
-        id: `drill_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: formData.name,
-        date: formData.date,
-        drills: formData.drills,
-        notes: formData.notes || undefined,
-        createdAt: Date.now(),
-        createdBy: currentUser.id,
-      };
-      saveSessions([...sessions, newSession].sort((a, b) => a.date.localeCompare(b.date)));
-    }
+    try {
+      if (editingSession) {
+        // Update existing session
+        await drillTrainingSessionService.updateSession(editingSession.id, {
+          name: formData.name,
+          date: formData.date,
+          drills: formData.drills,
+          notes: formData.notes || undefined,
+        });
+      } else {
+        // Create new session
+        await drillTrainingSessionService.createSession({
+          name: formData.name,
+          date: formData.date,
+          drills: formData.drills,
+          notes: formData.notes || undefined,
+        });
+      }
 
-    handleCloseDialog();
+      // Reload data from backend
+      await loadData();
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Failed to save session:', error);
+      alert(t('drills.saveSessionError'));
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('drills.confirmDeleteSession'))) {
-      saveSessions(sessions.filter(s => s.id !== id));
+      try {
+        await drillTrainingSessionService.deleteSession(id);
+        await loadData();
+      } catch (error) {
+        console.error('Failed to delete session:', error);
+        alert(t('drills.deleteSessionError'));
+      }
     }
   };
 
