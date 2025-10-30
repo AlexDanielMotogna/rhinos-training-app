@@ -753,7 +753,7 @@ export const drillService = {
     formData.append('sketch', file);
 
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/drills/${id}/upload-sketch`, {
+    const response = await fetch(`${API_URL}/drills/${id}/upload-sketch`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -818,7 +818,7 @@ export const equipmentService = {
     formData.append('image', file);
 
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/equipment/${id}/upload-image`, {
+    const response = await fetch(`${API_URL}/equipment/${id}/upload-image`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
