@@ -15,6 +15,12 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('[AUTH] No token provided. Headers:', {
+        authorization: authHeader,
+        contentType: req.headers['content-type'],
+        method: req.method,
+        path: req.path,
+      });
       return res.status(401).json({ error: 'No token provided' });
     }
 
@@ -23,9 +29,10 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     const decoded = verifyToken(token);
     req.user = decoded;
 
+    console.log(`[AUTH] Authenticated user: ${decoded.email} (${decoded.role})`);
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('[AUTH] Authentication error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }

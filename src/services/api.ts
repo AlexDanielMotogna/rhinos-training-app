@@ -752,7 +752,15 @@ export const drillService = {
     const formData = new FormData();
     formData.append('sketch', file);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.error('[API] No authentication token found');
+      throw new Error('No authentication token found. Please log in again.');
+    }
+
+    console.log('[API] Uploading sketch for drill:', id, 'File size:', file.size, 'bytes');
+    console.log('[API] Token exists:', !!token, 'Token length:', token.length);
+
     const response = await fetch(`${API_URL}/drills/${id}/upload-sketch`, {
       method: 'POST',
       headers: {
@@ -761,12 +769,22 @@ export const drillService = {
       body: formData,
     });
 
+    console.log('[API] Upload response status:', response.status);
+
     if (!response.ok) {
+      if (response.status === 401) {
+        const errorBody = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[API] 401 Unauthorized. Error body:', errorBody);
+        throw new Error('Authentication failed. Please log in again.');
+      }
       const error = await response.json().catch(() => ({ error: 'Failed to upload sketch' }));
+      console.error('[API] Upload failed:', error);
       throw new Error(error.error || 'Failed to upload sketch');
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('[API] Upload successful:', result);
+    return result;
   },
 };
 
@@ -817,7 +835,11 @@ export const equipmentService = {
     const formData = new FormData();
     formData.append('image', file);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.');
+    }
+
     const response = await fetch(`${API_URL}/equipment/${id}/upload-image`, {
       method: 'POST',
       headers: {
@@ -827,6 +849,9 @@ export const equipmentService = {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      }
       const error = await response.json().catch(() => ({ error: 'Failed to upload image' }));
       throw new Error(error.error || 'Failed to upload image');
     }

@@ -214,11 +214,15 @@ router.delete('/:id', authenticate, async (req, res) => {
 // POST /api/drills/:id/upload-sketch - Upload drill sketch (coach only)
 router.post('/:id/upload-sketch', authenticate, upload.single('sketch'), async (req, res) => {
   try {
+    console.log('[DRILLS] Upload sketch request received for drill:', req.params.id);
     const user = (req as any).user;
     const { id } = req.params;
 
+    console.log('[DRILLS] User authenticated:', { email: user.email, role: user.role });
+
     // Only coaches can upload drill sketches
     if (user.role !== 'coach') {
+      console.warn('[DRILLS] Non-coach user attempted upload:', user.email);
       return res.status(403).json({ error: 'Only coaches can upload drill sketches' });
     }
 
