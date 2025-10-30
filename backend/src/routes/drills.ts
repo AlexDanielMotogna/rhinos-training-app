@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { upload, uploadDrillSketch, deleteImage } from '../utils/cloudinary.js';
 
 const router = express.Router();
 
@@ -189,6 +190,15 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'Drill not found' });
     }
 
+    // Delete sketch from Cloudinary if exists
+    if (existingDrill.sketchPublicId) {
+      try {
+        await deleteImage(existingDrill.sketchPublicId as string);
+      } catch (error) {
+        console.warn('[DRILLS] Failed to delete sketch from Cloudinary:', error);
+      }
+    }
+
     await prisma.drill.delete({
       where: { id },
     });
@@ -198,6 +208,63 @@ router.delete('/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('[DRILLS] Delete drill error:', error);
     res.status(500).json({ error: 'Failed to delete drill' });
+  }
+});
+
+// POST /api/drills/:id/upload-sketch - Upload drill sketch (coach only)
+router.post('/:id/upload-sketch', authenticate, upload.single('sketch'), async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    // Only coaches can upload drill sketches
+    if (user.role !== 'coach') {
+      return res.status(403).json({ error: 'Only coaches can upload drill sketches' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Check if drill exists
+    const existingDrill = await prisma.drill.findUnique({
+      where: { id },
+    });
+
+    if (!existingDrill) {
+      return res.status(404).json({ error: 'Drill not found' });
+    }
+
+    // Delete old sketch if exists
+    if (existingDrill.sketchPublicId) {
+      try {
+        await deleteImage(existingDrill.sketchPublicId as string);
+      } catch (error) {
+        console.warn('[DRILLS] Failed to delete old sketch:', error);
+      }
+    }
+
+    // Upload new sketch
+    const { url, publicId } = await uploadDrillSketch(req.file.buffer, id);
+
+    // Update drill with new sketch URL
+    const updatedDrill = await prisma.drill.update({
+      where: { id },
+      data: {
+        sketchUrl: url,
+        sketchPublicId: publicId,
+      },
+    });
+
+    console.log(`[DRILLS] Sketch uploaded for drill: ${updatedDrill.name} by ${user.email}`);
+    res.json({
+      sketchUrl: url,
+      sketchPublicId: publicId,
+      drill: updatedDrill,
+    });
+  } catch (error) {
+    console.error('[DRILLS] Upload sketch error:', error);
+    res.status(500).json({ error: 'Failed to upload sketch' });
   }
 });
 

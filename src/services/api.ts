@@ -747,6 +747,27 @@ export const drillService = {
       method: 'DELETE',
     });
   },
+
+  async uploadSketch(id: string, file: File) {
+    const formData = new FormData();
+    formData.append('sketch', file);
+
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/drills/${id}/upload-sketch`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to upload sketch' }));
+      throw new Error(error.error || 'Failed to upload sketch');
+    }
+
+    return response.json();
+  },
 };
 
 // ========================================
@@ -790,5 +811,26 @@ export const equipmentService = {
     return apiCall(`/equipment/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  async uploadImage(id: string, file: File) {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/equipment/${id}/upload-image`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to upload image' }));
+      throw new Error(error.error || 'Failed to upload image');
+    }
+
+    return response.json();
   },
 };

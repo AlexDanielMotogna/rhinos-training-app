@@ -124,15 +124,31 @@ export const drillService = {
     }
   },
 
-  uploadSketch(file: File): Promise<string> {
-    // For now, convert to base64 data URL
-    // TODO: In production, upload to Cloudinary via backend
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  async uploadSketch(drillId: string, file: File): Promise<{ sketchUrl: string; sketchPublicId: string }> {
+    if (isOnline()) {
+      try {
+        const result = await drillApi.uploadSketch(drillId, file);
+
+        // Update local cache with new sketch URL
+        const drills = this.getAllDrills();
+        const index = drills.findIndex(d => d.id === drillId);
+        if (index !== -1) {
+          drills[index].sketchUrl = result.sketchUrl;
+          drills[index].sketchPublicId = result.sketchPublicId;
+          localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
+        }
+
+        return {
+          sketchUrl: result.sketchUrl,
+          sketchPublicId: result.sketchPublicId,
+        };
+      } catch (error) {
+        console.error('Failed to upload sketch to backend:', error);
+        throw error;
+      }
+    } else {
+      throw new Error('Cannot upload sketch while offline');
+    }
   },
 
   calculateResourceSummary(drillIds: string[]): DrillResourceSummary {

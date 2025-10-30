@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { upload, uploadEquipmentImage, deleteImage } from '../utils/cloudinary.js';
 
 const router = express.Router();
 
@@ -164,6 +165,15 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'Equipment not found' });
     }
 
+    // Delete image from Cloudinary if exists
+    if (existingEquipment.imagePublicId) {
+      try {
+        await deleteImage(existingEquipment.imagePublicId as string);
+      } catch (error) {
+        console.warn('[EQUIPMENT] Failed to delete image from Cloudinary:', error);
+      }
+    }
+
     await prisma.equipment.delete({
       where: { id },
     });
@@ -173,6 +183,63 @@ router.delete('/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('[EQUIPMENT] Delete equipment error:', error);
     res.status(500).json({ error: 'Failed to delete equipment' });
+  }
+});
+
+// POST /api/equipment/:id/upload-image - Upload equipment image (coach only)
+router.post('/:id/upload-image', authenticate, upload.single('image'), async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    // Only coaches can upload equipment images
+    if (user.role !== 'coach') {
+      return res.status(403).json({ error: 'Only coaches can upload equipment images' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Check if equipment exists
+    const existingEquipment = await prisma.equipment.findUnique({
+      where: { id },
+    });
+
+    if (!existingEquipment) {
+      return res.status(404).json({ error: 'Equipment not found' });
+    }
+
+    // Delete old image if exists
+    if (existingEquipment.imagePublicId) {
+      try {
+        await deleteImage(existingEquipment.imagePublicId as string);
+      } catch (error) {
+        console.warn('[EQUIPMENT] Failed to delete old image:', error);
+      }
+    }
+
+    // Upload new image
+    const { url, publicId } = await uploadEquipmentImage(req.file.buffer, id);
+
+    // Update equipment with new image URL
+    const updatedEquipment = await prisma.equipment.update({
+      where: { id },
+      data: {
+        imageUrl: url,
+        imagePublicId: publicId,
+      },
+    });
+
+    console.log(`[EQUIPMENT] Image uploaded for equipment: ${updatedEquipment.name} by ${user.email}`);
+    res.json({
+      imageUrl: url,
+      imagePublicId: publicId,
+      equipment: updatedEquipment,
+    });
+  } catch (error) {
+    console.error('[EQUIPMENT] Upload image error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
   }
 });
 

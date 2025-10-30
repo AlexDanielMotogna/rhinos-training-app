@@ -101,6 +101,36 @@ export async function uploadTeamLogo(buffer: Buffer) {
 }
 
 /**
+ * Upload drill sketch (optimized for diagrams/drawings)
+ */
+export async function uploadDrillSketch(buffer: Buffer, drillId: string) {
+  return uploadImage(buffer, {
+    folder: `${CLOUDINARY_FOLDER}/drills`,
+    transformation: [
+      { width: 1200, height: 1200, crop: 'limit' },
+      { quality: 'auto' },
+      { fetch_format: 'auto' },
+    ],
+    publicId: `drill-sketch-${drillId}`,
+  });
+}
+
+/**
+ * Upload equipment image
+ */
+export async function uploadEquipmentImage(buffer: Buffer, equipmentId: string) {
+  return uploadImage(buffer, {
+    folder: `${CLOUDINARY_FOLDER}/equipment`,
+    transformation: [
+      { width: 800, height: 800, crop: 'limit' },
+      { quality: 'auto' },
+      { fetch_format: 'auto' },
+    ],
+    publicId: `equipment-${equipmentId}`,
+  });
+}
+
+/**
  * Delete image from Cloudinary
  */
 export async function deleteImage(publicId: string): Promise<void> {

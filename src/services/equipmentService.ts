@@ -94,15 +94,31 @@ export const equipmentService = {
     }
   },
 
-  uploadImage(file: File): Promise<string> {
-    // Convert to base64 data URL
-    // TODO: In production, upload to Cloudinary via backend
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  async uploadImage(equipmentId: string, file: File): Promise<{ imageUrl: string; imagePublicId: string }> {
+    if (isOnline()) {
+      try {
+        const result = await equipmentApi.uploadImage(equipmentId, file);
+
+        // Update local cache with new image URL
+        const equipment = this.getAllEquipment();
+        const index = equipment.findIndex(e => e.id === equipmentId);
+        if (index !== -1) {
+          equipment[index].imageUrl = result.imageUrl;
+          equipment[index].imagePublicId = result.imagePublicId;
+          localStorage.setItem(EQUIPMENT_STORAGE_KEY, JSON.stringify(equipment));
+        }
+
+        return {
+          imageUrl: result.imageUrl,
+          imagePublicId: result.imagePublicId,
+        };
+      } catch (error) {
+        console.error('Failed to upload image to backend:', error);
+        throw error;
+      }
+    } else {
+      throw new Error('Cannot upload image while offline');
+    }
   },
 
   async deleteEquipment(id: string): Promise<boolean> {
