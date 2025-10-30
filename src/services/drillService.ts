@@ -18,9 +18,19 @@ export async function syncDrillsFromBackend(): Promise<void> {
     console.log('🔄 Syncing drills from backend...');
     const backendDrills = await drillApi.getAll();
 
+    // Normalize drill data - ensure equipment is always an array
+    const normalizedDrills = backendDrills.map((drill: any) => ({
+      ...drill,
+      equipment: Array.isArray(drill.equipment)
+        ? drill.equipment
+        : (typeof drill.equipment === 'string'
+          ? JSON.parse(drill.equipment)
+          : []),
+    }));
+
     // Save in localStorage as cache
-    localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(backendDrills));
-    console.log(`✅ Drills synced successfully (${backendDrills.length} drills)`);
+    localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(normalizedDrills));
+    console.log(`✅ Drills synced successfully (${normalizedDrills.length} drills)`);
   } catch (error) {
     console.warn('⚠️ Failed to sync drills:', error);
   }
@@ -64,12 +74,22 @@ export const drillService = {
           sketchUrl: drill.sketchUrl,
         });
 
+        // Normalize equipment field
+        const normalizedDrill = {
+          ...newDrill,
+          equipment: Array.isArray(newDrill.equipment)
+            ? newDrill.equipment
+            : (typeof newDrill.equipment === 'string'
+              ? JSON.parse(newDrill.equipment)
+              : []),
+        };
+
         // Update local cache
         const drills = this.getAllDrills();
-        drills.push(newDrill);
+        drills.push(normalizedDrill);
         localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
 
-        return newDrill;
+        return normalizedDrill;
       } catch (error) {
         console.error('Failed to create drill on backend:', error);
         throw error;
@@ -85,15 +105,25 @@ export const drillService = {
         // Update on backend
         const updatedDrill = await drillApi.update(id, updates);
 
+        // Normalize equipment field
+        const normalizedDrill = {
+          ...updatedDrill,
+          equipment: Array.isArray(updatedDrill.equipment)
+            ? updatedDrill.equipment
+            : (typeof updatedDrill.equipment === 'string'
+              ? JSON.parse(updatedDrill.equipment)
+              : []),
+        };
+
         // Update local cache
         const drills = this.getAllDrills();
         const index = drills.findIndex(d => d.id === id);
         if (index !== -1) {
-          drills[index] = updatedDrill;
+          drills[index] = normalizedDrill;
           localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
         }
 
-        return updatedDrill;
+        return normalizedDrill;
       } catch (error) {
         console.error('Failed to update drill on backend:', error);
         throw error;
