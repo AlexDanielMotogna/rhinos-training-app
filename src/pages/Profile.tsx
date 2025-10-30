@@ -22,6 +22,7 @@ import {
   getUser,
   getAllUsers,
   saveUser,
+  updateUserProfile,
   getCurrentUser,
   syncUserProfileFromBackend,
   syncAllUsersFromBackend,
@@ -457,10 +458,20 @@ export const Profile: React.FC = () => {
                 control={
                   <Switch
                     checked={user.metricsPublic ?? true}
-                    onChange={(e) => {
-                      const updatedUser = { ...user, metricsPublic: e.target.checked };
+                    onChange={async (e) => {
+                      const newValue = e.target.checked;
+                      // Update local state immediately for responsiveness
+                      const updatedUser = { ...user, metricsPublic: newValue };
                       setUser(updatedUser);
-                      saveUser(updatedUser);
+
+                      // Sync with backend
+                      try {
+                        await updateUserProfile({ metricsPublic: newValue });
+                      } catch (error) {
+                        console.error('Failed to update privacy settings:', error);
+                        // Revert on error
+                        setUser(user);
+                      }
                     }}
                   />
                 }
