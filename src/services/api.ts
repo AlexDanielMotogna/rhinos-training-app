@@ -684,3 +684,111 @@ export const videoTagsService = {
     });
   },
 };
+
+// ========================================
+// DRILLS API
+// ========================================
+
+export const drillService = {
+  async getAll(category?: string, difficulty?: string) {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (difficulty) params.append('difficulty', difficulty);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiCall(`/drills${query}`);
+  },
+
+  async getById(id: string) {
+    return apiCall(`/drills/${id}`);
+  },
+
+  async create(data: {
+    name: string;
+    category: string;
+    description: string;
+    coachingPoints: string;
+    players?: number;
+    coaches?: number;
+    dummies?: number;
+    equipment?: Array<{ equipmentId: string; quantity: number }>;
+    difficulty: string;
+    trainingContext?: string;
+    sketchUrl?: string;
+    sketchPublicId?: string;
+  }) {
+    return apiCall('/drills', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: Partial<{
+    name: string;
+    category: string;
+    description: string;
+    coachingPoints: string;
+    players: number;
+    coaches: number;
+    dummies: number;
+    equipment: Array<{ equipmentId: string; quantity: number }>;
+    difficulty: string;
+    trainingContext: string;
+    sketchUrl: string;
+    sketchPublicId: string;
+  }>) {
+    return apiCall(`/drills/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string) {
+    return apiCall(`/drills/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ========================================
+// EQUIPMENT API
+// ========================================
+
+export const equipmentService = {
+  async getAll() {
+    return apiCall('/equipment');
+  },
+
+  async getById(id: string) {
+    return apiCall(`/equipment/${id}`);
+  },
+
+  async create(data: {
+    name: string;
+    quantity?: number;
+    imageUrl?: string;
+    imagePublicId?: string;
+  }) {
+    return apiCall('/equipment', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: Partial<{
+    name: string;
+    quantity: number;
+    imageUrl: string;
+    imagePublicId: string;
+  }>) {
+    return apiCall(`/equipment/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string) {
+    return apiCall(`/equipment/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};

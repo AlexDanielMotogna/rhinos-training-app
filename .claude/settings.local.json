@@ -14,7 +14,8 @@
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma db push)",
       "Bash(del nul)",
-      "Bash(del backendnul)"
+      "Bash(del backendnul)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -38,8 +38,8 @@ import {
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nProvider';
-import { drillService } from '../services/drillService';
-import { equipmentService } from '../services/equipmentService';
+import { drillService, syncDrillsFromBackend } from '../services/drillService';
+import { equipmentService, syncEquipmentFromBackend } from '../services/equipmentService';
 import { exportDrillToPDF } from '../services/drillPdfExport';
 import { optimizeDrillSketch, validateImage } from '../services/imageOptimizer';
 import { Drill, DrillCategory, DrillDifficulty, Equipment, DrillEquipment } from '../types/drill';
@@ -90,7 +90,14 @@ export const DrillManager: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
+    // Sync from backend first
+    await Promise.all([
+      syncDrillsFromBackend(),
+      syncEquipmentFromBackend(),
+    ]);
+
+    // Load from cache
     setDrills(drillService.getAllDrills());
     setEquipment(equipmentService.getAllEquipment());
   };
@@ -243,20 +250,30 @@ export const DrillManager: React.FC = () => {
       createdBy: currentUser.id,
     };
 
-    if (editingDrill) {
-      drillService.updateDrill(editingDrill.id, drillData);
-    } else {
-      drillService.createDrill(drillData);
-    }
+    try {
+      if (editingDrill) {
+        await drillService.updateDrill(editingDrill.id, drillData);
+      } else {
+        await drillService.createDrill(drillData);
+      }
 
-    loadData();
-    handleCloseDialog();
+      await loadData();
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Failed to save drill:', error);
+      alert('Failed to save drill. Please try again.');
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('drills.confirmDelete'))) {
-      drillService.deleteDrill(id);
-      loadData();
+      try {
+        await drillService.deleteDrill(id);
+        await loadData();
+      } catch (error) {
+        console.error('Failed to delete drill:', error);
+        alert('Failed to delete drill. Please try again.');
+      }
     }
   };
 
