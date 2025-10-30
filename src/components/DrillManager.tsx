@@ -18,7 +18,6 @@ import {
   Select,
   MenuItem,
   FormHelperText,
-  Autocomplete,
   CardMedia,
   Stack,
   Divider,
@@ -41,6 +40,7 @@ import {
 import { useI18n } from '../i18n/I18nProvider';
 import { drillService, syncDrillsFromBackend } from '../services/drillService';
 import { equipmentService, syncEquipmentFromBackend } from '../services/equipmentService';
+import { drillCategoryService, syncDrillCategoriesFromBackend, DrillCategory as ManagedCategory } from '../services/drillCategoryService';
 import { exportDrillToPDF } from '../services/drillPdfExport';
 import { optimizeDrillSketch, validateImage } from '../services/imageOptimizer';
 import { Drill, DrillCategory, DrillDifficulty, Equipment, DrillEquipment } from '../types/drill';
@@ -65,9 +65,10 @@ export const DrillManager: React.FC = () => {
   const { t } = useI18n();
   const [drills, setDrills] = useState<Drill[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [categories, setCategories] = useState<ManagedCategory[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDrill, setEditingDrill] = useState<Drill | null>(null);
-  const [filterCategory, setFilterCategory] = useState<DrillCategory | 'all'>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
   const [sketchFile, setSketchFile] = useState<File | null>(null);
   const [sketchPreview, setSketchPreview] = useState<string>('');
   const [selectedEquipment, setSelectedEquipment] = useState<string>('');
@@ -98,11 +99,13 @@ export const DrillManager: React.FC = () => {
     await Promise.all([
       syncDrillsFromBackend(),
       syncEquipmentFromBackend(),
+      syncDrillCategoriesFromBackend(),
     ]);
 
     // Load from cache
     setDrills(drillService.getAllDrills());
     setEquipment(equipmentService.getAllEquipment());
+    setCategories(drillCategoryService.getAllCategories());
   };
 
   const handleOpenDialog = (drill?: Drill) => {
@@ -296,13 +299,6 @@ export const DrillManager: React.FC = () => {
     ? drills
     : drills.filter(d => d.category === filterCategory);
 
-  // Get unique categories from existing drills
-  const getAvailableCategories = (): string[] => {
-    const categories = drills.map(d => d.category);
-    const uniqueCategories = Array.from(new Set(categories));
-    return uniqueCategories.sort();
-  };
-
   const getEquipmentName = (equipmentId: string): string => {
     return equipment.find(e => e.id === equipmentId)?.name || 'Unknown';
   };
@@ -332,16 +328,26 @@ export const DrillManager: React.FC = () => {
           <InputLabel>{t('drills.filterCategory')}</InputLabel>
           <Select
             value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value as DrillCategory | 'all')}
+            onChange={(e) => setFilterCategory(e.target.value)}
             label={t('drills.filterCategory')}
           >
             <MenuItem value="all">{t('drills.allCategories')}</MenuItem>
-            <MenuItem value="athletik">{t('drills.category.athletik')}</MenuItem>
-            <MenuItem value="fundamentals">{t('drills.category.fundamentals')}</MenuItem>
-            <MenuItem value="offense">{t('drills.category.offense')}</MenuItem>
-            <MenuItem value="defense">{t('drills.category.defense')}</MenuItem>
-            <MenuItem value="team">{t('drills.category.team')}</MenuItem>
-            <MenuItem value="cooldown">{t('drills.category.cooldown')}</MenuItem>
+            {categories.map((category) => (
+              <MenuItem key={category.id} value={category.name}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '3px',
+                      backgroundColor: category.color,
+                      border: '1px solid rgba(0,0,0,0.12)',
+                    }}
+                  />
+                  {category.name}
+                </Box>
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
       </Box>
@@ -459,29 +465,32 @@ export const DrillManager: React.FC = () => {
               required
             />
 
-            <Autocomplete
-              freeSolo
-              options={getAvailableCategories()}
-              value={formData.category}
-              onChange={(e, newValue) => {
-                if (newValue) {
-                  setFormData({ ...formData, category: newValue as DrillCategory });
-                }
-              }}
-              onInputChange={(e, newInputValue) => {
-                if (newInputValue) {
-                  setFormData({ ...formData, category: newInputValue as DrillCategory });
-                }
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={t('drills.category.label')}
-                  required
-                  helperText={t('drills.categoryHelp')}
-                />
-              )}
-            />
+            <FormControl fullWidth required>
+              <InputLabel>{t('drills.category.label')}</InputLabel>
+              <Select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value as DrillCategory })}
+                label={t('drills.category.label')}
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.name}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '3px',
+                          backgroundColor: category.color,
+                          border: '1px solid rgba(0,0,0,0.12)',
+                        }}
+                      />
+                      {category.name}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>{t('drills.categoryHelp')}</FormHelperText>
+            </FormControl>
 
             {/* Equipment Selection with Quantities */}
             <Box>

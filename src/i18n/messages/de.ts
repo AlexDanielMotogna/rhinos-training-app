@@ -852,7 +852,26 @@ export const messagesDE = {
   // Admin - Drills
   'admin.drillbookTab': 'Drillbook',
   'admin.equipmentTab': 'Equipment',
+  'admin.drillCategoriesTab': 'Drill-Kategorien',
   'admin.drillSessionsTab': 'Drill-Einheiten',
+
+  // Drill Categories
+  'drillCategories.title': 'Drill-Kategorien',
+  'drillCategories.addCategory': 'Kategorie hinzufügen',
+  'drillCategories.editCategory': 'Kategorie bearbeiten',
+  'drillCategories.name': 'Kategoriename',
+  'drillCategories.nameDE': 'Deutscher Name',
+  'drillCategories.nameDEHelp': 'Optionale deutsche Übersetzung',
+  'drillCategories.color': 'Farbe',
+  'drillCategories.confirmDelete': 'Möchten Sie diese Kategorie wirklich löschen?',
+  'drillCategories.deleteError': 'Kategorie konnte nicht gelöscht werden. Sie wird möglicherweise von Drills verwendet.',
+  'drillCategories.saveError': 'Kategorie konnte nicht gespeichert werden',
+  'drillCategories.noCategories': 'Noch keine Kategorien. Erstellen Sie eine, um loszulegen!',
+  'drillCategories.seedDefaults': 'Standardkategorien erstellen',
+  'drillCategories.seedSuccess': 'Kategorien erfolgreich erstellt!',
+  'drillCategories.seedError': 'Kategorien konnten nicht erstellt werden',
+  'drillCategories.created': 'Erstellt',
+  'drillCategories.skipped': 'Übersprungen',
 
   // Team Settings
   'teamSettings.title': 'Team-Einstellungen',

@@ -45,6 +45,7 @@ import { PointsSystemManager } from '../components/admin/PointsSystemManager';
 import { getAllBlockInfo } from '../services/blockInfo';
 import { DrillManager } from '../components/DrillManager';
 import { EquipmentManager } from '../components/EquipmentManager';
+import { DrillCategoryManager } from '../components/DrillCategoryManager';
 import { VideoTagsManager } from '../components/VideoTagsManager';
 import { getTeamSettings, updateTeamSettings } from '../services/teamSettings';
 import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
@@ -1060,6 +1061,7 @@ export const Admin: React.FC = () => {
         <Tab label={t('admin.pointsSystemTab')} />
         <Tab label={t('admin.drillbookTab')} />
         <Tab label={t('admin.equipmentTab')} />
+        <Tab label={t('admin.drillCategoriesTab')} />
         <Tab label="Video Tags" />
       </Tabs>
 
@@ -2704,8 +2706,11 @@ export const Admin: React.FC = () => {
       {/* Equipment Tab */}
       {activeTab === 11 && <EquipmentManager />}
 
+      {/* Drill Categories Tab */}
+      {activeTab === 12 && <DrillCategoryManager />}
+
       {/* Video Tags Tab */}
-      {activeTab === 12 && <VideoTagsManager />}
+      {activeTab === 13 && <VideoTagsManager />}
     </Box>
   );
 };

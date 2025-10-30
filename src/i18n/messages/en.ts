@@ -863,7 +863,26 @@ export const messagesEN = {
   // Admin - Drills
   'admin.drillbookTab': 'Drillbook',
   'admin.equipmentTab': 'Equipment',
+  'admin.drillCategoriesTab': 'Drill Categories',
   'admin.drillSessionsTab': 'Drill Sessions',
+
+  // Drill Categories
+  'drillCategories.title': 'Drill Categories',
+  'drillCategories.addCategory': 'Add Category',
+  'drillCategories.editCategory': 'Edit Category',
+  'drillCategories.name': 'Category Name',
+  'drillCategories.nameDE': 'German Name',
+  'drillCategories.nameDEHelp': 'Optional German translation',
+  'drillCategories.color': 'Color',
+  'drillCategories.confirmDelete': 'Are you sure you want to delete this category?',
+  'drillCategories.deleteError': 'Failed to delete category. It may be in use by drills.',
+  'drillCategories.saveError': 'Failed to save category',
+  'drillCategories.noCategories': 'No categories yet. Create one to get started!',
+  'drillCategories.seedDefaults': 'Seed Default Categories',
+  'drillCategories.seedSuccess': 'Categories seeded successfully!',
+  'drillCategories.seedError': 'Failed to seed categories',
+  'drillCategories.created': 'Created',
+  'drillCategories.skipped': 'Skipped',
 
   // Team Settings
   'teamSettings.title': 'Team Settings',

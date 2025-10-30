@@ -859,3 +859,51 @@ export const equipmentService = {
     return response.json();
   },
 };
+
+// ========================================
+// DRILL CATEGORIES API
+// ========================================
+
+export const drillCategoryService = {
+  async getAll() {
+    return apiCall('/drill-categories');
+  },
+
+  async getById(id: string) {
+    return apiCall(`/drill-categories/${id}`);
+  },
+
+  async create(data: {
+    name: string;
+    nameDE?: string;
+    color?: string;
+  }) {
+    return apiCall('/drill-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: {
+    name?: string;
+    nameDE?: string;
+    color?: string;
+  }) {
+    return apiCall(`/drill-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string) {
+    return apiCall(`/drill-categories/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async seed() {
+    return apiCall('/drill-categories/seed', {
+      method: 'POST',
+    });
+  },
+};
