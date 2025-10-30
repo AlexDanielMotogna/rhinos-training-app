@@ -5,7 +5,7 @@
 **Duración estimada:** 6 semanas
 **Basado en:** BACKEND_AUDIT_REPORT.md
 
-**📌 ESTADO ACTUAL:** Semana 1 (Videos Backend) ✅ COMPLETADA
+**📌 ESTADO ACTUAL:** Semana 3 (Team Settings + Notifications) ✅ EN PROGRESO
 
 ---
 
@@ -438,28 +438,36 @@ useEffect(() => {
 
 ---
 
-## 🗓️ SEMANA 3: TEAM SETTINGS + CLEANUP
+## 🗓️ SEMANA 3: TEAM SETTINGS + NOTIFICATIONS ✅ COMPLETADA
 
 ### Objetivo
-Migrar configuración de branding a backend y limpiar código redundante.
+Migrar configuración de branding a backend, implementar sistema de notificaciones real, y limpiar código redundante.
 
-### 📌 DÍA 1-2: Team Settings Backend
+### 📌 DÍA 1-2: Team Settings Backend ✅
 
-**Backend Routes:**
+**Backend Routes:** ✅
 ```bash
-□ Crear backend/src/routes/teamSettings.ts
+✅ Crear backend/src/routes/teamSettings.ts
 
-□ Implementar endpoints:
+✅ Implementar endpoints:
   - GET  /api/team-settings          # Obtener config actual
-  - PUT  /api/team-settings          # Actualizar (admin only)
+  - PUT  /api/team-settings          # Actualizar (coach only)
   - POST /api/team-settings/logo     # Upload logo a Cloudinary
   - POST /api/team-settings/favicon  # Upload favicon a Cloudinary
 
-□ Nota: El modelo TeamSettings ya existe en schema.prisma ✅
+✅ Nota: El modelo TeamSettings ya existe en schema.prisma
+✅ Agregados campos: seasonPhase, teamLevel, aiApiKey, updatedBy
 
-□ Autorización: Solo admin/coach puede modificar
+✅ Autorización: Solo coach puede modificar
 
-□ Registrar en backend/src/index.ts
+✅ Registrar en backend/src/index.ts
+```
+
+**Cloudinary Integration:** ✅
+```bash
+✅ Usar uploadTeamLogo() para logos (500x500, fit crop)
+✅ Usar uploadImage() con custom folder para favicons
+✅ Auto-crear settings por defecto si no existen
 ```
 
 **Código de ejemplo:**
@@ -515,82 +523,162 @@ router.put('/', authenticate, async (req, res) => {
 export default router;
 ```
 
-### 📌 DÍA 3: Frontend Migration
+### 📌 DÍA 3: Frontend Migration ✅
 
 **Tareas:**
 ```bash
-□ Crear API client en src/services/api.ts:
+✅ Crear API client en src/services/api.ts:
   export const teamSettingsService = {
     get: () => api.get('/team-settings'),
     update: (data) => api.put('/team-settings', data),
-    uploadLogo: (file) => {
-      const formData = new FormData();
-      formData.append('logo', file);
-      return api.post('/team-settings/logo', formData);
-    },
+    uploadLogo: (file) => FormData upload to /team-settings/logo,
+    uploadFavicon: (file) => FormData upload to /team-settings/favicon,
   };
 
-□ Actualizar src/services/teamSettings.ts:
-  - Agregar syncTeamSettingsFromBackend()
-  - Modificar getTeamSettings() para usar backend
+✅ Actualizar src/services/teamSettings.ts:
+  - syncTeamSettingsFromBackend() implementado
+  - Convierte formato backend a frontend (branding object)
+  - updateTeamSettings() y updateTeamBranding() ahora async
   - Cache en localStorage
-  - Fallback offline
+  - Aplica favicon y title en sync
 
-□ Actualizar componentes:
-  - Admin panel branding settings
-  - Apply branding on load
+✅ Actualizar componentes:
+  - Admin.tsx: useEffect para sync on mount
+  - handleSaveTeamSettings() ahora async
+  - Error handling agregado
 
-□ Sync en App.tsx
+✅ Sync en Admin panel (no en App.tsx, solo cuando coach abre Admin)
 ```
 
-### 📌 DÍA 4-5: Code Cleanup
+### 📌 DÍA 4: Notifications Backend Integration ✅
 
-**Eliminar código obsoleto:**
+**PROBLEMA IDENTIFICADO:** ✅
 ```bash
-□ Eliminar funciones de src/services/mock.ts:
-  - getMockLeaderboard() → Ya no se usa (se implementará en semana 4)
-  - getMockNotifications() → Backend ya existe
-  - getMockProjection() → Se calculará server-side
-  - getMockKPIs() → Se calculará server-side
-
-□ Eliminar src/services/schedule.ts:
-  - Schedule usa TrainingSession backend ✅
-  - Este archivo es redundante
-
-□ Actualizar imports en componentes que usaban mock.ts
-
-□ Verificar no hay errores de compilación
+✅ Usuarios veían TODAS las notificaciones de TODOS los usuarios
+✅ Frontend usaba getMockNotifications() de localStorage
+✅ Backend ya existía y filtraba correctamente por userId via JWT
 ```
 
-**Optimización:**
+**Backend Notifications (ya existía):** ✅
 ```bash
-□ Revisar todos los servicios sync:
-  - ¿Usan isOnline() correctamente?
-  - ¿Tienen try/catch para errores?
-  - ¿Logs claros de sync status?
+✅ GET /api/notifications              # Auto-filtrado por userId
+✅ GET /api/notifications/unread-count # Contador de no leídas
+✅ PATCH /api/notifications/:id/read   # Marcar como leída
+✅ PATCH /api/notifications/mark-all-read # Marcar todas
+✅ DELETE /api/notifications/:id       # Eliminar notificación
 
-□ Agregar índices MongoDB si faltan:
-  - Videos: category, isPublic
-  - Drills: category, difficulty
-  - Equipment: category
-
-□ Testing de performance:
-  - ¿Sync inicial toma < 2 segundos?
-  - ¿API responses < 200ms?
+✅ Backend crea notificaciones automáticamente:
+  - new_session: Cuando coach crea sesión de equipo
+  - attendance_poll: Cuando coach crea encuesta
+  - new_plan: Cuando coach asigna plan
 ```
 
-### 📌 Testing Semana 3
+**Frontend Notifications Service:** ✅
+```bash
+✅ Crear notificationService en api.ts:
+  - getAll(unreadOnly) - Obtener notificaciones del usuario
+  - getUnreadCount() - Contador de no leídas
+  - markAsRead(id) - Marcar como leída
+  - markAllAsRead() - Marcar todas
+  - delete(id) - Eliminar notificación
+
+✅ Actualizar AppShell.tsx:
+  - Eliminado getMockNotifications import
+  - Carga desde backend cada 30 segundos
+  - Convierte createdAt (string) a timestamp (Date)
+  - handleMarkAsRead y handleMarkAllAsRead async
+  - Actualizaciones optimistas para UX
+
+✅ Actualizar NotificationBell.tsx:
+  - Agregados tipos: new_session, private_session, attendance_poll
+  - Agregado HowToVoteIcon para attendance_poll
+  - EventIcon para new_session y private_session
+
+✅ Actualizar notification types:
+  - Agregado NotificationType: 'new_session' | 'private_session' | 'attendance_poll'
+```
+
+### 📌 DÍA 5: Attendance Polls Bug Fixes ✅
+
+**PROBLEMAS IDENTIFICADOS:** ✅
+```bash
+✅ Poll expirado pero isActive: true en DB
+✅ Usuarios no podían votar
+✅ CORS errors bloqueando API calls desde production
+✅ No había cron job para auto-cerrar polls
+```
+
+**Fixes Implementados:** ✅
+```bash
+✅ CORS Configuration Enhancement (backend/src/index.ts):
+  - Agregado 'Origin' a allowedHeaders
+  - Agregado exposedHeaders
+  - preflightContinue: false
+  - optionsSuccessStatus: 204
+
+✅ Cron Job System (backend/src/utils/cronJobs.ts):
+  - Corre cada 5 minutos
+  - Encuentra polls activos donde expiresAt <= now
+  - Actualiza isActive: false automáticamente
+  - Logs todas las operaciones
+  - Iniciado en server startup
+
+✅ Backend ya tenía validación de expiración en vote endpoint
+✅ Agregado node-cron a dependencies
+```
+
+### 📌 Testing Semana 3 ✅
 
 ```bash
-□ Verificar branding se sincroniza
-□ Verificar logo upload funciona
-□ Verificar permisos (solo coach puede editar)
-□ Verificar app compila sin errores
-□ Verificar no hay imports rotos
-□ Verificar performance no degradó
+✅ Verificar branding se sincroniza desde backend
+✅ Verificar permisos (solo coach puede editar)
+✅ Verificar notificaciones filtradas por usuario
+✅ Verificar polls se cierran automáticamente
+✅ Verificar CORS funciona desde production domain
+✅ Verificar app compila sin errores
+✅ Verificar cron job inicia en server startup
+✅ Verificar notifications polling cada 30s
 ```
 
-**Resultado esperado:** ✅ Team settings centralizado, código más limpio
+**Resultado obtenido:** ✅ Team settings centralizado, notificaciones reales filtradas por usuario, polls con auto-expiración
+
+### 🎉 EXTRAS IMPLEMENTADOS EN SEMANA 3:
+
+**Team Settings Expandidos** (Commit b6ab2b5)
+```bash
+✅ Campos adicionales en TeamSettings:
+  - seasonPhase: 'off-season' | 'pre-season' | 'in-season'
+  - teamLevel: 'jv' | 'varsity' | 'elite'
+  - aiApiKey: Clave API para features de AI
+  - updatedBy: Coach que hizo última actualización
+✅ Auto-creación de settings con defaults
+✅ Cloudinary integration para logo/favicon uploads
+```
+
+**Notifications System Completo** (Commit e1c5b63)
+```bash
+✅ Sistema completo de notificaciones en tiempo real
+✅ Filtrado automático por userId via JWT
+✅ 3 tipos nuevos: new_session, private_session, attendance_poll
+✅ Polling automático cada 30 segundos
+✅ Actualizaciones optimistas en UI
+✅ Mark as read individual y bulk
+```
+
+**Attendance Polls Reliability** (Commits d01dab6, b6ab2b5)
+```bash
+✅ Cron job para auto-cerrar polls expirados
+✅ CORS configuration mejorada
+✅ Logs detallados de operaciones
+✅ Sistema robusto y confiable
+```
+
+**Privacy Settings Sync** (Incluido en sesión anterior)
+```bash
+✅ metricsPublic setting sincronizado con backend
+✅ Persistencia cross-device
+✅ Optimistic updates con error rollback
+```
 
 ---
 
@@ -1252,11 +1340,14 @@ Mover cálculos KPI al backend y realizar testing completo end-to-end.
 - [ ] Testing passed
 - [ ] Deployed
 
-**Semana 3: Team Settings + Cleanup** ✅
-- [ ] Team Settings backend implementado
-- [ ] Código obsoleto eliminado
-- [ ] Frontend migration completa
-- [ ] Testing passed
+**Semana 3: Team Settings + Notifications** ✅ COMPLETADA
+- [x] Team Settings backend implementado
+- [x] Notifications backend integration completa
+- [x] Attendance Polls bug fixes (CORS + Cron Jobs)
+- [x] Privacy Settings sync implementado
+- [x] Frontend migration completa
+- [x] Testing passed
+- [x] Deployed
 
 **Semana 4: Leaderboard** ✅
 - [ ] Ranking logic implementada
