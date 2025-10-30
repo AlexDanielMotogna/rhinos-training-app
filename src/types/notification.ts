@@ -15,7 +15,10 @@ export type NotificationType =
   | 'new_exercise'
   | 'free_work_reviewed'
   | 'attendance_reminder'
-  | 'performance_alert';
+  | 'performance_alert'
+  | 'new_session'
+  | 'private_session'
+  | 'attendance_poll';
 
 export interface Notification {
   id: string;

@@ -18,6 +18,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EventIcon from '@mui/icons-material/Event';
 import WarningIcon from '@mui/icons-material/Warning';
+import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import { useI18n } from '../i18n/I18nProvider';
 import type { Notification, NotificationType } from '../types/notification';
 
@@ -42,6 +43,12 @@ const getNotificationIcon = (type: NotificationType) => {
       return <EventIcon color="warning" />;
     case 'performance_alert':
       return <WarningIcon color="error" />;
+    case 'new_session':
+      return <EventIcon color="primary" />;
+    case 'private_session':
+      return <EventIcon color="info" />;
+    case 'attendance_poll':
+      return <HowToVoteIcon color="secondary" />;
     default:
       return <NotificationsIcon />;
   }

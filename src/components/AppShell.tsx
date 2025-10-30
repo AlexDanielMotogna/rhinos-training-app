@@ -36,10 +36,9 @@ import { OfflineIndicator } from './OfflineIndicator';
 import {
   logout,
   getUser,
-  getMockNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
 } from '../services/mock';
+import { notificationService } from '../services/api';
+import { isOnline } from '../services/sync';
 import type { Notification } from '../types/notification';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 import { getTeamBranding } from '../services/teamSettings';
@@ -58,12 +57,39 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const branding = getTeamBranding();
 
   useEffect(() => {
-    // Load notifications
-    setNotifications(getMockNotifications());
+    // Load notifications from backend
+    const loadNotifications = async () => {
+      if (!isOnline()) {
+        console.log('[NOTIFICATIONS] Offline - skipping notification sync');
+        return;
+      }
+
+      try {
+        const backendNotifications = await notificationService.getAll();
+
+        // Convert backend format (createdAt as string) to frontend format (timestamp as Date)
+        const formattedNotifications = backendNotifications.map((n: any) => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          timestamp: new Date(n.createdAt),
+          read: n.read,
+          actionUrl: n.actionUrl,
+        }));
+
+        setNotifications(formattedNotifications);
+        console.log(`[NOTIFICATIONS] Loaded ${formattedNotifications.length} notifications`);
+      } catch (error) {
+        console.error('[NOTIFICATIONS] Failed to load notifications:', error);
+      }
+    };
+
+    loadNotifications();
 
     // Poll for new notifications every 30 seconds
     const interval = setInterval(() => {
-      setNotifications(getMockNotifications());
+      loadNotifications();
     }, 30000);
 
     return () => clearInterval(interval);
@@ -107,14 +133,40 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     navigate('/', { replace: true });
   };
 
-  const handleMarkAsRead = (id: string) => {
-    markNotificationAsRead(id);
-    setNotifications(getMockNotifications());
+  const handleMarkAsRead = async (id: string) => {
+    if (!isOnline()) {
+      console.warn('[NOTIFICATIONS] Cannot mark as read while offline');
+      return;
+    }
+
+    try {
+      await notificationService.markAsRead(id);
+
+      // Update local state optimistically
+      setNotifications(prev =>
+        prev.map(n => (n.id === id ? { ...n, read: true } : n))
+      );
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Failed to mark notification as read:', error);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    markAllNotificationsAsRead();
-    setNotifications(getMockNotifications());
+  const handleMarkAllAsRead = async () => {
+    if (!isOnline()) {
+      console.warn('[NOTIFICATIONS] Cannot mark all as read while offline');
+      return;
+    }
+
+    try {
+      await notificationService.markAllAsRead();
+
+      // Update local state optimistically
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, read: true }))
+      );
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Failed to mark all notifications as read:', error);
+    }
   };
 
   const handleNotificationClick = (notification: Notification) => {

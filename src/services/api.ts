@@ -998,3 +998,52 @@ export const teamSettingsService = {
     });
   },
 };
+
+// ========================================
+// NOTIFICATIONS API
+// ========================================
+
+export const notificationService = {
+  /**
+   * Get user's notifications (automatically filtered by userId from JWT)
+   * @param unreadOnly - If true, only return unread notifications
+   */
+  async getAll(unreadOnly = false) {
+    const query = unreadOnly ? '?unreadOnly=true' : '';
+    return apiCall(`/notifications${query}`);
+  },
+
+  /**
+   * Get count of unread notifications
+   */
+  async getUnreadCount() {
+    return apiCall('/notifications/unread-count');
+  },
+
+  /**
+   * Mark a notification as read
+   */
+  async markAsRead(notificationId: string) {
+    return apiCall(`/notifications/${notificationId}/read`, {
+      method: 'PATCH',
+    });
+  },
+
+  /**
+   * Mark all notifications as read
+   */
+  async markAllAsRead() {
+    return apiCall('/notifications/mark-all-read', {
+      method: 'PATCH',
+    });
+  },
+
+  /**
+   * Delete a notification
+   */
+  async delete(notificationId: string) {
+    return apiCall(`/notifications/${notificationId}`, {
+      method: 'DELETE',
+    });
+  },
+};
