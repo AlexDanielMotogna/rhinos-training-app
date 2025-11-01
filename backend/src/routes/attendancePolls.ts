@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { createNotificationsForUsers } from './notifications.js';
+import { t, formatPollMessage } from '../utils/i18n.js';
 
 const router = express.Router();
 
@@ -115,25 +116,28 @@ router.post('/', async (req, res) => {
       },
     });
 
-    // Send notifications to all players
+    // Send notifications to all players with their preferred language
     const allPlayers = await prisma.user.findMany({
       where: { role: 'player' },
-      select: { id: true },
+      select: { id: true, preferredLanguage: true },
     });
 
     if (allPlayers.length > 0) {
-      const playerIds = allPlayers.map(p => p.id);
-      const title = 'Encuesta de asistencia';
-      const message = `Vota tu disponibilidad para ${data.sessionName} el ${data.sessionDate}`;
+      // Create notifications for each player with their preferred language
+      for (const player of allPlayers) {
+        const lang = (player.preferredLanguage as 'de' | 'en') || 'de';
+        const title = t('notification.attendancePoll.title', lang);
+        const message = formatPollMessage(data.sessionName, data.sessionDate, lang);
 
-      await createNotificationsForUsers(
-        playerIds,
-        'attendance_poll',
-        title,
-        message,
-        '/training-sessions',
-        poll.id
-      );
+        await createNotificationsForUsers(
+          [player.id],
+          'attendance_poll',
+          title,
+          message,
+          '/training-sessions',
+          poll.id
+        );
+      }
     }
 
     res.status(201).json(poll);

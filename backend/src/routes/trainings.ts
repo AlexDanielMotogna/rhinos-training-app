@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { createNotificationsForUsers } from './notifications.js';
+import { t, formatSessionMessage, formatPrivateSessionTitle } from '../utils/i18n.js';
 
 const router = express.Router();
 
@@ -125,26 +126,33 @@ router.post('/', async (req, res) => {
     // Send notifications to all players
     const allPlayers = await prisma.user.findMany({
       where: { role: 'player' },
-      select: { id: true },
+      select: { id: true, preferredLanguage: true },
     });
 
-    const playerIds = allPlayers.map(p => p.id).filter(id => id !== userId);
+    const playersToNotify = allPlayers.filter(p => p.id !== userId);
 
-    if (playerIds.length > 0) {
+    if (playersToNotify.length > 0) {
       const notificationType = data.sessionCategory === 'team' ? 'new_session' : 'private_session';
-      const title = data.sessionCategory === 'team'
-        ? 'Nueva sesión de entrenamiento'
-        : `${user.name} creó una sesión privada`;
-      const message = `${data.title} - ${data.date} a las ${data.time} en ${data.location}`;
 
-      await createNotificationsForUsers(
-        playerIds,
-        notificationType,
-        title,
-        message,
-        '/training-sessions',
-        session.id
-      );
+      // Create notifications for each player with their preferred language
+      for (const player of playersToNotify) {
+        const lang = (player.preferredLanguage as 'de' | 'en') || 'de';
+
+        const title = data.sessionCategory === 'team'
+          ? t('notification.newSession.title', lang)
+          : formatPrivateSessionTitle(user.name, lang);
+
+        const message = formatSessionMessage(data.title, data.date, data.time, data.location, lang);
+
+        await createNotificationsForUsers(
+          [player.id],
+          notificationType,
+          title,
+          message,
+          '/training-sessions',
+          session.id
+        );
+      }
     }
 
     res.status(201).json({

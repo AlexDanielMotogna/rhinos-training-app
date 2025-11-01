@@ -129,6 +129,7 @@ router.patch('/me', authenticate, async (req, res) => {
       tiktok,
       hudl,
       metricsPublic,
+      preferredLanguage,
       aiCoachEnabled,
       aiApiKey,
     } = req.body;
@@ -150,6 +151,7 @@ router.patch('/me', authenticate, async (req, res) => {
         ...(tiktok !== undefined && { tiktok }),
         ...(hudl !== undefined && { hudl }),
         ...(metricsPublic !== undefined && { metricsPublic }),
+        ...(preferredLanguage && { preferredLanguage }),
         ...(aiCoachEnabled !== undefined && { aiCoachEnabled }),
         ...(aiApiKey !== undefined && { aiApiKey }),
       },

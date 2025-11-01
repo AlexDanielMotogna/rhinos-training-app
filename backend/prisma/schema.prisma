@@ -37,6 +37,9 @@ model User {
   // Privacy settings
   metricsPublic Boolean  @default(true)
 
+  // Preferences
+  preferredLanguage String @default("de") // 'de' | 'en'
+
   // AI settings
   aiCoachEnabled Boolean @default(false)
   aiApiKey       String?
