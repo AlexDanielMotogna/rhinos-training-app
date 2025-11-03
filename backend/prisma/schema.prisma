@@ -266,13 +266,56 @@ model PointsConfig {
 }
 
 // ========================================
+// PLAYER WEEKLY POINTS (Leaderboard Data)
+// ========================================
+
+model PlayerWeeklyPoints {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  week           String   // ISO week format: "2025-W03"
+
+  // Point totals
+  totalPoints    Float    @default(0)
+  targetPoints   Int      @default(20)
+
+  // Activity tracking
+  workoutDays    Int      @default(0)
+  teamTrainingDays Int    @default(0)
+  coachWorkoutDays Int    @default(0)
+  personalWorkoutDays Int @default(0)
+
+  // Detailed breakdown
+  breakdown      Json     // Array of PointsBreakdown entries (per-workout details)
+
+  lastUpdated    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, week])
+  @@index([week])
+  @@index([userId])
+}
+
+// ========================================
 // EXERCISE CATALOG (Could be synced to offline)
 // ========================================
+
+model ExerciseCategory {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique  // Unique key (e.g., "strength", "speed", "cod")
+  nameEN    String   // English name
+  nameDE    String   // German translation
+  color     String   @default("#1976d2")  // Color for UI display
+  icon      String?  // Optional icon name for UI
+  active    Boolean  @default(true)  // Active/inactive flag
+  createdBy String?  @db.ObjectId  // Coach who created it (null for system categories)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
 model Exercise {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
   name          String
-  category      String   // 'Strength' | 'Speed' | 'COD' | 'Mobility' | 'Technique' | 'Conditioning' | 'Recovery' | 'Plyometrics'
+  category      String   // References ExerciseCategory.key (e.g., "strength", "speed")
   youtubeUrl    String?  // YouTube URL
   positionTags  String[] // ['RB', 'WR', 'LB', etc.] - empty array means all positions
   intensity     String?  // 'low' | 'mod' | 'high'

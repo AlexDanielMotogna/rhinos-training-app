@@ -15,27 +15,67 @@ import {
   TableRow,
   Tooltip,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useI18n } from '../i18n/I18nProvider';
-import { getMockLeaderboard } from '../services/mock';
-import type { LeaderboardRow } from '../types/leaderboard';
+import { leaderboardService } from '../services/api';
+import { isOnline } from '../services/sync';
 import type { Position } from '../types/exercise';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
+
+interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  playerName: string;
+  position: string;
+  totalPoints: number;
+  targetPoints: number;
+  workoutDays: number;
+  compliancePct: number;
+  attendancePct: number;
+  freeSharePct: number;
+  teamTrainingDays: number;
+  coachWorkoutDays: number;
+  personalWorkoutDays: number;
+  lastUpdated: string;
+}
 
 export const Leaderboard: React.FC = () => {
   const { t } = useI18n();
   const [window, setWindow] = useState<'7d' | '30d'>('7d');
   const [positionFilter, setPositionFilter] = useState<Position | ''>('');
-  const [data, setData] = useState<LeaderboardRow[]>([]);
+  const [data, setData] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const mockData = getMockLeaderboard();
-    const filtered = positionFilter
-      ? mockData.filter((row) => row.position === positionFilter)
-      : mockData;
-    setData(filtered);
+    const loadLeaderboard = async () => {
+      if (!isOnline()) {
+        console.log('[LEADERBOARD] Offline - cannot load leaderboard');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await leaderboardService.getCurrentWeek();
+
+        // Filter by position if selected
+        const filtered = positionFilter
+          ? response.leaderboard.filter((entry: LeaderboardEntry) => entry.position === positionFilter)
+          : response.leaderboard;
+
+        setData(filtered);
+      } catch (error) {
+        console.error('[LEADERBOARD] Failed to load:', error);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLeaderboard();
   }, [positionFilter]);
 
   return (
@@ -146,25 +186,41 @@ export const Leaderboard: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.map((row) => (
-              <TableRow
-                key={row.rank}
-                sx={{
-                  '&:nth-of-type(odd)': { backgroundColor: 'action.hover' },
-                  '&:last-child td, &:last-child th': { border: 0 },
-                }}
-              >
-                <TableCell component="th" scope="row" sx={{ fontWeight: 600 }}>
-                  #{row.rank}
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <CircularProgress />
                 </TableCell>
-                <TableCell>{row.playerName}</TableCell>
-                <TableCell>{row.position}</TableCell>
-                <TableCell align="right">{row.scoreAvg}</TableCell>
-                <TableCell align="right">{row.compliancePct}%</TableCell>
-                <TableCell align="right">{row.attendancePct}%</TableCell>
-                <TableCell align="right">{row.freeSharePct}%</TableCell>
               </TableRow>
-            ))}
+            ) : data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <Typography color="text.secondary">
+                    {t('leaderboard.noData')}
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((row) => (
+                <TableRow
+                  key={row.userId}
+                  sx={{
+                    '&:nth-of-type(odd)': { backgroundColor: 'action.hover' },
+                    '&:last-child td, &:last-child th': { border: 0 },
+                  }}
+                >
+                  <TableCell component="th" scope="row" sx={{ fontWeight: 600 }}>
+                    #{row.rank}
+                  </TableCell>
+                  <TableCell>{row.playerName}</TableCell>
+                  <TableCell>{row.position}</TableCell>
+                  <TableCell align="right">{row.totalPoints.toFixed(1)}</TableCell>
+                  <TableCell align="right">{row.compliancePct}%</TableCell>
+                  <TableCell align="right">{row.attendancePct}%</TableCell>
+                  <TableCell align="right">{row.freeSharePct}%</TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>

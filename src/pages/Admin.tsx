@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ExerciseCategoryManager } from '../components/admin/ExerciseCategoryManager';
 import {
   Box,
   Typography,
@@ -39,7 +40,7 @@ import type { Exercise, ExerciseCategory, Position } from '../types/exercise';
 import type { TrainingTemplate, TrainingAssignment } from '../types/trainingBuilder';
 // Note: TrainingTypes now loaded from backend via trainingTypeService
 import { getUser } from '../services/userProfile';
-import { exerciseService, templateService, assignmentService, userService, trainingTypeService } from '../services/api';
+import { exerciseService, templateService, assignmentService, userService, trainingTypeService, exerciseCategoryService } from '../services/api';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
 import { PointsSystemManager } from '../components/admin/PointsSystemManager';
 import { getAllBlockInfo } from '../services/blockInfo';
@@ -91,9 +92,10 @@ export const Admin: React.FC = () => {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [exercisePage, setExercisePage] = useState(0);
   const [exercisesPerPage] = useState(20);
+  const [exerciseCategories, setExerciseCategories] = useState<any[]>([]);
   const [newExercise, setNewExercise] = useState<Partial<Exercise & { trainingTypes?: string[] }>>({
     name: '',
-    category: 'Strength',
+    category: 'strength', // Default to first category key
     intensity: 'mod',
     isGlobal: true,
     youtubeUrl: '',
@@ -164,6 +166,21 @@ export const Admin: React.FC = () => {
       }
     };
     loadExercises();
+  }, []);
+
+  // Load exercise categories from backend on mount
+  React.useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await exerciseCategoryService.getActive();
+        setExerciseCategories(data);
+      } catch (error) {
+        console.error('Error loading exercise categories:', error);
+        // Fallback to empty array
+        setExerciseCategories([]);
+      }
+    };
+    loadCategories();
   }, []);
 
   // Load templates from backend on mount
@@ -954,11 +971,6 @@ export const Admin: React.FC = () => {
     }
   };
 
-  const categories: ExerciseCategory[] = [
-    'Strength', 'Speed', 'COD', 'Plyometrics',
-    'Mobility', 'Technique', 'Conditioning', 'Recovery'
-  ];
-
   const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
 
   // Helper function to group blocks by session within a day
@@ -1070,6 +1082,7 @@ export const Admin: React.FC = () => {
         <Tab label={t('admin.trainingBuilderTab')} />
         <Tab label="Assign Programs" />
         <Tab label={t('admin.exercisesTab')} />
+        <Tab label={t('admin.exerciseCategoriesTab')} />
         <Tab label={t('admin.sessionsTab')} />
         <Tab label={t('admin.trainingTypesTab')} />
         <Tab label={t('admin.policiesTab')} />
@@ -1351,8 +1364,13 @@ export const Admin: React.FC = () => {
         </Box>
       )}
 
-      {/* Sessions Management Tab */}
+      {/* Exercise Categories Tab */}
       {activeTab === 3 && (
+        <ExerciseCategoryManager />
+      )}
+
+      {/* Sessions Management Tab */}
+      {activeTab === 4 && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
             <Typography variant="h6">
@@ -1532,7 +1550,7 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Policies Management Tab */}
-      {activeTab === 5 && (
+      {activeTab === 6 && (
         <Box>
           <Typography variant="h6" sx={{ mb: 3 }}>
             {t('admin.trainingPolicies')}
@@ -1634,10 +1652,10 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Block Info Management Tab */}
-      {activeTab === 6 && <BlockInfoManager />}
+      {activeTab === 7 && <BlockInfoManager />}
 
       {/* Team Settings Tab */}
-      {activeTab === 7 && (
+      {activeTab === 8 && (
         <Box>
           <Typography variant="h6" sx={{ mb: 3 }}>
             {t('teamSettings.title')}
@@ -1798,10 +1816,22 @@ export const Admin: React.FC = () => {
               <Select
                 value={newExercise.category}
                 label={t('admin.category')}
-                onChange={(e) => setNewExercise({ ...newExercise, category: e.target.value as ExerciseCategory })}
+                onChange={(e) => setNewExercise({ ...newExercise, category: e.target.value })}
               >
-                {categories.map((cat) => (
-                  <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                {exerciseCategories.map((cat) => (
+                  <MenuItem key={cat.key} value={cat.key}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          backgroundColor: cat.color,
+                        }}
+                      />
+                      {cat.nameEN}
+                    </Box>
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -2594,7 +2624,7 @@ export const Admin: React.FC = () => {
       </Dialog>
 
       {/* AI Coach Configuration Tab */}
-      {activeTab === 8 && (
+      {activeTab === 9 && (
         <Box>
           <Typography variant="h6" sx={{ mb: 3 }}>
             {t('admin.aiCoachTab')}
@@ -2716,19 +2746,19 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Points System Configuration Tab */}
-      {activeTab === 9 && <PointsSystemManager />}
+      {activeTab === 10 && <PointsSystemManager />}
 
       {/* Drillbook Tab */}
-      {activeTab === 10 && <DrillManager />}
+      {activeTab === 11 && <DrillManager />}
 
       {/* Equipment Tab */}
-      {activeTab === 11 && <EquipmentManager />}
+      {activeTab === 12 && <EquipmentManager />}
 
       {/* Drill Categories Tab */}
-      {activeTab === 12 && <DrillCategoryManager />}
+      {activeTab === 13 && <DrillCategoryManager />}
 
       {/* Video Tags Tab */}
-      {activeTab === 13 && <VideoTagsManager />}
+      {activeTab === 14 && <VideoTagsManager />}
     </Box>
   );
 };

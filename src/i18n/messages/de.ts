@@ -281,6 +281,7 @@ export const messagesDE = {
   'leaderboard.complianceInfo': 'Prozentsatz der vom Trainer zugewiesenen Trainingseinheiten, die abgeschlossen wurden. Höhere Einhaltung bedeutet bessere Befolgung des Trainingsplans.',
   'leaderboard.attendanceInfo': 'Prozentsatz der besuchten Team-Trainingseinheiten. Zeigt Engagement und Teampartizipation.',
   'leaderboard.freeShareInfo': 'Prozentsatz des Gesamttrainings, das selbstgesteuert ist (nicht vom Trainerplan). Niedriger ist normalerweise besser - zeigt Fokus auf zugewiesene Arbeit.',
+  'leaderboard.noData': 'Noch keine Bestenlisten-Daten verfügbar. Absolvieren Sie einige Trainingseinheiten, um Rankings zu sehen!',
 
   // Coach
   'coach.activate': 'Aktivieren',
@@ -317,6 +318,7 @@ export const messagesDE = {
   'admin.coachOnlyAccess': 'Dieses Panel ist nur für Trainer/Admins zugänglich',
   'admin.trainingBuilderTab': 'Trainings-Builder',
   'admin.exercisesTab': 'Übungen',
+  'admin.exerciseCategoriesTab': 'Übungskategorien',
   'admin.sessionsTab': 'Einheiten',
   'admin.trainingTypesTab': 'Trainingstypen',
   'admin.policiesTab': 'Richtlinien',

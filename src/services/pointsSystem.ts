@@ -6,7 +6,8 @@ import type {
   PlayerPointsProgress,
   PointCategoryType,
 } from '../types/pointsSystem';
-import { pointsConfigService } from './api';
+import { pointsConfigService, leaderboardService } from './api';
+import { isOnline } from './sync';
 
 /**
  * Get ISO week string for a given date
@@ -193,6 +194,9 @@ export async function addWorkoutPoints(
   // Save to localStorage (weekly points are still stored locally)
   savePlayerWeeklyPoints(userId, currentWeek, updated);
 
+  // Sync to backend if online
+  await syncWeeklyPointsToBackend(updated);
+
   return updated;
 }
 
@@ -232,6 +236,46 @@ export function getPlayerWeeklyPoints(userId: string, week: string): PlayerWeekl
 function savePlayerWeeklyPoints(userId: string, week: string, points: PlayerWeeklyPoints): void {
   const key = `weeklyPoints_${userId}_${week}`;
   localStorage.setItem(key, JSON.stringify(points));
+}
+
+/**
+ * Sync player's weekly points to backend
+ */
+async function syncWeeklyPointsToBackend(points: PlayerWeeklyPoints): Promise<void> {
+  if (!isOnline()) {
+    console.log('[POINTS] Offline - skipping backend sync');
+    return;
+  }
+
+  try {
+    // Transform breakdown to match backend schema
+    const breakdown = points.breakdown.map(b => ({
+      date: b.date,
+      workoutTitle: b.workoutTitle,
+      category: b.categoryType,
+      points: b.points,
+      source: b.source,
+      duration: b.duration,
+      totalSets: undefined, // Not tracked in current breakdown
+      totalVolume: undefined, // Not tracked in current breakdown
+      totalDistance: undefined, // Not tracked in current breakdown
+    }));
+
+    await leaderboardService.syncWeeklyPoints({
+      week: points.week,
+      totalPoints: points.totalPoints,
+      targetPoints: points.targetPoints,
+      workoutDays: points.workoutDays,
+      teamTrainingDays: points.teamTrainingDays,
+      coachWorkoutDays: points.coachWorkoutDays,
+      personalWorkoutDays: points.personalWorkoutDays,
+      breakdown,
+    });
+
+    console.log(`[POINTS] Synced week ${points.week} to backend: ${points.totalPoints} points`);
+  } catch (error) {
+    console.error('[POINTS] Failed to sync to backend:', error);
+  }
 }
 
 /**

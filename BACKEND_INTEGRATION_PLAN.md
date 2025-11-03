@@ -1351,12 +1351,17 @@ Mover cálculos KPI al backend y realizar testing completo end-to-end.
 - [x] Testing passed
 - [x] Deployed
 
-**Semana 4: Leaderboard** ✅
-- [ ] Ranking logic implementada
-- [ ] Backend routes implementados
-- [ ] Frontend migration completa
-- [ ] Testing passed
-- [ ] Deployed
+**Semana 4: Leaderboard** ✅ COMPLETADA
+- [x] PlayerWeeklyPoints model created in Prisma
+- [x] Backend routes implementados (4 endpoints: getCurrentWeek, getWeek, getPlayerHistory, syncWeeklyPoints)
+- [x] Ranking logic implementada (compliancePct, attendancePct, freeSharePct calculations)
+- [x] Frontend leaderboardService created in api.ts
+- [x] Points system backend sync implemented (auto-sync after workout)
+- [x] Leaderboard component migrated to backend data
+- [x] i18n messages added (EN/DE)
+- [x] Build passed
+- [ ] Testing pending
+- [ ] Deployed pending
 
 **Semana 5: Reports** ✅
 - [ ] Report generation logic implementada

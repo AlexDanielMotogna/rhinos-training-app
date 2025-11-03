@@ -23,6 +23,8 @@ import equipmentRoutes from './routes/equipment.js';
 import drillCategoryRoutes from './routes/drillCategories.js';
 import drillTrainingSessionRoutes from './routes/drillTrainingSessions.js';
 import teamSettingsRoutes from './routes/teamSettings.js';
+import leaderboardRoutes from './routes/leaderboard.js';
+import exerciseCategoryRoutes from './routes/exerciseCategories.js';
 import { startCronJobs } from './utils/cronJobs.js';
 
 // Load environment variables
@@ -92,6 +94,8 @@ app.use('/api/equipment', equipmentRoutes);
 app.use('/api/drill-categories', drillCategoryRoutes);
 app.use('/api/drill-training-sessions', drillTrainingSessionRoutes);
 app.use('/api/team-settings', teamSettingsRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/exercise-categories', exerciseCategoryRoutes);
 
 // 404 handler
 app.use((req, res) => {

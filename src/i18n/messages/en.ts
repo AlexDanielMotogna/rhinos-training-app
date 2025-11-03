@@ -293,6 +293,7 @@ export const messagesEN = {
   'leaderboard.complianceInfo': 'Percentage of coach-assigned workouts completed. Higher compliance means better adherence to the training plan.',
   'leaderboard.attendanceInfo': 'Percentage of team training sessions attended. Shows commitment and team participation.',
   'leaderboard.freeShareInfo': 'Percentage of total training that is self-directed (not from coach plan). Lower is usually better - shows focus on assigned work.',
+  'leaderboard.noData': 'No leaderboard data available yet. Complete some workouts to see rankings!',
 
   // Coach
   'coach.activate': 'Activate',
@@ -329,6 +330,7 @@ export const messagesEN = {
   'admin.coachOnlyAccess': 'This panel is only accessible to coaches/admins',
   'admin.trainingBuilderTab': 'Training Builder',
   'admin.exercisesTab': 'Exercises',
+  'admin.exerciseCategoriesTab': 'Exercise Categories',
   'admin.sessionsTab': 'Sessions',
   'admin.trainingTypesTab': 'Training Types',
   'admin.policiesTab': 'Policies',

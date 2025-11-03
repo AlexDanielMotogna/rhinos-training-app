@@ -1047,3 +1047,131 @@ export const notificationService = {
     });
   },
 };
+
+/**
+ * Leaderboard Service
+ * Backend-first: All leaderboard data is stored and fetched from backend
+ */
+export const leaderboardService = {
+  /**
+   * Get current week leaderboard
+   */
+  async getCurrentWeek() {
+    return apiCall('/leaderboard');
+  },
+
+  /**
+   * Get leaderboard for a specific week
+   */
+  async getWeek(week: string) {
+    return apiCall(`/leaderboard/${week}`);
+  },
+
+  /**
+   * Get player's weekly history
+   */
+  async getPlayerHistory(userId: string) {
+    return apiCall(`/leaderboard/player/${userId}`);
+  },
+
+  /**
+   * Sync player's weekly points to backend
+   */
+  async syncWeeklyPoints(data: {
+    week: string;
+    totalPoints: number;
+    targetPoints: number;
+    workoutDays: number;
+    teamTrainingDays: number;
+    coachWorkoutDays: number;
+    personalWorkoutDays: number;
+    breakdown: Array<{
+      date: string;
+      workoutTitle: string;
+      category: string;
+      points: number;
+      source: string;
+      duration?: number;
+      totalSets?: number;
+      totalVolume?: number;
+      totalDistance?: number;
+    }>;
+  }) {
+    return apiCall('/leaderboard/sync', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+/**
+ * Exercise Category Service
+ * Backend-first: All exercise categories are stored and managed in backend
+ */
+export const exerciseCategoryService = {
+  /**
+   * Get all exercise categories
+   */
+  async getAll() {
+    return apiCall('/exercise-categories');
+  },
+
+  /**
+   * Get only active exercise categories
+   */
+  async getActive() {
+    return apiCall('/exercise-categories/active');
+  },
+
+  /**
+   * Initialize default exercise categories (coach only)
+   */
+  async initialize() {
+    return apiCall('/exercise-categories/init', {
+      method: 'POST',
+    });
+  },
+
+  /**
+   * Create a new exercise category (coach only)
+   */
+  async create(data: {
+    key: string;
+    nameEN: string;
+    nameDE: string;
+    color?: string;
+    icon?: string;
+    active?: boolean;
+  }) {
+    return apiCall('/exercise-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Update an exercise category (coach only)
+   */
+  async update(id: string, data: {
+    key?: string;
+    nameEN?: string;
+    nameDE?: string;
+    color?: string;
+    icon?: string;
+    active?: boolean;
+  }) {
+    return apiCall(`/exercise-categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete an exercise category (coach only)
+   */
+  async delete(id: string) {
+    return apiCall(`/exercise-categories/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
