@@ -1333,12 +1333,14 @@ Mover cálculos KPI al backend y realizar testing completo end-to-end.
 - [x] EXTRAS: Run Concepts type
 - [x] EXTRAS: YouTube URL fixes
 
-**Semana 2: Drills & Equipment** ✅
-- [ ] Drills backend implementado
-- [ ] Equipment backend implementado
-- [ ] Frontend migration completa
-- [ ] Testing passed
-- [ ] Deployed
+**Semana 2: Drills & Equipment** ✅ COMPLETADA
+- [x] Drills backend implementado
+- [x] Equipment backend implementado
+- [x] Frontend migration completa (backend-first pattern)
+- [x] Sync functions implemented in services
+- [x] DrillManager and components use backend
+- [x] Testing passed
+- [x] Deployed
 
 **Semana 3: Team Settings + Notifications** ✅ COMPLETADA
 - [x] Team Settings backend implementado
