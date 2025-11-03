@@ -38,9 +38,11 @@ const DrillSessions = lazy(() => import('./components/DrillTrainingPlan').then(m
 
 function App() {
   // Initialize drill data on app startup
-  useEffect(() => {
-    initializeDrillData();
-  }, []);
+  // DISABLED: Drills/Equipment should be created manually by coaches via Admin panel
+  // The auto-initialization was causing 400 errors on backend due to validation issues
+  // useEffect(() => {
+  //   initializeDrillData();
+  // }, []);
 
   // Initialize branding (favicon and title) on app startup
   useEffect(() => {
