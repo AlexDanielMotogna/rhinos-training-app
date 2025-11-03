@@ -13,6 +13,7 @@ import type { AttendancePoll } from './types/attendancePoll';
 import { getTeamBranding } from './services/teamSettings';
 import { initializeDrillData } from './services/drillDataInit';
 import { getActivePoll, hasUserVoted } from './services/attendancePollService';
+import { cleanupMockNotifications } from './services/mock';
 
 // Lazy load all page components
 const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
@@ -43,6 +44,11 @@ function App() {
   // useEffect(() => {
   //   initializeDrillData();
   // }, []);
+
+  // Clean up old mock data on app startup
+  useEffect(() => {
+    cleanupMockNotifications();
+  }, []);
 
   // Initialize branding (favicon and title) on app startup
   useEffect(() => {

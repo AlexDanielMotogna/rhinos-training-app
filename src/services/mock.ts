@@ -258,81 +258,44 @@ export function getMockLeaderboard(): LeaderboardRow[] {
 }
 
 /**
- * Mock notifications
+ * Mock notifications - DEPRECATED
+ * Notifications now come from backend via notificationService in api.ts
+ * These functions are kept for backward compatibility but return empty data
  */
 const NOTIFICATIONS_KEY = 'notifications';
 
+/**
+ * Clean up old mock notifications from localStorage
+ * Should be called once on app initialization
+ */
+export function cleanupMockNotifications(): void {
+  localStorage.removeItem(NOTIFICATIONS_KEY);
+  console.log('[CLEANUP] Removed mock notifications from localStorage');
+}
+
 export function getMockNotifications(): Notification[] {
-  const stored = localStorage.getItem(NOTIFICATIONS_KEY);
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    // Convert timestamp strings back to Date objects
-    return parsed.map((n: any) => ({
-      ...n,
-      timestamp: new Date(n.timestamp),
-    }));
-  }
-
-  // Default notifications
-  const defaultNotifications: Notification[] = [
-    {
-      id: 'notif-1',
-      type: 'new_plan',
-      title: 'New Training Plan Available',
-      message: 'Coach has created a new strength training plan for your position.',
-      timestamp: new Date(Date.now() - 3600000), // 1 hour ago
-      read: false,
-      actionUrl: '/training',
-    },
-    {
-      id: 'notif-2',
-      type: 'new_exercise',
-      title: 'New Exercise Added',
-      message: 'Power Clean has been added to your training catalog.',
-      timestamp: new Date(Date.now() - 7200000), // 2 hours ago
-      read: false,
-      actionUrl: '/training',
-    },
-    {
-      id: 'notif-3',
-      type: 'attendance_reminder',
-      title: 'Training Session Tomorrow',
-      message: 'Reminder: Team training on Tuesday at 19:00.',
-      timestamp: new Date(Date.now() - 86400000), // 1 day ago
-      read: true,
-      actionUrl: '/attendance',
-    },
-  ];
-
-  saveNotifications(defaultNotifications);
-  return defaultNotifications;
+  // Return empty array - notifications now come from backend
+  return [];
 }
 
 export function saveNotifications(notifications: Notification[]): void {
-  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
+  // No-op - notifications are managed by backend
+  console.warn('[DEPRECATED] saveNotifications() is deprecated. Notifications are managed by backend.');
 }
 
 export function markNotificationAsRead(id: string): void {
-  const notifications = getMockNotifications();
-  const updated = notifications.map((n) =>
-    n.id === id ? { ...n, read: true } : n
-  );
-  saveNotifications(updated);
+  // No-op - use notificationService.markAsRead() instead
+  console.warn('[DEPRECATED] markNotificationAsRead() is deprecated. Use notificationService.markAsRead() instead.');
 }
 
 export function markAllNotificationsAsRead(): void {
-  const notifications = getMockNotifications();
-  const updated = notifications.map((n) => ({ ...n, read: true }));
-  saveNotifications(updated);
+  // No-op - use notificationService.markAllAsRead() instead
+  console.warn('[DEPRECATED] markAllNotificationsAsRead() is deprecated. Use notificationService.markAllAsRead() instead.');
 }
 
 export function addNotification(notification: Omit<Notification, 'id'>): void {
-  const notifications = getMockNotifications();
-  const newNotification: Notification = {
-    ...notification,
-    id: `notif-${Date.now()}`,
-  };
-  saveNotifications([newNotification, ...notifications]);
+  // No-op - notifications are created by backend
+  console.warn('[DEPRECATED] addNotification() is deprecated. Notifications are created by backend.');
 }
 
 /**
