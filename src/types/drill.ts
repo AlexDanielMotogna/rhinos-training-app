@@ -2,6 +2,22 @@ export type DrillCategory = 'athletik' | 'fundamentals' | 'offense' | 'defense' 
 
 export type DrillDifficulty = 'basic' | 'advanced' | 'complex';
 
+// Type for creating a new drill (excluding backend-generated fields)
+export type CreateDrillData = {
+  name: string;
+  category: DrillCategory;
+  equipment: DrillEquipment[];
+  coaches: number;
+  dummies: number;
+  players: number;
+  difficulty: DrillDifficulty;
+  description: string;
+  coachingPoints: string;
+  trainingContext?: string;
+  sketchUrl?: string;
+  sketchPublicId?: string;
+};
+
 export interface Equipment {
   id: string;
   name: string;
@@ -25,10 +41,11 @@ export interface Drill {
   players: number; // Number of players needed
   difficulty: DrillDifficulty;
   sketchUrl?: string; // URL to uploaded image/sketch
+  sketchPublicId?: string; // Cloudinary public_id for deletion
   description: string;
   coachingPoints: string;
   trainingContext?: string; // Optional (Warm-up, Individual, Team Period, etc.)
-  createdAt: number;
+  createdAt: number | Date;
   createdBy: string; // Coach user ID
 }
 

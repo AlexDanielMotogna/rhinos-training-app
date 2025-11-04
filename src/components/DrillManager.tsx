@@ -43,7 +43,7 @@ import { equipmentService, syncEquipmentFromBackend } from '../services/equipmen
 import { drillCategoryService, syncDrillCategoriesFromBackend, DrillCategory as ManagedCategory } from '../services/drillCategoryService';
 import { exportDrillToPDF } from '../services/drillPdfExport';
 import { optimizeDrillSketch, validateImage } from '../services/imageOptimizer';
-import { Drill, DrillCategory, DrillDifficulty, Equipment, DrillEquipment } from '../types/drill';
+import { Drill, DrillCategory, DrillDifficulty, Equipment, DrillEquipment, CreateDrillData } from '../types/drill';
 import { getUser } from '../services/userProfile';
 
 const CATEGORY_COLORS: Record<DrillCategory, string> = {
@@ -234,7 +234,7 @@ export const DrillManager: React.FC = () => {
     if (!currentUser) return;
 
     setIsSaving(true);
-    const drillData = {
+    const drillData: CreateDrillData = {
       name: formData.name,
       category: formData.category,
       equipment: formData.equipment,
@@ -246,6 +246,8 @@ export const DrillManager: React.FC = () => {
       coachingPoints: formData.coachingPoints,
       trainingContext: formData.trainingContext || undefined,
     };
+
+    console.log('[DrillManager] Sending drill data:', JSON.stringify(drillData, null, 2));
 
     try {
       let drillId: string;

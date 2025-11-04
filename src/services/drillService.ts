@@ -1,4 +1,4 @@
-import { Drill, DrillResourceSummary } from '../types/drill';
+import { Drill, DrillResourceSummary, CreateDrillData } from '../types/drill';
 import { drillService as drillApi } from './api';
 import { isOnline } from './sync';
 
@@ -16,7 +16,7 @@ export async function syncDrillsFromBackend(): Promise<void> {
 
   try {
     console.log('🔄 Syncing drills from backend...');
-    const backendDrills = await drillApi.getAll();
+    const backendDrills = await drillApi.getAll() as any[];
 
     // Normalize drill data - ensure equipment is always an array
     const normalizedDrills = backendDrills.map((drill: any) => ({
@@ -68,7 +68,7 @@ export const drillService = {
     return drills.filter(d => d.category === category);
   },
 
-  async createDrill(drill: Omit<Drill, 'id' | 'createdAt'>): Promise<Drill> {
+  async createDrill(drill: CreateDrillData): Promise<Drill> {
     if (isOnline()) {
       try {
         // Create on backend
@@ -88,13 +88,13 @@ export const drillService = {
 
         // Normalize equipment field
         const normalizedDrill = {
-          ...newDrill,
-          equipment: Array.isArray(newDrill.equipment)
-            ? newDrill.equipment
-            : (typeof newDrill.equipment === 'string'
-              ? JSON.parse(newDrill.equipment)
+          ...(newDrill as any),
+          equipment: Array.isArray((newDrill as any).equipment)
+            ? (newDrill as any).equipment
+            : (typeof (newDrill as any).equipment === 'string'
+              ? JSON.parse((newDrill as any).equipment)
               : []),
-        };
+        } as Drill;
 
         // Update local cache
         const drills = this.getAllDrills();
@@ -119,13 +119,13 @@ export const drillService = {
 
         // Normalize equipment field
         const normalizedDrill = {
-          ...updatedDrill,
-          equipment: Array.isArray(updatedDrill.equipment)
-            ? updatedDrill.equipment
-            : (typeof updatedDrill.equipment === 'string'
-              ? JSON.parse(updatedDrill.equipment)
+          ...(updatedDrill as any),
+          equipment: Array.isArray((updatedDrill as any).equipment)
+            ? (updatedDrill as any).equipment
+            : (typeof (updatedDrill as any).equipment === 'string'
+              ? JSON.parse((updatedDrill as any).equipment)
               : []),
-        };
+        } as Drill;
 
         // Update local cache
         const drills = this.getAllDrills();
