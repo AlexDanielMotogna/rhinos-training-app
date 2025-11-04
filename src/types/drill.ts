@@ -1,11 +1,9 @@
-export type DrillCategory = 'athletik' | 'fundamentals' | 'offense' | 'defense' | 'team' | 'cooldown';
-
 export type DrillDifficulty = 'basic' | 'advanced' | 'complex';
 
 // Type for creating a new drill (excluding backend-generated fields)
 export type CreateDrillData = {
   name: string;
-  category: DrillCategory;
+  category: string; // Now accepts any category key from DrillCategory
   equipment: DrillEquipment[];
   coaches: number;
   dummies: number;
@@ -34,7 +32,7 @@ export interface DrillEquipment {
 export interface Drill {
   id: string;
   name: string;
-  category: DrillCategory;
+  category: string; // Now references DrillCategory.key from database
   equipment: DrillEquipment[]; // Array of equipment with quantities
   coaches: number; // Number of coaches needed
   dummies: number; // Number of dummies needed

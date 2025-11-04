@@ -5,6 +5,7 @@ const DRILL_CATEGORIES_STORAGE_KEY = 'rhinos_drill_categories';
 
 export interface DrillCategory {
   id: string;
+  key?: string; // New field for unique key
   name: string;
   nameDE?: string;
   color: string;
@@ -25,7 +26,7 @@ export async function syncDrillCategoriesFromBackend(): Promise<void> {
 
   try {
     console.log('🔄 Syncing drill categories from backend...');
-    const backendCategories = await drillCategoryApi.getAll();
+    const backendCategories = await drillCategoryApi.getAll() as DrillCategory[];
 
     // Save in localStorage as cache
     localStorage.setItem(DRILL_CATEGORIES_STORAGE_KEY, JSON.stringify(backendCategories));
@@ -66,7 +67,7 @@ export const drillCategoryService = {
     if (isOnline()) {
       try {
         // Create on backend
-        const newCategory = await drillCategoryApi.create(data);
+        const newCategory = await drillCategoryApi.create(data) as DrillCategory;
 
         // Update local cache
         const categories = this.getAllCategories();
@@ -87,7 +88,7 @@ export const drillCategoryService = {
     if (isOnline()) {
       try {
         // Update on backend
-        const updatedCategory = await drillCategoryApi.update(id, data);
+        const updatedCategory = await drillCategoryApi.update(id, data) as DrillCategory;
 
         // Update local cache
         const categories = this.getAllCategories();
@@ -132,7 +133,7 @@ export const drillCategoryService = {
     if (isOnline()) {
       try {
         // Seed on backend
-        const result = await drillCategoryApi.seed();
+        const result = await drillCategoryApi.seed() as { created: string[]; skipped: string[]; };
 
         // Sync to update local cache
         await syncDrillCategoriesFromBackend();

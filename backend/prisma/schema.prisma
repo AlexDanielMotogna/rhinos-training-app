@@ -577,7 +577,7 @@ model TestResult {
 model Drill {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
   name          String
-  category      String   // 'athletik' | 'fundamentals' | 'offense' | 'defense' | 'team' | 'cooldown'
+  category      String   // References DrillCategory.key (e.g., "athletik", "fundamentals")
   description   String
   coachingPoints String
 
@@ -631,6 +631,7 @@ model Equipment {
 
 model DrillCategory {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique  // Unique key (e.g., "athletik", "fundamentals", "offense")
   name      String   @unique  // Category name (e.g., "Offense", "Defense", "Team")
   nameDE    String?  // German translation
   color     String   @default("#1976d2")  // Color for UI display

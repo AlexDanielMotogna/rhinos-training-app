@@ -9,7 +9,7 @@ const router = express.Router();
 // Validation schemas
 const createDrillSchema = z.object({
   name: z.string().min(1, 'Drill name is required'),
-  category: z.enum(['athletik', 'fundamentals', 'offense', 'defense', 'team', 'cooldown']),
+  category: z.string().min(1, 'Category is required'), // Now accepts any category key
   description: z.string().min(1, 'Description is required'),
   coachingPoints: z.string().min(1, 'Coaching points are required'),
   players: z.number().min(0).default(0),
@@ -27,7 +27,7 @@ const createDrillSchema = z.object({
 
 const updateDrillSchema = z.object({
   name: z.string().min(1).optional(),
-  category: z.enum(['athletik', 'fundamentals', 'offense', 'defense', 'team', 'cooldown']).optional(),
+  category: z.string().min(1).optional(), // Now accepts any category key
   description: z.string().min(1).optional(),
   coachingPoints: z.string().min(1).optional(),
   players: z.number().min(0).optional(),
@@ -95,6 +95,13 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
+
+    console.log('[DRILLS] Create request received from user:', { 
+      email: user.email, 
+      role: user.role, 
+      userId: user.userId 
+    });
+    console.log('[DRILLS] Request body:', JSON.stringify(req.body, null, 2));
 
     // Only coaches can create drills
     if (user.role !== 'coach') {

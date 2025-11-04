@@ -43,17 +43,8 @@ import { equipmentService, syncEquipmentFromBackend } from '../services/equipmen
 import { drillCategoryService, syncDrillCategoriesFromBackend, DrillCategory as ManagedCategory } from '../services/drillCategoryService';
 import { exportDrillToPDF } from '../services/drillPdfExport';
 import { optimizeDrillSketch, validateImage } from '../services/imageOptimizer';
-import { Drill, DrillCategory, DrillDifficulty, Equipment, DrillEquipment, CreateDrillData } from '../types/drill';
+import { Drill, DrillDifficulty, Equipment, DrillEquipment, CreateDrillData } from '../types/drill';
 import { getUser } from '../services/userProfile';
-
-const CATEGORY_COLORS: Record<DrillCategory, string> = {
-  athletik: '#FFB300',
-  fundamentals: '#43A047',
-  offense: '#E53935',
-  defense: '#1E88E5',
-  team: '#8E24AA',
-  cooldown: '#00ACC1',
-};
 
 const DIFFICULTY_COLORS: Record<DrillDifficulty, string> = {
   basic: '#4CAF50',
@@ -79,7 +70,7 @@ export const DrillManager: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    category: 'fundamentals' as DrillCategory,
+    category: '', // Will be set to first available category
     equipment: [] as DrillEquipment[],
     coaches: '1',
     dummies: '0',
@@ -126,9 +117,10 @@ export const DrillManager: React.FC = () => {
       setSketchPreview(drill.sketchUrl || '');
     } else {
       setEditingDrill(null);
+      const defaultCategory = categories.length > 0 ? categories[0].key || '' : '';
       setFormData({
         name: '',
-        category: 'fundamentals',
+        category: defaultCategory,
         equipment: [],
         coaches: '1',
         dummies: '0',
@@ -304,6 +296,14 @@ export const DrillManager: React.FC = () => {
     return equipment.find(e => e.id === equipmentId)?.name || 'Unknown';
   };
 
+  const getCategoryDisplayName = (categoryKey: string): string => {
+    return categories.find(c => (c.key || c.name) === categoryKey)?.name || categoryKey;
+  };
+
+  const getCategoryColor = (categoryKey: string): string => {
+    return categories.find(c => (c.key || c.name) === categoryKey)?.color || '#1976d2';
+  };
+
   const formatEquipmentList = (drillEquipment: DrillEquipment[]): string => {
     if (drillEquipment.length === 0) return t('drills.noEquipment');
     return drillEquipment
@@ -334,7 +334,7 @@ export const DrillManager: React.FC = () => {
           >
             <MenuItem value="all">{t('drills.allCategories')}</MenuItem>
             {categories.map((category) => (
-              <MenuItem key={category.id} value={category.name}>
+              <MenuItem key={category.id} value={category.key || category.name}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box
                     sx={{
@@ -392,9 +392,9 @@ export const DrillManager: React.FC = () => {
                 <Stack spacing={1}>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Chip
-                      label={t(`drills.category.${drill.category}`)}
+                      label={getCategoryDisplayName(drill.category)}
                       size="small"
-                      sx={{ bgcolor: CATEGORY_COLORS[drill.category], color: 'white' }}
+                      sx={{ bgcolor: getCategoryColor(drill.category), color: 'white' }}
                     />
                     <Chip
                       label={t(`drills.difficulty.${drill.difficulty}`)}
@@ -470,11 +470,11 @@ export const DrillManager: React.FC = () => {
               <InputLabel>{t('drills.category.label')}</InputLabel>
               <Select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as DrillCategory })}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 label={t('drills.category.label')}
               >
                 {categories.map((category) => (
-                  <MenuItem key={category.id} value={category.name}>
+                  <MenuItem key={category.id} value={category.key || category.name}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box
                         sx={{
@@ -490,7 +490,6 @@ export const DrillManager: React.FC = () => {
                   </MenuItem>
                 ))}
               </Select>
-              <FormHelperText>{t('drills.categoryHelp')}</FormHelperText>
             </FormControl>
 
             {/* Equipment Selection with Quantities */}
