@@ -245,7 +245,6 @@ export const DrillManager: React.FC = () => {
       description: formData.description,
       coachingPoints: formData.coachingPoints,
       trainingContext: formData.trainingContext || undefined,
-      createdBy: currentUser.id,
     };
 
     try {
