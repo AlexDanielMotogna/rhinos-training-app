@@ -411,6 +411,8 @@ export const messagesEN = {
   'admin.configured': 'Configured',
   'admin.notConfigured': 'Not Configured',
   'admin.aiCoachUsageInfo': 'When a team API key is configured, players cannot configure their own API keys. If you want players to use their own API keys, leave this field empty.',
+  'admin.editTrainingType': 'Edit Training Type',
+  'admin.editBlock': 'Edit Block',
 
   // MyTraining assigned programs
   'training.yourAssignedPrograms': 'Your Assigned Programs',

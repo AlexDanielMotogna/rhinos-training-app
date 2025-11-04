@@ -1958,7 +1958,7 @@ export const Admin: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>{editingTrainingType ? 'Edit Training Type' : t('admin.addTrainingType')}</DialogTitle>
+        <DialogTitle>{editingTrainingType ? t('admin.editTrainingType') : t('admin.addTrainingType')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
@@ -2271,7 +2271,7 @@ export const Admin: React.FC = () => {
         fullWidth
       >
         <DialogTitle>
-          {editingBlockIndex !== null ? 'Edit Block' : t('admin.addBlock')}
+          {editingBlockIndex !== null ? t('admin.editBlock') : t('admin.addBlock')}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>

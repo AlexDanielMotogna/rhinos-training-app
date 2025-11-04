@@ -399,6 +399,8 @@ export const messagesDE = {
   'admin.configured': 'Konfiguriert',
   'admin.notConfigured': 'Nicht konfiguriert',
   'admin.aiCoachUsageInfo': 'Wenn ein Team-API-Schlüssel konfiguriert ist, können Spieler keine eigenen API-Schlüssel konfigurieren. Wenn Sie möchten, dass Spieler ihre eigenen API-Schlüssel verwenden, lassen Sie dieses Feld leer.',
+  'admin.editTrainingType': 'Trainingstyp bearbeiten',
+  'admin.editBlock': 'Block bearbeiten',
 
   // MyTraining assigned programs
   'training.yourAssignedPrograms': 'Ihre zugewiesenen Programme',
