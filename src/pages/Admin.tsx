@@ -1619,9 +1619,9 @@ export const Admin: React.FC = () => {
                         },
                       }}
                     >
-                      {categories.map((cat) => (
-                        <MenuItem key={cat} value={cat}>
-                          {cat}
+                      {exerciseCategories.map((cat) => (
+                        <MenuItem key={cat.key || cat.name} value={cat.key || cat.name}>
+                          {cat.name}
                         </MenuItem>
                       ))}
                     </Select>
