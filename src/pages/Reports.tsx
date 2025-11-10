@@ -33,7 +33,9 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useI18n } from '../i18n/I18nProvider';
-import { generateDailyReport, generateWeeklyReport, generateMonthlyReport, getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from '../services/reports';
+import { getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from '../services/reports';
+import { reportsService } from '../services/api';
+import { isOnline } from '../services/sync';
 import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod, PlayerStatus } from '../types/report';
 import type { Position } from '../types/exercise';
 
@@ -54,13 +56,41 @@ export const Reports: React.FC = () => {
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
   const [sessionCarouselIndex, setSessionCarouselIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load reports
-    setDailyReport(generateDailyReport());
-    setWeeklyReport(generateWeeklyReport());
-    setMonthlyReport(generateMonthlyReport());
+    loadReports();
   }, []);
+
+  const loadReports = async () => {
+    if (!isOnline()) {
+      setError('Offline - Cannot load reports');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load all reports from backend
+      const [daily, weekly, monthly] = await Promise.all([
+        reportsService.getDailyReport(),
+        reportsService.getWeeklyReport(),
+        reportsService.getMonthlyReport(),
+      ]);
+
+      setDailyReport(daily);
+      setWeeklyReport(weekly);
+      setMonthlyReport(monthly);
+    } catch (err: any) {
+      console.error('[REPORTS] Load error:', err);
+      setError(err.message || 'Failed to load reports');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Reset position filter when unit filter changes
   useEffect(() => {
@@ -131,11 +161,36 @@ export const Reports: React.FC = () => {
     };
   }, [currentReport, filteredPlayers]);
 
-  if (!currentReport || !filteredSummary) {
+  if (loading) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography variant="h6" color="text.secondary">
           {t('common.loading')}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="h6" color="error">
+          {error}
+        </Typography>
+        {!isOnline() && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Reports require an internet connection
+          </Typography>
+        )}
+      </Box>
+    );
+  }
+
+  if (!currentReport || !filteredSummary) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="h6" color="text.secondary">
+          No report data available
         </Typography>
       </Box>
     );
