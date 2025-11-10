@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useI18n } from '../../i18n/I18nProvider';
 import {
   Dialog,
   DialogTitle,
@@ -8,7 +9,6 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  ListItemIcon,
   InputAdornment,
   Box,
   Chip,
@@ -16,7 +16,6 @@ import {
   Tabs,
   Tab,
   IconButton,
-  Avatar,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
@@ -24,9 +23,8 @@ import { globalCatalog } from '../../services/catalog';
 import { exerciseService } from '../../services/api';
 import { db } from '../../services/db';
 import { isOnline } from '../../services/sync';
-import type { Exercise, ExerciseCategory } from '../../types/exercise';
+import type { Exercise, ExerciseCategory, MuscleGroup } from '../../types/exercise';
 import { sanitizeYouTubeUrl } from '../../services/yt';
-import { getExerciseIcon, getCategoryGradient } from '../../utils/exerciseIcons';
 
 interface ExerciseSelectorProps {
   open: boolean;
@@ -39,8 +37,10 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onClose,
   onSelect,
 }) => {
+  const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory | 'All'>('All');
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroup | 'All'>('All');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
 
@@ -52,6 +52,17 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     'Mobility',
     'Technique',
     'Conditioning',
+  ];
+
+  const muscleGroups: Array<MuscleGroup | 'All'> = [
+    'All',
+    'legs',
+    'chest',
+    'back',
+    'shoulders',
+    'arms',
+    'core',
+    'full-body',
   ];
 
   // Load exercises from backend when dialog opens
@@ -115,13 +126,16 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || exercise.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesMuscleGroup = selectedMuscleGroup === 'All' ||
+      (exercise.muscleGroups && exercise.muscleGroups.includes(selectedMuscleGroup));
+    return matchesSearch && matchesCategory && matchesMuscleGroup;
   });
 
   const handleSelect = (exercise: Exercise) => {
     onSelect(exercise);
     setSearchTerm('');
     setSelectedCategory('All');
+    setSelectedMuscleGroup('All');
     setPreviewExercise(null);
   };
 
@@ -204,6 +218,23 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           ))}
         </Tabs>
 
+        {/* Muscle Group Tabs */}
+        <Tabs
+          value={selectedMuscleGroup}
+          onChange={(_, value) => setSelectedMuscleGroup(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+        >
+          {muscleGroups.map(group => (
+            <Tab
+              key={group}
+              label={group === 'All' ? t('muscleGroup.all') : t(`muscleGroup.${group}` as any)}
+              value={group}
+            />
+          ))}
+        </Tabs>
+
         {/* Exercise List */}
         {filteredExercises.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -232,23 +263,20 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 }
               >
                 <ListItemButton onClick={() => handleSelect(exercise)}>
-                  <ListItemIcon>
-                    <Avatar
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        background: getCategoryGradient(exercise.category),
-                        color: 'white',
-                      }}
-                    >
-                      {getExerciseIcon(exercise.name, exercise.category)}
-                    </Avatar>
-                  </ListItemIcon>
                   <ListItemText
                     primary={exercise.name}
                     secondary={
-                      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, alignItems: 'center' }}>
+                      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
                         <Chip label={exercise.category} size="small" />
+                        {exercise.muscleGroups && exercise.muscleGroups.map((group) => (
+                          <Chip
+                            key={group}
+                            label={t(`muscleGroup.${group}` as any)}
+                            size="small"
+                            variant="outlined"
+                            color="secondary"
+                          />
+                        ))}
                         {exercise.youtubeUrl && (
                           <Chip
                             icon={<PlayCircleOutlineIcon sx={{ fontSize: '0.9rem' }} />}

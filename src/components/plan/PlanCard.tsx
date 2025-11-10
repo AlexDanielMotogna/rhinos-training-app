@@ -15,7 +15,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useI18n } from '../../i18n/I18nProvider';
-import { getExerciseIcon, getCategoryGradient } from '../../utils/exerciseIcons';
 import type { UserPlanTemplate } from '../../types/userPlan';
 
 interface PlanCardProps {
@@ -64,17 +63,13 @@ export const PlanCard: React.FC<PlanCardProps> = ({
     }
   };
 
-  // Get primary exercise category for styling
-  const primaryExercise = plan.exercises[0];
-  const gradient = primaryExercise ? getCategoryGradient(primaryExercise.category) : getCategoryGradient('Strength');
-
   return (
     <Card sx={{ width: '100%', position: 'relative', overflow: 'hidden' }}>
-      {/* Gradient Header Background */}
+      {/* Header Background */}
       <Box
         sx={{
           height: 80,
-          background: gradient,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
@@ -90,7 +85,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
             mr: 2,
           }}
         >
-          {primaryExercise ? getExerciseIcon(primaryExercise.name, primaryExercise.category) : <FitnessCenterIcon />}
+          <FitnessCenterIcon />
         </Avatar>
         <Box sx={{ flex: 1 }}>
           <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
