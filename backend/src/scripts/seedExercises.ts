@@ -1127,15 +1127,32 @@ async function seedExercises() {
     let created = 0;
     let skipped = 0;
 
-    // Create exercises
+    // Create or update exercises
+    let updated = 0;
+
     for (const exercise of standardExercises) {
       const existing = await prisma.exercise.findUnique({
         where: { name: exercise.name },
       });
 
       if (existing) {
-        console.log(`[SEED] Exercise "${exercise.name}" already exists, skipping...`);
-        skipped++;
+        // Update existing exercise with muscle groups if they don't have them
+        if (!existing.muscleGroups || existing.muscleGroups.length === 0) {
+          await prisma.exercise.update({
+            where: { id: existing.id },
+            data: {
+              muscleGroups: exercise.muscleGroups,
+              descriptionEN: exercise.descriptionEN,
+              descriptionDE: exercise.descriptionDE,
+              youtubeUrl: exercise.youtubeUrl || existing.youtubeUrl,
+            },
+          });
+          updated++;
+          console.log(`[SEED] ↻ Updated: ${exercise.name} (added muscle groups)`);
+        } else {
+          console.log(`[SEED] Exercise "${exercise.name}" already exists with muscle groups, skipping...`);
+          skipped++;
+        }
         continue;
       }
 
@@ -1155,7 +1172,8 @@ async function seedExercises() {
 
     console.log(`\n[SEED] ✅ Exercises seed completed!`);
     console.log(`[SEED] Created: ${created} exercises`);
-    console.log(`[SEED] Skipped: ${skipped} exercises (already exist)`);
+    console.log(`[SEED] Updated: ${updated} exercises (added muscle groups)`);
+    console.log(`[SEED] Skipped: ${skipped} exercises (already have muscle groups)`);
     console.log(`[SEED] Total: ${standardExercises.length} exercises in catalog`);
   } catch (error) {
     console.error('[SEED ERROR] Failed to seed exercises:', error);
