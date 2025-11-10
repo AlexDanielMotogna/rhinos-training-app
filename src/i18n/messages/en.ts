@@ -923,12 +923,14 @@ export const messagesEN = {
   'teamSettings.level.amateur': 'Amateur',
   'teamSettings.level.semi-pro': 'Semi-Pro',
   'teamSettings.level.college': 'College',
+  'teamSettings.level.varsity': 'Varsity',
   'teamSettings.level.pro': 'Professional',
 
   // Team Level Descriptions
   'teamSettings.levelDesc.amateur': 'Amateur level: Recreational/hobby sport, limited training time, focus on enjoyment and fitness.',
   'teamSettings.levelDesc.semi-pro': 'Semi-professional level: Competitive standards, part-time training, balance with work/life commitments.',
   'teamSettings.levelDesc.college': 'College level: NCAA/university standards, structured training programs, competitive athletics with academic balance.',
+  'teamSettings.levelDesc.varsity': 'Varsity level: High school/university competitive team, structured practice schedules, balance with academics.',
   'teamSettings.levelDesc.pro': 'Professional level: Elite standards, full-time training, high expectations for performance and professionalism.',
 };
 

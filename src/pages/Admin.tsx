@@ -1716,22 +1716,7 @@ export const Admin: React.FC = () => {
                     >
                       {t('teamSettings.saveSettings')}
                     </Button>
-                    
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      onClick={handlePopulateUsers}
-                      disabled={isPopulatingUsers}
-                    >
-                      {isPopulatingUsers ? 'Populating Users...' : 'Populate Database Users'}
-                    </Button>
                   </Box>
-                  
-                  {populationResult && (
-                    <Alert severity={populationResult.includes('Error') ? 'error' : 'success'} sx={{ mt: 2 }}>
-                      {populationResult}
-                    </Alert>
-                  )}
                 </Grid>
 
                 {/* Impact Info */}
