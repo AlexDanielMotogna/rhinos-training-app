@@ -21,11 +21,19 @@ import CloseIcon from '@mui/icons-material/Close';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
+import CircleIcon from '@mui/icons-material/Circle';
+import SportsFootballIcon from '@mui/icons-material/SportsFootball';
 import { useI18n } from '../i18n/I18nProvider';
 import { submitVote, getPollResults, getUserVote } from '../services/attendancePollService';
-import { getUser } from '../services/userProfile';
+import { getUser, getAllUsers } from '../services/userProfile';
 import type { AttendancePoll } from '../types/attendancePoll';
+import type { Position } from '../types/exercise';
 import { apiCall } from '../services/api';
+
+// Position groupings for unit counts
+const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OL'];
+const DEFENSE_POSITIONS: Position[] = ['DL', 'LB', 'DB'];
+const SPECIAL_TEAMS_POSITIONS: Position[] = ['K/P'];
 
 interface AttendancePollModalProps {
   poll: AttendancePoll;
@@ -379,30 +387,221 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
 
             <Divider sx={{ my: 2 }} />
 
-            {/* Attendees List - Visible to all users */}
+            {/* Attendees List by Unit - Visible to all users */}
             <Typography variant="subtitle2" sx={{ mb: 2 }}>
               {t('attendancePoll.attendeesList')} ({attendees.length})
             </Typography>
 
             {attendees.length > 0 ? (
-              <List dense sx={{ maxHeight: 200, overflow: 'auto' }}>
-                {attendees.map((attendee) => (
-                  <ListItem key={attendee.userId}>
-                    <Avatar sx={{ width: 32, height: 32, mr: 2, fontSize: '0.875rem' }}>
-                      {attendee.userName.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <ListItemText
-                      primary={attendee.userName}
-                      secondary={attendee.userPosition || ''}
-                    />
-                    <Chip
-                      size="small"
-                      label={attendee.option === 'training' ? t('attendancePoll.training') : t('attendancePoll.present')}
-                      color={attendee.option === 'training' ? 'success' : 'info'}
-                    />
-                  </ListItem>
-                ))}
-              </List>
+              <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+                {(() => {
+                  // Get all users to lookup positions
+                  const allUsers = getAllUsers();
+
+                  // Calculate position counts for training+present voters
+                  const offensePositions: Record<string, number> = {};
+                  const defensePositions: Record<string, number> = {};
+                  const specialTeamsPositions: Record<string, number> = {};
+                  let offenseCount = 0;
+                  let defenseCount = 0;
+                  let specialTeamsCount = 0;
+
+                  // Filter only training voters for position breakdown
+                  const trainingAttendees = attendees.filter(a => a.option === 'training');
+
+                  trainingAttendees.forEach((attendee) => {
+                    const user = allUsers.find(u => u.id === attendee.userId);
+                    const position = (user?.position || attendee.userPosition) as Position;
+
+                    if (!position) return;
+
+                    if (OFFENSE_POSITIONS.includes(position)) {
+                      offenseCount++;
+                      offensePositions[position] = (offensePositions[position] || 0) + 1;
+                    } else if (DEFENSE_POSITIONS.includes(position)) {
+                      defenseCount++;
+                      defensePositions[position] = (defensePositions[position] || 0) + 1;
+                    } else if (SPECIAL_TEAMS_POSITIONS.includes(position)) {
+                      specialTeamsCount++;
+                      specialTeamsPositions[position] = (specialTeamsPositions[position] || 0) + 1;
+                    }
+                  });
+
+                  return (
+                    <Box>
+                      {/* Offense */}
+                      {offenseCount > 0 && (
+                        <Box sx={{ mb: 1.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Chip
+                              icon={<CircleIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                              label={`Offense (${offenseCount})`}
+                              size="small"
+                              sx={{
+                                backgroundColor: '#4caf50',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem'
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
+                            {Object.entries(offensePositions)
+                              .sort((a, b) => b[1] - a[1])
+                              .map(([position, count]) => (
+                                <Chip
+                                  key={`offense-${position}`}
+                                  label={`${count}x ${position}`}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{
+                                    borderColor: '#4caf50',
+                                    color: '#4caf50',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Defense */}
+                      {defenseCount > 0 && (
+                        <Box sx={{ mb: 1.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Chip
+                              icon={<CloseIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                              label={`Defense (${defenseCount})`}
+                              size="small"
+                              sx={{
+                                backgroundColor: '#2196F3',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem'
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
+                            {Object.entries(defensePositions)
+                              .sort((a, b) => b[1] - a[1])
+                              .map(([position, count]) => (
+                                <Chip
+                                  key={`defense-${position}`}
+                                  label={`${count}x ${position}`}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{
+                                    borderColor: '#2196F3',
+                                    color: '#2196F3',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Special Teams */}
+                      {specialTeamsCount > 0 && (
+                        <Box sx={{ mb: 1.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Chip
+                              icon={<SportsFootballIcon sx={{ fontSize: 16, color: 'white !important' }} />}
+                              label={`Special Teams (${specialTeamsCount})`}
+                              size="small"
+                              sx={{
+                                backgroundColor: '#9C27B0',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem'
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
+                            {Object.entries(specialTeamsPositions)
+                              .sort((a, b) => b[1] - a[1])
+                              .map(([position, count]) => (
+                                <Chip
+                                  key={`st-${position}`}
+                                  label={`${count}x ${position}`}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{
+                                    borderColor: '#9C27B0',
+                                    color: '#9C27B0',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Training with team - names */}
+                      {trainingAttendees.length > 0 && (
+                        <Box sx={{ mb: 1.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Chip
+                              label={`${trainingAttendees.length} ${t('attendancePoll.players')}`}
+                              size="small"
+                              sx={{ backgroundColor: '#4caf50', color: 'white', minWidth: 60, fontWeight: 'bold' }}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              {t('attendancePoll.training')}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 0.5 }}>
+                            {trainingAttendees.map((attendee) => (
+                              <Chip
+                                key={attendee.userId}
+                                label={attendee.userName}
+                                size="small"
+                                variant="outlined"
+                                sx={{ borderColor: '#4caf50', color: '#4caf50' }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Present (not training) - names */}
+                      {(() => {
+                        const presentAttendees = attendees.filter(a => a.option === 'present');
+                        if (presentAttendees.length === 0) return null;
+
+                        return (
+                          <Box sx={{ mb: 0 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              <Chip
+                                label={`${presentAttendees.length} ${t('attendancePoll.players')}`}
+                                size="small"
+                                sx={{ backgroundColor: '#2196f3', color: 'white', minWidth: 60, fontWeight: 'bold' }}
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {t('attendancePoll.present')}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 0.5 }}>
+                              {presentAttendees.map((attendee) => (
+                                <Chip
+                                  key={attendee.userId}
+                                  label={attendee.userName}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ borderColor: '#2196f3', color: '#2196f3' }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        );
+                      })()}
+                    </Box>
+                  );
+                })()}
+              </Box>
             ) : (
               <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>
                 {t('attendancePoll.noAttendees')}
