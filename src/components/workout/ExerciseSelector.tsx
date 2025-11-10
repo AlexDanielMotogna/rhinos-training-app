@@ -249,17 +249,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     secondary={
                       <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, alignItems: 'center' }}>
                         <Chip label={exercise.category} size="small" />
-                        <Chip
-                          label={exercise.intensity}
-                          size="small"
-                          color={
-                            exercise.intensity === 'high'
-                              ? 'error'
-                              : exercise.intensity === 'mod'
-                              ? 'warning'
-                              : 'success'
-                          }
-                        />
                         {exercise.youtubeUrl && (
                           <Chip
                             icon={<PlayCircleOutlineIcon sx={{ fontSize: '0.9rem' }} />}

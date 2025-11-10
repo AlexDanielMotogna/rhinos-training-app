@@ -96,7 +96,6 @@ export const Admin: React.FC = () => {
   const [newExercise, setNewExercise] = useState<Partial<Exercise & { trainingTypes?: string[] }>>({
     name: '',
     category: 'strength', // Default to first category key
-    intensity: 'mod',
     isGlobal: true,
     youtubeUrl: '',
     trainingTypes: [],
@@ -372,7 +371,6 @@ export const Admin: React.FC = () => {
       setNewExercise({
         name: '',
         category: 'Strength',
-        intensity: 'mod',
         isGlobal: true,
         youtubeUrl: '',
       });
@@ -393,7 +391,6 @@ export const Admin: React.FC = () => {
         const created = await exerciseService.create({
           name: newExercise.name!,
           category: newExercise.category!,
-          intensity: newExercise.intensity,
           isGlobal: true,
           positionTags: [], // Empty array - exercises are universal
           youtubeUrl: newExercise.youtubeUrl,
@@ -407,7 +404,6 @@ export const Admin: React.FC = () => {
       setNewExercise({
         name: '',
         category: 'Strength',
-        intensity: 'mod',
         isGlobal: true,
         youtubeUrl: '',
         trainingTypes: [],
@@ -1291,7 +1287,6 @@ export const Admin: React.FC = () => {
                 <TableRow sx={{ backgroundColor: 'primary.main' }}>
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Name</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Category</TableCell>
-                  <TableCell sx={{ color: 'white', fontWeight: 600 }}>Intensity</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Video</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 600 }}>Actions</TableCell>
                 </TableRow>
@@ -1304,21 +1299,6 @@ export const Admin: React.FC = () => {
                       <TableCell>{exercise.name}</TableCell>
                       <TableCell>
                         <Chip label={exercise.category} size="small" />
-                      </TableCell>
-                      <TableCell>
-                        {exercise.intensity && (
-                          <Chip
-                            label={exercise.intensity}
-                            size="small"
-                            color={
-                              exercise.intensity === 'high'
-                                ? 'error'
-                                : exercise.intensity === 'mod'
-                                ? 'warning'
-                                : 'success'
-                            }
-                          />
-                        )}
                       </TableCell>
                       <TableCell>
                         {exercise.youtubeUrl ? (
@@ -1775,19 +1755,6 @@ export const Admin: React.FC = () => {
                     </Box>
                   </MenuItem>
                 ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth>
-              <InputLabel>{t('admin.intensity')}</InputLabel>
-              <Select
-                value={newExercise.intensity || 'mod'}
-                label={t('admin.intensity')}
-                onChange={(e) => setNewExercise({ ...newExercise, intensity: e.target.value as 'low' | 'mod' | 'high' })}
-              >
-                <MenuItem value="low">Low</MenuItem>
-                <MenuItem value="mod">Moderate</MenuItem>
-                <MenuItem value="high">High</MenuItem>
               </Select>
             </FormControl>
 

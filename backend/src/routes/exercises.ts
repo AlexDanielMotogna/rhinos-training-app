@@ -11,7 +11,6 @@ const exerciseSchema = z.object({
   category: z.enum(['Strength', 'Speed', 'COD', 'Mobility', 'Technique', 'Conditioning', 'Recovery', 'Plyometrics']),
   youtubeUrl: z.string().url().optional().or(z.literal('')),
   positionTags: z.array(z.string()).optional().default([]),
-  intensity: z.enum(['low', 'mod', 'high']).optional(),
   isGlobal: z.boolean().optional().default(true),
   isCustom: z.boolean().optional().default(false),
   descriptionEN: z.string().optional(),

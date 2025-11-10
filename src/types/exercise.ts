@@ -22,15 +22,12 @@ export interface ExerciseCategoryData {
  */
 export type ExerciseCategory = string;
 
-export type Intensity = 'low' | 'mod' | 'high';
-
 export interface Exercise {
   id: string;
   name: string;
   category: string;  // Now stores ExerciseCategoryData.key
   youtubeUrl?: string;
   positionTags?: Position[];
-  intensity?: Intensity;
   isGlobal?: boolean;
   createdBy?: string;
   isCustom?: boolean;

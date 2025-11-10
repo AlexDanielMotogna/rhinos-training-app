@@ -318,7 +318,6 @@ model Exercise {
   category      String   // References ExerciseCategory.key (e.g., "strength", "speed")
   youtubeUrl    String?  // YouTube URL
   positionTags  String[] // ['RB', 'WR', 'LB', etc.] - empty array means all positions
-  intensity     String?  // 'low' | 'mod' | 'high'
   isGlobal      Boolean  @default(true)  // Global exercises vs custom
   createdBy     String?  @db.ObjectId    // Coach who created it (null for system exercises)
   isCustom      Boolean  @default(false) // Custom exercise flag

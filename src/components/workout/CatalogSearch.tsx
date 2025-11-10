@@ -196,14 +196,6 @@ export const CatalogSearch: React.FC<CatalogSearchProps> = ({
                                 color="primary"
                                 sx={{ height: 20, fontSize: '0.7rem' }}
                               />
-                              {exercise.intensity && (
-                                <Chip
-                                  label={exercise.intensity}
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ height: 20, fontSize: '0.7rem' }}
-                                />
-                              )}
                             </Box>
                           </CardContent>
                         </CardActionArea>

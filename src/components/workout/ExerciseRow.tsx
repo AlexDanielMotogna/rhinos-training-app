@@ -22,12 +22,6 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
 }) => {
   const { t } = useI18n();
 
-  const intensityColors = {
-    low: 'success',
-    mod: 'warning',
-    high: 'error',
-  } as const;
-
   return (
     <Box
       sx={{
@@ -53,14 +47,6 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
             size="small"
             sx={{ height: 24 }}
           />
-          {exercise.intensity && (
-            <Chip
-              label={exercise.intensity.toUpperCase()}
-              size="small"
-              color={intensityColors[exercise.intensity]}
-              sx={{ height: 24 }}
-            />
-          )}
           {targetSets && (
             <Chip
               label={`${targetSets} sets`}

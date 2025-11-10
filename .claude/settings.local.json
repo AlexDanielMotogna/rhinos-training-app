@@ -15,7 +15,8 @@
       "Bash(npx prisma db push)",
       "Bash(del nul)",
       "Bash(del backendnul)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
