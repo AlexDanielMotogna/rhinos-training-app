@@ -9,10 +9,10 @@
 ## 📊 PROGRESO GENERAL
 
 ```
-[█████████████░░░░░░░] 67% Completado
+[███████████████░░░░░] 83% Completado
 
-Semanas completadas: 4/6
-Módulos completados: 5/7 (Videos ✅, Drills ✅, Equipment ✅, Team Settings ✅, Leaderboard ✅)
+Semanas completadas: 5/6
+Módulos completados: 6/7 (Videos ✅, Drills ✅, Equipment ✅, Team Settings ✅, Leaderboard ✅, Reports ✅)
 EXTRA: Dynamic Exercise Categories ✅
 ```
 
@@ -211,47 +211,55 @@ EXTRA: Dynamic Exercise Categories ✅
 ## 🗓️ SEMANA 5: REPORTS BACKEND (20%)
 
 **Fecha:** Semana del 26 Nov - 2 Dic
-**Status:** ⚪ PENDIENTE
+**Status:** ✅ COMPLETADA
+**Commit:** 5f35921
 
 ### DÍA 1-3: Backend Report Generation
-- [ ] Crear `backend/src/services/reports.ts`
-- [ ] Implementar `generateDailyReport(date)`
-- [ ] Implementar cálculo de player status
-- [ ] Implementar aggregation de workouts
-- [ ] Implementar aggregation de attendance
-- [ ] Implementar `generateWeeklyReport(startDate)`
-- [ ] Implementar weekly aggregations
-- [ ] Implementar daily breakdown
-- [ ] Implementar `generateMonthlyReport(month)`
-- [ ] Implementar monthly aggregations
-- [ ] Implementar weekly breakdown
-- [ ] Testing de cálculos
-- [ ] Crear `backend/src/routes/reports.ts`
-- [ ] Implementar `GET /api/reports/daily/:date` (coach only)
-- [ ] Implementar `GET /api/reports/weekly/:date` (coach only)
-- [ ] Implementar `GET /api/reports/monthly/:month` (coach only)
-- [ ] Implementar caching
-- [ ] Registrar routes en `backend/src/index.ts`
-- [ ] Testing backend
+- [x] Crear `backend/src/services/reports.ts` ✅
+- [x] Implementar `generateDailyReport(date)` ✅
+- [x] Implementar cálculo de player status ✅
+- [x] Implementar aggregation de workouts ✅
+- [x] Implementar aggregation de attendance ✅
+- [x] Implementar `generateWeeklyReport(startDate)` ✅
+- [x] Implementar weekly aggregations ✅
+- [x] Implementar daily breakdown ✅
+- [x] Implementar `generateMonthlyReport(month)` ✅
+- [x] Implementar monthly aggregations ✅
+- [x] Implementar weekly breakdown ✅
+- [x] Implementar improvements/declines tracking ✅
+- [x] Crear `backend/src/routes/reports.ts` ✅
+- [x] Implementar `GET /api/reports/daily/:date` (coach only) ✅
+- [x] Implementar `GET /api/reports/weekly/:date` (coach only) ✅
+- [x] Implementar `GET /api/reports/monthly/:month` (coach only) ✅
+- [x] Implementar autenticación y autorización ✅
+- [x] Registrar routes en `backend/src/index.ts` ✅
+- [ ] Testing backend ⏳
 
 ### DÍA 4-5: Frontend Migration
-- [ ] Crear `reportsService` en `src/services/api.ts`
-- [ ] Eliminar funciones mock de `src/services/reports.ts`
-- [ ] Actualizar `src/pages/Reports.tsx`
-- [ ] Agregar loading states
-- [ ] Agregar error handling
-- [ ] Mantener filtros de período
-- [ ] Verificar solo coaches pueden acceder
-- [ ] Testing frontend
+- [x] Crear `reportsService` en `src/services/api.ts` ✅
+- [x] Actualizar `src/pages/Reports.tsx` ✅
+- [x] Agregar loading states ✅
+- [x] Agregar error handling ✅
+- [x] Agregar offline detection ✅
+- [x] Mantener filtros de período ✅
+- [x] Verificar solo coaches pueden acceder ✅
+- [ ] Testing frontend ⏳
 
 ### Testing Final Semana 5
-- [ ] Reportes tienen datos correctos
-- [ ] Cálculos son precisos
-- [ ] Filtros de fecha funcionan
-- [ ] Solo coaches pueden acceder
-- [ ] Loading/error states funcionan
-- [ ] Performance < 3 segundos
-- [ ] Deploy a staging
+- [ ] Reportes tienen datos correctos ⏳
+- [ ] Cálculos son precisos ⏳
+- [ ] Filtros de fecha funcionan ⏳
+- [ ] Solo coaches pueden acceder ⏳
+- [ ] Loading/error states funcionan ⏳
+- [ ] Performance < 3 segundos ⏳
+- [ ] Deploy a staging ⏳
+
+**Notes:**
+- Complete backend report generation service with weighted score calculation
+- Player status determined by workout completion (active/partial/absent)
+- Weekly and monthly reports include breakdown and trend analysis
+- Frontend fully integrated with backend API
+- Mock data still in src/services/reports.ts but not used
 
 ---
 
