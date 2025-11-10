@@ -1125,9 +1125,6 @@ async function seedExercises() {
     console.log(`[SEED] Using coach ${coach.email} as creator`);
 
     let created = 0;
-    let skipped = 0;
-
-    // Create or update exercises
     let updated = 0;
 
     for (const exercise of standardExercises) {
@@ -1136,23 +1133,18 @@ async function seedExercises() {
       });
 
       if (existing) {
-        // Update existing exercise with muscle groups if they don't have them
-        if (!existing.muscleGroups || existing.muscleGroups.length === 0) {
-          await prisma.exercise.update({
-            where: { id: existing.id },
-            data: {
-              muscleGroups: exercise.muscleGroups,
-              descriptionEN: exercise.descriptionEN,
-              descriptionDE: exercise.descriptionDE,
-              youtubeUrl: exercise.youtubeUrl || existing.youtubeUrl,
-            },
-          });
-          updated++;
-          console.log(`[SEED] ↻ Updated: ${exercise.name} (added muscle groups)`);
-        } else {
-          console.log(`[SEED] Exercise "${exercise.name}" already exists with muscle groups, skipping...`);
-          skipped++;
-        }
+        // FORCE update all existing exercises with muscle groups
+        await prisma.exercise.update({
+          where: { id: existing.id },
+          data: {
+            muscleGroups: exercise.muscleGroups,
+            descriptionEN: exercise.descriptionEN,
+            descriptionDE: exercise.descriptionDE,
+            youtubeUrl: exercise.youtubeUrl || existing.youtubeUrl,
+          },
+        });
+        updated++;
+        console.log(`[SEED] ↻ Updated: ${exercise.name} (added muscle groups: ${exercise.muscleGroups.join(', ')})`);
         continue;
       }
 
@@ -1173,7 +1165,6 @@ async function seedExercises() {
     console.log(`\n[SEED] ✅ Exercises seed completed!`);
     console.log(`[SEED] Created: ${created} exercises`);
     console.log(`[SEED] Updated: ${updated} exercises (added muscle groups)`);
-    console.log(`[SEED] Skipped: ${skipped} exercises (already have muscle groups)`);
     console.log(`[SEED] Total: ${standardExercises.length} exercises in catalog`);
   } catch (error) {
     console.error('[SEED ERROR] Failed to seed exercises:', error);
