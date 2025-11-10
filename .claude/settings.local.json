@@ -16,7 +16,8 @@
       "Bash(del nul)",
       "Bash(del backendnul)",
       "Bash(cat:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

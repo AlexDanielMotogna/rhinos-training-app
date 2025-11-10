@@ -158,6 +158,17 @@ export const messagesDE = {
   'category.Recovery': 'Regeneration',
   'category.Plyometrics': 'Plyometrie',
 
+  // Muscle Groups
+  'muscleGroup.legs': 'Beine',
+  'muscleGroup.chest': 'Brust',
+  'muscleGroup.back': 'Rücken',
+  'muscleGroup.shoulders': 'Schultern',
+  'muscleGroup.arms': 'Arme',
+  'muscleGroup.core': 'Rumpf',
+  'muscleGroup.full-body': 'Ganzkörper',
+  'muscleGroup.filter': 'Nach Muskelgruppe filtern',
+  'muscleGroup.all': 'Alle Muskelgruppen',
+
   // Notifications
   'notify.hard.title': 'Aktion erforderlich',
   'notify.hard.cta': 'Verstanden',

@@ -170,6 +170,17 @@ export const messagesEN = {
   'category.Recovery': 'Recovery',
   'category.Plyometrics': 'Plyometrics',
 
+  // Muscle Groups
+  'muscleGroup.legs': 'Legs',
+  'muscleGroup.chest': 'Chest',
+  'muscleGroup.back': 'Back',
+  'muscleGroup.shoulders': 'Shoulders',
+  'muscleGroup.arms': 'Arms',
+  'muscleGroup.core': 'Core',
+  'muscleGroup.full-body': 'Full Body',
+  'muscleGroup.filter': 'Filter by Muscle Group',
+  'muscleGroup.all': 'All Muscle Groups',
+
   // Notifications
   'notify.hard.title': 'Action Required',
   'notify.hard.cta': 'I Understand',

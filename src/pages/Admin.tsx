@@ -36,7 +36,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useI18n } from '../i18n/I18nProvider';
-import type { Exercise, ExerciseCategory, Position } from '../types/exercise';
+import type { Exercise, ExerciseCategory, Position, MuscleGroup } from '../types/exercise';
 import type { TrainingTemplate, TrainingAssignment } from '../types/trainingBuilder';
 // Note: TrainingTypes now loaded from backend via trainingTypeService
 import { getUser } from '../services/userProfile';
@@ -96,6 +96,7 @@ export const Admin: React.FC = () => {
   const [newExercise, setNewExercise] = useState<Partial<Exercise & { trainingTypes?: string[] }>>({
     name: '',
     category: 'strength', // Default to first category key
+    muscleGroups: [],
     isGlobal: true,
     youtubeUrl: '',
     trainingTypes: [],
@@ -371,6 +372,7 @@ export const Admin: React.FC = () => {
       setNewExercise({
         name: '',
         category: 'Strength',
+        muscleGroups: [],
         isGlobal: true,
         youtubeUrl: '',
       });
@@ -391,6 +393,7 @@ export const Admin: React.FC = () => {
         const created = await exerciseService.create({
           name: newExercise.name!,
           category: newExercise.category!,
+          muscleGroups: newExercise.muscleGroups || [],
           isGlobal: true,
           positionTags: [], // Empty array - exercises are universal
           youtubeUrl: newExercise.youtubeUrl,
@@ -404,6 +407,7 @@ export const Admin: React.FC = () => {
       setNewExercise({
         name: '',
         category: 'Strength',
+        muscleGroups: [],
         isGlobal: true,
         youtubeUrl: '',
         trainingTypes: [],
@@ -1753,6 +1757,29 @@ export const Admin: React.FC = () => {
                       />
                       {cat.nameEN}
                     </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>{t('muscleGroup.filter')}</InputLabel>
+              <Select
+                multiple
+                value={newExercise.muscleGroups || []}
+                label={t('muscleGroup.filter')}
+                onChange={(e) => setNewExercise({ ...newExercise, muscleGroups: e.target.value as MuscleGroup[] })}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as MuscleGroup[]).map((value) => (
+                      <Chip key={value} label={t(`muscleGroup.${value}` as any)} size="small" />
+                    ))}
+                  </Box>
+                )}
+              >
+                {(['legs', 'chest', 'back', 'shoulders', 'arms', 'core', 'full-body'] as MuscleGroup[]).map((group) => (
+                  <MenuItem key={group} value={group}>
+                    {t(`muscleGroup.${group}` as any)}
                   </MenuItem>
                 ))}
               </Select>

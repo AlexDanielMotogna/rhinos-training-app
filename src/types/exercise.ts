@@ -1,5 +1,7 @@
 export type Position = 'RB' | 'WR' | 'LB' | 'OL' | 'DB' | 'QB' | 'DL' | 'TE' | 'K/P';
 
+export type MuscleGroup = 'legs' | 'chest' | 'back' | 'shoulders' | 'arms' | 'core' | 'full-body';
+
 /**
  * Exercise Category - Now stored in backend database
  */
@@ -28,6 +30,7 @@ export interface Exercise {
   category: string;  // Now stores ExerciseCategoryData.key
   youtubeUrl?: string;
   positionTags?: Position[];
+  muscleGroups?: MuscleGroup[];
   isGlobal?: boolean;
   createdBy?: string;
   isCustom?: boolean;
