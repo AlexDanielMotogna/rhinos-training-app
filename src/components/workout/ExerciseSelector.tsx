@@ -65,6 +65,24 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     'full-body',
   ];
 
+  // Force refresh exercises from backend
+  const forceRefresh = async () => {
+    console.log('🔄 Force refreshing exercises from backend...');
+    try {
+      const backendExercises = await exerciseService.getAll() as Exercise[];
+      console.log('📥 Received from backend:', backendExercises.length, 'exercises');
+
+      // Clear and update IndexedDB cache
+      await db.exercises.clear();
+      await db.exercises.bulkPut(backendExercises);
+
+      setExercises(backendExercises);
+      console.log(`✅ Loaded ${backendExercises.length} exercises from backend`);
+    } catch (error) {
+      console.error('❌ Failed to refresh exercises:', error);
+    }
+  };
+
   // Load exercises from backend when dialog opens
   useEffect(() => {
     const loadExercises = async () => {
