@@ -56,7 +56,6 @@ router.get('/', async (req, res) => {
     res.json(sessions.map(s => ({
       ...s,
       attendees: s.attendees as any,
-      checkIns: s.checkIns as any || [],
       version: 1,
       updatedAt: s.updatedAt.toISOString(),
     })));
@@ -85,7 +84,6 @@ router.get('/:id', async (req, res) => {
     res.json({
       ...session,
       attendees: session.attendees as any,
-      checkIns: session.checkIns as any || [],
       version: 1,
       updatedAt: session.updatedAt.toISOString(),
     });
@@ -106,6 +104,7 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Create session with auto-created attendance poll
     const session = await prisma.trainingSession.create({
       data: {
         creatorId: userId,
@@ -119,7 +118,22 @@ router.post('/', async (req, res) => {
         time: data.time,
         description: data.description,
         attendees: data.attendees as any,
-        checkIns: [],
+      },
+    });
+
+    // Auto-create attendance poll for the session
+    const expiresAt = new Date(data.date);
+    expiresAt.setHours(23, 59, 59, 999); // Expires at end of session date
+
+    await prisma.attendancePoll.create({
+      data: {
+        sessionId: session.id,
+        sessionName: data.title,
+        sessionDate: data.date,
+        createdBy: userId,
+        createdAt: new Date().toISOString(),
+        expiresAt: expiresAt.toISOString(),
+        isActive: true,
       },
     });
 
@@ -158,7 +172,6 @@ router.post('/', async (req, res) => {
     res.status(201).json({
       ...session,
       attendees: session.attendees as any,
-      checkIns: [],
       version: 1,
       updatedAt: session.updatedAt.toISOString(),
     });
@@ -201,7 +214,6 @@ router.patch('/:id', async (req, res) => {
     res.json({
       ...updated,
       attendees: updated.attendees as any,
-      checkIns: updated.checkIns as any || [],
       version: 1,
       updatedAt: updated.updatedAt.toISOString(),
     });

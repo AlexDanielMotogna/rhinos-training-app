@@ -80,7 +80,7 @@ model TrainingSession {
   description     String?
 
   attendees       Json     // Array of {userId, userName, status: RSVPStatus}
-  checkIns        Json?    // Array of {userId, userName, status, time}
+  // checkIns field removed - attendance is now tracked via AttendancePoll votes
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

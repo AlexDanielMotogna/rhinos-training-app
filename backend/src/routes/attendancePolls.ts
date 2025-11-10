@@ -278,6 +278,51 @@ router.get('/:id/results', async (req, res) => {
   }
 });
 
+// GET /api/attendance-polls/:id/attendees - Get list of confirmed attendees
+// Returns users who voted 'training' or 'present' (confirmed to attend)
+router.get('/:id/attendees', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const poll = await prisma.attendancePoll.findUnique({
+      where: { id },
+      include: {
+        votes: {
+          where: {
+            OR: [
+              { option: 'training' },
+              { option: 'present' }
+            ]
+          }
+        },
+      },
+    });
+
+    if (!poll) {
+      return res.status(404).json({ error: 'Poll not found' });
+    }
+
+    // Return list of attendees with their details
+    const attendees = poll.votes.map(vote => ({
+      userId: vote.userId,
+      userName: vote.userName,
+      userPosition: vote.userPosition,
+      option: vote.option,
+      timestamp: vote.timestamp,
+    }));
+
+    res.json({
+      sessionName: poll.sessionName,
+      sessionDate: poll.sessionDate,
+      totalAttendees: attendees.length,
+      attendees,
+    });
+  } catch (error) {
+    console.error('[POLLS] Get attendees error:', error);
+    res.status(500).json({ error: 'Failed to fetch attendees' });
+  }
+});
+
 // PATCH /api/attendance-polls/:id/close - Close/deactivate a poll
 router.patch('/:id/close', async (req, res) => {
   try {

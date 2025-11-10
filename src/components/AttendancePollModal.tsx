@@ -12,6 +12,10 @@ import {
   Divider,
   Chip,
   IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Avatar,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
@@ -21,11 +25,20 @@ import { useI18n } from '../i18n/I18nProvider';
 import { submitVote, getPollResults, getUserVote } from '../services/attendancePollService';
 import { getUser } from '../services/userProfile';
 import type { AttendancePoll } from '../types/attendancePoll';
+import { apiCall } from '../services/api';
 
 interface AttendancePollModalProps {
   poll: AttendancePoll;
   onClose: () => void;
   canDismiss?: boolean; // If false, user must vote before closing
+}
+
+interface Attendee {
+  userId: string;
+  userName: string;
+  userPosition?: string;
+  option: 'training' | 'present';
+  timestamp: string;
 }
 
 export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
@@ -39,42 +52,52 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
   const [results, setResults] = useState<any>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isChangingVote, setIsChangingVote] = useState(false);
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
 
   useEffect(() => {
+    loadPollData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poll.id]);
+
+  const loadPollData = async () => {
     if (!currentUser || isLoading) return;
 
-    // Check if user has already voted - only run once on mount
-    const checkVote = async () => {
-      setIsLoading(true);
+    setIsLoading(true);
+    try {
+      console.log('[POLL DEBUG] Loading poll data for user:', currentUser.id, 'poll:', poll.id);
+
+      // Load vote status
+      const existingVote = await getUserVote(poll.id, currentUser.id);
+      console.log('[POLL DEBUG] Existing vote found:', existingVote);
+
+      // Load results
+      const pollResults = await getPollResults(poll.id);
+      console.log('[POLL DEBUG] Poll results:', pollResults);
+      setResults(pollResults);
+
+      // Load attendees list (for all users)
       try {
-        console.log('[POLL DEBUG] Checking vote for user:', currentUser.id, 'poll:', poll.id);
-
-        // Always get fresh data from backend to avoid stale state
-        const existingVote = await getUserVote(poll.id, currentUser.id);
-        console.log('[POLL DEBUG] Existing vote found:', existingVote);
-
-        // Load results (this will also fetch from backend if online)
-        const pollResults = await getPollResults(poll.id);
-        console.log('[POLL DEBUG] Poll results:', pollResults);
-        setResults(pollResults);
-
-        if (existingVote) {
-          console.log('[POLL DEBUG] User has voted:', existingVote.option);
-          setSelectedOption(existingVote.option);
-          setHasVoted(true);
-        } else {
-          console.log('[POLL DEBUG] User has not voted yet');
-          setHasVoted(false);
-          setSelectedOption(null);
-        }
-      } finally {
-        setIsLoading(false);
+        const attendeesData = await apiCall(`/attendance-polls/${poll.id}/attendees`);
+        setAttendees(attendeesData.attendees || []);
+      } catch (err) {
+        console.error('[POLL] Failed to load attendees:', err);
+        setAttendees([]);
       }
-    };
 
-    checkVote();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poll.id]); // Only re-run if poll changes, not on currentUser changes
+      if (existingVote) {
+        console.log('[POLL DEBUG] User has voted:', existingVote.option);
+        setSelectedOption(existingVote.option);
+        setHasVoted(true);
+      } else {
+        console.log('[POLL DEBUG] User has not voted yet');
+        setHasVoted(false);
+        setSelectedOption(null);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!currentUser || !selectedOption) return;
@@ -84,22 +107,26 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
     console.log('[POLL DEBUG] Vote submission result:', success);
 
     if (success) {
-      // Refresh vote status from backend to ensure consistency
-      const existingVote = await getUserVote(poll.id, currentUser.id);
-      if (existingVote) {
-        setSelectedOption(existingVote.option);
-        setHasVoted(true);
+      // Reload all poll data
+      await loadPollData();
+
+      setIsChangingVote(false);
+
+      // Auto-close after voting (unless changing vote)
+      if (!hasVoted) {
+        setTimeout(() => onClose(), canDismiss ? 1500 : 2000);
       }
-
-      // Get fresh results from backend
-      const newResults = await getPollResults(poll.id);
-      setResults(newResults);
-
-      // Auto-close after voting
-      // For mandatory polls (canDismiss=false), close after a short delay
-      // For optional polls (canDismiss=true), close immediately
-      setTimeout(() => onClose(), canDismiss ? 1500 : 2000);
     }
+  };
+
+  const handleChangeVote = () => {
+    setIsChangingVote(true);
+  };
+
+  const handleCancelChange = () => {
+    // Restore original vote
+    setIsChangingVote(false);
+    // selectedOption already has the original vote
   };
 
   const handleClose = () => {
@@ -141,6 +168,8 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
     });
   };
 
+  const showVotingInterface = !hasVoted || isChangingVote;
+
   return (
     <Dialog
       open={true}
@@ -171,133 +200,10 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
       <Divider />
 
       <DialogContent>
-        {hasVoted ? (
-          <>
-            <Box sx={{ textAlign: 'center', py: 2, mb: 3 }}>
-              <Typography variant="h6" color="success.main" gutterBottom>
-                {t('attendancePoll.thankYou')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('attendancePoll.voteRecorded')}
-              </Typography>
-            </Box>
-
-            <Typography variant="subtitle2" sx={{ mb: 2 }}>
-              {t('attendancePoll.results')}
-            </Typography>
-
-            {/* Results */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {/* Training */}
-              <Box
-                sx={{
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: selectedOption === 'training' ? 'success.main' : 'grey.300',
-                  borderRadius: 2,
-                  backgroundColor: selectedOption === 'training' ? 'success.light' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{ color: 'success.main' }}>
-                    {getOptionIcon('training')}
-                  </Box>
-                  <Box>
-                    <Typography variant="body1" fontWeight="bold">
-                      {t('attendancePoll.training')}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {t('attendancePoll.trainingDesc')}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Chip
-                  label={results?.training || 0}
-                  color="success"
-                  sx={{ minWidth: 50, fontWeight: 'bold', fontSize: 16 }}
-                />
-              </Box>
-
-              {/* Present (bin dabei) */}
-              <Box
-                sx={{
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: selectedOption === 'present' ? 'info.main' : 'grey.300',
-                  borderRadius: 2,
-                  backgroundColor: selectedOption === 'present' ? 'info.light' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{ color: 'info.main' }}>
-                    {getOptionIcon('present')}
-                  </Box>
-                  <Box>
-                    <Typography variant="body1" fontWeight="bold">
-                      {t('attendancePoll.present')}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {t('attendancePoll.presentDesc')}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Chip
-                  label={results?.present || 0}
-                  color="info"
-                  sx={{ minWidth: 50, fontWeight: 'bold', fontSize: 16 }}
-                />
-              </Box>
-
-              {/* Absent */}
-              <Box
-                sx={{
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: selectedOption === 'absent' ? 'error.main' : 'grey.300',
-                  borderRadius: 2,
-                  backgroundColor: selectedOption === 'absent' ? 'error.light' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{ color: 'error.main' }}>
-                    {getOptionIcon('absent')}
-                  </Box>
-                  <Box>
-                    <Typography variant="body1" fontWeight="bold">
-                      {t('attendancePoll.absent')}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {t('attendancePoll.absentDesc')}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Chip
-                  label={results?.absent || 0}
-                  color="error"
-                  sx={{ minWidth: 50, fontWeight: 'bold', fontSize: 16 }}
-                />
-              </Box>
-            </Box>
-
-            <Box sx={{ mt: 3, textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary">
-                {t('attendancePoll.totalVotes')}: {results?.totalVotes || 0}
-              </Typography>
-            </Box>
-          </>
-        ) : (
+        {showVotingInterface ? (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {t('attendancePoll.question')}
+              {isChangingVote ? t('attendancePoll.changeQuestion') : t('attendancePoll.question')}
             </Typography>
 
             <RadioGroup
@@ -421,22 +327,201 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
               </Box>
             </RadioGroup>
 
-            <Button
-              variant="contained"
-              fullWidth
-              size="large"
-              onClick={handleSubmit}
-              disabled={!selectedOption}
-              sx={{ mt: 3 }}
-            >
-              {t('attendancePoll.submitVote')}
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+              {isChangingVote && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  size="large"
+                  onClick={handleCancelChange}
+                >
+                  {t('common.cancel')}
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                fullWidth
+                size="large"
+                onClick={handleSubmit}
+                disabled={!selectedOption}
+              >
+                {isChangingVote ? t('attendancePoll.updateVote') : t('attendancePoll.submitVote')}
+              </Button>
+            </Box>
 
-            {!canDismiss && (
+            {!canDismiss && !isChangingVote && (
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2 }}>
                 {t('attendancePoll.mustVote')}
               </Typography>
             )}
+          </>
+        ) : (
+          <>
+            <Box sx={{ textAlign: 'center', py: 2, mb: 3 }}>
+              <Typography variant="h6" color="success.main" gutterBottom>
+                {t('attendancePoll.thankYou')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('attendancePoll.voteRecorded')}
+              </Typography>
+            </Box>
+
+            {/* Change Vote Button */}
+            <Box sx={{ mb: 3, textAlign: 'center' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleChangeVote}
+              >
+                {t('attendancePoll.changeVote')}
+              </Button>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Attendees List - Visible to all users */}
+            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+              {t('attendancePoll.attendeesList')} ({attendees.length})
+            </Typography>
+
+            {attendees.length > 0 ? (
+              <List dense sx={{ maxHeight: 200, overflow: 'auto' }}>
+                {attendees.map((attendee) => (
+                  <ListItem key={attendee.userId}>
+                    <Avatar sx={{ width: 32, height: 32, mr: 2, fontSize: '0.875rem' }}>
+                      {attendee.userName.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <ListItemText
+                      primary={attendee.userName}
+                      secondary={attendee.userPosition || ''}
+                    />
+                    <Chip
+                      size="small"
+                      label={attendee.option === 'training' ? t('attendancePoll.training') : t('attendancePoll.present')}
+                      color={attendee.option === 'training' ? 'success' : 'info'}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>
+                {t('attendancePoll.noAttendees')}
+              </Typography>
+            )}
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Results Summary */}
+            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+              {t('attendancePoll.results')}
+            </Typography>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Training */}
+              <Box
+                sx={{
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: selectedOption === 'training' ? 'success.main' : 'grey.300',
+                  borderRadius: 2,
+                  backgroundColor: selectedOption === 'training' ? 'success.light' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ color: 'success.main' }}>
+                    {getOptionIcon('training')}
+                  </Box>
+                  <Box>
+                    <Typography variant="body1" fontWeight="bold">
+                      {t('attendancePoll.training')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('attendancePoll.trainingDesc')}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Chip
+                  label={results?.training || 0}
+                  color="success"
+                  sx={{ minWidth: 50, fontWeight: 'bold', fontSize: 16 }}
+                />
+              </Box>
+
+              {/* Present */}
+              <Box
+                sx={{
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: selectedOption === 'present' ? 'info.main' : 'grey.300',
+                  borderRadius: 2,
+                  backgroundColor: selectedOption === 'present' ? 'info.light' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ color: 'info.main' }}>
+                    {getOptionIcon('present')}
+                  </Box>
+                  <Box>
+                    <Typography variant="body1" fontWeight="bold">
+                      {t('attendancePoll.present')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('attendancePoll.presentDesc')}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Chip
+                  label={results?.present || 0}
+                  color="info"
+                  sx={{ minWidth: 50, fontWeight: 'bold', fontSize: 16 }}
+                />
+              </Box>
+
+              {/* Absent */}
+              <Box
+                sx={{
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: selectedOption === 'absent' ? 'error.main' : 'grey.300',
+                  borderRadius: 2,
+                  backgroundColor: selectedOption === 'absent' ? 'error.light' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ color: 'error.main' }}>
+                    {getOptionIcon('absent')}
+                  </Box>
+                  <Box>
+                    <Typography variant="body1" fontWeight="bold">
+                      {t('attendancePoll.absent')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('attendancePoll.absentDesc')}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Chip
+                  label={results?.absent || 0}
+                  color="error"
+                  sx={{ minWidth: 50, fontWeight: 'bold', fontSize: 16 }}
+                />
+              </Box>
+            </Box>
+
+            <Box sx={{ mt: 3, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">
+                {t('attendancePoll.totalVotes')}: {results?.totalVotes || 0}
+              </Typography>
+            </Box>
           </>
         )}
       </DialogContent>
