@@ -268,6 +268,7 @@ export const messagesEN = {
   'attendancePoll.mustVote': 'Please respond to continue using the app',
   'attendancePoll.attendeesList': 'Who\'s Coming',
   'attendancePoll.noAttendees': 'No one has confirmed attendance yet',
+  'attendancePoll.viewPoll': 'View Attendance',
   'attendancePoll.createPoll': 'Create Attendance Poll',
   'attendancePoll.created': 'Attendance poll created successfully! Players will see it when they open the app.',
   'attendancePoll.alreadyExists': 'An active poll already exists for this session.',

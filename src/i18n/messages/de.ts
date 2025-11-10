@@ -256,6 +256,7 @@ export const messagesDE = {
   'attendancePoll.mustVote': 'Bitte antworte, um die App weiter zu nutzen',
   'attendancePoll.attendeesList': 'Wer kommt',
   'attendancePoll.noAttendees': 'Niemand hat die Teilnahme bestätigt',
+  'attendancePoll.viewPoll': 'Anwesenheit ansehen',
   'attendancePoll.createPoll': 'Anwesenheitsumfrage erstellen',
   'attendancePoll.created': 'Anwesenheitsumfrage erfolgreich erstellt! Spieler sehen sie, wenn sie die App öffnen.',
   'attendancePoll.alreadyExists': 'Es existiert bereits eine aktive Umfrage für diese Einheit.',

@@ -30,23 +30,21 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import GroupsIcon from '@mui/icons-material/Groups';
 import PersonIcon from '@mui/icons-material/Person';
-import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import CircleIcon from '@mui/icons-material/Circle';
 import CloseIcon from '@mui/icons-material/Close';
 import SportsFootballIcon from '@mui/icons-material/SportsFootball';
+import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import { useI18n } from '../i18n/I18nProvider';
 import { getUser, getAllUsers } from '../services/userProfile';
+import { AttendancePollModal } from '../components/AttendancePollModal';
 import {
   getTeamSessions,
   getPrivateSessions,
   createSession,
   updateRSVP,
   deleteSession,
-  canCheckIn,
-  checkInToSession,
-  getCheckInStatus,
 } from '../services/trainingSessions';
-import { createPoll, getAllPolls, getPollResults } from '../services/attendancePollService';
+import { getAllPolls, getPollResults } from '../services/attendancePollService';
 import type { TrainingSession, SessionType, RSVPStatus } from '../types/trainingSession';
 import type { Position } from '../types/exercise';
 import type { AttendancePollVote } from '../types/attendancePoll';
@@ -66,6 +64,8 @@ export const TrainingSessions: React.FC = () => {
   const [pollResults, setPollResults] = useState<Map<string, any>>(new Map());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [selectedPoll, setSelectedPoll] = useState<any>(null);
+  const [pollModalOpen, setPollModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     type: 'gym' as SessionType,
     title: '',
@@ -151,46 +151,24 @@ export const TrainingSessions: React.FC = () => {
     await loadSessions();
   };
 
-  const handleCheckIn = async (session: TrainingSession) => {
-    if (!currentUser || !canCheckIn(session)) return;
-
-    await checkInToSession(session.id, currentUser.id, currentUser.name);
-    setSuccessMessage(t('trainingSessions.checkedIn'));
-    setTimeout(() => setSuccessMessage(''), 3000);
-    await loadSessions();
-  };
 
   const handleDeleteSession = async (sessionId: string) => {
     await deleteSession(sessionId);
     await loadSessions();
   };
 
-  const handleCreatePoll = async (session: TrainingSession) => {
-    if (!currentUser) return;
-
-    // Check if poll already exists for this session
-    if (sessionPolls.has(session.id)) {
-      alert(t('attendancePoll.alreadyExists'));
-      return;
+  const handleOpenPoll = (session: TrainingSession) => {
+    const poll = getSessionPoll(session.id);
+    if (poll) {
+      setSelectedPoll(poll);
+      setPollModalOpen(true);
     }
+  };
 
-    // Set expiry to 24 hours after creation (for easier testing)
-    // In production, you might want to set it to 1 hour before session
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    await createPoll(
-      session.id,
-      session.title,
-      session.date,
-      currentUser.name,
-      expiresAt
-    );
-
-    // Reload polls to update UI
-    await loadPolls();
-
-    setSuccessMessage(t('attendancePoll.created'));
-    setTimeout(() => setSuccessMessage(''), 4000);
+  const handleClosePollModal = () => {
+    setPollModalOpen(false);
+    setSelectedPoll(null);
+    loadPolls(); // Refresh poll data
   };
 
   const getSessionPoll = (sessionId: string) => {
@@ -222,18 +200,6 @@ export const TrainingSessions: React.FC = () => {
     }
   };
 
-  const getCheckInStatusColor = (status: string) => {
-    switch (status) {
-      case 'on_time':
-        return 'success';
-      case 'late':
-        return 'warning';
-      case 'absent':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
 
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
@@ -271,9 +237,6 @@ export const TrainingSessions: React.FC = () => {
       <Grid container spacing={2}>
         {teamSessions.map((session) => {
           const isCreator = session.creatorId === currentUser?.id;
-          const checkInStatus = currentUser ? getCheckInStatus(session, currentUser.id) : null;
-          const canCheck = canCheckIn(session);
-          const checkedIn = checkInStatus === 'on_time' || checkInStatus === 'late';
 
           return (
             <Grid item xs={12} md={6} key={session.id}>
@@ -300,24 +263,13 @@ export const TrainingSessions: React.FC = () => {
                       </Typography>
                     </Box>
                     {isCreator && currentUser?.role === 'coach' && (
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <Tooltip title={t('attendancePoll.createPoll')}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleCreatePoll(session)}
-                            color={getSessionPoll(session.id) ? 'success' : 'default'}
-                          >
-                            <HowToVoteIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteSession(session.id)}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteSession(session.id)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
                     )}
                   </Box>
 
@@ -343,57 +295,24 @@ export const TrainingSessions: React.FC = () => {
                     </Typography>
                   )}
 
-                  {/* Check-in Status */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                    <Box>
-                      {checkInStatus && (
-                        <Chip
-                          label={t(`trainingSessions.checkInStatus.${checkInStatus}`)}
-                          color={getCheckInStatusColor(checkInStatus) as any}
-                          size="small"
-                          icon={checkedIn ? <CheckCircleIcon /> : undefined}
-                        />
-                      )}
-                      {!checkInStatus && (
-                        <Chip
-                          label={t('trainingSessions.notCheckedIn')}
-                          color="default"
-                          size="small"
-                        />
-                      )}
-                    </Box>
+                  {/* Poll Access Button - Available to ALL users */}
+                  {(() => {
+                    const poll = getSessionPoll(session.id);
+                    if (!poll) return null;
 
-                    {!checkedIn && currentUser?.role === 'player' && (
-                      <Button
-                        size="small"
-                        variant="contained"
-                        startIcon={<CheckCircleIcon />}
-                        onClick={() => handleCheckIn(session)}
-                        disabled={!canCheck}
-                      >
-                        {t('trainingSessions.checkIn')}
-                      </Button>
-                    )}
-                  </Box>
-
-                  {/* Show who checked in (for coaches) */}
-                  {currentUser?.role === 'coach' && session.checkIns && session.checkIns.length > 0 && (
-                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(0,0,0,0.12)' }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                        {t('trainingSessions.checkedInCount', { count: session.checkIns.length })}
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {session.checkIns.map((checkIn) => (
-                          <Chip
-                            key={checkIn.userId}
-                            label={checkIn.userName}
-                            size="small"
-                            color={getCheckInStatusColor(checkIn.status) as any}
-                          />
-                        ))}
+                    return (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+                        <Button
+                          variant="contained"
+                          startIcon={<HowToVoteIcon />}
+                          onClick={() => handleOpenPoll(session)}
+                          sx={{ minWidth: 200 }}
+                        >
+                          {t('attendancePoll.viewPoll')}
+                        </Button>
                       </Box>
-                    </Box>
-                  )}
+                    );
+                  })()}
 
                   {/* Show poll results (for coaches) */}
                   {currentUser?.role === 'coach' && (() => {
@@ -937,6 +856,16 @@ export const TrainingSessions: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Attendance Poll Modal */}
+      {selectedPoll && currentUser && (
+        <AttendancePollModal
+          open={pollModalOpen}
+          poll={selectedPoll}
+          currentUser={currentUser}
+          onClose={handleClosePollModal}
+        />
+      )}
     </Box>
   );
 };
