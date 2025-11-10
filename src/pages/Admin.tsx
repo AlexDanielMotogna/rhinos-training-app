@@ -1372,60 +1372,17 @@ export const Admin: React.FC = () => {
       {/* Sessions Management Tab */}
       {activeTab === 4 && (
         <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
               {t('admin.teamSessions')} ({sessions.length})
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                startIcon={<NotificationsIcon />}
-                onClick={async () => {
-                  console.log('=== NOTIFICATION TEST START ===');
-
-                  const status = getNotificationStatus();
-                  console.log('Notification status:', status);
-
-                  if (!status.supported) {
-                    alert('❌ Tu navegador no soporta notificaciones');
-                    return;
-                  }
-                  if (status.permission === 'denied') {
-                    alert('❌ Notificaciones bloqueadas. Habilítalas en la configuración del navegador.');
-                    return;
-                  }
-
-                  console.log('Requesting permission...');
-                  const granted = await requestNotificationPermission();
-                  console.log('Permission granted:', granted);
-
-                  if (granted) {
-                    console.log('Sending test notification...');
-                    const sent = await NotificationTemplates.testNotification();
-                    console.log('Notification sent:', sent);
-
-                    if (sent) {
-                      alert('✅ Notificación enviada! Revisa la barra de notificaciones');
-                    } else {
-                      alert('❌ Error al enviar notificación. Revisa la consola.');
-                    }
-                  } else {
-                    alert('❌ Permiso de notificaciones denegado');
-                  }
-
-                  console.log('=== NOTIFICATION TEST END ===');
-                }}
-              >
-                Test Notification
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setSessionDialogOpen(true)}
-              >
-                {t('admin.addSession')}
-              </Button>
-            </Box>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setSessionDialogOpen(true)}
+            >
+              {t('admin.addSession')}
+            </Button>
           </Box>
 
           <Grid container spacing={2}>
@@ -1482,7 +1439,7 @@ export const Admin: React.FC = () => {
       )}
 
       {/* Training Types Management Tab */}
-      {activeTab === 4 && (
+      {activeTab === 5 && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
