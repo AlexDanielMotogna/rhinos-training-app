@@ -294,6 +294,7 @@ export const VideosAdmin: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: 'primary.main' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Video</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>Title</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>Type</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>Status</TableCell>
@@ -303,8 +304,41 @@ export const VideosAdmin: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {videos.map((video) => (
+            {videos.map((video) => {
+              // Extract YouTube video ID for thumbnail
+              const videoId = extractYouTubeVideoId(video.youtubeUrl);
+              const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+
+              return (
               <TableRow key={video.id}>
+                <TableCell>
+                  {thumbnailUrl ? (
+                    <Box
+                      component="img"
+                      src={thumbnailUrl}
+                      alt={video.title}
+                      sx={{
+                        width: 120,
+                        height: 68,
+                        objectFit: 'cover',
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          opacity: 0.8,
+                        }
+                      }}
+                      onClick={() => window.open(video.youtubeUrl, '_blank')}
+                      onError={(e) => {
+                        // Replace with error placeholder if thumbnail fails to load
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="68"%3E%3Crect width="120" height="68" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="Arial" font-size="12"%3EInvalid URL%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                  ) : (
+                    <Chip label="No video" size="small" color="default" />
+                  )}
+                </TableCell>
                 <TableCell>
                   <Box>
                     <Typography variant="body2" fontWeight={600}>
@@ -367,7 +401,8 @@ export const VideosAdmin: React.FC = () => {
                   </Box>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
