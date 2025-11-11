@@ -1337,37 +1337,82 @@ export const Admin: React.FC = () => {
               <TableBody>
                 {exercises
                   .slice(exercisePage * exercisesPerPage, (exercisePage + 1) * exercisesPerPage)
-                  .map((exercise) => (
-                    <TableRow key={exercise.id}>
-                      <TableCell>{exercise.name}</TableCell>
-                      <TableCell>
-                        <Chip label={exercise.category} size="small" />
-                      </TableCell>
-                      <TableCell>
-                        {exercise.youtubeUrl ? (
-                          <Chip label="Yes" size="small" color="success" />
-                        ) : (
-                          <Chip label="No" size="small" color="default" />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenExerciseDialog(exercise)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteExercise(exercise.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  .map((exercise) => {
+                    // Extract YouTube video ID from URL
+                    const getYouTubeVideoId = (url: string) => {
+                      if (!url) return null;
+                      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?]+)/);
+                      return match ? match[1] : null;
+                    };
+
+                    const videoId = getYouTubeVideoId(exercise.youtubeUrl || '');
+                    const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+
+                    return (
+                      <TableRow key={exercise.id}>
+                        <TableCell>{exercise.name}</TableCell>
+                        <TableCell>
+                          <Chip label={exercise.category} size="small" />
+                        </TableCell>
+                        <TableCell>
+                          {exercise.youtubeUrl ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {thumbnailUrl && (
+                                <Box
+                                  component="img"
+                                  src={thumbnailUrl}
+                                  alt={exercise.name}
+                                  sx={{
+                                    width: 120,
+                                    height: 68,
+                                    objectFit: 'cover',
+                                    borderRadius: 1,
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                      opacity: 0.8,
+                                    }
+                                  }}
+                                  onClick={() => window.open(exercise.youtubeUrl, '_blank')}
+                                  onError={(e) => {
+                                    // If thumbnail fails to load, show broken indicator
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    const parent = (e.target as HTMLElement).parentElement;
+                                    if (parent) {
+                                      const chip = document.createElement('div');
+                                      chip.textContent = '❌ Video not found';
+                                      chip.style.color = 'red';
+                                      chip.style.fontSize = '12px';
+                                      chip.style.fontWeight = 'bold';
+                                      parent.appendChild(chip);
+                                    }
+                                  }}
+                                />
+                              )}
+                              <Chip label="Yes" size="small" color="success" />
+                            </Box>
+                          ) : (
+                            <Chip label="No" size="small" color="default" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleOpenExerciseDialog(exercise)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteExercise(exercise.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
               </TableBody>
             </Table>
           </TableContainer>
