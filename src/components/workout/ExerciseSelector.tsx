@@ -298,54 +298,88 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           </Box>
         ) : (
           <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-            {filteredExercises.map((exercise) => (
-              <ListItem
-                key={exercise.id}
-                disablePadding
-                secondaryAction={
-                  exercise.youtubeUrl ? (
-                    <IconButton
-                      edge="end"
-                      aria-label="watch video"
-                      onClick={(e) => handleVideoClick(exercise, e)}
-                      size="small"
-                      color="primary"
-                    >
-                      <PlayCircleOutlineIcon />
-                    </IconButton>
-                  ) : null
-                }
-              >
-                <ListItemButton onClick={() => handleSelect(exercise)}>
-                  <ListItemText
-                    primary={exercise.name}
-                    secondary={
-                      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Chip label={exercise.category} size="small" />
-                        {exercise.muscleGroups && exercise.muscleGroups.map((group) => (
-                          <Chip
-                            key={group}
-                            label={t(`muscleGroup.${group}` as any)}
-                            size="small"
-                            variant="outlined"
-                            color="secondary"
-                          />
-                        ))}
-                        {exercise.youtubeUrl && (
-                          <Chip
-                            icon={<PlayCircleOutlineIcon sx={{ fontSize: '0.9rem' }} />}
-                            label="Video"
-                            size="small"
-                            variant="outlined"
-                            color="primary"
-                          />
-                        )}
-                      </Box>
-                    }
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
+            {filteredExercises.map((exercise) => {
+              // Extract YouTube video ID for thumbnail
+              const getYouTubeVideoId = (url: string) => {
+                if (!url) return null;
+                const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?]+)/);
+                return match ? match[1] : null;
+              };
+
+              const videoId = getYouTubeVideoId(exercise.youtubeUrl || '');
+              const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+
+              return (
+                <ListItem
+                  key={exercise.id}
+                  disablePadding
+                  sx={{
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    '&:last-child': { borderBottom: 'none' }
+                  }}
+                >
+                  <ListItemButton
+                    onClick={() => handleSelect(exercise)}
+                    sx={{
+                      py: 1.5,
+                      display: 'flex',
+                      gap: 2,
+                      alignItems: 'flex-start'
+                    }}
+                  >
+                    {/* Thumbnail */}
+                    {thumbnailUrl && (
+                      <Box
+                        component="img"
+                        src={thumbnailUrl}
+                        alt={exercise.name}
+                        sx={{
+                          width: 80,
+                          height: 45,
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          '&:hover': {
+                            opacity: 0.8,
+                          }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVideoClick(exercise, e);
+                        }}
+                        onError={(e) => {
+                          // Hide thumbnail if it fails to load
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+
+                    {/* Exercise Info */}
+                    <ListItemText
+                      primary={exercise.name}
+                      secondary={
+                        <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <Chip label={exercise.category} size="small" />
+                          {exercise.muscleGroups && exercise.muscleGroups.map((group) => (
+                            <Chip
+                              key={group}
+                              label={t(`muscleGroup.${group}` as any)}
+                              size="small"
+                              variant="outlined"
+                              color="secondary"
+                            />
+                          ))}
+                        </Box>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
           </List>
         )}
       </DialogContent>
