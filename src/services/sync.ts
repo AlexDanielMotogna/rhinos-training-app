@@ -484,6 +484,27 @@ async function syncItem(item: any, token: string): Promise<void> {
       }
       break;
 
+    case 'trainingSession':
+      if (item.action === 'create') {
+        url = `${API_URL}/training-sessions`;
+        method = 'POST';
+      } else if (item.action === 'rsvp') {
+        url = `${API_URL}/training-sessions/${item.data.sessionId}/rsvp`;
+        method = 'POST';
+        body = JSON.stringify({ userId: item.data.userId, status: item.data.status });
+      } else if (item.action === 'checkin') {
+        url = `${API_URL}/training-sessions/${item.data.sessionId}/checkin`;
+        method = 'POST';
+        body = JSON.stringify({ userId: item.data.userId });
+      } else if (item.action === 'delete') {
+        url = `${API_URL}/training-sessions/${item.data.sessionId}`;
+        method = 'DELETE';
+        body = '';
+      } else {
+        throw new Error(`Unknown action for trainingSession: ${item.action}`);
+      }
+      break;
+
     case 'assignment':
       url = `${API_URL}/assignments`;
       if (item.action === 'update') {
