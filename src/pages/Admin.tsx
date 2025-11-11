@@ -1356,42 +1356,44 @@ export const Admin: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           {exercise.youtubeUrl ? (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              {thumbnailUrl && (
-                                <Box
-                                  component="img"
-                                  src={thumbnailUrl}
-                                  alt={exercise.name}
-                                  sx={{
-                                    width: 120,
-                                    height: 68,
-                                    objectFit: 'cover',
-                                    borderRadius: 1,
-                                    cursor: 'pointer',
-                                    '&:hover': {
-                                      opacity: 0.8,
-                                    }
-                                  }}
-                                  onClick={() => window.open(exercise.youtubeUrl, '_blank')}
-                                  onError={(e) => {
-                                    // If thumbnail fails to load, show broken indicator
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    const parent = (e.target as HTMLElement).parentElement;
-                                    if (parent) {
-                                      const chip = document.createElement('div');
-                                      chip.textContent = '❌ Video not found';
-                                      chip.style.color = 'red';
-                                      chip.style.fontSize = '12px';
-                                      chip.style.fontWeight = 'bold';
-                                      parent.appendChild(chip);
-                                    }
-                                  }}
-                                />
-                              )}
-                              <Chip label="Yes" size="small" color="success" />
-                            </Box>
+                            thumbnailUrl ? (
+                              <Box
+                                component="img"
+                                src={thumbnailUrl}
+                                alt={exercise.name}
+                                sx={{
+                                  width: 120,
+                                  height: 68,
+                                  objectFit: 'cover',
+                                  borderRadius: 1,
+                                  cursor: 'pointer',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  '&:hover': {
+                                    opacity: 0.8,
+                                    boxShadow: 2,
+                                  }
+                                }}
+                                onClick={() => window.open(exercise.youtubeUrl, '_blank')}
+                                onError={(e) => {
+                                  // If thumbnail fails to load, show broken indicator
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                  const parent = (e.target as HTMLElement).parentElement;
+                                  if (parent) {
+                                    const chip = document.createElement('div');
+                                    chip.textContent = '❌ Video not found';
+                                    chip.style.color = 'red';
+                                    chip.style.fontSize = '12px';
+                                    chip.style.fontWeight = 'bold';
+                                    parent.appendChild(chip);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <Chip label="Invalid URL" size="small" color="warning" />
+                            )
                           ) : (
-                            <Chip label="No" size="small" color="default" />
+                            <Chip label="No video" size="small" color="default" />
                           )}
                         </TableCell>
                         <TableCell>
