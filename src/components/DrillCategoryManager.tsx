@@ -18,13 +18,14 @@ import {
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Palette as PaletteIcon } from '@mui/icons-material';
 import { useI18n } from '../i18n/I18nProvider';
 import { drillCategoryService, syncDrillCategoriesFromBackend, DrillCategory } from '../services/drillCategoryService';
+import { toastService } from '../services/toast';
 
 export const DrillCategoryManager: React.FC = () => {
   const { t } = useI18n();
   const [categories, setCategories] = useState<DrillCategory[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<DrillCategory | null>(null);
-  const [formData, setFormData] = useState({ name: '', nameDE: '', color: '#1976d2' });
+  const [formData, setFormData] = useState({ name: '', nameDE: '', color: '#1976d2', key: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
@@ -44,11 +45,12 @@ export const DrillCategoryManager: React.FC = () => {
       setFormData({
         name: category.name,
         nameDE: category.nameDE || '',
-        color: category.color
+        color: category.color,
+        key: category.key || ''
       });
     } else {
       setEditingCategory(null);
-      setFormData({ name: '', nameDE: '', color: '#1976d2' });
+      setFormData({ name: '', nameDE: '', color: '#1976d2', key: '' });
     }
     setDialogOpen(true);
   };
@@ -56,7 +58,7 @@ export const DrillCategoryManager: React.FC = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingCategory(null);
-    setFormData({ name: '', nameDE: '', color: '#1976d2' });
+    setFormData({ name: '', nameDE: '', color: '#1976d2', key: '' });
   };
 
   const handleSave = async () => {
@@ -64,14 +66,20 @@ export const DrillCategoryManager: React.FC = () => {
     try {
       if (editingCategory) {
         await drillCategoryService.updateCategory(editingCategory.id, formData);
+        toastService.updated('Category');
       } else {
         await drillCategoryService.createCategory(formData);
+        toastService.created('Category');
       }
       await loadCategories();
       handleCloseDialog();
     } catch (error: any) {
       console.error('Failed to save category:', error);
-      alert(error.message || t('drillCategories.saveError'));
+      if (editingCategory) {
+        toastService.updateError('category', error.message);
+      } else {
+        toastService.createError('category', error.message);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -83,9 +91,10 @@ export const DrillCategoryManager: React.FC = () => {
       try {
         await drillCategoryService.deleteCategory(id);
         await loadCategories();
+        toastService.deleted('Category');
       } catch (error: any) {
         console.error('Failed to delete category:', error);
-        alert(error.message || t('drillCategories.deleteError'));
+        toastService.deleteError('category', error.message);
       } finally {
         setIsDeleting(null);
       }
@@ -97,10 +106,10 @@ export const DrillCategoryManager: React.FC = () => {
     try {
       const result = await drillCategoryService.seedCategories();
       await loadCategories();
-      alert(`${t('drillCategories.seedSuccess')}\n${t('drillCategories.created')}: ${result.created.join(', ')}\n${t('drillCategories.skipped')}: ${result.skipped.join(', ')}`);
+      toastService.success(`${t('drillCategories.seedSuccess')} - ${t('drillCategories.created')}: ${result.created.join(', ')}`);
     } catch (error: any) {
       console.error('Failed to seed categories:', error);
-      alert(error.message || t('drillCategories.seedError'));
+      toastService.error(error.message || t('drillCategories.seedError'));
     } finally {
       setIsSeeding(false);
     }
@@ -192,6 +201,16 @@ export const DrillCategoryManager: React.FC = () => {
             />
 
             <TextField
+              label="Category Key"
+              value={formData.key}
+              onChange={(e) => setFormData({ ...formData, key: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+              fullWidth
+              required
+              helperText="Unique identifier (e.g., 'offense', 'defense', 'fundamentals')"
+              disabled={!!editingCategory}
+            />
+
+            <TextField
               label={t('drillCategories.nameDE')}
               value={formData.nameDE}
               onChange={(e) => setFormData({ ...formData, nameDE: e.target.value })}
@@ -223,7 +242,7 @@ export const DrillCategoryManager: React.FC = () => {
           <Button
             onClick={handleSave}
             variant="contained"
-            disabled={isSaving || !formData.name.trim()}
+            disabled={isSaving || !formData.name.trim() || !formData.key.trim()}
             startIcon={isSaving ? <CircularProgress size={20} /> : null}
           >
             {isSaving ? t('common.saving') : t('common.save')}

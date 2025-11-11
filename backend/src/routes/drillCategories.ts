@@ -10,12 +10,14 @@ const createCategorySchema = z.object({
   name: z.string().min(1, 'Category name is required'),
   nameDE: z.string().optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').default('#1976d2'),
+  key: z.string().min(1, 'Category key is required'), // Unique identifier (e.g., "offense", "defense")
 });
 
 const updateCategorySchema = z.object({
   name: z.string().min(1).optional(),
   nameDE: z.string().optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').optional(),
+  key: z.string().min(1).optional(),
 });
 
 // GET /api/drill-categories - Get all categories (authenticated)

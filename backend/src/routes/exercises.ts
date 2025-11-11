@@ -28,6 +28,20 @@ router.get('/', authenticate, async (req, res) => {
       ],
     });
 
+    // DEBUG: Log first exercise to check muscleGroups
+    if (exercises.length > 0) {
+      console.log('[DEBUG] First exercise from DB:', {
+        name: exercises[0].name,
+        category: exercises[0].category,
+        muscleGroups: exercises[0].muscleGroups,
+        hasMusclGroups: !!exercises[0].muscleGroups,
+        muscleGroupsLength: exercises[0].muscleGroups?.length || 0,
+      });
+
+      const withLegs = exercises.filter(e => e.muscleGroups?.includes('legs'));
+      console.log(`[DEBUG] Exercises with 'legs': ${withLegs.length}/${exercises.length}`);
+    }
+
     res.json(exercises);
   } catch (error) {
     console.error('Get exercises error:', error);

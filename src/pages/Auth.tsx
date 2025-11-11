@@ -22,6 +22,7 @@ import { calculateAge } from '../services/userProfile';
 import { authService } from '../services/api';
 import type { Position } from '../types/exercise';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
+import { toastService } from '../services/toast';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
 
@@ -56,6 +57,7 @@ export const Auth: React.FC = () => {
         // Validate password confirmation
         if (password !== confirmPassword) {
           setError(t('auth.passwordMismatch'));
+          toastService.validationError(t('auth.passwordMismatch'));
           setLoading(false);
           return;
         }
@@ -80,9 +82,11 @@ export const Auth: React.FC = () => {
           position: role === 'player' ? position : undefined,
           sex,
         });
+        toastService.success(`Welcome, ${name}! Account created successfully`);
       } else {
         // LOGIN via backend API
-        await authService.login({ email, password });
+        const response = await authService.login({ email, password });
+        toastService.loginSuccess(name || email);
       }
 
       // Navigate to training page
@@ -90,7 +94,9 @@ export const Auth: React.FC = () => {
       // Force reload to update app state
       window.location.reload();
     } catch (err: any) {
-      setError(err.message || (isSignup ? 'Failed to create account' : 'Failed to login'));
+      const errorMsg = err.message || (isSignup ? 'Failed to create account' : 'Failed to login');
+      setError(errorMsg);
+      toastService.authError(errorMsg);
     } finally {
       setLoading(false);
     }

@@ -63,7 +63,7 @@ export const drillCategoryService = {
     return categories.find(c => c.id === id);
   },
 
-  async createCategory(data: { name: string; nameDE?: string; color?: string }): Promise<DrillCategory> {
+  async createCategory(data: { name: string; nameDE?: string; color?: string; key: string }): Promise<DrillCategory> {
     if (isOnline()) {
       try {
         // Create on backend
@@ -84,7 +84,7 @@ export const drillCategoryService = {
     }
   },
 
-  async updateCategory(id: string, data: { name?: string; nameDE?: string; color?: string }): Promise<DrillCategory> {
+  async updateCategory(id: string, data: { name?: string; nameDE?: string; color?: string; key?: string }): Promise<DrillCategory> {
     if (isOnline()) {
       try {
         // Update on backend

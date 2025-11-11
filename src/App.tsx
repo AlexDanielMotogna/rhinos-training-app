@@ -1,6 +1,8 @@
 import { useState, useEffect, lazy, Suspense, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { createDynamicTheme } from './theme';
 import { I18nProvider } from './i18n/I18nProvider';
 import { AppShell } from './components/AppShell';
@@ -181,6 +183,18 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
       <I18nProvider defaultLocale="en">
         <BrowserRouter>
           <Routes>

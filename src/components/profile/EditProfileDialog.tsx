@@ -15,6 +15,7 @@ import {
 import { useI18n } from '../../i18n/I18nProvider';
 import { saveUser, calculateAge, type MockUser } from '../../services/userProfile';
 import { updateUserProfile } from '../../services/userProfile';
+import { toastService } from '../../services/toast';
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -72,34 +73,41 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   const handleSave = async () => {
     // Validate phone before saving
     if (!validatePhone(phone)) {
+      toastService.validationError('Please enter a valid phone number');
       return;
     }
 
-    const updates: Partial<MockUser> = {
-      name,
-      jerseyNumber: jerseyNumber && jerseyNumber !== '--' ? Number(jerseyNumber) : undefined,
-      birthDate,
-      age: birthDate ? calculateAge(birthDate) : user.age,
-      weightKg: Number(weightKg),
-      heightCm: Number(heightCm),
-      sex,
-      phone: phone && phone !== '+43' ? phone : undefined,
-      instagram: instagram || undefined,
-      snapchat: snapchat || undefined,
-      tiktok: tiktok || undefined,
-      hudl: hudl || undefined,
-    };
+    try {
+      const updates: Partial<MockUser> = {
+        name,
+        jerseyNumber: jerseyNumber && jerseyNumber !== '--' ? Number(jerseyNumber) : undefined,
+        birthDate,
+        age: birthDate ? calculateAge(birthDate) : user.age,
+        weightKg: Number(weightKg),
+        heightCm: Number(heightCm),
+        sex,
+        phone: phone && phone !== '+43' ? phone : undefined,
+        instagram: instagram || undefined,
+        snapchat: snapchat || undefined,
+        tiktok: tiktok || undefined,
+        hudl: hudl || undefined,
+      };
 
-    // Use the new sync service that handles backend sync
-    const updatedUser = await updateUserProfile(updates);
+      // Use the new sync service that handles backend sync
+      const updatedUser = await updateUserProfile(updates);
 
-    if (updatedUser) {
-      // Also save to mock service for backward compatibility
-      saveUser(updatedUser);
-      onSave(updatedUser);
+      if (updatedUser) {
+        // Also save to mock service for backward compatibility
+        saveUser(updatedUser);
+        onSave(updatedUser);
+        toastService.updated('Profile');
+      }
+
+      onClose();
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      toastService.updateError('profile', error instanceof Error ? error.message : undefined);
     }
-
-    onClose();
   };
 
   return (

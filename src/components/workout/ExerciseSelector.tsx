@@ -99,7 +99,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           console.log('🔄 Fetching exercises from backend...');
           const backendExercises = await exerciseService.getAll() as Exercise[];
           console.log('📥 Received from backend:', backendExercises.length, 'exercises');
-          console.log('📥 Backend exercises:', backendExercises.map(e => e.name));
+          console.log('📥 Sample exercise with muscle groups:', backendExercises[0]);
+          console.log('📥 Exercises with legs:', backendExercises.filter(e => e.muscleGroups?.includes('legs')).length);
 
           // Cache in IndexedDB
           await db.exercises.clear();
@@ -140,13 +141,27 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     loadExercises();
   }, [open]);
 
-  // Filter exercises
+  // Filter exercises with debug logging
+  console.log('🔍 Filter State:', {
+    totalExercises: exercises.length,
+    selectedCategory,
+    selectedMuscleGroup,
+    searchTerm,
+    sampleExercise: exercises[0],
+  });
+
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || exercise.category === selectedCategory;
     const matchesMuscleGroup = selectedMuscleGroup === 'All' ||
       (exercise.muscleGroups && exercise.muscleGroups.includes(selectedMuscleGroup));
+
     return matchesSearch && matchesCategory && matchesMuscleGroup;
+  });
+
+  console.log('✅ Filtered Result:', {
+    filteredCount: filteredExercises.length,
+    selectedMuscleGroup,
   });
 
   const handleSelect = (exercise: Exercise) => {

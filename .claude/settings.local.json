@@ -17,7 +17,11 @@
       "Bash(del backendnul)",
       "Bash(cat:*)",
       "Bash(git commit:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(nul)",
+      "Bash(timeout 5 npx prisma db push:*)",
+      "Bash(npx tsx:*)",
+      "Bash(del nul 2)"
     ],
     "deny": [],
     "ask": []

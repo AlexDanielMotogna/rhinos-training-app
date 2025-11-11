@@ -21,6 +21,7 @@ import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useI18n } from '../i18n/I18nProvider';
+import { toastService } from '../services/toast';
 import { WorkoutBlock } from '../components/workout/WorkoutBlock';
 import { CoachBlockWorkoutDialog } from '../components/workout/CoachBlockWorkoutDialog';
 import { FreeSessionDialog } from '../components/workout/FreeSessionDialog';
@@ -348,11 +349,15 @@ export const MyTraining: React.FC = () => {
 
   const handleDeleteWorkout = async (logId: string) => {
     if (window.confirm(t('workout.confirmDelete'))) {
-      // Soft delete - hides from history but keeps for stats
-      await deleteWorkoutLog(logId);
-      refreshWorkoutHistory();
-      setSuccessMessage(t('workout.workoutDeleted'));
-      setTimeout(() => setSuccessMessage(''), 3000);
+      try {
+        // Soft delete - hides from history but keeps for stats
+        await deleteWorkoutLog(logId);
+        refreshWorkoutHistory();
+        toastService.deleted('Workout');
+        setSuccessMessage('');
+      } catch (error) {
+        toastService.deleteError('workout', error instanceof Error ? error.message : undefined);
+      }
     }
   };
 
@@ -364,8 +369,8 @@ export const MyTraining: React.FC = () => {
     updateWorkoutLog(workoutId, { entries, notes });
     refreshWorkoutHistory();
     setEditWorkout(null);
-    setSuccessMessage(t('workout.workoutUpdated'));
-    setTimeout(() => setSuccessMessage(''), 3000);
+    toastService.saved('Workout');
+    setSuccessMessage('');
   };
 
   const handleVideoClick = (url: string) => {
@@ -378,46 +383,62 @@ export const MyTraining: React.FC = () => {
   // Plan handlers
   const handleCreatePlan = async (planName: string, exercises: PlanExercise[], warmupMinutes?: number) => {
     if (user) {
-      await createUserPlan({
-        userId: user.id,
-        name: planName,
-        exercises,
-        warmupMinutes,
-      });
-      await refreshUserPlans();
-      setSuccessMessage('Plan created successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      try {
+        await createUserPlan({
+          userId: user.id,
+          name: planName,
+          exercises,
+          warmupMinutes,
+        });
+        await refreshUserPlans();
+        toastService.created('Plan');
+        setSuccessMessage('');
+      } catch (error) {
+        toastService.createError('plan', error instanceof Error ? error.message : undefined);
+      }
     }
   };
 
   const handleUpdatePlan = async (planName: string, exercises: PlanExercise[], warmupMinutes?: number) => {
     if (editingPlan) {
-      await updateUserPlan(editingPlan.id, {
-        name: planName,
-        exercises,
-        warmupMinutes,
-      });
-      await refreshUserPlans();
-      setEditingPlan(null);
-      setSuccessMessage('Plan updated successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      try {
+        await updateUserPlan(editingPlan.id, {
+          name: planName,
+          exercises,
+          warmupMinutes,
+        });
+        await refreshUserPlans();
+        setEditingPlan(null);
+        toastService.updated('Plan');
+        setSuccessMessage('');
+      } catch (error) {
+        toastService.updateError('plan', error instanceof Error ? error.message : undefined);
+      }
     }
   };
 
   const handleDeletePlan = async (planId: string) => {
     if (window.confirm('Are you sure you want to delete this plan?')) {
-      await deleteUserPlan(planId);
-      await refreshUserPlans();
-      setSuccessMessage('Plan deleted successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      try {
+        await deleteUserPlan(planId);
+        await refreshUserPlans();
+        toastService.deleted('Plan');
+        setSuccessMessage('');
+      } catch (error) {
+        toastService.deleteError('plan', error instanceof Error ? error.message : undefined);
+      }
     }
   };
 
   const handleDuplicatePlan = async (planId: string) => {
-    await duplicateUserPlan(planId);
-    await refreshUserPlans();
-    setSuccessMessage('Plan duplicated successfully!');
-    setTimeout(() => setSuccessMessage(''), 3000);
+    try {
+      await duplicateUserPlan(planId);
+      await refreshUserPlans();
+      toastService.duplicated('Plan');
+      setSuccessMessage('');
+    } catch (error) {
+      toastService.error('Failed to duplicate plan', { autoClose: 5000 });
+    }
   };
 
   const handleStartPlan = (plan: UserPlanTemplate) => {
@@ -562,6 +583,9 @@ export const MyTraining: React.FC = () => {
       setShowWorkoutReport(true);
       setStartingPlan(null);
       setShowStartWorkout(false); // Close StartWorkoutDialog after everything is done
+
+      // Show success toast
+      toastService.workoutCompleted();
     }
   };
 
@@ -705,6 +729,9 @@ export const MyTraining: React.FC = () => {
       setShowWorkoutReport(true);
       setSelectedBlock(null);
       setShowBlockWorkout(false); // Close CoachBlockWorkoutDialog after everything is done
+
+      // Show success toast
+      toastService.workoutCompleted();
     }
   };
 

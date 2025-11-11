@@ -40,6 +40,7 @@ import { getTeamSettings } from '../services/teamSettings';
 import { testResultService } from '../services/api';
 import type { KPISnapshot } from '../types/kpi';
 import type { StrengthSummary, SpeedSummary, PowerSummary, AgilitySummary } from '../types/testing';
+import { toastService } from '../services/toast';
 
 export const Profile: React.FC = () => {
   const { t } = useI18n();
@@ -467,8 +468,10 @@ export const Profile: React.FC = () => {
                       // Sync with backend
                       try {
                         await updateUserProfile({ metricsPublic: newValue });
+                        toastService.updated('Privacy Settings');
                       } catch (error) {
                         console.error('Failed to update privacy settings:', error);
+                        toastService.updateError('privacy settings', error instanceof Error ? error.message : undefined);
                         // Revert on error
                         setUser(user);
                       }

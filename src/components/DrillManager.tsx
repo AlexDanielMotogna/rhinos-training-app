@@ -45,6 +45,7 @@ import { exportDrillToPDF } from '../services/drillPdfExport';
 import { optimizeDrillSketch, validateImage } from '../services/imageOptimizer';
 import { Drill, DrillDifficulty, Equipment, DrillEquipment, CreateDrillData } from '../types/drill';
 import { getUser } from '../services/userProfile';
+import { toastService } from '../services/toast';
 
 const DIFFICULTY_COLORS: Record<DrillDifficulty, string> = {
   basic: '#4CAF50',
@@ -248,18 +249,21 @@ export const DrillManager: React.FC = () => {
       if (editingDrill) {
         await drillService.updateDrill(editingDrill.id, drillData);
         drillId = editingDrill.id;
+        toastService.updated('Drill');
       } else {
         const newDrill = await drillService.createDrill(drillData);
         drillId = newDrill.id;
+        toastService.created('Drill');
       }
 
       // Upload image to Cloudinary if a new file was selected
       if (sketchFile) {
         try {
           await drillService.uploadSketch(drillId, sketchFile);
+          toastService.uploadSuccess('Sketch');
         } catch (uploadError) {
           console.error('Failed to upload sketch:', uploadError);
-          alert(t('drills.uploadSketchError'));
+          toastService.uploadError('sketch');
         }
       }
 
@@ -267,7 +271,11 @@ export const DrillManager: React.FC = () => {
       handleCloseDialog();
     } catch (error) {
       console.error('Failed to save drill:', error);
-      alert(t('drills.saveError'));
+      if (editingDrill) {
+        toastService.updateError('drill', error instanceof Error ? error.message : undefined);
+      } else {
+        toastService.createError('drill', error instanceof Error ? error.message : undefined);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -279,9 +287,10 @@ export const DrillManager: React.FC = () => {
       try {
         await drillService.deleteDrill(id);
         await loadData();
+        toastService.deleted('Drill');
       } catch (error) {
         console.error('Failed to delete drill:', error);
-        alert(t('drills.deleteError'));
+        toastService.deleteError('drill', error instanceof Error ? error.message : undefined);
       } finally {
         setIsDeleting(null);
       }

@@ -40,6 +40,7 @@ import {
 import { getUser } from '../services/userProfile';
 import { videoTagsService } from '../services/api';
 import { extractYouTubeVideoId } from '../services/yt';
+import { toastService } from '../services/toast';
 import type {
   Video,
   VideoType,
@@ -200,6 +201,7 @@ export const VideosAdmin: React.FC = () => {
       if (editingVideo) {
         // Update existing
         await updateVideo(editingVideo.id, formData);
+        toastService.updated('Video');
       } else {
         // Create new
         if (!user) return;
@@ -207,12 +209,18 @@ export const VideosAdmin: React.FC = () => {
           ...formData,
           createdBy: user.id,
         });
+        toastService.created('Video');
       }
 
       setVideos(getAllVideos());
       handleCloseDialog();
     } catch (err: any) {
-      setError(err.message || 'Failed to save video');
+      console.error('Failed to save video:', err);
+      if (editingVideo) {
+        toastService.updateError('video', err.message);
+      } else {
+        toastService.createError('video', err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -229,8 +237,10 @@ export const VideosAdmin: React.FC = () => {
     try {
       await deleteVideo(id);
       setVideos(getAllVideos());
+      toastService.deleted('Video');
     } catch (err: any) {
-      setError(err.message || 'Failed to delete video');
+      console.error('Failed to delete video:', err);
+      toastService.deleteError('video', err.message);
     } finally {
       setLoading(false);
     }
@@ -245,8 +255,10 @@ export const VideosAdmin: React.FC = () => {
     try {
       await updateVideo(video.id, { status: newStatus });
       setVideos(getAllVideos());
+      toastService.updated('Video status');
     } catch (err: any) {
-      setError(err.message || 'Failed to toggle status');
+      console.error('Failed to toggle status:', err);
+      toastService.updateError('video status', err.message);
     } finally {
       setLoading(false);
     }

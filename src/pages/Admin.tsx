@@ -53,6 +53,7 @@ import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
 import { validateAPIKey } from '../services/aiInsights';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 import { NotificationTemplates, getNotificationStatus, requestNotificationPermission } from '../services/notifications';
+import { toastService } from '../services/toast';
 import { createSession, getTeamSessions, deleteSession } from '../services/trainingSessions';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
@@ -388,6 +389,7 @@ export const Admin: React.FC = () => {
         setExercises(exercises.map(ex =>
           ex.id === editingExercise.id ? updated : ex
         ));
+        toastService.updated('Exercise');
       } else {
         // Create new
         const created = await exerciseService.create({
@@ -401,6 +403,7 @@ export const Admin: React.FC = () => {
           descriptionDE: newExercise.descriptionDE,
         }) as Exercise;
         setExercises([...exercises, created]);
+        toastService.created('Exercise');
       }
       setExerciseDialogOpen(false);
       setEditingExercise(null);
@@ -414,7 +417,7 @@ export const Admin: React.FC = () => {
       });
     } catch (error) {
       console.error('Error saving exercise:', error);
-      alert('Failed to save exercise. Please try again.');
+      toastService.createError('exercise', error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -423,9 +426,10 @@ export const Admin: React.FC = () => {
       try {
         await exerciseService.delete(id);
         setExercises(exercises.filter(ex => ex.id !== id));
+        toastService.deleted('Exercise');
       } catch (error) {
         console.error('Error deleting exercise:', error);
-        alert('Failed to delete exercise. Please try again.');
+        toastService.deleteError('exercise', error instanceof Error ? error.message : undefined);
       }
     }
   };
@@ -435,65 +439,78 @@ export const Admin: React.FC = () => {
     const currentUser = getUser();
     if (!currentUser) return;
 
-    // Create team session in unified service
-    const createdSession = await createSession({
-      creatorId: currentUser.id,
-      creatorName: currentUser.name,
-      sessionCategory: 'team',
-      type: 'coach-plan',
-      title: newSession.type!,
-      location: newSession.location || 'TBD',
-      address: newSession.address,
-      date: newSession.date!,
-      time: newSession.startTime!,
-      description: `Team training from ${newSession.startTime} to ${newSession.endTime}`,
-      attendees: [],
-    });
+    try {
+      // Create team session in unified service
+      const createdSession = await createSession({
+        creatorId: currentUser.id,
+        creatorName: currentUser.name,
+        sessionCategory: 'team',
+        type: 'coach-plan',
+        title: newSession.type!,
+        location: newSession.location || 'TBD',
+        address: newSession.address,
+        date: newSession.date!,
+        time: newSession.startTime!,
+        description: `Team training from ${newSession.startTime} to ${newSession.endTime}`,
+        attendees: [],
+      });
 
-    // Update local admin state
-    const session: TeamSession = {
-      id: createdSession.id,
-      date: newSession.date!,
-      startTime: newSession.startTime!,
-      endTime: newSession.endTime!,
-      type: newSession.type!,
-      location: newSession.location,
-      address: newSession.address,
-    };
-    setSessions([...sessions, session].sort((a, b) => a.date.localeCompare(b.date)));
+      // Update local admin state
+      const session: TeamSession = {
+        id: createdSession.id,
+        date: newSession.date!,
+        startTime: newSession.startTime!,
+        endTime: newSession.endTime!,
+        type: newSession.type!,
+        location: newSession.location,
+        address: newSession.address,
+      };
+      setSessions([...sessions, session].sort((a, b) => a.date.localeCompare(b.date)));
 
-    // Send notification about new session
-    const sessionDate = new Date(session.date);
-    const formattedDate = sessionDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+      // Send notification about new session
+      const sessionDate = new Date(session.date);
+      const formattedDate = sessionDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
 
-    await NotificationTemplates.newTeamSession(
-      formattedDate,
-      session.startTime,
-      session.location
-    );
+      await NotificationTemplates.newTeamSession(
+        formattedDate,
+        session.startTime,
+        session.location
+      );
 
-    setSessionDialogOpen(false);
-    setNewSession({
-      date: new Date().toISOString().split('T')[0],
-      startTime: '19:00',
-      endTime: '21:00',
-      type: 'Team Training',
-      location: '',
-      address: '',
-    });
+      toastService.created('Team Session');
+
+      setSessionDialogOpen(false);
+      setNewSession({
+        date: new Date().toISOString().split('T')[0],
+        startTime: '19:00',
+        endTime: '21:00',
+        type: 'Team Training',
+        location: '',
+        address: '',
+      });
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toastService.createError('session', error instanceof Error ? error.message : undefined);
+    }
   };
 
   const handleDeleteSession = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
-      // Delete from unified service
-      await deleteSession(id);
-      // Update local admin state
-      setSessions(sessions.filter(s => s.id !== id));
+      try {
+        // Delete from unified service
+        await deleteSession(id);
+        // Update local admin state
+        setSessions(sessions.filter(s => s.id !== id));
+        toastService.deleted('Team Session');
+      } catch (error) {
+        console.error('Error deleting session:', error);
+        toastService.deleteError('session', error instanceof Error ? error.message : undefined);
+      }
     }
   };
 
@@ -505,6 +522,7 @@ export const Admin: React.FC = () => {
       const updated = await updateTeamSettings(seasonPhase, teamLevel, user.name);
       setTeamSettings(updated);
       setSettingsSaved(true);
+      toastService.updated('Team Settings');
 
       // Hide success message after 3 seconds
       setTimeout(() => {
@@ -512,7 +530,7 @@ export const Admin: React.FC = () => {
       }, 3000);
     } catch (error) {
       console.error('Failed to save team settings:', error);
-      alert('Failed to save team settings');
+      toastService.updateError('team settings', error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -534,29 +552,35 @@ export const Admin: React.FC = () => {
   const handleSaveAICoachConfig = () => {
     if (!user) return;
 
-    // Get current team settings
-    const currentSettings = getTeamSettings();
+    try {
+      // Get current team settings
+      const currentSettings = getTeamSettings();
 
-    // Update with new API key
-    const updatedSettings = {
-      ...currentSettings,
-      aiApiKey: teamApiKey.trim() || undefined,
-      updatedAt: new Date().toISOString(),
-      updatedBy: user.name,
-    };
+      // Update with new API key
+      const updatedSettings = {
+        ...currentSettings,
+        aiApiKey: teamApiKey.trim() || undefined,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user.name,
+      };
 
-    // Save to localStorage
-    localStorage.setItem('teamSettings', JSON.stringify(updatedSettings));
-    setTeamSettings(updatedSettings);
-    setAiCoachSaved(true);
+      // Save to localStorage
+      localStorage.setItem('teamSettings', JSON.stringify(updatedSettings));
+      setTeamSettings(updatedSettings);
+      setAiCoachSaved(true);
+      toastService.updated('AI Coach Configuration');
 
-    // Clear validation result and show success
-    setApiKeyValidationResult(null);
+      // Clear validation result and show success
+      setApiKeyValidationResult(null);
 
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setAiCoachSaved(false);
-    }, 3000);
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setAiCoachSaved(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to save AI coach config:', error);
+      toastService.updateError('AI coach configuration', error instanceof Error ? error.message : undefined);
+    }
   };
 
   // User Population Handlers
@@ -598,9 +622,14 @@ export const Admin: React.FC = () => {
 
   // Policies Management Handlers
   const handleSavePolicies = () => {
-    // In real app, would save to backend
-    setPoliciesModified(false);
-    alert('Policies saved successfully!');
+    try {
+      // In real app, would save to backend
+      setPoliciesModified(false);
+      toastService.updated('Policies');
+    } catch (error) {
+      console.error('Failed to save policies:', error);
+      toastService.updateError('policies', error instanceof Error ? error.message : undefined);
+    }
   };
 
   // Training Types Management Handlers
@@ -637,9 +666,11 @@ export const Admin: React.FC = () => {
       if (editingTrainingType) {
         const updated = await trainingTypeService.update(editingTrainingType.id, data) as TrainingType;
         setTrainingTypes(trainingTypes.map(tt => tt.id === editingTrainingType.id ? updated : tt));
+        toastService.updated('Training Type');
       } else {
         const created = await trainingTypeService.create(data) as TrainingType;
         setTrainingTypes([...trainingTypes, created]);
+        toastService.created('Training Type');
       }
 
       setTrainingTypeDialogOpen(false);
@@ -653,7 +684,7 @@ export const Admin: React.FC = () => {
       });
     } catch (error) {
       console.error('Error saving training type:', error);
-      alert('Failed to save training type. Please try again.');
+      toastService.createError('training type', error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -666,9 +697,10 @@ export const Admin: React.FC = () => {
         active: !trainingType.active,
       }) as TrainingType;
       setTrainingTypes(trainingTypes.map(tt => tt.id === id ? updated : tt));
+      toastService.updated('Training Type');
     } catch (error) {
       console.error('Error toggling training type:', error);
-      alert('Failed to update training type. Please try again.');
+      toastService.updateError('training type', error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -689,9 +721,10 @@ export const Admin: React.FC = () => {
       try {
         await trainingTypeService.delete(id);
         setTrainingTypes(trainingTypes.filter(tt => tt.id !== id));
+        toastService.deleted('Training Type');
       } catch (error) {
         console.error('Error deleting training type:', error);
-        alert('Failed to delete training type. Please try again.');
+        toastService.deleteError('training type', error instanceof Error ? error.message : undefined);
       }
     }
   };
@@ -776,15 +809,17 @@ export const Admin: React.FC = () => {
       if (editingTemplate) {
         const updated = await templateService.update(editingTemplate.id, templateData) as TrainingTemplate;
         setTemplates(templates.map(t => t.id === editingTemplate.id ? updated : t));
+        toastService.updated('Template');
       } else {
         const created = await templateService.create(templateData) as TrainingTemplate;
         setTemplates([...templates, created]);
+        toastService.created('Template');
       }
       setTemplateDialogOpen(false);
       setEditingTemplate(null);
     } catch (error) {
       console.error('Error saving template:', error);
-      alert('Failed to save template. Please try again.');
+      toastService.createError('template', error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -793,9 +828,10 @@ export const Admin: React.FC = () => {
       try {
         await templateService.delete(id);
         setTemplates(templates.filter(t => t.id !== id));
+        toastService.deleted('Template');
       } catch (error) {
         console.error('Error deleting template:', error);
-        alert('Failed to delete template. Please try again.');
+        toastService.deleteError('template', error instanceof Error ? error.message : undefined);
       }
     }
   };
@@ -937,8 +973,10 @@ export const Admin: React.FC = () => {
 
       if (editingAssignment) {
         await assignmentService.update(editingAssignment.id, assignmentData);
+        toastService.updated('Assignment');
       } else {
         await assignmentService.create(assignmentData);
+        toastService.created('Assignment');
       }
 
       // Reload assignments
@@ -955,7 +993,7 @@ export const Admin: React.FC = () => {
       });
     } catch (error) {
       console.error('Error saving assignment:', error);
-      alert('Failed to save assignment. Please try again.');
+      toastService.createError('assignment', error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -964,9 +1002,10 @@ export const Admin: React.FC = () => {
       try {
         await assignmentService.delete(id);
         setAssignments(assignments.filter(a => a.id !== id));
+        toastService.deleted('Assignment');
       } catch (error) {
         console.error('Error deleting assignment:', error);
-        alert('Failed to delete assignment. Please try again.');
+        toastService.deleteError('assignment', error instanceof Error ? error.message : undefined);
       }
     }
   };

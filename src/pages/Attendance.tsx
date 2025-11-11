@@ -13,6 +13,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import { getUpcomingTeamSessions, sessionsToAttendanceRows, canCheckIn } from '../services/schedule';
 import { getUser } from '../services/userProfile';
 import type { AttendanceRow, TeamSession } from '../types/attendance';
+import { toastService } from '../services/toast';
 
 export const Attendance: React.FC = () => {
   const { t } = useI18n();
@@ -36,19 +37,24 @@ export const Attendance: React.FC = () => {
 
   const handleCheckIn = (session: TeamSession, dateISO: string) => {
     if (!canCheckIn(session)) {
+      toastService.error('Cannot check in at this time');
       return;
     }
 
-    const newCheckins = new Set(checkedIn);
-    newCheckins.add(dateISO);
-    setCheckedIn(newCheckins);
-    localStorage.setItem('checkins', JSON.stringify([...newCheckins]));
+    try {
+      const newCheckins = new Set(checkedIn);
+      newCheckins.add(dateISO);
+      setCheckedIn(newCheckins);
+      localStorage.setItem('checkins', JSON.stringify([...newCheckins]));
 
-    const rows = sessionsToAttendanceRows(sessions, newCheckins);
-    setAttendanceRows(rows);
+      const rows = sessionsToAttendanceRows(sessions, newCheckins);
+      setAttendanceRows(rows);
 
-    setSuccessMessage(t('attendance.checkedIn'));
-    setTimeout(() => setSuccessMessage(''), 3000);
+      toastService.checkInSuccess();
+      setSuccessMessage('');
+    } catch (error) {
+      toastService.checkInError();
+    }
   };
 
   const getStatusColor = (status: string) => {

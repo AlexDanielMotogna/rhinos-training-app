@@ -93,7 +93,18 @@ export const apiCall = async <T>(
   }
 
   const data = await response.json();
-  console.log(`[API DATA] ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'single item', data);
+
+  // Special logging for exercises endpoint to debug muscle groups
+  if (endpoint === '/exercises' && Array.isArray(data)) {
+    console.log(`[API DATA] ${endpoint}: Received ${data.length} items`);
+    console.log('[API DATA] First exercise:', data[0]);
+    console.log('[API DATA] First exercise muscleGroups:', data[0]?.muscleGroups);
+    const withLegs = data.filter((e: any) => e.muscleGroups?.includes('legs'));
+    console.log(`[API DATA] Exercises with 'legs' in API response: ${withLegs.length}`);
+  } else {
+    console.log(`[API DATA] ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'single item');
+  }
+
   return data;
 };
 

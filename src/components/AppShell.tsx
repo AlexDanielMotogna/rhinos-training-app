@@ -42,6 +42,7 @@ import { isOnline } from '../services/sync';
 import type { Notification } from '../types/notification';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 import { getTeamBranding } from '../services/teamSettings';
+import { toastService } from '../services/toast';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -128,6 +129,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     setDrawerOpen(false);
     // Clear all user data
     logout();
+    toastService.logoutSuccess();
     // Force immediate navigation to login page
     // Use replace to prevent going back to authenticated pages
     navigate('/', { replace: true });

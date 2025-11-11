@@ -48,6 +48,7 @@ import { getAllPolls, getPollResults } from '../services/attendancePollService';
 import type { TrainingSession, SessionType, RSVPStatus } from '../types/trainingSession';
 import type { Position } from '../types/exercise';
 import type { AttendancePollVote } from '../types/attendancePoll';
+import { toastService } from '../services/toast';
 
 // Position groupings for unit counts
 const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OL'];
@@ -112,49 +113,68 @@ export const TrainingSessions: React.FC = () => {
   const handleCreatePrivateSession = async () => {
     if (!currentUser || !formData.title || !formData.location) return;
 
-    await createSession({
-      creatorId: currentUser.id,
-      creatorName: currentUser.name,
-      sessionCategory: 'private',
-      type: formData.type,
-      title: formData.title,
-      location: formData.location,
-      address: formData.address,
-      date: formData.date,
-      time: formData.time,
-      description: formData.description,
-      attendees: [
-        {
-          userId: currentUser.id,
-          userName: currentUser.name,
-          status: 'going',
-        },
-      ],
-    });
+    try {
+      await createSession({
+        creatorId: currentUser.id,
+        creatorName: currentUser.name,
+        sessionCategory: 'private',
+        type: formData.type,
+        title: formData.title,
+        location: formData.location,
+        address: formData.address,
+        date: formData.date,
+        time: formData.time,
+        description: formData.description,
+        attendees: [
+          {
+            userId: currentUser.id,
+            userName: currentUser.name,
+            status: 'going',
+          },
+        ],
+      });
 
-    setCreateDialogOpen(false);
-    setFormData({
-      type: 'gym',
-      title: '',
-      location: '',
-      address: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '19:00',
-      description: '',
-    });
-    await loadSessions();
+      setCreateDialogOpen(false);
+      setFormData({
+        type: 'gym',
+        title: '',
+        location: '',
+        address: '',
+        date: new Date().toISOString().split('T')[0],
+        time: '19:00',
+        description: '',
+      });
+      await loadSessions();
+      toastService.created('Session');
+    } catch (error) {
+      toastService.createError('session', error instanceof Error ? error.message : undefined);
+    }
   };
 
   const handleRSVP = async (sessionId: string, status: RSVPStatus) => {
     if (!currentUser) return;
-    await updateRSVP(sessionId, currentUser.id, currentUser.name, status);
-    await loadSessions();
+    try {
+      await updateRSVP(sessionId, currentUser.id, currentUser.name, status);
+      await loadSessions();
+      if (status === 'going') {
+        toastService.checkInSuccess();
+      } else {
+        toastService.success('RSVP updated successfully');
+      }
+    } catch (error) {
+      toastService.checkInError();
+    }
   };
 
 
   const handleDeleteSession = async (sessionId: string) => {
-    await deleteSession(sessionId);
-    await loadSessions();
+    try {
+      await deleteSession(sessionId);
+      await loadSessions();
+      toastService.deleted('Session');
+    } catch (error) {
+      toastService.deleteError('session', error instanceof Error ? error.message : undefined);
+    }
   };
 
   const handleOpenPoll = (session: TrainingSession) => {

@@ -20,6 +20,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 import { ExerciseSelector } from '../workout/ExerciseSelector';
 import type { UserPlanTemplate, PlanExercise } from '../../types/userPlan';
 import type { Exercise } from '../../types/exercise';
+import { toastService } from '../../services/toast';
 
 interface PlanBuilderDialogProps {
   open: boolean;
@@ -98,11 +99,11 @@ export const PlanBuilderDialog: React.FC<PlanBuilderDialogProps> = ({
 
   const handleSave = () => {
     if (!planName.trim()) {
-      alert('Please enter a plan name');
+      toastService.validationError('Please enter a plan name');
       return;
     }
     if (exercises.length === 0) {
-      alert('Please add at least one exercise');
+      toastService.validationError('Please add at least one exercise');
       return;
     }
     onSave(planName, exercises, warmupMinutes);

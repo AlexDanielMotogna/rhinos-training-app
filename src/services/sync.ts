@@ -9,6 +9,7 @@ import {
   LocalWorkout,
 } from './db';
 import { getAuthToken } from './api';
+import { toastService } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -18,6 +19,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 let isSyncing = false;
 let lastSyncTimestamp: number | null = null;
+let listenersRegistered = false;
 
 /**
  * Check if device is online
@@ -26,18 +28,32 @@ export function isOnline(): boolean {
   return navigator.onLine;
 }
 
+// Define handlers outside to avoid duplicates
+const handleOnline = () => {
+  console.log('📡 Connection restored - starting sync...');
+  toastService.online();
+  syncAll();
+};
+
+const handleOffline = () => {
+  console.log('📡 Connection lost - switching to offline mode');
+  toastService.offline();
+};
+
 /**
  * Register online/offline listeners
  */
 export function registerSyncListeners(): void {
-  window.addEventListener('online', () => {
-    console.log('📡 Connection restored - starting sync...');
-    syncAll();
-  });
+  // Prevent duplicate registration
+  if (listenersRegistered) {
+    return;
+  }
 
-  window.addEventListener('offline', () => {
-    console.log('📡 Connection lost - switching to offline mode');
-  });
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+  listenersRegistered = true;
+
+  console.log('✅ Sync listeners registered');
 }
 
 // ========================================
@@ -399,6 +415,16 @@ export async function syncAll(): Promise<void> {
     lastSyncTimestamp = Date.now();
     console.log(`✅ Sync complete - ${syncedCount} synced, ${failedCount} failed`);
 
+    // Show success toast only if items were synced
+    if (syncedCount > 0) {
+      toastService.syncSuccess();
+    }
+
+    // Show error toast if there were failures
+    if (failedCount > 0) {
+      toastService.syncError();
+    }
+
     // After sync, prefetch latest data
     await Promise.all([
       prefetchUpcomingTrainings(),
@@ -409,6 +435,7 @@ export async function syncAll(): Promise<void> {
     ]);
   } catch (error) {
     console.error('❌ Sync failed:', error);
+    toastService.syncError();
   } finally {
     isSyncing = false;
   }

@@ -29,6 +29,7 @@ import { getUser, getAllUsers } from '../services/userProfile';
 import type { AttendancePoll } from '../types/attendancePoll';
 import type { Position } from '../types/exercise';
 import { apiCall } from '../services/api';
+import { toastService } from '../services/toast';
 
 // Position groupings for unit counts
 const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OL'];
@@ -111,19 +112,28 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
     if (!currentUser || !selectedOption) return;
 
     console.log('[POLL DEBUG] Submitting vote:', selectedOption);
-    const success = await submitVote(poll.id, currentUser.id, currentUser.name, selectedOption);
-    console.log('[POLL DEBUG] Vote submission result:', success);
 
-    if (success) {
-      // Reload all poll data
-      await loadPollData();
+    try {
+      const success = await submitVote(poll.id, currentUser.id, currentUser.name, selectedOption);
+      console.log('[POLL DEBUG] Vote submission result:', success);
 
-      setIsChangingVote(false);
+      if (success) {
+        // Reload all poll data
+        await loadPollData();
 
-      // Auto-close after voting (unless changing vote)
-      if (!hasVoted) {
-        setTimeout(() => onClose(), canDismiss ? 1500 : 2000);
+        setIsChangingVote(false);
+
+        toastService.success('Vote submitted successfully!');
+
+        // Auto-close after voting (unless changing vote)
+        if (!hasVoted) {
+          setTimeout(() => onClose(), canDismiss ? 1500 : 2000);
+        }
+      } else {
+        toastService.error('Failed to submit vote');
       }
+    } catch (error) {
+      toastService.error('Failed to submit vote. Please try again.');
     }
   };
 
