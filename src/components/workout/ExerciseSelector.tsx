@@ -16,15 +16,18 @@ import {
   Tabs,
   Tab,
   IconButton,
+  Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import AddIcon from '@mui/icons-material/Add';
 import { globalCatalog } from '../../services/catalog';
 import { exerciseService } from '../../services/api';
 import { db } from '../../services/db';
 import { isOnline } from '../../services/sync';
 import type { Exercise, ExerciseCategory, MuscleGroup } from '../../types/exercise';
 import { sanitizeYouTubeUrl } from '../../services/yt';
+import { ExerciseFormDialog } from '../exercise/ExerciseFormDialog';
 
 interface ExerciseSelectorProps {
   open: boolean;
@@ -43,6 +46,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroup | 'All'>('All');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
+  const [showAddExerciseDialog, setShowAddExerciseDialog] = useState(false);
 
   const categories: Array<ExerciseCategory | 'All'> = [
     'All',
@@ -177,6 +181,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     setPreviewExercise(exercise);
   };
 
+  const handleExerciseAdded = async () => {
+    // Reload exercises after adding a new one
+    setShowAddExerciseDialog(false);
+    await forceRefresh();
+  };
+
   const getEmbedUrl = (url: string | undefined): string | null => {
     if (!url) return null;
     const sanitized = sanitizeYouTubeUrl(url);
@@ -187,8 +197,19 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Select Exercise</DialogTitle>
+    <>
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Select Exercise
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => setShowAddExerciseDialog(true)}
+            size="small"
+          >
+            Add New
+          </Button>
+        </DialogTitle>
       <DialogContent>
         {/* Video Preview */}
         {previewExercise && previewExercise.youtubeUrl && (
@@ -329,5 +350,13 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Add Exercise Dialog */}
+    <ExerciseFormDialog
+      open={showAddExerciseDialog}
+      onClose={() => setShowAddExerciseDialog(false)}
+      onSuccess={handleExerciseAdded}
+    />
+  </>
   );
 };
