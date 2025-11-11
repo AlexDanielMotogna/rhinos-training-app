@@ -40,7 +40,6 @@ export const Videos: React.FC = () => {
   const [selectedCoverage, setSelectedCoverage] = useState<CoverageTag | 'all'>('all');
   const [selectedRunConcept, setSelectedRunConcept] = useState<RunConceptTag | 'all'>('all');
   const [selectedLevel, setSelectedLevel] = useState<VideoLevel | 'all'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<WatchStatus | 'all'>('all');
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [videosToShow, setVideosToShow] = useState(30); // Start with 30 videos
 
@@ -103,19 +102,14 @@ export const Videos: React.FC = () => {
         if (video.level !== selectedLevel) return false;
       }
 
-      // Status filter
-      if (selectedStatus !== 'all') {
-        if (getVideoStatus(video.id) !== selectedStatus) return false;
-      }
-
       return true;
     });
-  }, [videos, activeTab, searchQuery, selectedPosition, selectedRoute, selectedCoverage, selectedRunConcept, selectedLevel, selectedStatus]);
+  }, [videos, activeTab, searchQuery, selectedPosition, selectedRoute, selectedCoverage, selectedRunConcept, selectedLevel]);
 
   // Reset videosToShow when filters change
   React.useEffect(() => {
     setVideosToShow(VIDEOS_PER_PAGE);
-  }, [activeTab, searchQuery, selectedPosition, selectedRoute, selectedCoverage, selectedRunConcept, selectedLevel, selectedStatus]);
+  }, [activeTab, searchQuery, selectedPosition, selectedRoute, selectedCoverage, selectedRunConcept, selectedLevel]);
 
   // Visible videos (paginated)
   const visibleVideos = useMemo(() => {
@@ -396,22 +390,6 @@ export const Videos: React.FC = () => {
               <MenuItem value="intro">Intro</MenuItem>
               <MenuItem value="intermediate">Intermediate</MenuItem>
               <MenuItem value="advanced">Advanced</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={selectedStatus}
-              label="Status"
-              onChange={(e) => setSelectedStatus(e.target.value as WatchStatus | 'all')}
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="new">New</MenuItem>
-              <MenuItem value="in-progress">In Progress</MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
             </Select>
           </FormControl>
         </Grid>
