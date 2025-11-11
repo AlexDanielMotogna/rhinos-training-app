@@ -10,13 +10,14 @@ const createVideoSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().default(''),
   youtubeUrl: z.string().url('Invalid YouTube URL'),
-  type: z.enum(['position', 'route', 'coverage']),
+  type: z.enum(['position', 'route', 'coverage', 'run']),
   status: z.enum(['draft', 'published']).default('draft'),
   level: z.enum(['intro', 'intermediate', 'advanced']).optional(),
   unit: z.enum(['Offense', 'Defense', 'Special Teams']).optional(),
   positions: z.array(z.string()).default([]),
   routes: z.array(z.string()).default([]),
   coverages: z.array(z.string()).default([]),
+  runs: z.array(z.string()).default([]),
   createdBy: z.string(),
   order: z.number().default(0),
   isPinned: z.boolean().default(false),
@@ -26,13 +27,14 @@ const updateVideoSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().optional(),
   youtubeUrl: z.string().url().optional(),
-  type: z.enum(['position', 'route', 'coverage']).optional(),
+  type: z.enum(['position', 'route', 'coverage', 'run']).optional(),
   status: z.enum(['draft', 'published']).optional(),
   level: z.enum(['intro', 'intermediate', 'advanced']).optional().nullable(),
   unit: z.enum(['Offense', 'Defense', 'Special Teams']).optional().nullable(),
   positions: z.array(z.string()).optional(),
   routes: z.array(z.string()).optional(),
   coverages: z.array(z.string()).optional(),
+  runs: z.array(z.string()).optional(),
   order: z.number().optional(),
   isPinned: z.boolean().optional(),
 });
@@ -121,6 +123,7 @@ router.post('/', authenticate, async (req, res) => {
         positions: data.positions,
         routes: data.routes,
         coverages: data.coverages,
+        runs: data.runs,
         createdBy: data.createdBy,
         order: data.order,
         isPinned: data.isPinned,
@@ -171,6 +174,7 @@ router.put('/:id', authenticate, async (req, res) => {
     if (data.positions !== undefined) updateData.positions = data.positions;
     if (data.routes !== undefined) updateData.routes = data.routes;
     if (data.coverages !== undefined) updateData.coverages = data.coverages;
+    if (data.runs !== undefined) updateData.runs = data.runs;
     if (data.order !== undefined) updateData.order = data.order;
     if (data.isPinned !== undefined) updateData.isPinned = data.isPinned;
 
