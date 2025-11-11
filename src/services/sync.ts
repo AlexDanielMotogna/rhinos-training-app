@@ -13,6 +13,9 @@ import { toastService } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Re-export addToOutbox for other services to use
+export { addToOutbox };
+
 // ========================================
 // SYNC STATE
 // ========================================
@@ -508,6 +511,20 @@ async function syncItem(item: any, token: string): Promise<void> {
     case 'assignment':
       url = `${API_URL}/assignments`;
       if (item.action === 'update') {
+        url += `/${item.data.id}`;
+        method = 'PATCH';
+      } else if (item.action === 'delete') {
+        url += `/${item.data.id}`;
+        method = 'DELETE';
+        body = '';
+      }
+      break;
+
+    case 'userPlan':
+      url = `${API_URL}/user-plans`;
+      if (item.action === 'create') {
+        method = 'POST';
+      } else if (item.action === 'update') {
         url += `/${item.data.id}`;
         method = 'PATCH';
       } else if (item.action === 'delete') {

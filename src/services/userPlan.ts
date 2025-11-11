@@ -5,7 +5,7 @@
 
 import type { UserPlanTemplate, UserPlanPayload } from '../types/userPlan';
 import { userPlanService } from './api';
-import { isOnline } from './sync';
+import { isOnline, addToOutbox } from './sync';
 
 const USER_PLANS_KEY = 'rhinos_user_plans';
 const SYNCING_PLANS_KEY = 'rhinos_syncing_plans';
@@ -175,7 +175,7 @@ export async function deleteUserPlan(planId: string): Promise<boolean> {
   localStorage.setItem(DELETED_PLANS_KEY, JSON.stringify(Array.from(deletedPlans)));
   console.log('[USER PLANS] Marked plan as deleted:', planId);
 
-  // Try to delete from backend if online
+  // Try to delete from backend if online, or add to outbox if offline
   const online = isOnline();
   if (online) {
     try {
@@ -183,8 +183,14 @@ export async function deleteUserPlan(planId: string): Promise<boolean> {
       await userPlanService.delete(planId);
       console.log('[USER PLANS] Plan deleted from backend');
     } catch (error) {
-      console.warn('[USER PLANS] Failed to delete plan from backend:', error);
+      console.warn('[USER PLANS] Failed to delete plan from backend, adding to outbox:', error);
+      // If delete failed while online, add to outbox for retry
+      await addToOutbox('userPlan', 'delete', { id: planId });
     }
+  } else {
+    // Offline: add to outbox for sync when online
+    console.log('[USER PLANS] Offline - adding deletion to outbox for later sync');
+    await addToOutbox('userPlan', 'delete', { id: planId });
   }
 
   return true;

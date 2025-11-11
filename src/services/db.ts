@@ -71,7 +71,7 @@ export interface LocalWorkout {
 
 export interface OutboxItem {
   id: string;
-  entity: 'training' | 'attendance' | 'workout' | 'user' | 'assignment' | 'trainingSession' | 'rsvp' | 'checkin' | 'attendancePoll';
+  entity: 'training' | 'attendance' | 'workout' | 'user' | 'assignment' | 'trainingSession' | 'rsvp' | 'checkin' | 'attendancePoll' | 'userPlan';
   action: 'create' | 'update' | 'delete' | 'rsvp' | 'checkin' | 'vote' | 'close';
   data: any;
   timestamp: number;
