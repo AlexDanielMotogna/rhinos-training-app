@@ -38,8 +38,8 @@ export interface TrainingTemplate {
 export interface ExerciseConfig {
   exerciseId: string;
   sets?: number; // Target sets for this specific exercise
-  reps?: number; // Target reps OR duration (depending on unit)
-  unit?: 'reps' | 'seconds'; // Whether reps is repetitions or time in seconds
+  reps?: number; // Target reps OR duration/distance (depending on unit)
+  unit?: 'reps' | 'seconds' | 'meters'; // Whether reps is repetitions, time in seconds, or distance in meters
 }
 
 /**

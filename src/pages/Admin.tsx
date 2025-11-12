@@ -2755,7 +2755,7 @@ export const Admin: React.FC = () => {
 
                             {/* Reps/Duration Field */}
                             <TextField
-                              label={unit === 'reps' ? 'Reps' : 'Seconds'}
+                              label={unit === 'reps' ? 'Reps' : unit === 'meters' ? 'Meters' : 'Seconds'}
                               type="number"
                               value={config?.reps || ''}
                               onChange={(e) => {
@@ -2772,18 +2772,18 @@ export const Admin: React.FC = () => {
                                 setCurrentBlock({ ...currentBlock, exerciseConfigs: newConfigs });
                               }}
                               size="small"
-                              inputProps={{ min: 1, max: unit === 'reps' ? 100 : 300 }}
+                              inputProps={{ min: 1, max: unit === 'reps' ? 100 : unit === 'meters' ? 500 : 300 }}
                               sx={{ width: 120 }}
                             />
 
-                            {/* Toggle between Reps and Seconds */}
+                            {/* Toggle between Reps, Seconds, and Meters */}
                             <FormControl size="small" sx={{ minWidth: 120 }}>
                               <InputLabel>Unit</InputLabel>
                               <Select
                                 value={unit}
                                 label="Unit"
                                 onChange={(e) => {
-                                  const newUnit = e.target.value as 'reps' | 'seconds';
+                                  const newUnit = e.target.value as 'reps' | 'seconds' | 'meters';
                                   const newConfigs = [...(currentBlock.exerciseConfigs || [])];
                                   const configIndex = newConfigs.findIndex(c => c.exerciseId === exerciseId);
 
@@ -2798,6 +2798,7 @@ export const Admin: React.FC = () => {
                               >
                                 <MenuItem value="reps">Reps</MenuItem>
                                 <MenuItem value="seconds">Seconds</MenuItem>
+                                <MenuItem value="meters">Meters</MenuItem>
                               </Select>
                             </FormControl>
                           </Box>

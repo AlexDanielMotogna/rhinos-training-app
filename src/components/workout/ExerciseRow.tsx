@@ -11,8 +11,8 @@ interface ExerciseRowProps {
   onLogWorkout?: () => void;
   showLogButton?: boolean;
   targetSets?: number; // Target sets for this exercise
-  targetReps?: number; // Target reps or duration
-  unit?: 'reps' | 'seconds'; // Unit for targetReps
+  targetReps?: number; // Target reps, duration, or distance
+  unit?: 'reps' | 'seconds' | 'meters'; // Unit for targetReps
 }
 
 export const ExerciseRow: React.FC<ExerciseRowProps> = ({
@@ -61,7 +61,11 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
           )}
           {targetReps && (
             <Chip
-              label={unit === 'seconds' ? `${targetReps}s` : `${targetReps} reps`}
+              label={
+                unit === 'seconds' ? `${targetReps}s` :
+                unit === 'meters' ? `${targetReps}m` :
+                `${targetReps} reps`
+              }
               size="small"
               color="success"
               sx={{ height: 24, fontWeight: 600 }}
