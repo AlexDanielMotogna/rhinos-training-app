@@ -140,6 +140,10 @@ export const Admin: React.FC = () => {
   const [isPopulatingUsers, setIsPopulatingUsers] = useState(false);
   const [populationResult, setPopulationResult] = useState<string | null>(null);
 
+  // View Training Dialog State
+  const [viewTrainingDialogOpen, setViewTrainingDialogOpen] = useState(false);
+  const [viewingTemplate, setViewingTemplate] = useState<TrainingTemplate | null>(null);
+
   // Sync team settings from backend on mount
   useEffect(() => {
     const loadSettings = async () => {
@@ -1209,6 +1213,17 @@ export const Admin: React.FC = () => {
                         ))}
                       </Box>
                       <Box>
+                        <IconButton
+                          size="small"
+                          color="info"
+                          onClick={() => {
+                            setViewingTemplate(template);
+                            setViewTrainingDialogOpen(true);
+                          }}
+                          title="View Training Details"
+                        >
+                          <SearchIcon />
+                        </IconButton>
                         <IconButton
                           size="small"
                           color="primary"
@@ -3051,6 +3066,147 @@ export const Admin: React.FC = () => {
 
       {/* Video Tags Tab */}
       {activeTab === 14 && <VideoTagsManager />}
+
+      {/* View Training Dialog */}
+      <Dialog
+        open={viewTrainingDialogOpen}
+        onClose={() => setViewTrainingDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              {viewingTemplate?.trainingTypeName || 'Training Details'}
+            </Typography>
+            {viewingTemplate?.positions && viewingTemplate.positions.length > 0 && (
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {viewingTemplate.positions.map((pos) => (
+                  <Chip key={pos} label={pos} size="small" color="primary" />
+                ))}
+              </Box>
+            )}
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {viewingTemplate && (
+            <Box>
+              {/* Template Info */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Duration: {viewingTemplate.durationWeeks} weeks • Frequency: {viewingTemplate.frequencyPerWeek}x/week
+                </Typography>
+                {viewingTemplate.weeklyNotes && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    <Typography variant="body2">{viewingTemplate.weeklyNotes}</Typography>
+                  </Alert>
+                )}
+              </Box>
+
+              {/* Blocks and Exercises */}
+              {viewingTemplate.blocks.map((block: any, blockIdx: number) => (
+                <Paper key={block.id || blockIdx} elevation={2} sx={{ p: 2, mb: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                    {blockIdx + 1}. {block.title}
+                  </Typography>
+
+                  {/* Block metadata */}
+                  <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    {block.dayOfWeek && (
+                      <Chip label={`Day: ${block.dayOfWeek}`} size="small" variant="outlined" />
+                    )}
+                    {block.dayNumber && (
+                      <Chip label={`Day ${block.dayNumber}`} size="small" variant="outlined" />
+                    )}
+                    {block.sessionName && (
+                      <Chip label={block.sessionName} size="small" variant="outlined" />
+                    )}
+                    {block.globalSets && (
+                      <Chip label={`${block.globalSets} sets`} size="small" color="secondary" />
+                    )}
+                  </Box>
+
+                  {/* Exercise List */}
+                  <List dense>
+                    {(block.exercises || block.items || []).map((exercise: any, exIdx: number) => {
+                      // Get specific sets config for this exercise
+                      const exerciseConfig = block.exerciseConfigs?.find(
+                        (config: any) => config.exerciseId === exercise.id
+                      );
+                      const sets = exerciseConfig?.sets || block.globalSets || '-';
+
+                      return (
+                        <ListItem
+                          key={exercise.id || exIdx}
+                          sx={{
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 1,
+                            mb: 1,
+                            bgcolor: 'background.paper',
+                          }}
+                        >
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body1" fontWeight={500}>
+                                  {exIdx + 1}. {exercise.name}
+                                </Typography>
+                                <Chip label={`${sets} sets`} size="small" color="primary" />
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5 }}>
+                                {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    Muscle Groups: {exercise.muscleGroups.join(', ')}
+                                  </Typography>
+                                )}
+                                {exercise.youtubeUrl && (
+                                  <Box sx={{ mt: 0.5 }}>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      href={exercise.youtubeUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Watch Video
+                                    </Button>
+                                  </Box>
+                                )}
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+
+                  {/* Summary */}
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Total: {(block.exercises?.length || block.items?.length || 0)} exercises
+                  </Typography>
+                </Paper>
+              ))}
+
+              {/* Overall Summary */}
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius: 1 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  Total Blocks: {viewingTemplate.blocks.length} | Total Exercises: {
+                    viewingTemplate.blocks.reduce((total: number, block: any) => {
+                      return total + ((block.exercises?.length || block.items?.length || 0));
+                    }, 0)
+                  }
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewTrainingDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
