@@ -1208,16 +1208,37 @@ export const Admin: React.FC = () => {
                           {template.blocks.length} block(s)
                         </Typography>
 
-                        {template.blocks.map((block, idx) => (
-                          <Box key={block.id} sx={{ mb: 1 }}>
-                            <Typography variant="body2" fontWeight={600}>
-                              {idx + 1}. {block.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {((block as any).exercises?.length || (block as any).items?.length || 0)} exercise(s)
-                            </Typography>
-                          </Box>
-                        ))}
+                        {/* Group blocks by day */}
+                        {(() => {
+                          const blocksByDay: Record<string, any[]> = {};
+                          template.blocks.forEach((block: any) => {
+                            const day = block.dayOfWeek || block.dayNumber?.toString() || 'Unassigned';
+                            if (!blocksByDay[day]) {
+                              blocksByDay[day] = [];
+                            }
+                            blocksByDay[day].push(block);
+                          });
+
+                          const days = Object.keys(blocksByDay).sort();
+
+                          return days.map((day) => (
+                            <Box key={day} sx={{ mb: 1.5 }}>
+                              <Typography variant="caption" fontWeight={700} color="primary.main" sx={{ display: 'block', mb: 0.5 }}>
+                                {day}
+                              </Typography>
+                              {blocksByDay[day].map((block: any, idx: number) => (
+                                <Box key={block.id} sx={{ ml: 1, mb: 0.5 }}>
+                                  <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.875rem' }}>
+                                    • {block.title}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary" sx={{ ml: 1.5 }}>
+                                    {((block as any).exercises?.length || (block as any).items?.length || 0)} exercise(s)
+                                  </Typography>
+                                </Box>
+                              ))}
+                            </Box>
+                          ));
+                        })()}
                       </Box>
                       <Box>
                         <IconButton
