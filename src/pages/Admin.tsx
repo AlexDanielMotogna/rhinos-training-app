@@ -1352,9 +1352,14 @@ export const Admin: React.FC = () => {
             <Typography variant="h6">
               {t('admin.exerciseCatalog')} ({(() => {
                 const filtered = exercises.filter(ex => {
-                  // Search filter
-                  if (exerciseSearchQuery && !ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())) {
-                    return false;
+                  // Search filter (name and category)
+                  if (exerciseSearchQuery) {
+                    const searchLower = exerciseSearchQuery.toLowerCase();
+                    const nameMatch = ex.name.toLowerCase().includes(searchLower);
+                    const categoryMatch = ex.category.toLowerCase().includes(searchLower);
+                    if (!nameMatch && !categoryMatch) {
+                      return false;
+                    }
                   }
                   // Muscle group filter
                   if (exerciseMuscleGroupFilter !== 'all' && !ex.muscleGroups?.includes(exerciseMuscleGroupFilter)) {
@@ -1379,7 +1384,7 @@ export const Admin: React.FC = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                placeholder="Search by name..."
+                placeholder="Search by name or category..."
                 value={exerciseSearchQuery}
                 onChange={(e) => {
                   setExerciseSearchQuery(e.target.value);
@@ -1432,9 +1437,14 @@ export const Admin: React.FC = () => {
               <TableBody>
                 {exercises
                   .filter(ex => {
-                    // Search filter
-                    if (exerciseSearchQuery && !ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())) {
-                      return false;
+                    // Search filter (name and category)
+                    if (exerciseSearchQuery) {
+                      const searchLower = exerciseSearchQuery.toLowerCase();
+                      const nameMatch = ex.name.toLowerCase().includes(searchLower);
+                      const categoryMatch = ex.category.toLowerCase().includes(searchLower);
+                      if (!nameMatch && !categoryMatch) {
+                        return false;
+                      }
                     }
                     // Muscle group filter
                     if (exerciseMuscleGroupFilter !== 'all' && !ex.muscleGroups?.includes(exerciseMuscleGroupFilter)) {
@@ -1529,9 +1539,16 @@ export const Admin: React.FC = () => {
             <Typography variant="body2" color="text.secondary">
               Showing {(() => {
                 const filtered = exercises.filter(ex => {
-                  if (exerciseSearchQuery && !ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())) {
-                    return false;
+                  // Search filter (name and category)
+                  if (exerciseSearchQuery) {
+                    const searchLower = exerciseSearchQuery.toLowerCase();
+                    const nameMatch = ex.name.toLowerCase().includes(searchLower);
+                    const categoryMatch = ex.category.toLowerCase().includes(searchLower);
+                    if (!nameMatch && !categoryMatch) {
+                      return false;
+                    }
                   }
+                  // Muscle group filter
                   if (exerciseMuscleGroupFilter !== 'all' && !ex.muscleGroups?.includes(exerciseMuscleGroupFilter)) {
                     return false;
                   }
@@ -1545,9 +1562,16 @@ export const Admin: React.FC = () => {
             <Pagination
               count={Math.ceil(
                 exercises.filter(ex => {
-                  if (exerciseSearchQuery && !ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())) {
-                    return false;
+                  // Search filter (name and category)
+                  if (exerciseSearchQuery) {
+                    const searchLower = exerciseSearchQuery.toLowerCase();
+                    const nameMatch = ex.name.toLowerCase().includes(searchLower);
+                    const categoryMatch = ex.category.toLowerCase().includes(searchLower);
+                    if (!nameMatch && !categoryMatch) {
+                      return false;
+                    }
                   }
+                  // Muscle group filter
                   if (exerciseMuscleGroupFilter !== 'all' && !ex.muscleGroups?.includes(exerciseMuscleGroupFilter)) {
                     return false;
                   }
@@ -2551,8 +2575,12 @@ export const Admin: React.FC = () => {
                 }}
               >
                 <List dense>
-                  {getFilteredExercises(newTemplateData.trainingTypeId)
+                  {(exerciseSearchQuery
+                    ? exercises // When searching, show ALL exercises
+                    : getFilteredExercises(newTemplateData.trainingTypeId) // When not searching, filter by training type
+                  )
                     .filter(exercise =>
+                      !exerciseSearchQuery || // If no search query, show all (from getFilteredExercises)
                       exercise.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase()) ||
                       exercise.category.toLowerCase().includes(exerciseSearchQuery.toLowerCase())
                     )
