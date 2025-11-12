@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, Box, Typography, Button } from '@mui/material';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createDynamicTheme } from './theme';
@@ -9,6 +9,7 @@ import { AppShell } from './components/AppShell';
 import { HardNotification } from './components/HardNotification';
 import { AttendancePollModal } from './components/AttendancePollModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { getUser } from './services/userProfile';
 import type { HardNotification as HardNotificationType } from './types/notification';
 import type { AttendancePoll } from './types/attendancePoll';
@@ -17,27 +18,69 @@ import { initializeDrillData } from './services/drillDataInit';
 import { getActivePoll, hasUserVoted } from './services/attendancePollService';
 import { cleanupMockNotifications } from './services/mock';
 
-// Lazy load all page components
-const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-const MyTraining = lazy(() => import('./pages/MyTraining').then(m => ({ default: m.MyTraining })));
-const MyStats = lazy(() => import('./pages/MyStats').then(m => ({ default: m.MyStats })));
-const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
-const Attendance = lazy(() => import('./pages/Attendance').then(m => ({ default: m.Attendance })));
-const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
-const Admin = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
-const Tests = lazy(() => import('./pages/Tests').then(m => ({ default: m.Tests })));
-const TestsStrength = lazy(() => import('./pages/TestsStrength').then(m => ({ default: m.TestsStrength })));
-const TestsSpeed = lazy(() => import('./pages/TestsSpeed').then(m => ({ default: m.TestsSpeed })));
-const TestsPower = lazy(() => import('./pages/TestsPower').then(m => ({ default: m.TestsPower })));
-const TestsAgility = lazy(() => import('./pages/TestsAgility').then(m => ({ default: m.TestsAgility })));
-const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
-const Videos = lazy(() => import('./pages/Videos').then(m => ({ default: m.Videos })));
-const VideosAdmin = lazy(() => import('./pages/VideosAdmin').then(m => ({ default: m.VideosAdmin })));
-const Team = lazy(() => import('./pages/Team').then(m => ({ default: m.Team })));
-const TrainingSessions = lazy(() => import('./pages/TrainingSessions').then(m => ({ default: m.TrainingSessions })));
-const Configuration = lazy(() => import('./pages/Configuration').then(m => ({ default: m.Configuration })));
-const DrillSessions = lazy(() => import('./components/DrillTrainingPlan').then(m => ({ default: m.DrillTrainingPlan })));
+/**
+ * Helper to create lazy-loaded components with error handling
+ * Prevents blank screens when chunks fail to load
+ */
+const createLazyComponent = (
+  importFn: () => Promise<any>,
+  componentName: string
+) => {
+  return lazy(() =>
+    importFn()
+      .catch((error) => {
+        console.error(`Failed to load component ${componentName}:`, error);
+        // Return a fallback component instead of crashing
+        return {
+          default: () => (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '60vh',
+                gap: 2,
+                p: 3,
+              }}
+            >
+              <Typography variant="h6" color="error">
+                Failed to load {componentName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Please check your internet connection and try again
+              </Typography>
+              <Button variant="contained" onClick={() => window.location.reload()}>
+                Reload Page
+              </Button>
+            </Box>
+          ),
+        };
+      })
+  );
+};
+
+// Lazy load all page components with error handling
+const Auth = createLazyComponent(() => import('./pages/Auth').then(m => ({ default: m.Auth })), 'Auth');
+const ResetPassword = createLazyComponent(() => import('./pages/ResetPassword'), 'ResetPassword');
+const MyTraining = createLazyComponent(() => import('./pages/MyTraining').then(m => ({ default: m.MyTraining })), 'MyTraining');
+const MyStats = createLazyComponent(() => import('./pages/MyStats').then(m => ({ default: m.MyStats })), 'MyStats');
+const Profile = createLazyComponent(() => import('./pages/Profile').then(m => ({ default: m.Profile })), 'Profile');
+const Attendance = createLazyComponent(() => import('./pages/Attendance').then(m => ({ default: m.Attendance })), 'Attendance');
+const Leaderboard = createLazyComponent(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })), 'Leaderboard');
+const Admin = createLazyComponent(() => import('./pages/Admin').then(m => ({ default: m.Admin })), 'Admin');
+const Tests = createLazyComponent(() => import('./pages/Tests').then(m => ({ default: m.Tests })), 'Tests');
+const TestsStrength = createLazyComponent(() => import('./pages/TestsStrength').then(m => ({ default: m.TestsStrength })), 'TestsStrength');
+const TestsSpeed = createLazyComponent(() => import('./pages/TestsSpeed').then(m => ({ default: m.TestsSpeed })), 'TestsSpeed');
+const TestsPower = createLazyComponent(() => import('./pages/TestsPower').then(m => ({ default: m.TestsPower })), 'TestsPower');
+const TestsAgility = createLazyComponent(() => import('./pages/TestsAgility').then(m => ({ default: m.TestsAgility })), 'TestsAgility');
+const Reports = createLazyComponent(() => import('./pages/Reports').then(m => ({ default: m.Reports })), 'Reports');
+const Videos = createLazyComponent(() => import('./pages/Videos').then(m => ({ default: m.Videos })), 'Videos');
+const VideosAdmin = createLazyComponent(() => import('./pages/VideosAdmin').then(m => ({ default: m.VideosAdmin })), 'VideosAdmin');
+const Team = createLazyComponent(() => import('./pages/Team').then(m => ({ default: m.Team })), 'Team');
+const TrainingSessions = createLazyComponent(() => import('./pages/TrainingSessions').then(m => ({ default: m.TrainingSessions })), 'TrainingSessions');
+const Configuration = createLazyComponent(() => import('./pages/Configuration').then(m => ({ default: m.Configuration })), 'Configuration');
+const DrillSessions = createLazyComponent(() => import('./components/DrillTrainingPlan').then(m => ({ default: m.DrillTrainingPlan })), 'DrillSessions');
 
 function App() {
   // Initialize drill data on app startup
@@ -201,17 +244,17 @@ function App() {
             <Route
               path="/"
               element={
-                currentUser ? <Navigate to="/training" replace /> : <Suspense fallback={<LoadingSpinner />}><Auth /></Suspense>
+                currentUser ? <Navigate to="/training" replace /> : <ErrorBoundary><Suspense fallback={<LoadingSpinner />}><Auth /></Suspense></ErrorBoundary>
               }
             />
 
             <Route
               path="/reset-password"
-              element={<Suspense fallback={<LoadingSpinner />}><ResetPassword /></Suspense>}
+              element={<ErrorBoundary><Suspense fallback={<LoadingSpinner />}><ResetPassword /></Suspense></ErrorBoundary>}
             />
 
             {currentUser ? (
-              <Route element={<AppShell><Suspense fallback={<LoadingSpinner />}><Outlet /></Suspense></AppShell>}>
+              <Route element={<AppShell><ErrorBoundary><Suspense fallback={<LoadingSpinner />}><Outlet /></Suspense></ErrorBoundary></AppShell>}>
                 <Route path="/training" element={<MyTraining />} />
                 <Route path="/stats" element={<MyStats />} />
                 <Route path="/tests" element={<Tests />} />

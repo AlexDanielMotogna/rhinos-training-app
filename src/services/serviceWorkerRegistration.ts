@@ -16,11 +16,43 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
     console.log('Service Worker registered successfully:', registration);
 
-    // Check for updates periodically
+    // Check for updates and notify user
     registration.addEventListener('updatefound', () => {
       const newWorker = registration.installing;
       console.log('Service Worker update found:', newWorker);
+
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New service worker available, notify user
+            console.log('New version available! Please reload to update.');
+
+            // Show update notification
+            const shouldReload = confirm(
+              'A new version of the app is available. Reload to update?'
+            );
+
+            if (shouldReload) {
+              // Tell the new service worker to skip waiting
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              // Reload the page
+              window.location.reload();
+            }
+          }
+        });
+      }
     });
+
+    // Handle controller change (new SW activated)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('Service Worker controller changed - reloading page');
+      window.location.reload();
+    });
+
+    // Check for updates every hour
+    setInterval(() => {
+      registration.update();
+    }, 60 * 60 * 1000); // Check every hour
 
     return registration;
   } catch (error) {

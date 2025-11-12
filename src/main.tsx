@@ -9,12 +9,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
-// Register service worker for PWA notifications
+// Register service worker for PWA notifications (PRODUCTION ONLY)
+// Service worker is disabled in development to prevent caching issues
 if (import.meta.env.PROD) {
-  // Only in production (Vercel)
+  console.log('Production mode: registering service worker...');
   registerServiceWorker();
 } else {
-  // In development, also register for testing
-  console.log('Development mode: registering service worker for testing...');
-  registerServiceWorker();
+  console.log('Development mode: service worker disabled to prevent caching issues');
 }
