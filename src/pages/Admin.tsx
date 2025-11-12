@@ -144,6 +144,10 @@ export const Admin: React.FC = () => {
   const [viewTrainingDialogOpen, setViewTrainingDialogOpen] = useState(false);
   const [viewingTemplate, setViewingTemplate] = useState<TrainingTemplate | null>(null);
 
+  // Video Player State
+  const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string>('');
+
   // Sync team settings from backend on mount
   useEffect(() => {
     const loadSettings = async () => {
@@ -3158,21 +3162,53 @@ export const Admin: React.FC = () => {
                             secondary={
                               <Box sx={{ mt: 0.5 }}>
                                 {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
-                                  <Typography variant="caption" color="text.secondary">
+                                  <Typography variant="caption" color="text.secondary" display="block">
                                     Muscle Groups: {exercise.muscleGroups.join(', ')}
                                   </Typography>
                                 )}
                                 {exercise.youtubeUrl && (
-                                  <Box sx={{ mt: 0.5 }}>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      href={exercise.youtubeUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                  <Box
+                                    sx={{
+                                      mt: 1,
+                                      cursor: 'pointer',
+                                      position: 'relative',
+                                      '&:hover': { opacity: 0.8 },
+                                      borderRadius: 1,
+                                      overflow: 'hidden',
+                                      maxWidth: 200,
+                                    }}
+                                    onClick={() => {
+                                      setCurrentVideoUrl(exercise.youtubeUrl);
+                                      setVideoPlayerOpen(true);
+                                    }}
+                                  >
+                                    <img
+                                      src={`https://img.youtube.com/vi/${extractYouTubeVideoId(exercise.youtubeUrl)}/mqdefault.jpg`}
+                                      alt={`${exercise.name} video thumbnail`}
+                                      style={{
+                                        width: '100%',
+                                        display: 'block',
+                                        borderRadius: 4,
+                                      }}
+                                    />
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        width: 48,
+                                        height: 48,
+                                        bgcolor: 'rgba(0,0,0,0.7)',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'white',
+                                      }}
                                     >
-                                      Watch Video
-                                    </Button>
+                                      ▶
+                                    </Box>
                                   </Box>
                                 )}
                               </Box>
@@ -3205,6 +3241,49 @@ export const Admin: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setViewTrainingDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Video Player Dialog */}
+      <Dialog
+        open={videoPlayerOpen}
+        onClose={() => {
+          setVideoPlayerOpen(false);
+          setCurrentVideoUrl('');
+        }}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Exercise Video
+        </DialogTitle>
+        <DialogContent>
+          {currentVideoUrl && (
+            <Box sx={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${extractYouTubeVideoId(currentVideoUrl)}?autoplay=1`}
+                title="Exercise Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setVideoPlayerOpen(false);
+            setCurrentVideoUrl('');
+          }}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
