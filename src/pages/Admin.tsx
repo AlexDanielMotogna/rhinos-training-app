@@ -148,6 +148,9 @@ export const Admin: React.FC = () => {
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string>('');
 
+  // Day Filter State
+  const [selectedDayFilter, setSelectedDayFilter] = useState<string>('all');
+
   // Sync team settings from backend on mount
   useEffect(() => {
     const loadSettings = async () => {
@@ -3074,7 +3077,10 @@ export const Admin: React.FC = () => {
       {/* View Training Dialog */}
       <Dialog
         open={viewTrainingDialogOpen}
-        onClose={() => setViewTrainingDialogOpen(false)}
+        onClose={() => {
+          setViewTrainingDialogOpen(false);
+          setSelectedDayFilter('all');
+        }}
         maxWidth="md"
         fullWidth
       >
@@ -3093,22 +3099,76 @@ export const Admin: React.FC = () => {
           </Box>
         </DialogTitle>
         <DialogContent dividers>
-          {viewingTemplate && (
-            <Box>
-              {/* Template Info */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Duration: {viewingTemplate.durationWeeks} weeks • Frequency: {viewingTemplate.frequencyPerWeek}x/week
-                </Typography>
-                {viewingTemplate.weeklyNotes && (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    <Typography variant="body2">{viewingTemplate.weeklyNotes}</Typography>
-                  </Alert>
-                )}
-              </Box>
+          {viewingTemplate && (() => {
+            // Group blocks by day
+            const blocksByDay: Record<string, any[]> = {};
+            viewingTemplate.blocks.forEach((block: any) => {
+              const day = block.dayOfWeek || block.dayNumber?.toString() || block.sessionName || 'Unassigned';
+              if (!blocksByDay[day]) {
+                blocksByDay[day] = [];
+              }
+              blocksByDay[day].push(block);
+            });
 
-              {/* Blocks and Exercises */}
-              {viewingTemplate.blocks.map((block: any, blockIdx: number) => (
+            const allDays = Object.keys(blocksByDay).sort();
+            const filteredDays = selectedDayFilter === 'all'
+              ? allDays
+              : allDays.filter(day => day === selectedDayFilter);
+
+            return (
+              <Box>
+                {/* Template Info */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Duration: {viewingTemplate.durationWeeks} weeks • Frequency: {viewingTemplate.frequencyPerWeek}x/week
+                  </Typography>
+                  {viewingTemplate.weeklyNotes && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2">{viewingTemplate.weeklyNotes}</Typography>
+                    </Alert>
+                  )}
+                </Box>
+
+                {/* Day Filter */}
+                <Box sx={{ mb: 3 }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Filter by Day</InputLabel>
+                    <Select
+                      value={selectedDayFilter}
+                      label="Filter by Day"
+                      onChange={(e) => setSelectedDayFilter(e.target.value)}
+                    >
+                      <MenuItem value="all">All Days</MenuItem>
+                      {allDays.map((day) => (
+                        <MenuItem key={day} value={day}>{day}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                {/* Days and Blocks */}
+                {filteredDays.map((day) => (
+                  <Box key={day} sx={{ mb: 4 }}>
+                    {/* Day Header */}
+                    <Paper
+                      elevation={3}
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText'
+                      }}
+                    >
+                      <Typography variant="h5" fontWeight={600}>
+                        {day}
+                      </Typography>
+                      <Typography variant="body2">
+                        {blocksByDay[day].length} block(s)
+                      </Typography>
+                    </Paper>
+
+                    {/* Blocks for this day */}
+                    {blocksByDay[day].map((block: any, blockIdx: number) => (
                 <Paper key={block.id || blockIdx} elevation={2} sx={{ p: 2, mb: 2 }}>
                   <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
                     {blockIdx + 1}. {block.title}
@@ -3219,28 +3279,36 @@ export const Admin: React.FC = () => {
                     })}
                   </List>
 
-                  {/* Summary */}
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    Total: {(block.exercises?.length || block.items?.length || 0)} exercises
-                  </Typography>
-                </Paper>
-              ))}
+                      {/* Summary */}
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                        Total: {(block.exercises?.length || block.items?.length || 0)} exercises
+                      </Typography>
+                    </Paper>
+                    ))}
+                  </Box>
+                ))}
 
-              {/* Overall Summary */}
-              <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius: 1 }}>
-                <Typography variant="body2" fontWeight={600}>
-                  Total Blocks: {viewingTemplate.blocks.length} | Total Exercises: {
-                    viewingTemplate.blocks.reduce((total: number, block: any) => {
-                      return total + ((block.exercises?.length || block.items?.length || 0));
-                    }, 0)
-                  }
-                </Typography>
+                {/* Overall Summary */}
+                <Box sx={{ mt: 3, p: 2, bgcolor: 'success.main', color: 'success.contrastText', borderRadius: 1 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    Total Training: {viewingTemplate.blocks.length} block(s) | {
+                      viewingTemplate.blocks.reduce((total: number, block: any) => {
+                        return total + ((block.exercises?.length || block.items?.length || 0));
+                      }, 0)
+                    } exercise(s)
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
-          )}
+            );
+          })()}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewTrainingDialogOpen(false)}>Close</Button>
+          <Button onClick={() => {
+            setViewTrainingDialogOpen(false);
+            setSelectedDayFilter('all');
+          }}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
