@@ -932,4 +932,14 @@ export const messagesDE = {
   'teamSettings.levelDesc.college': 'College-Level: NCAA/Universitätsstandards, strukturierte Trainingsprogramme, Wettkampfsport mit akademischem Ausgleich.',
   'teamSettings.levelDesc.varsity': 'Varsity-Level: Highschool/Universitätswettbewerbsteam, strukturierte Trainingspläne, Balance mit Akademischem.',
   'teamSettings.levelDesc.pro': 'Professionelles Level: Elite-Standards, Vollzeit-Training, hohe Erwartungen an Leistung und Professionalität.',
+
+  // Notifications
+  'notifications.newTeamSession.title': 'Neue Team-Trainingseinheit',
+  'notifications.newTeamSession.body': '{date} um {time} - {location}',
+  'notifications.sessionReminder.title': 'Trainingserinnerung',
+  'notifications.sessionReminder.body': 'Training in 1 Stunde in {location}',
+  'notifications.coachComment.title': 'Neuer Trainerkommentar',
+  'notifications.newVideo.title': 'Neues Video verfügbar',
+  'notifications.testNotification.title': 'Test-Benachrichtigung',
+  'notifications.testNotification.body': 'Dies ist eine Test-Benachrichtigung von der Rhinos Training App',
 };

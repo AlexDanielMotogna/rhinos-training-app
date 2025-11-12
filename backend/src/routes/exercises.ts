@@ -8,14 +8,19 @@ const router = express.Router();
 // Validation schemas
 const exerciseSchema = z.object({
   name: z.string().min(1),
-  category: z.enum(['Strength', 'Speed', 'COD', 'Mobility', 'Technique', 'Conditioning', 'Recovery', 'Plyometrics']),
-  youtubeUrl: z.string().url().optional().or(z.literal('')),
+  category: z.string().min(1), // Accept any category key (dynamic categories)
+  youtubeUrl: z.string()
+    .transform(val => val?.trim() || '')
+    .refine(val => val === '' || z.string().url().safeParse(val).success, {
+      message: 'YouTube URL must be a valid URL. Check for extra characters like brackets or spaces.',
+    })
+    .optional(),
   positionTags: z.array(z.string()).optional().default([]),
   muscleGroups: z.array(z.enum(['legs', 'chest', 'back', 'shoulders', 'arms', 'core', 'full-body'])).optional().default([]),
   isGlobal: z.boolean().optional().default(true),
   isCustom: z.boolean().optional().default(false),
-  descriptionEN: z.string().optional(),
-  descriptionDE: z.string().optional(),
+  descriptionEN: z.string().nullable().optional(),
+  descriptionDE: z.string().nullable().optional(),
 });
 
 // GET /api/exercises - Get all exercises

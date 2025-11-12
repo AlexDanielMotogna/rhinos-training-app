@@ -11,6 +11,8 @@ interface ExerciseRowProps {
   onLogWorkout?: () => void;
   showLogButton?: boolean;
   targetSets?: number; // Target sets for this exercise
+  targetReps?: number; // Target reps or duration
+  unit?: 'reps' | 'seconds'; // Unit for targetReps
 }
 
 export const ExerciseRow: React.FC<ExerciseRowProps> = ({
@@ -18,7 +20,9 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
   onVideoClick,
   onLogWorkout,
   showLogButton = false,
-  targetSets
+  targetSets,
+  targetReps,
+  unit = 'reps'
 }) => {
   const { t } = useI18n();
 
@@ -52,6 +56,14 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
               label={`${targetSets} sets`}
               size="small"
               color="info"
+              sx={{ height: 24, fontWeight: 600 }}
+            />
+          )}
+          {targetReps && (
+            <Chip
+              label={unit === 'seconds' ? `${targetReps}s` : `${targetReps} reps`}
+              size="small"
+              color="success"
               sx={{ height: 24, fontWeight: 600 }}
             />
           )}

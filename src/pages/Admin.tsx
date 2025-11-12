@@ -31,10 +31,16 @@ import {
   FormControlLabel,
   Checkbox,
   Pagination,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SearchIcon from '@mui/icons-material/Search';
 import { useI18n } from '../i18n/I18nProvider';
 import type { Exercise, ExerciseCategory, Position, MuscleGroup } from '../types/exercise';
 import type { TrainingTemplate, TrainingAssignment } from '../types/trainingBuilder';
@@ -56,6 +62,7 @@ import { NotificationTemplates, getNotificationStatus, requestNotificationPermis
 import { toastService } from '../services/toast';
 import { createSession, getTeamSessions, deleteSession } from '../services/trainingSessions';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import { extractYouTubeVideoId } from '../services/yt';
 
 interface TeamSession {
   id: string;
@@ -83,7 +90,7 @@ interface TrainingType {
 }
 
 export const Admin: React.FC = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
   const user = getUser();
 
@@ -94,6 +101,8 @@ export const Admin: React.FC = () => {
   const [exercisePage, setExercisePage] = useState(0);
   const [exercisesPerPage] = useState(20);
   const [exerciseCategories, setExerciseCategories] = useState<any[]>([]);
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
+  const [exerciseMuscleGroupFilter, setExerciseMuscleGroupFilter] = useState<MuscleGroup | 'all'>('all');
   const [newExercise, setNewExercise] = useState<Partial<Exercise & { trainingTypes?: string[] }>>({
     name: '',
     category: 'strength', // Default to first category key
@@ -469,18 +478,20 @@ export const Admin: React.FC = () => {
 
       // Send notification about new session
       const sessionDate = new Date(session.date);
-      const formattedDate = sessionDate.toLocaleDateString('en-US', {
+      const formattedDate = sessionDate.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       });
 
-      await NotificationTemplates.newTeamSession(
-        formattedDate,
-        session.startTime,
-        session.location
-      );
+      const notificationTitle = t('notifications.newTeamSession.title');
+      const notificationBody = t('notifications.newTeamSession.body')
+        .replace('{date}', formattedDate)
+        .replace('{time}', session.startTime)
+        .replace('{location}', session.location || '');
+
+      await NotificationTemplates.newTeamSession(notificationTitle, notificationBody);
 
       toastService.created('Team Session');
 
@@ -847,6 +858,7 @@ export const Admin: React.FC = () => {
       globalSets: undefined,
       exerciseConfigs: [],
     });
+    setExerciseSearchQuery(''); // Reset search
     setBlockDialogOpen(true);
   };
 
@@ -862,6 +874,7 @@ export const Admin: React.FC = () => {
       globalSets: block.globalSets,
       exerciseConfigs: block.exerciseConfigs || [],
     });
+    setExerciseSearchQuery(''); // Reset search
     setBlockDialogOpen(true);
   };
 
@@ -1068,16 +1081,18 @@ export const Admin: React.FC = () => {
 
     // Strength & Conditioning: Strength, Plyometrics, Conditioning, Mobility, Recovery
     if (key.includes('strength') || key.includes('conditioning')) {
-      return exercises.filter(ex =>
-        ['Strength', 'Plyometrics', 'Conditioning', 'Mobility', 'Recovery'].includes(ex.category)
-      );
+      return exercises.filter(ex => {
+        const categoryLower = ex.category.toLowerCase();
+        return ['strength', 'plyometrics', 'conditioning', 'mobility', 'recovery'].includes(categoryLower);
+      });
     }
 
     // Sprints / Speed: Speed, COD, Technique, Conditioning, Mobility, Recovery
     if (key.includes('sprint') || key.includes('speed')) {
-      return exercises.filter(ex =>
-        ['Speed', 'COD', 'Technique', 'Conditioning', 'Mobility', 'Recovery'].includes(ex.category)
-      );
+      return exercises.filter(ex => {
+        const categoryLower = ex.category.toLowerCase();
+        return ['speed', 'cod', 'technique', 'conditioning', 'mobility', 'recovery'].includes(categoryLower);
+      });
     }
 
     // Default: show all exercises from backend
@@ -1313,7 +1328,20 @@ export const Admin: React.FC = () => {
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">
-              {t('admin.exerciseCatalog')} ({exercises.length} {t('admin.exercises')})
+              {t('admin.exerciseCatalog')} ({(() => {
+                const filtered = exercises.filter(ex => {
+                  // Search filter
+                  if (exerciseSearchQuery && !ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())) {
+                    return false;
+                  }
+                  // Muscle group filter
+                  if (exerciseMuscleGroupFilter !== 'all' && !ex.muscleGroups?.includes(exerciseMuscleGroupFilter)) {
+                    return false;
+                  }
+                  return true;
+                });
+                return filtered.length;
+              })()} {t('admin.exercises')})
             </Typography>
             <Button
               variant="contained"
@@ -1323,6 +1351,51 @@ export const Admin: React.FC = () => {
               {t('admin.addExercise')}
             </Button>
           </Box>
+
+          {/* Filters */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                placeholder="Search by name..."
+                value={exerciseSearchQuery}
+                onChange={(e) => {
+                  setExerciseSearchQuery(e.target.value);
+                  setExercisePage(0); // Reset to first page
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Muscle Group</InputLabel>
+                <Select
+                  value={exerciseMuscleGroupFilter}
+                  label="Muscle Group"
+                  onChange={(e) => {
+                    setExerciseMuscleGroupFilter(e.target.value as MuscleGroup | 'all');
+                    setExercisePage(0); // Reset to first page
+                  }}
+                >
+                  <MenuItem value="all">All Muscle Groups</MenuItem>
+                  <MenuItem value="legs">Legs</MenuItem>
+                  <MenuItem value="chest">Chest</MenuItem>
+                  <MenuItem value="back">Back</MenuItem>
+                  <MenuItem value="shoulders">Shoulders</MenuItem>
+                  <MenuItem value="arms">Arms</MenuItem>
+                  <MenuItem value="core">Core</MenuItem>
+                  <MenuItem value="full-body">Full Body</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
 
           <TableContainer component={Paper}>
             <Table>
@@ -1336,6 +1409,17 @@ export const Admin: React.FC = () => {
               </TableHead>
               <TableBody>
                 {exercises
+                  .filter(ex => {
+                    // Search filter
+                    if (exerciseSearchQuery && !ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())) {
+                      return false;
+                    }
+                    // Muscle group filter
+                    if (exerciseMuscleGroupFilter !== 'all' && !ex.muscleGroups?.includes(exerciseMuscleGroupFilter)) {
+                      return false;
+                    }
+                    return true;
+                  })
                   .slice(exercisePage * exercisesPerPage, (exercisePage + 1) * exercisesPerPage)
                   .map((exercise) => {
                     // Extract YouTube video ID from URL
@@ -1421,11 +1505,33 @@ export const Admin: React.FC = () => {
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              Showing {exercisePage * exercisesPerPage + 1}-
-              {Math.min((exercisePage + 1) * exercisesPerPage, exercises.length)} of {exercises.length} exercises
+              Showing {(() => {
+                const filtered = exercises.filter(ex => {
+                  if (exerciseSearchQuery && !ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())) {
+                    return false;
+                  }
+                  if (exerciseMuscleGroupFilter !== 'all' && !ex.muscleGroups?.includes(exerciseMuscleGroupFilter)) {
+                    return false;
+                  }
+                  return true;
+                });
+                const start = exercisePage * exercisesPerPage + 1;
+                const end = Math.min((exercisePage + 1) * exercisesPerPage, filtered.length);
+                return `${start}-${end} of ${filtered.length}`;
+              })()} exercises
             </Typography>
             <Pagination
-              count={Math.ceil(exercises.length / exercisesPerPage)}
+              count={Math.ceil(
+                exercises.filter(ex => {
+                  if (exerciseSearchQuery && !ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())) {
+                    return false;
+                  }
+                  if (exerciseMuscleGroupFilter !== 'all' && !ex.muscleGroups?.includes(exerciseMuscleGroupFilter)) {
+                    return false;
+                  }
+                  return true;
+                }).length / exercisesPerPage
+              )}
               page={exercisePage + 1}
               onChange={(_, page) => setExercisePage(page - 1)}
               color="primary"
@@ -2391,42 +2497,153 @@ export const Admin: React.FC = () => {
               </Typography>
             </FormControl>
 
-            <FormControl fullWidth>
-              <InputLabel>{t('admin.selectExercises')}</InputLabel>
-              <Select
-                multiple
-                value={currentBlock.exerciseIds}
-                label={t('admin.selectExercises')}
-                onChange={(e) => {
-                  const newExerciseIds = e.target.value as string[];
-                  setCurrentBlock({ ...currentBlock, exerciseIds: newExerciseIds });
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                {t('admin.selectExercises')}
+              </Typography>
 
-                  // Initialize exerciseConfigs for new exercises
-                  const newConfigs = newExerciseIds.map(exId => {
-                    const existing = currentBlock.exerciseConfigs?.find(c => c.exerciseId === exId);
-                    return existing || { exerciseId: exId, sets: undefined };
-                  });
-                  setCurrentBlock({ ...currentBlock, exerciseIds: newExerciseIds, exerciseConfigs: newConfigs });
+              {/* Search Bar */}
+              <TextField
+                fullWidth
+                placeholder="Search exercises..."
+                value={exerciseSearchQuery}
+                onChange={(e) => setExerciseSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
                 }}
-                renderValue={(selected) => `${selected.length} selected`}
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 300,
-                    },
-                  },
+                sx={{ mb: 2 }}
+                size="small"
+              />
+
+              {/* Exercise List with Thumbnails */}
+              <Paper
+                variant="outlined"
+                sx={{
+                  maxHeight: 400,
+                  overflow: 'auto',
+                  bgcolor: 'background.default'
                 }}
               >
-                {getFilteredExercises(newTemplateData.trainingTypeId).map((exercise) => (
-                  <MenuItem key={exercise.id} value={exercise.id}>
-                    {exercise.name} ({exercise.category})
-                  </MenuItem>
-                ))}
-              </Select>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                Click outside or press ESC to close
+                <List dense>
+                  {getFilteredExercises(newTemplateData.trainingTypeId)
+                    .filter(exercise =>
+                      exercise.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase()) ||
+                      exercise.category.toLowerCase().includes(exerciseSearchQuery.toLowerCase())
+                    )
+                    .map((exercise) => {
+                      const isSelected = currentBlock.exerciseIds.includes(exercise.id);
+                      const videoId = extractYouTubeVideoId(exercise.youtubeUrl || '');
+                      const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+
+                      return (
+                        <ListItem
+                          key={exercise.id}
+                          disablePadding
+                          sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
+                        >
+                          <ListItemButton
+                            selected={isSelected}
+                            onClick={() => {
+                              const newExerciseIds = isSelected
+                                ? currentBlock.exerciseIds.filter(id => id !== exercise.id)
+                                : [...currentBlock.exerciseIds, exercise.id];
+
+                              // Initialize exerciseConfigs for new exercises
+                              const newConfigs = newExerciseIds.map(exId => {
+                                const existing = currentBlock.exerciseConfigs?.find(c => c.exerciseId === exId);
+                                return existing || { exerciseId: exId, sets: undefined };
+                              });
+
+                              setCurrentBlock({
+                                ...currentBlock,
+                                exerciseIds: newExerciseIds,
+                                exerciseConfigs: newConfigs
+                              });
+                            }}
+                            sx={{ gap: 2, py: 1 }}
+                          >
+                            {/* Thumbnail */}
+                            {thumbnailUrl ? (
+                              <Box
+                                component="img"
+                                src={thumbnailUrl}
+                                alt={exercise.name}
+                                sx={{
+                                  width: 80,
+                                  height: 45,
+                                  objectFit: 'cover',
+                                  borderRadius: 1,
+                                  flexShrink: 0,
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <Box
+                                sx={{
+                                  width: 80,
+                                  height: 45,
+                                  bgcolor: 'action.hover',
+                                  borderRadius: 1,
+                                  flexShrink: 0,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Typography variant="caption" color="text.disabled">
+                                  No video
+                                </Typography>
+                              </Box>
+                            )}
+
+                            {/* Exercise Info */}
+                            <ListItemText
+                              primary={exercise.name}
+                              secondary={
+                                <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
+                                  <Chip label={exercise.category} size="small" />
+                                  {exercise.muscleGroups?.map((group) => (
+                                    <Chip
+                                      key={group}
+                                      label={t(`muscleGroup.${group}` as any)}
+                                      size="small"
+                                      variant="outlined"
+                                    />
+                                  ))}
+                                </Box>
+                              }
+                            />
+
+                            {/* Selection Indicator */}
+                            {isSelected && (
+                              <Chip
+                                label="✓"
+                                size="small"
+                                color="primary"
+                                sx={{ minWidth: 32, height: 24 }}
+                              />
+                            )}
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    })}
+                </List>
+              </Paper>
+
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                {currentBlock.exerciseIds.length} exercise(s) selected
               </Typography>
-            </FormControl>
+            </Box>
 
             {currentBlock.exerciseIds.length > 0 && (
               <>
@@ -2454,33 +2671,86 @@ export const Admin: React.FC = () => {
                     {currentBlock.exerciseIds.map((exerciseId) => {
                       const exercise = getFilteredExercises(newTemplateData.trainingTypeId).find(ex => ex.id === exerciseId);
                       const config = currentBlock.exerciseConfigs?.find(c => c.exerciseId === exerciseId);
+                      const unit = config?.unit || 'reps';
 
                       return (
-                        <Box key={exerciseId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Typography variant="body2" sx={{ flex: 1, fontSize: '0.875rem' }}>
+                        <Box key={exerciseId} sx={{ display: 'flex', flexDirection: 'column', gap: 1, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                          <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.875rem' }}>
                             {exercise?.name}
                           </Typography>
-                          <TextField
-                            label="Sets"
-                            type="number"
-                            value={config?.sets || ''}
-                            onChange={(e) => {
-                              const newConfigs = [...(currentBlock.exerciseConfigs || [])];
-                              const configIndex = newConfigs.findIndex(c => c.exerciseId === exerciseId);
-                              const newSets = e.target.value ? Number(e.target.value) : undefined;
 
-                              if (configIndex >= 0) {
-                                newConfigs[configIndex] = { ...newConfigs[configIndex], sets: newSets };
-                              } else {
-                                newConfigs.push({ exerciseId, sets: newSets });
-                              }
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {/* Sets Field */}
+                            <TextField
+                              label="Sets"
+                              type="number"
+                              value={config?.sets || ''}
+                              onChange={(e) => {
+                                const newConfigs = [...(currentBlock.exerciseConfigs || [])];
+                                const configIndex = newConfigs.findIndex(c => c.exerciseId === exerciseId);
+                                const newSets = e.target.value ? Number(e.target.value) : undefined;
 
-                              setCurrentBlock({ ...currentBlock, exerciseConfigs: newConfigs });
-                            }}
-                            size="small"
-                            inputProps={{ min: 1, max: 10 }}
-                            sx={{ width: 100 }}
-                          />
+                                if (configIndex >= 0) {
+                                  newConfigs[configIndex] = { ...newConfigs[configIndex], sets: newSets };
+                                } else {
+                                  newConfigs.push({ exerciseId, sets: newSets, reps: undefined, unit: 'reps' });
+                                }
+
+                                setCurrentBlock({ ...currentBlock, exerciseConfigs: newConfigs });
+                              }}
+                              size="small"
+                              inputProps={{ min: 1, max: 10 }}
+                              sx={{ width: 100 }}
+                            />
+
+                            {/* Reps/Duration Field */}
+                            <TextField
+                              label={unit === 'reps' ? 'Reps' : 'Seconds'}
+                              type="number"
+                              value={config?.reps || ''}
+                              onChange={(e) => {
+                                const newConfigs = [...(currentBlock.exerciseConfigs || [])];
+                                const configIndex = newConfigs.findIndex(c => c.exerciseId === exerciseId);
+                                const newReps = e.target.value ? Number(e.target.value) : undefined;
+
+                                if (configIndex >= 0) {
+                                  newConfigs[configIndex] = { ...newConfigs[configIndex], reps: newReps };
+                                } else {
+                                  newConfigs.push({ exerciseId, sets: undefined, reps: newReps, unit });
+                                }
+
+                                setCurrentBlock({ ...currentBlock, exerciseConfigs: newConfigs });
+                              }}
+                              size="small"
+                              inputProps={{ min: 1, max: unit === 'reps' ? 100 : 300 }}
+                              sx={{ width: 120 }}
+                            />
+
+                            {/* Toggle between Reps and Seconds */}
+                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                              <InputLabel>Unit</InputLabel>
+                              <Select
+                                value={unit}
+                                label="Unit"
+                                onChange={(e) => {
+                                  const newUnit = e.target.value as 'reps' | 'seconds';
+                                  const newConfigs = [...(currentBlock.exerciseConfigs || [])];
+                                  const configIndex = newConfigs.findIndex(c => c.exerciseId === exerciseId);
+
+                                  if (configIndex >= 0) {
+                                    newConfigs[configIndex] = { ...newConfigs[configIndex], unit: newUnit };
+                                  } else {
+                                    newConfigs.push({ exerciseId, sets: undefined, reps: undefined, unit: newUnit });
+                                  }
+
+                                  setCurrentBlock({ ...currentBlock, exerciseConfigs: newConfigs });
+                                }}
+                              >
+                                <MenuItem value="reps">Reps</MenuItem>
+                                <MenuItem value="seconds">Seconds</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Box>
                         </Box>
                       );
                     })}

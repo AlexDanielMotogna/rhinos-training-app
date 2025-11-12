@@ -173,41 +173,42 @@ export function getNotificationStatus(): {
 
 /**
  * Notification templates for common use cases
+ * Note: Pass translated strings from components using useI18n() hook
  */
 export const NotificationTemplates = {
-  newTeamSession: (date: string, time: string, location?: string) =>
-    sendServiceWorkerNotification('Nueva sesión de entrenamiento', {
-      body: `${date} a las ${time}${location ? `\n${location}` : ''}`,
+  newTeamSession: (title: string, body: string) =>
+    sendServiceWorkerNotification(title, {
+      body,
       vibrate: [300, 100, 300],
       tag: 'new-session',
       requireInteraction: true,
     }),
 
-  sessionReminder: (time: string, location?: string) =>
-    sendServiceWorkerNotification('Entrenamiento en 1 hora', {
-      body: `A las ${time}${location ? ` en ${location}` : ''}\nNo olvides tu equipamiento`,
+  sessionReminder: (title: string, body: string) =>
+    sendServiceWorkerNotification(title, {
+      body,
       vibrate: [200, 100, 200, 100, 200],
       tag: 'session-reminder',
       requireInteraction: true,
     }),
 
-  coachComment: (message: string) =>
-    sendServiceWorkerNotification('Comentario del Coach', {
+  coachComment: (title: string, message: string) =>
+    sendServiceWorkerNotification(title, {
       body: message,
       vibrate: [200, 100, 200],
       tag: 'coach-comment',
     }),
 
-  newVideo: (title: string, type: string) =>
-    sendServiceWorkerNotification('Nuevo video disponible', {
-      body: `${type}: ${title}`,
+  newVideo: (title: string, body: string) =>
+    sendServiceWorkerNotification(title, {
+      body,
       vibrate: [200, 100, 200],
       tag: 'new-video',
     }),
 
-  testNotification: () =>
-    sendServiceWorkerNotification('¡Notificaciones funcionando! 🎉', {
-      body: 'Tu PWA puede enviar notificaciones correctamente en Android',
+  testNotification: (title: string, body: string) =>
+    sendServiceWorkerNotification(title, {
+      body,
       vibrate: [200, 100, 200, 100, 200, 100, 200],
       tag: 'test-notification',
       requireInteraction: false,

@@ -943,6 +943,16 @@ export const messagesEN = {
   'teamSettings.levelDesc.college': 'College level: NCAA/university standards, structured training programs, competitive athletics with academic balance.',
   'teamSettings.levelDesc.varsity': 'Varsity level: High school/university competitive team, structured practice schedules, balance with academics.',
   'teamSettings.levelDesc.pro': 'Professional level: Elite standards, full-time training, high expectations for performance and professionalism.',
+
+  // Notifications
+  'notifications.newTeamSession.title': 'New Team Training Session',
+  'notifications.newTeamSession.body': '{date} at {time} - {location}',
+  'notifications.sessionReminder.title': 'Training Reminder',
+  'notifications.sessionReminder.body': 'Training in 1 hour at {location}',
+  'notifications.coachComment.title': 'New Coach Comment',
+  'notifications.newVideo.title': 'New Video Available',
+  'notifications.testNotification.title': 'Test Notification',
+  'notifications.testNotification.body': 'This is a test notification from Rhinos Training App',
 };
 
 export type MessageKey = keyof typeof messagesEN;

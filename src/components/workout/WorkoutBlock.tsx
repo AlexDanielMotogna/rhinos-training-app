@@ -169,16 +169,20 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         {block.items.map((exercise) => {
-          // Get target sets for this exercise
+          // Get target sets, reps, and unit for this exercise
           const exerciseConfig = block.exerciseConfigs?.find(c => c.exerciseId === exercise.id);
           const targetSets = exerciseConfig?.sets || block.globalSets;
+          const targetReps = exerciseConfig?.reps;
+          const unit = exerciseConfig?.unit;
 
           return (
             <ExerciseRow
               key={exercise.id}
               exercise={exercise}
-              showLogButton={showLogButtons}
               targetSets={targetSets}
+              targetReps={targetReps}
+              unit={unit}
+              showLogButton={showLogButtons}
               onLogWorkout={onLogWorkout ? () => onLogWorkout(exercise) : undefined}
               onVideoClick={
                 exercise.youtubeUrl && onVideoClick
