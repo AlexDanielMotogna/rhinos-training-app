@@ -94,7 +94,7 @@ router.get('/:id', authenticate, async (req, res) => {
     }
 
     // Players can only view their own assignments
-    if (req.user.role === 'player' && assignment.playerId !== req.user.userId) {
+    if (req.user.role === 'player' && !assignment.playerIds.includes(req.user.userId)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
