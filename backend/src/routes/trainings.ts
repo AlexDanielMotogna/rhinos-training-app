@@ -253,4 +253,64 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// POST /api/trainings/:id/rsvp - Update RSVP status
+router.post('/:id/rsvp', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, status } = req.body;
+
+    if (!userId || !status) {
+      return res.status(400).json({ error: 'userId and status are required' });
+    }
+
+    if (!['going', 'maybe', 'not-going'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    // Check if session exists
+    const session = await prisma.trainingSession.findUnique({ where: { id } });
+    if (!session) {
+      return res.status(404).json({ error: 'Training session not found' });
+    }
+
+    // Get user info
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update attendees array
+    const attendees = (session.attendees as any[]) || [];
+    const existingIndex = attendees.findIndex((a: any) => a.userId === userId);
+
+    if (existingIndex >= 0) {
+      // Update existing attendee
+      attendees[existingIndex].status = status;
+    } else {
+      // Add new attendee
+      attendees.push({
+        userId,
+        userName: user.name,
+        status,
+      });
+    }
+
+    // Update session
+    const updated = await prisma.trainingSession.update({
+      where: { id },
+      data: { attendees: attendees as any },
+    });
+
+    res.json({
+      ...updated,
+      attendees: updated.attendees as any,
+      version: 1,
+      updatedAt: updated.updatedAt.toISOString(),
+    });
+  } catch (error) {
+    console.error('RSVP error:', error);
+    res.status(500).json({ error: 'Failed to update RSVP' });
+  }
+});
+
 export default router;
