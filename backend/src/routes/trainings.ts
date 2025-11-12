@@ -34,6 +34,12 @@ const updateTrainingSchema = createTrainingSchema.partial();
 router.get('/', async (req, res) => {
   try {
     const { from, days } = req.query;
+    const userId = (req as any).user.userId;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     let filter: any = {};
 
@@ -53,7 +59,36 @@ router.get('/', async (req, res) => {
       orderBy: { date: 'asc' },
     });
 
-    res.json(sessions.map(s => ({
+    // Filter sessions based on user role and session category
+    const filteredSessions = sessions.filter(session => {
+      // Team sessions: everyone can see
+      if (session.sessionCategory === 'team') {
+        return true;
+      }
+
+      // Private sessions: only creator and attendees can see
+      if (session.sessionCategory === 'private') {
+        // Check if user is creator
+        if (session.creatorId === userId) {
+          return true;
+        }
+
+        // Check if user is in attendees
+        const attendees = session.attendees as any[];
+        const isAttendee = attendees?.some(a => a.userId === userId);
+        if (isAttendee) {
+          return true;
+        }
+
+        // User cannot see this private session
+        return false;
+      }
+
+      // Default: show session
+      return true;
+    });
+
+    res.json(filteredSessions.map(s => ({
       ...s,
       attendees: s.attendees as any,
       version: 1,
@@ -69,6 +104,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user.userId;
 
     const session = await prisma.trainingSession.findUnique({
       where: { id },
@@ -79,6 +115,18 @@ router.get('/:id', async (req, res) => {
 
     if (!session) {
       return res.status(404).json({ error: 'Training session not found' });
+    }
+
+    // Check access for private sessions
+    if (session.sessionCategory === 'private') {
+      // Check if user is creator or attendee
+      const attendees = session.attendees as any[];
+      const isCreator = session.creatorId === userId;
+      const isAttendee = attendees?.some(a => a.userId === userId);
+
+      if (!isCreator && !isAttendee) {
+        return res.status(403).json({ error: 'Access denied to this private session' });
+      }
     }
 
     res.json({
@@ -137,13 +185,28 @@ router.post('/', async (req, res) => {
       },
     });
 
-    // Send notifications to all players
-    const allPlayers = await prisma.user.findMany({
-      where: { role: 'player' },
-      select: { id: true, preferredLanguage: true },
-    });
+    // Send notifications based on session category
+    let playersToNotify: Array<{ id: string; preferredLanguage: string | null }> = [];
 
-    const playersToNotify = allPlayers.filter(p => p.id !== userId);
+    if (data.sessionCategory === 'team') {
+      // Team sessions: notify all players except creator
+      const allPlayers = await prisma.user.findMany({
+        where: { role: 'player' },
+        select: { id: true, preferredLanguage: true },
+      });
+      playersToNotify = allPlayers.filter(p => p.id !== userId);
+    } else if (data.sessionCategory === 'private') {
+      // Private sessions: only notify attendees (excluding creator)
+      const attendeeIds = data.attendees.map(a => a.userId).filter(id => id !== userId);
+
+      if (attendeeIds.length > 0) {
+        const attendeePlayers = await prisma.user.findMany({
+          where: { id: { in: attendeeIds } },
+          select: { id: true, preferredLanguage: true },
+        });
+        playersToNotify = attendeePlayers;
+      }
+    }
 
     if (playersToNotify.length > 0) {
       const notificationType = data.sessionCategory === 'team' ? 'new_session' : 'private_session';
