@@ -28,9 +28,62 @@ export async function syncDrillTrainingSessionsFromBackend(): Promise<void> {
     console.log('🔄 Syncing drill training sessions from backend...');
     const backendSessions = await drillSessionApi.getAll();
 
-    // Save in localStorage as cache
-    localStorage.setItem(DRILL_TRAINING_SESSIONS_KEY, JSON.stringify(backendSessions));
-    console.log(`✅ Drill training sessions synced successfully (${backendSessions.length} sessions)`);
+    // Get current local sessions
+    const localData = localStorage.getItem(DRILL_TRAINING_SESSIONS_KEY);
+    const localSessions: DrillTrainingSession[] = localData ? JSON.parse(localData) : [];
+
+    // Merge: compare timestamps to keep newer version
+    const mergedSessions: DrillTrainingSession[] = [];
+    const processedIds = new Set<string>();
+
+    // Process backend sessions
+    for (const backendSession of backendSessions) {
+      const localSession = localSessions.find(s => s.id === backendSession.id);
+
+      if (localSession) {
+        // Compare timestamps
+        const localTime = new Date(localSession.updatedAt).getTime();
+        const backendTime = new Date(backendSession.updatedAt).getTime();
+
+        if (localTime > backendTime) {
+          // Local is newer - keep local and sync to backend
+          console.log('[DRILL SESSIONS] Local version is newer, syncing to backend:', localSession.id);
+          mergedSessions.push(localSession);
+
+          try {
+            await drillSessionApi.update(localSession.id, {
+              name: localSession.name,
+              date: localSession.date,
+              drills: localSession.drills,
+              notes: localSession.notes,
+            });
+            console.log('[DRILL SESSIONS] ✅ Synced newer local version to backend');
+          } catch (error) {
+            console.error('[DRILL SESSIONS] ❌ Failed to sync newer local version:', error);
+          }
+        } else {
+          // Backend is newer or same - use backend
+          mergedSessions.push(backendSession);
+        }
+      } else {
+        // No local version - use backend
+        mergedSessions.push(backendSession);
+      }
+
+      processedIds.add(backendSession.id);
+    }
+
+    // Add local-only sessions (not yet in backend)
+    for (const localSession of localSessions) {
+      if (!processedIds.has(localSession.id)) {
+        console.log('[DRILL SESSIONS] Found local-only session:', localSession.id);
+        mergedSessions.push(localSession);
+      }
+    }
+
+    // Save merged sessions
+    localStorage.setItem(DRILL_TRAINING_SESSIONS_KEY, JSON.stringify(mergedSessions));
+    console.log(`✅ Drill training sessions synced successfully (${mergedSessions.length} sessions)`);
   } catch (error) {
     console.warn('⚠️ Failed to sync drill training sessions:', error);
   }

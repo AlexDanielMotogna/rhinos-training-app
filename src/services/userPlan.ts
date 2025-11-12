@@ -136,6 +136,11 @@ export async function updateUserPlan(planId: string, updates: Partial<UserPlanPa
   if (online) {
     try {
       console.log('[USER PLANS] Updating plan on backend:', planId);
+      console.log('[USER PLANS] Update payload:', {
+        name: updatedPlan.name,
+        exerciseCount: updatedPlan.exercises.length,
+        exercises: updatedPlan.exercises
+      });
       await userPlanService.update(planId, {
         name: updatedPlan.name,
         trainingType: 'custom',
@@ -144,10 +149,15 @@ export async function updateUserPlan(planId: string, updates: Partial<UserPlanPa
         timesCompleted: updatedPlan.timesCompleted,
         updatedAt: updatedPlan.updatedAt,
       });
-      console.log('[USER PLANS] Plan updated on backend');
+      console.log('[USER PLANS] ✅ Plan updated successfully on backend');
     } catch (error) {
-      console.warn('[USER PLANS] Failed to update plan on backend:', error);
+      console.error('[USER PLANS] ❌ FAILED to update plan on backend:', error);
+      console.error('[USER PLANS] ⚠️  WARNING: Changes are only saved locally. They will be lost if backend sync happens before reconnection.');
+      // TODO: Add to outbox for retry
+      throw error; // Re-throw to let caller know update failed
     }
+  } else {
+    console.warn('[USER PLANS] Offline - changes saved locally only');
   }
 
   return updatedPlan;
@@ -264,7 +274,7 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
     const mergedPlans: UserPlanTemplate[] = [];
     const processedIds = new Set<string>();
 
-    // Add backend plans (they're the source of truth)
+    // Add backend plans (merge with local if local is newer)
     for (const backendPlan of backendPlans) {
       // Skip plans that were marked as deleted by user
       if (deletedPlans.has(backendPlan.id)) {
@@ -272,20 +282,67 @@ export async function syncUserPlansFromBackend(userId: string): Promise<void> {
         continue;
       }
 
-      const transformedPlan: UserPlanTemplate = {
-        id: backendPlan.id,
-        userId: backendPlan.userId,
-        name: backendPlan.name,
-        exercises: backendPlan.exercises || [],
-        warmupMinutes: backendPlan.warmupMinutes,
-        createdAt: backendPlan.createdAt,
-        updatedAt: backendPlan.updatedAt,
-        lastUsed: backendPlan.lastUsed,
-        timesCompleted: backendPlan.timesCompleted || 0,
-      };
+      // Check if we have a local version of this plan
+      const localVersion = localPlans.find(p => p.id === backendPlan.id);
 
-      mergedPlans.push(transformedPlan);
-      processedIds.add(transformedPlan.id);
+      let finalPlan: UserPlanTemplate;
+
+      if (localVersion) {
+        // Compare timestamps to see which is newer
+        const localTime = new Date(localVersion.updatedAt).getTime();
+        const backendTime = new Date(backendPlan.updatedAt).getTime();
+
+        if (localTime > backendTime) {
+          // Local is newer - keep local and sync to backend
+          console.log('[USER PLANS] Local version is newer, keeping local and syncing to backend:', localVersion.id, localVersion.name);
+          finalPlan = localVersion;
+
+          // Try to sync newer local version to backend
+          try {
+            await userPlanService.update(localVersion.id, {
+              name: localVersion.name,
+              trainingType: 'custom',
+              exercises: localVersion.exercises,
+              notes: '',
+              timesCompleted: localVersion.timesCompleted,
+              updatedAt: localVersion.updatedAt,
+            });
+            console.log('[USER PLANS] ✅ Synced newer local version to backend');
+          } catch (error) {
+            console.error('[USER PLANS] ❌ Failed to sync newer local version:', error);
+          }
+        } else {
+          // Backend is newer or same - use backend
+          console.log('[USER PLANS] Backend version is newer or same, using backend:', backendPlan.id, backendPlan.name);
+          finalPlan = {
+            id: backendPlan.id,
+            userId: backendPlan.userId,
+            name: backendPlan.name,
+            exercises: backendPlan.exercises || [],
+            warmupMinutes: backendPlan.warmupMinutes,
+            createdAt: backendPlan.createdAt,
+            updatedAt: backendPlan.updatedAt,
+            lastUsed: backendPlan.lastUsed,
+            timesCompleted: backendPlan.timesCompleted || 0,
+          };
+        }
+      } else {
+        // No local version - use backend
+        finalPlan = {
+          id: backendPlan.id,
+          userId: backendPlan.userId,
+          name: backendPlan.name,
+          exercises: backendPlan.exercises || [],
+          warmupMinutes: backendPlan.warmupMinutes,
+          createdAt: backendPlan.createdAt,
+          updatedAt: backendPlan.updatedAt,
+          lastUsed: backendPlan.lastUsed,
+          timesCompleted: backendPlan.timesCompleted || 0,
+        };
+      }
+
+      mergedPlans.push(finalPlan);
+      processedIds.add(finalPlan.id);
     }
 
     // Get currently syncing plans to prevent duplicates

@@ -30,9 +30,50 @@ export async function syncVideosFromBackend(): Promise<void> {
     console.log('🔄 Syncing videos from backend...');
     const backendVideos = await videoService.getAll();
 
-    // Save to localStorage as cache
-    localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(backendVideos));
-    console.log(`✅ Videos synced successfully (${backendVideos.length} videos)`);
+    // Get current local videos
+    const localData = localStorage.getItem(VIDEOS_STORAGE_KEY);
+    const localVideos: any[] = localData ? JSON.parse(localData) : [];
+
+    // Merge: compare timestamps to keep newer version
+    const mergedVideos: any[] = [];
+    const processedIds = new Set<string>();
+
+    // Process backend videos
+    for (const backendVideo of backendVideos) {
+      const localVideo = localVideos.find(v => v.id === backendVideo.id);
+
+      if (localVideo) {
+        // Compare timestamps
+        const localTime = new Date(localVideo.updatedAt).getTime();
+        const backendTime = new Date(backendVideo.updatedAt).getTime();
+
+        if (localTime > backendTime) {
+          // Local is newer (e.g., draft edits) - keep local
+          console.log('[VIDEOS] Local version is newer, keeping local:', localVideo.id);
+          mergedVideos.push(localVideo);
+        } else {
+          // Backend is newer or same - use backend
+          mergedVideos.push(backendVideo);
+        }
+      } else {
+        // No local version - use backend
+        mergedVideos.push(backendVideo);
+      }
+
+      processedIds.add(backendVideo.id);
+    }
+
+    // Add local-only videos (drafts not yet synced)
+    for (const localVideo of localVideos) {
+      if (!processedIds.has(localVideo.id)) {
+        console.log('[VIDEOS] Found local-only video (draft):', localVideo.id);
+        mergedVideos.push(localVideo);
+      }
+    }
+
+    // Save merged videos
+    localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(mergedVideos));
+    console.log(`✅ Videos synced successfully (${mergedVideos.length} videos)`);
   } catch (error) {
     console.warn('⚠️ Failed to sync videos from backend:', error);
   }
@@ -309,8 +350,50 @@ export async function syncVideoProgressFromBackend(userId: string): Promise<void
 
   try {
     const backendProgress = await videoService.getUserProgress(userId);
-    // Update local cache with backend data
-    localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(backendProgress));
+
+    // Get current local progress
+    const localData = localStorage.getItem(VIDEO_PROGRESS_STORAGE_KEY);
+    const localProgress: any[] = localData ? JSON.parse(localData) : [];
+
+    // Merge: compare timestamps to keep newer version
+    const mergedProgress: any[] = [];
+    const processedIds = new Set<string>();
+
+    // Process backend progress
+    for (const backendItem of backendProgress) {
+      const localItem = localProgress.find(p => p.videoId === backendItem.videoId);
+
+      if (localItem) {
+        // Compare timestamps
+        const localTime = new Date(localItem.lastWatchedAt).getTime();
+        const backendTime = new Date(backendItem.lastWatchedAt).getTime();
+
+        if (localTime > backendTime) {
+          // Local is newer - keep local
+          console.log('[VIDEO PROGRESS] Local progress is newer for video:', localItem.videoId);
+          mergedProgress.push(localItem);
+        } else {
+          // Backend is newer or same - use backend
+          mergedProgress.push(backendItem);
+        }
+      } else {
+        // No local version - use backend
+        mergedProgress.push(backendItem);
+      }
+
+      processedIds.add(backendItem.videoId);
+    }
+
+    // Add local-only progress (not yet synced)
+    for (const localItem of localProgress) {
+      if (!processedIds.has(localItem.videoId)) {
+        console.log('[VIDEO PROGRESS] Found local-only progress for video:', localItem.videoId);
+        mergedProgress.push(localItem);
+      }
+    }
+
+    // Save merged progress
+    localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(mergedProgress));
     console.log('✅ Video progress synced from backend');
   } catch (error) {
     console.warn('⚠️ Failed to sync video progress:', error);

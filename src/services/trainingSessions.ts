@@ -22,19 +22,40 @@ export async function getAllSessions(): Promise<TrainingSession[]> {
     if (online) {
       // Fetch from backend
       console.log('🔄 Fetching training sessions from backend...');
-      const sessions = await trainingSessionService.getAll() as TrainingSession[];
+      const backendSessions = await trainingSessionService.getAll() as TrainingSession[];
 
-      // Update caches
+      // Get current local sessions to preserve local-only changes
+      const localSessions = await db.trainingSessions.toArray();
+
+      // Merge: backend sessions take priority, but preserve local-only sessions
+      const mergedSessions: TrainingSession[] = [];
+      const processedIds = new Set<string>();
+
+      // Add all backend sessions (they're authoritative)
+      for (const backendSession of backendSessions) {
+        mergedSessions.push(backendSession);
+        processedIds.add(backendSession.id);
+      }
+
+      // Add any local-only sessions not in backend (shouldn't happen often, but just in case)
+      for (const localSession of localSessions) {
+        if (!processedIds.has(localSession.id)) {
+          console.log('[SESSIONS] Found local-only session:', localSession.id);
+          mergedSessions.push(localSession as TrainingSession);
+        }
+      }
+
+      // Update caches with merged data
       await db.trainingSessions.clear();
-      await db.trainingSessions.bulkPut(sessions.map(s => ({
+      await db.trainingSessions.bulkPut(mergedSessions.map(s => ({
         ...s,
         version: 1,
         updatedAt: new Date().toISOString(),
       })));
-      localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(mergedSessions));
 
-      console.log(`✅ Loaded ${sessions.length} sessions from backend`);
-      return sessions;
+      console.log(`✅ Loaded ${mergedSessions.length} sessions from backend`);
+      return mergedSessions;
     } else {
       // Load from IndexedDB cache
       console.log('📦 Loading sessions from cache...');
