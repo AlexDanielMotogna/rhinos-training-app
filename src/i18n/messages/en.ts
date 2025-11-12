@@ -160,7 +160,7 @@ export const messagesEN = {
   'workout.rpeEasy': 'Easy',
   'workout.rpeMaxEffort': 'Max Effort',
 
-  // Categories
+  // Categories (both capital and lowercase for database compatibility)
   'category.Strength': 'Strength',
   'category.Speed': 'Speed',
   'category.COD': 'Change of Direction',
@@ -169,6 +169,14 @@ export const messagesEN = {
   'category.Conditioning': 'Conditioning',
   'category.Recovery': 'Recovery',
   'category.Plyometrics': 'Plyometrics',
+  'category.strength': 'Strength',
+  'category.speed': 'Speed',
+  'category.cod': 'Change of Direction',
+  'category.mobility': 'Mobility',
+  'category.technique': 'Technique',
+  'category.conditioning': 'Conditioning',
+  'category.recovery': 'Recovery',
+  'category.plyometrics': 'Plyometrics',
 
   // Muscle Groups
   'muscleGroup.legs': 'Legs',

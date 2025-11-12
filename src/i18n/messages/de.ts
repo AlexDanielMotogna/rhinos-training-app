@@ -148,7 +148,7 @@ export const messagesDE = {
   'workout.rpeEasy': 'Leicht',
   'workout.rpeMaxEffort': 'Maximale Anstrengung',
 
-  // Categories
+  // Categories (both capital and lowercase for database compatibility)
   'category.Strength': 'Kraft',
   'category.Speed': 'Geschwindigkeit',
   'category.COD': 'Richtungswechsel',
@@ -157,6 +157,14 @@ export const messagesDE = {
   'category.Conditioning': 'Kondition',
   'category.Recovery': 'Regeneration',
   'category.Plyometrics': 'Plyometrie',
+  'category.strength': 'Kraft',
+  'category.speed': 'Geschwindigkeit',
+  'category.cod': 'Richtungswechsel',
+  'category.mobility': 'Beweglichkeit',
+  'category.technique': 'Technik',
+  'category.conditioning': 'Kondition',
+  'category.recovery': 'Regeneration',
+  'category.plyometrics': 'Plyometrie',
 
   // Muscle Groups
   'muscleGroup.legs': 'Beine',
