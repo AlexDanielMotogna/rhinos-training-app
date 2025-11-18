@@ -146,10 +146,58 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
     const elapsedMinutes = Math.round((Date.now() - startTime) / 60000);
     const totalMinutes = (warmupMinutes || 0) + elapsedMinutes;
 
+    // Create entries for ALL exercises across ALL blocks, not just completed ones
+    const allEntries: WorkoutEntry[] = [];
+    blocks.forEach((block, blockIdx) => {
+      const blockExercises = (block as any).items || (block as any).exercises || [];
+      blockExercises.forEach((exercise: any, exerciseIdx: number) => {
+        // Calculate absolute index for this exercise
+        const absoluteIndex = blocks.slice(0, blockIdx).reduce((sum, b) => {
+          const bExercises = (b as any).items || (b as any).exercises || [];
+          return sum + bExercises.length;
+        }, 0) + exerciseIdx;
+
+        // Check if this exercise has logged data
+        const existing = allCompletedEntries[absoluteIndex];
+
+        if (existing && existing.setData && existing.setData.length > 0) {
+          // Exercise was logged - use the logged data
+          allEntries.push(existing);
+        } else {
+          // Exercise was NOT logged - create empty entry with target sets
+          const exerciseConfig = (block as any).exerciseConfigs?.find((c: any) => c.exerciseId === exercise.id);
+          const targetSets = exerciseConfig?.sets || (block as any).globalSets;
+          const targetReps = exerciseConfig?.reps;
+          const unit = exerciseConfig?.unit;
+
+          allEntries.push({
+            exerciseId: exercise.id,
+            name: exercise.name,
+            category: exercise.category,
+            sets: targetSets || 0,
+            reps: targetReps,
+            unit: unit,
+            setData: [], // No sets completed
+            source: 'coach' as const,
+            specific: false,
+            youtubeUrl: exercise.youtubeUrl,
+          });
+        }
+      });
+    });
+
+    // Prepend warm-up info to notes
+    let finalNotes = workoutNotes;
+    if (warmupMinutes && warmupMinutes > 0) {
+      finalNotes = `[Warm-up: ${warmupMinutes} min]${workoutNotes ? '\n' + workoutNotes : ''}`;
+    } else {
+      finalNotes = `[No warm-up performed]${workoutNotes ? '\n' + workoutNotes : ''}`;
+    }
+
     // Clear persistence
     localStorage.removeItem(persistenceKey);
 
-    onFinish(allCompletedEntries, workoutNotes, totalMinutes, dayName);
+    onFinish(allEntries, finalNotes, totalMinutes, dayName);
     resetWorkout();
   };
 
@@ -161,11 +209,52 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
   const completedCount = allCompletedEntries.filter(e => e && e.setData && e.setData.length > 0).length;
   const progressPercent = totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0;
 
+  // Get target sets for a specific exercise in current block
+  const getTargetSets = (exerciseIndex: number): number | undefined => {
+    if (!exercises[exerciseIndex]) return undefined;
+    const exercise = exercises[exerciseIndex];
+    const exerciseConfig = (currentBlock as any).exerciseConfigs?.find((c: any) => c.exerciseId === exercise.id);
+    return exerciseConfig?.sets || (currentBlock as any).globalSets;
+  };
+
+  // Get target reps/duration for a specific exercise in current block
+  const getTargetReps = (exerciseIndex: number): number | undefined => {
+    if (!exercises[exerciseIndex]) return undefined;
+    const exercise = exercises[exerciseIndex];
+    const exerciseConfig = (currentBlock as any).exerciseConfigs?.find((c: any) => c.exerciseId === exercise.id);
+    return exerciseConfig?.reps;
+  };
+
+  // Get unit for a specific exercise in current block
+  const getUnit = (exerciseIndex: number): 'reps' | 'seconds' | 'meters' | undefined => {
+    if (!exercises[exerciseIndex]) return undefined;
+    const exercise = exercises[exerciseIndex];
+    const exerciseConfig = (currentBlock as any).exerciseConfigs?.find((c: any) => c.exerciseId === exercise.id);
+    return exerciseConfig?.unit;
+  };
+
   // If an exercise is selected, show the workout form
   if (selectedExerciseIndex !== null) {
     const exercise = exercises[selectedExerciseIndex];
     const absoluteIndex = blockStartIndex + selectedExerciseIndex;
     const existingEntry = allCompletedEntries[absoluteIndex];
+    const targetSets = getTargetSets(selectedExerciseIndex);
+    const targetReps = getTargetReps(selectedExerciseIndex);
+    const unit = getUnit(selectedExerciseIndex);
+
+    // If no existing entry, create a template with target values
+    const entryTemplate = existingEntry || {
+      exerciseId: exercise.id,
+      name: exercise.name,
+      category: exercise.category,
+      sets: targetSets,
+      reps: targetReps,
+      unit: unit,
+      setData: [],
+      source: 'coach' as const,
+      specific: false,
+      youtubeUrl: exercise.youtubeUrl,
+    };
 
     return (
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -174,7 +263,7 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
             exercise={exercise}
             onSave={handleSaveExercise}
             onBack={() => setSelectedExerciseIndex(null)}
-            existingEntry={existingEntry}
+            existingEntry={entryTemplate}
             trainingType={trainingType}
           />
         </DialogContent>
@@ -255,6 +344,8 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
               const absoluteIndex = blockStartIndex + index;
               const entry = allCompletedEntries[absoluteIndex];
               const isCompleted = entry && entry.setData && entry.setData.length > 0;
+              const completedSets = entry?.setData?.length || 0;
+              const targetSets = getTargetSets(index);
 
               return (
                 <ListItem key={index} disablePadding>
@@ -277,11 +368,18 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
                     <ListItemText
                       primary={exercise.name}
                       secondary={
-                        entry && entry.setData ? (
-                          <Typography variant="caption" color="success.main">
-                            {entry.setData.length} sets completed
-                          </Typography>
-                        ) : null
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                          {targetSets && (
+                            <Typography variant="caption" color="text.secondary">
+                              Target: {targetSets} sets
+                            </Typography>
+                          )}
+                          {completedSets > 0 && (
+                            <Typography variant="caption" color="success.main">
+                              • {completedSets} / {targetSets || '?'} completed
+                            </Typography>
+                          )}
+                        </Box>
                       }
                     />
                   </ListItemButton>
