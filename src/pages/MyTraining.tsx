@@ -20,6 +20,8 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { useI18n } from '../i18n/I18nProvider';
 import { toastService } from '../services/toast';
 import { WorkoutBlock } from '../components/workout/WorkoutBlock';
@@ -967,128 +969,8 @@ export const MyTraining: React.FC = () => {
       {/* TEAM SESSIONS VIEW */}
       {sessionView === 'team' && (
         <Box>
-          {/* Assigned Programs Section */}
           {activeAssignments.length > 0 ? (
             <>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                  {t('training.yourAssignedPrograms')}
-                </Typography>
-
-                {activeAssignments
-                  .filter(assignment => assignment.template) // Filter out assignments without template
-                  .map((assignment) => {
-                    const { currentWeek, totalWeeks, progressPercent } = calculateProgress(
-                      assignment.startDate,
-                      assignment.endDate
-                    );
-
-                    // Helper to get unique days from blocks
-                    const getAvailableDays = (blocks: any[]) => {
-                      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                      const daysSet = new Set<number>();
-                      blocks.forEach(block => {
-                        const dayNum = (block as any).dayNumber;
-                        if (dayNum && dayNum >= 1 && dayNum <= 7) {
-                          daysSet.add(dayNum);
-                        }
-                      });
-                      return Array.from(daysSet).sort().map(num => dayNames[num - 1].substring(0, 3));
-                    };
-
-                    const availableDays = getAvailableDays(assignment.template.blocks);
-
-                    return (
-                      <Card
-                        key={assignment.id}
-                        sx={{
-                          mb: 2,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: 4,
-                          }
-                        }}
-                        onClick={() => {
-                          setSelectedAssignment(assignment);
-                          setShowAssignmentDialog(true);
-                        }}
-                      >
-                        <CardContent>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography variant="h6" sx={{ mb: 0.5 }}>
-                                {assignment.template.trainingTypeName}
-                              </Typography>
-                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                              <Chip
-                                label={`Week ${currentWeek} of ${totalWeeks}`}
-                                size="small"
-                                color="primary"
-                              />
-                              <Chip
-                                label={`${assignment.template.frequencyPerWeek}x per week`}
-                                size="small"
-                                variant="outlined"
-                              />
-                              <Typography variant="caption" color="text.secondary">
-                                {assignment.startDate} → {assignment.endDate}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-
-                        <Box sx={{ mb: 2 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              {t('training.programProgress')}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {Math.round(progressPercent)}%
-                            </Typography>
-                          </Box>
-                          <LinearProgress
-                            variant="determinate"
-                            value={progressPercent}
-                            sx={{ height: 8, borderRadius: 1 }}
-                          />
-                        </Box>
-
-                        {availableDays.length > 0 && (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                              Training Days:
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                              {availableDays.map(day => (
-                                <Chip
-                                  key={day}
-                                  label={day}
-                                  size="small"
-                                  sx={{
-                                    backgroundColor: 'primary.light',
-                                    color: 'white',
-                                    fontWeight: 600,
-                                    fontSize: '0.7rem'
-                                  }}
-                                />
-                              ))}
-                            </Box>
-                          </Box>
-                        )}
-
-                        <Alert severity="info" sx={{ mt: 2 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            👆 Click to start training
-                          </Typography>
-                        </Alert>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </Box>
-
               {/* Team Session Tabs: Training Plan / History / My Reports */}
               <Tabs
                 value={teamSessionTab}
@@ -1103,241 +985,124 @@ export const MyTraining: React.FC = () => {
               {/* Training Plan Tab */}
               {teamSessionTab === 'plan' && (
                 <>
-                  {/* Training Type Tabs - Only show assigned programs */}
-                  <Tabs
-                    value={activeTab}
-                    onChange={(_, value) => setActiveTab(value)}
-                    sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                  >
-                    {trainingTypes
-                      .filter((tt) => {
-                        // Only show tabs for training types that are in activeAssignments
-                        return activeAssignments.some(assignment => assignment.template && assignment.template.trainingTypeId === tt.id);
-                      })
-                      .map((tt) => {
-                        // Use actual training type name from the assignment
-                        const assignment = activeAssignments.find(a => a.template && a.template.trainingTypeId === tt.id);
-                        const displayName = assignment?.template?.trainingTypeName || tt.nameEN;
+                  {/* Assigned Programs Cards */}
+                  <Box sx={{ mb: 4 }}>
+                    {activeAssignments
+                      .filter(assignment => assignment.template) // Filter out assignments without template
+                      .map((assignment) => {
+                        const { currentWeek, totalWeeks, progressPercent } = calculateProgress(
+                          assignment.startDate,
+                          assignment.endDate
+                        );
+
+                        // Helper to get unique days from blocks
+                        const getAvailableDays = (blocks: any[]) => {
+                          const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                          const daysSet = new Set<number>();
+                          blocks.forEach(block => {
+                            const dayNum = (block as any).dayNumber;
+                            if (dayNum && dayNum >= 1 && dayNum <= 7) {
+                              daysSet.add(dayNum);
+                            }
+                          });
+                          return Array.from(daysSet).sort().map(num => dayNames[num - 1].substring(0, 3));
+                        };
+
+                        const availableDays = getAvailableDays(assignment.template.blocks);
 
                         return (
-                          <Tab
-                            key={tt.key}
-                            value={tt.key}
-                            label={displayName}
-                          />
-                        );
-                      })}
-                  </Tabs>
-
-                  {/* Coach Plan Exercises */}
-                  {(() => {
-                    const activeTrainingType = trainingTypes.find(tt => tt.key === activeTab);
-                    console.log('🔍 Looking for assignment:', {
-                      activeTab,
-                      activeTrainingTypeId: activeTrainingType?.id,
-                      availableAssignments: activeAssignments.map(a => ({
-                        id: a.id,
-                        trainingTypeId: a.template?.trainingTypeId
-                      }))
-                    });
-
-                    const assignment = activeAssignments.find(a => a.template && a.template.trainingTypeId === activeTrainingType?.id);
-
-                    if (!assignment || !assignment.template) {
-                      return (
-                        <Alert severity="info">
-                          No training plan available for this type
-                        </Alert>
-                      );
-                    }
-
-                    const { currentWeek } = calculateProgress(assignment.startDate, assignment.endDate);
-
-                    // Helper function to group blocks by day
-                    const groupBlocksByDay = (blocks: typeof assignment.template.blocks) => {
-                      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                      const grouped = new Map<number, typeof assignment.template.blocks>();
-                      const unscheduled: typeof assignment.template.blocks = [];
-
-                      blocks.forEach(block => {
-                        const dayNum = (block as any).dayNumber;
-                        if (dayNum && dayNum >= 1 && dayNum <= 7) {
-                          if (!grouped.has(dayNum)) {
-                            grouped.set(dayNum, []);
-                          }
-                          grouped.get(dayNum)!.push(block);
-                        } else {
-                          unscheduled.push(block);
-                        }
-                      });
-
-                      const dayGroups = Array.from(grouped.entries())
-                        .sort(([a], [b]) => a - b)
-                        .map(([dayNum, dayBlocks]) => ({
-                          dayNumber: dayNum,
-                          dayName: `${dayNames[dayNum - 1]} / Day ${dayNum}`,
-                          blocks: dayBlocks
-                        }));
-
-                      return { dayGroups, unscheduled };
-                    };
-
-                    // Helper function to group blocks by session within a day
-                    const groupBlocksBySession = (blocks: typeof assignment.template.blocks) => {
-                      const grouped = new Map<string, typeof assignment.template.blocks>();
-
-                      blocks.forEach(block => {
-                        const sessionKey = (block as any).sessionName || '_default';
-                        if (!grouped.has(sessionKey)) {
-                          grouped.set(sessionKey, []);
-                        }
-                        grouped.get(sessionKey)!.push(block);
-                      });
-
-                      return Array.from(grouped.entries()).map(([name, blocks]) => ({
-                        name: name === '_default' ? '' : name,
-                        blocks: blocks.sort((a, b) => a.order - b.order)
-                      }));
-                    };
-
-                    const { dayGroups, unscheduled } = groupBlocksByDay(assignment.template.blocks);
-
-                    return (
-                      <Box>
-                        <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
-                          {t('training.coachPlan')}
-                        </Typography>
-
-                        {/* Weekly Notes */}
-                        {assignment.template.weeklyNotes && (
-                          <Alert severity="info" sx={{ mb: 3, whiteSpace: 'pre-line' }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                              📋 Week {currentWeek} of {assignment.template.durationWeeks} - Progression Notes
-                            </Typography>
-                            <Typography variant="body2">
-                              {assignment.template.weeklyNotes}
-                            </Typography>
-                          </Alert>
-                        )}
-
-                        {/* Days with expandable sessions */}
-                        {dayGroups.length > 0 ? (
-                          dayGroups.map((dayGroup) => {
-                            const sessions = groupBlocksBySession(dayGroup.blocks);
-
-                            return (
-                              <Accordion key={dayGroup.dayNumber} sx={{ mb: 1 }}>
-                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                      {dayGroup.dayName}
-                                    </Typography>
-                                  </Box>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                  {sessions.map((session, sIdx) => (
-                                    <Box key={sIdx} sx={{ mb: 3 }}>
-                                      {session.name && (
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
-                                          {session.name}
-                                        </Typography>
-                                      )}
-
-                                      {session.blocks.map(block => {
-                                        // Convert TrainingBlock to TemplateBlock format
-                                        const templateBlock = {
-                                          order: block.order,
-                                          title: block.title,
-                                          items: (block as any).items || (block as any).exercises || [],
-                                          globalSets: (block as any).globalSets,
-                                          exerciseConfigs: (block as any).exerciseConfigs,
-                                        };
-                                        return (
-                                          <WorkoutBlock
-                                            key={block.order}
-                                            block={templateBlock}
-                                            showLogButtons={false}
-                                            onStartBlock={undefined}
-                                            onVideoClick={handleVideoClick}
-                                            trainingType={activeTab}
-                                          />
-                                        );
-                                      })}
-
-                                      <Button
-                                        variant="contained"
-                                        size="small"
-                                        onClick={() => {
-                                          // Combine all blocks from this session/day into one workout
-                                          const allExercises: any[] = [];
-                                          const allExerciseConfigs: any[] = [];
-
-                                          session.blocks.forEach(block => {
-                                            const blockExercises = (block as any).items || (block as any).exercises || [];
-                                            allExercises.push(...blockExercises);
-
-                                            // Preserve exercise configs from each block
-                                            const blockConfigs = (block as any).exerciseConfigs || [];
-                                            allExerciseConfigs.push(...blockConfigs);
-                                          });
-
-                                          // Create a combined block with all exercises
-                                          const combinedBlock = {
-                                            order: 1,
-                                            title: session.name || dayGroup.dayName,
-                                            items: allExercises,
-                                            globalSets: undefined, // Don't use global sets for combined blocks
-                                            exerciseConfigs: allExerciseConfigs,
-                                          };
-
-                                          handleStartBlock(combinedBlock);
-                                        }}
-                                        sx={{ mt: 1 }}
-                                      >
-                                        Start {session.name || 'Workout'}
-                                      </Button>
-                                    </Box>
-                                  ))}
-                                </AccordionDetails>
-                              </Accordion>
-                            );
-                          })
-                        ) : unscheduled.length > 0 ? (
-                          // Show unscheduled blocks as before (flat list)
-                          <Box>
-                            {unscheduled
-                              .sort((a, b) => a.order - b.order)
-                              .map((block) => {
-                                // Convert TrainingBlock to TemplateBlock format
-                                const templateBlock = {
-                                  order: block.order,
-                                  title: block.title,
-                                  items: (block as any).items || (block as any).exercises || [],
-                                  globalSets: (block as any).globalSets,
-                                  exerciseConfigs: (block as any).exerciseConfigs,
-                                };
-                                return (
-                                  <WorkoutBlock
-                                    key={block.order}
-                                    block={templateBlock}
-                                    showLogButtons={false}
-                                    onStartBlock={handleStartBlock}
-                                    onVideoClick={handleVideoClick}
-                                    trainingType={activeTab}
+                          <Card
+                            key={assignment.id}
+                            sx={{
+                              mb: 2,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              '&:hover': {
+                                transform: 'translateY(-2px)',
+                                boxShadow: 4,
+                              }
+                            }}
+                            onClick={() => {
+                              setSelectedAssignment(assignment);
+                              setShowAssignmentDialog(true);
+                            }}
+                          >
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography variant="h6" sx={{ mb: 0.5 }}>
+                                    {assignment.template.trainingTypeName}
+                                  </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <Chip
+                                    label={`Week ${currentWeek} of ${totalWeeks}`}
+                                    size="small"
+                                    color="primary"
                                   />
-                                );
-                              })}
-                          </Box>
-                        ) : (
-                          <Alert severity="info">
-                            No blocks configured for this program yet
-                          </Alert>
-                        )}
-                      </Box>
-                    );
-                  })()}
+                                  <Chip
+                                    label={`${assignment.template.frequencyPerWeek}x per week`}
+                                    size="small"
+                                    variant="outlined"
+                                  />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {assignment.startDate} → {assignment.endDate}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+
+                            <Box sx={{ mb: 2 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                  {t('training.programProgress')}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {Math.round(progressPercent)}%
+                                </Typography>
+                              </Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={progressPercent}
+                                sx={{ height: 8, borderRadius: 1 }}
+                              />
+                            </Box>
+
+                            {availableDays.length > 0 && (
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                  Training Days:
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                  {availableDays.map(day => (
+                                    <Chip
+                                      key={day}
+                                      label={day}
+                                      size="small"
+                                      sx={{
+                                        backgroundColor: 'primary.light',
+                                        color: 'white',
+                                        fontWeight: 600,
+                                        fontSize: '0.7rem'
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+
+                            <Alert severity="info" sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <FitnessCenterIcon fontSize="small" />
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  Click to start training
+                                </Typography>
+                              </Box>
+                            </Alert>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </Box>
                 </>
               )}
 
@@ -1593,8 +1358,9 @@ export const MyTraining: React.FC = () => {
                       background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
                       boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
                     }}
+                    startIcon={<FitnessCenterIcon />}
                   >
-                    🏋️ Start Training - {dayFullName}
+                    Start Training - {dayFullName}
                   </Button>
                 </Box>
               );
@@ -1612,9 +1378,12 @@ export const MyTraining: React.FC = () => {
 
                 {selectedAssignment.template.weeklyNotes && (
                   <Alert severity="info" sx={{ mb: 3, whiteSpace: 'pre-line' }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                      📋 Week {currentWeek} Notes
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <DescriptionIcon fontSize="small" />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        Week {currentWeek} Notes
+                      </Typography>
+                    </Box>
                     <Typography variant="body2">
                       {selectedAssignment.template.weeklyNotes}
                     </Typography>
