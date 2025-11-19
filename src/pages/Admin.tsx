@@ -66,6 +66,7 @@ import { EquipmentManager } from '../components/EquipmentManager';
 import { DrillCategoryManager } from '../components/DrillCategoryManager';
 import { VideoTagsManager } from '../components/VideoTagsManager';
 import { VideosAdmin } from './VideosAdmin';
+import { SpielplanManager } from '../components/admin/SpielplanManager';
 import { getTeamSettings, updateTeamSettings, syncTeamSettingsFromBackend } from '../services/teamSettings';
 import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
 import { validateAPIKey } from '../services/aiInsights';
@@ -1238,6 +1239,9 @@ export const Admin: React.FC = () => {
                   </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => setActiveTab(12)}>
                     <ListItemText primary={t('admin.equipmentTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 16} onClick={() => setActiveTab(16)}>
+                    <ListItemText primary="Spielplan" />
                   </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 15} onClick={() => setActiveTab(15)}>
                     <ListItemText primary={t('nav.videosAdmin')} />
@@ -3235,6 +3239,9 @@ export const Admin: React.FC = () => {
 
       {/* Drill Categories Tab */}
       {activeTab === 13 && <DrillCategoryManager />}
+
+      {/* Spielplan Tab */}
+      {activeTab === 16 && <SpielplanManager />}
 
       {/* Videos Admin Tab */}
       {activeTab === 15 && <VideosAdmin />}

@@ -15,6 +15,7 @@ export const messagesEN = {
   'nav.videos': 'Videos',
   'nav.videosAdmin': 'Videos Admin',
   'nav.drillSessions': 'Drill Sessions',
+  'nav.spielplan': 'Spielplan',
   'nav.logout': 'Logout',
 
   // Common
