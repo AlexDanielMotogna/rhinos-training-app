@@ -12,8 +12,11 @@ import {
   ListItemIcon,
   ListItemText,
   Container,
+  Collapse,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -54,6 +57,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const user = getUser();
   const branding = getTeamBranding();
 
@@ -105,16 +109,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { key: 'trainingSessions', label: t('nav.trainingSessions'), icon: <GroupsIcon />, path: '/training-sessions', showForAll: true },
     { key: 'leaderboard', label: t('nav.leaderboard'), icon: <LeaderboardIcon />, path: '/leaderboard', showForAll: true },
     { key: 'videos', label: t('nav.videos'), icon: <OndemandVideoIcon />, path: '/videos', showForAll: true },
-    { key: 'drillSessions', label: t('nav.drillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions', showForAll: false, coachOnly: true },
-    { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports', showForAll: false, coachOnly: true },
-    { key: 'videosAdmin', label: t('nav.videosAdmin'), icon: <VideoLibraryIcon />, path: '/videos-admin', showForAll: false, coachOnly: true },
-    { key: 'admin', label: t('nav.admin'), icon: <AdminPanelSettingsIcon />, path: '/admin', showForAll: false, coachOnly: true },
-    { key: 'configuration', label: 'Configuration', icon: <SettingsIcon />, path: '/configuration', showForAll: false, coachOnly: true },
   ];
 
-  const visibleMenuItems = menuItems.filter(item =>
-    item.showForAll || (item.coachOnly && user?.role === 'coach')
-  );
+  const adminMenuItems = [
+    { key: 'admin', label: t('nav.admin'), icon: <AdminPanelSettingsIcon />, path: '/admin', description: 'Exercises, Training, Settings' },
+    { key: 'drillSessions', label: t('nav.drillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions' },
+    { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports' },
+    { key: 'videosAdmin', label: t('nav.videosAdmin'), icon: <VideoLibraryIcon />, path: '/videos-admin' },
+    { key: 'configuration', label: 'Configuration', icon: <SettingsIcon />, path: '/configuration' },
+  ];
 
   const handleNavigation = (path: string) => {
     // Close drawer immediately for better UX
@@ -275,7 +278,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </Box>
 
           <List>
-            {visibleMenuItems.map((item) => (
+            {menuItems.map((item) => (
               <ListItem key={item.key} disablePadding>
                 <ListItemButton
                   selected={location.pathname === item.path}
@@ -288,6 +291,39 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 </ListItemButton>
               </ListItem>
             ))}
+
+            {/* Admin Menu (Coach Only) */}
+            {user?.role === 'coach' && (
+              <>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={() => setAdminMenuOpen(!adminMenuOpen)}>
+                    <ListItemIcon>
+                      <AdminPanelSettingsIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Admin" />
+                    {adminMenuOpen ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+                </ListItem>
+                <Collapse in={adminMenuOpen} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {adminMenuItems.map((item) => (
+                      <ListItem key={item.key} disablePadding>
+                        <ListItemButton
+                          sx={{ pl: 4 }}
+                          selected={location.pathname === item.path}
+                          onClick={() => handleNavigation(item.path)}
+                        >
+                          <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit', minWidth: 40 }}>
+                            {item.icon}
+                          </ListItemIcon>
+                          <ListItemText primary={item.label} />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
+              </>
+            )}
 
             <ListItem disablePadding>
               <ListItemButton onClick={handleLogout}>
