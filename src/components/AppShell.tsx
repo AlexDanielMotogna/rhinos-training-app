@@ -107,13 +107,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { key: 'profile', label: t('nav.profile'), icon: <PersonIcon />, path: '/profile', showForAll: true },
     { key: 'team', label: t('nav.team'), icon: <GroupIcon />, path: '/team', showForAll: true },
     { key: 'trainingSessions', label: t('nav.trainingSessions'), icon: <GroupsIcon />, path: '/training-sessions', showForAll: true },
+    { key: 'drillSessions', label: t('nav.drillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions', showForAll: true },
     { key: 'leaderboard', label: t('nav.leaderboard'), icon: <LeaderboardIcon />, path: '/leaderboard', showForAll: true },
     { key: 'videos', label: t('nav.videos'), icon: <OndemandVideoIcon />, path: '/videos', showForAll: true },
   ];
 
   const adminMenuItems = [
     { key: 'admin', label: 'Coach Panel', icon: <AdminPanelSettingsIcon />, path: '/admin', description: 'Exercises, Training, Settings' },
-    { key: 'drillSessions', label: t('nav.drillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions' },
     { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports' },
     { key: 'configuration', label: 'Configuration', icon: <SettingsIcon />, path: '/configuration' },
   ];
