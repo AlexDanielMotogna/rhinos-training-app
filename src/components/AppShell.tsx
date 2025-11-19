@@ -242,8 +242,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <Box
           sx={{ width: 250 }}
           role="presentation"
-          onClick={() => setDrawerOpen(false)}
-          onKeyDown={() => setDrawerOpen(false)}
         >
           <Box
             sx={{
@@ -296,7 +294,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             {user?.role === 'coach' && (
               <>
                 <ListItem disablePadding>
-                  <ListItemButton onClick={() => setAdminMenuOpen(!adminMenuOpen)}>
+                  <ListItemButton onClick={(e) => {
+                    e.stopPropagation();
+                    setAdminMenuOpen(!adminMenuOpen);
+                  }}>
                     <ListItemIcon>
                       <AdminPanelSettingsIcon />
                     </ListItemIcon>
