@@ -112,10 +112,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   ];
 
   const adminMenuItems = [
-    { key: 'admin', label: t('nav.admin'), icon: <AdminPanelSettingsIcon />, path: '/admin', description: 'Exercises, Training, Settings' },
+    { key: 'admin', label: 'Coach Panel', icon: <AdminPanelSettingsIcon />, path: '/admin', description: 'Exercises, Training, Settings' },
     { key: 'drillSessions', label: t('nav.drillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions' },
     { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports' },
-    { key: 'videosAdmin', label: t('nav.videosAdmin'), icon: <VideoLibraryIcon />, path: '/videos-admin' },
     { key: 'configuration', label: 'Configuration', icon: <SettingsIcon />, path: '/configuration' },
   ];
 
