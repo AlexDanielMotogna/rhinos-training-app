@@ -106,8 +106,8 @@ export const Admin: React.FC = () => {
   const [exercisesMenuOpen, setExercisesMenuOpen] = useState(true);
   const [trainingMenuOpen, setTrainingMenuOpen] = useState(false);
   const [teamMenuOpen, setTeamMenuOpen] = useState(false);
+  const [resourcesMenuOpen, setResourcesMenuOpen] = useState(false);
   const [systemMenuOpen, setSystemMenuOpen] = useState(false);
-  const [contentMenuOpen, setContentMenuOpen] = useState(false);
   const user = getUser();
 
   // Exercise Management State
@@ -1221,6 +1221,31 @@ export const Admin: React.FC = () => {
 
               <Divider />
 
+              {/* Resources Menu */}
+              <ListItemButton onClick={() => setResourcesMenuOpen(!resourcesMenuOpen)}>
+                <ListItemIcon><LibraryBooksIcon /></ListItemIcon>
+                <ListItemText primary="Resources" />
+                {resourcesMenuOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={resourcesMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 11} onClick={() => setActiveTab(11)}>
+                    <ListItemText primary={t('admin.drillbookTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => setActiveTab(12)}>
+                    <ListItemText primary={t('admin.equipmentTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 13} onClick={() => setActiveTab(13)}>
+                    <ListItemText primary={t('admin.drillCategoriesTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 14} onClick={() => setActiveTab(14)}>
+                    <ListItemText primary="Video Tags" />
+                  </ListItemButton>
+                </List>
+              </Collapse>
+
+              <Divider />
+
               {/* System Menu */}
               <ListItemButton onClick={() => setSystemMenuOpen(!systemMenuOpen)}>
                 <ListItemIcon><SettingsIcon /></ListItemIcon>
@@ -1237,31 +1262,6 @@ export const Admin: React.FC = () => {
                   </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 10} onClick={() => setActiveTab(10)}>
                     <ListItemText primary={t('admin.pointsSystemTab')} />
-                  </ListItemButton>
-                </List>
-              </Collapse>
-
-              <Divider />
-
-              {/* Content Menu */}
-              <ListItemButton onClick={() => setContentMenuOpen(!contentMenuOpen)}>
-                <ListItemIcon><LibraryBooksIcon /></ListItemIcon>
-                <ListItemText primary="Content" />
-                {contentMenuOpen ? <ExpandLess /> : <ExpandMore />}
-              </ListItemButton>
-              <Collapse in={contentMenuOpen} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 11} onClick={() => setActiveTab(11)}>
-                    <ListItemText primary={t('admin.drillbookTab')} />
-                  </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => setActiveTab(12)}>
-                    <ListItemText primary={t('admin.equipmentTab')} />
-                  </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 13} onClick={() => setActiveTab(13)}>
-                    <ListItemText primary={t('admin.drillCategoriesTab')} />
-                  </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 14} onClick={() => setActiveTab(14)}>
-                    <ListItemText primary="Video Tags" />
                   </ListItemButton>
                 </List>
               </Collapse>
