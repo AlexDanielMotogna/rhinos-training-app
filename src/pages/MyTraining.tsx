@@ -62,7 +62,7 @@ type TeamSessionTab = 'plan' | 'history' | 'reports';
 
 export const MyTraining: React.FC = () => {
   const { t } = useI18n();
-  const [sessionView, setSessionView] = useState<SessionView>('my');
+  const [sessionView, setSessionView] = useState<SessionView>('team');
   const [mySessionTab, setMySessionTab] = useState<MySessionTab>('plans');
   const [teamSessionTab, setTeamSessionTab] = useState<TeamSessionTab>('plan');
   const [activeTab, setActiveTab] = useState<TrainingTypeKey>('strength_conditioning');
