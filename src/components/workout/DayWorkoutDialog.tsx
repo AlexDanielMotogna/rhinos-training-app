@@ -261,10 +261,10 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
         <DialogContent>
           <WorkoutForm
             exercise={exercise}
+            initialData={entryTemplate}
+            targetSets={targetSets}
             onSave={handleSaveExercise}
-            onBack={() => setSelectedExerciseIndex(null)}
-            existingEntry={entryTemplate}
-            trainingType={trainingType}
+            onCancel={() => setSelectedExerciseIndex(null)}
           />
         </DialogContent>
       </Dialog>
