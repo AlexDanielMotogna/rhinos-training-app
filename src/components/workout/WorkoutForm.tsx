@@ -51,7 +51,18 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
 }) => {
   const { t } = useI18n();
   const [name, setName] = useState(initialData?.name || exercise?.name || '');
-  const [category, setCategory] = useState<ExerciseCategory>(initialData?.category || exercise?.category || 'Strength');
+  // Normalize category to capitalized format for consistent comparison
+  const normalizeCategory = (cat: string | undefined): ExerciseCategory => {
+    if (!cat) return 'Strength';
+    const lower = cat.toLowerCase();
+    // Special case for COD (all caps)
+    if (lower === 'cod') return 'COD' as ExerciseCategory;
+    // Capitalize first letter for all other categories
+    return (lower.charAt(0).toUpperCase() + lower.slice(1)) as ExerciseCategory;
+  };
+  const [category, setCategory] = useState<ExerciseCategory>(
+    normalizeCategory(initialData?.category || exercise?.category)
+  );
 
   // Separate previous sets (read-only) from new sets (editable)
   const previousSets = initialData?.setData || [];
