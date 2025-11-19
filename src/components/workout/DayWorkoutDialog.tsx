@@ -166,7 +166,8 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
         } else {
           // Exercise was NOT logged - create empty entry with target sets
           const exerciseConfig = (block as any).exerciseConfigs?.find((c: any) => c.exerciseId === exercise.id);
-          const targetSets = exerciseConfig?.sets || (block as any).globalSets;
+          // Default to 3 sets if neither exerciseConfig nor globalSets are defined
+          const targetSets = exerciseConfig?.sets || (block as any).globalSets || 3;
           const targetReps = exerciseConfig?.reps;
           const unit = exerciseConfig?.unit;
 
@@ -174,7 +175,7 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
             exerciseId: exercise.id,
             name: exercise.name,
             category: exercise.category,
-            sets: targetSets || 0,
+            sets: targetSets,
             reps: targetReps,
             unit: unit,
             setData: [], // No sets completed
@@ -214,7 +215,8 @@ export const DayWorkoutDialog: React.FC<DayWorkoutDialogProps> = ({
     if (!exercises[exerciseIndex]) return undefined;
     const exercise = exercises[exerciseIndex];
     const exerciseConfig = (currentBlock as any).exerciseConfigs?.find((c: any) => c.exerciseId === exercise.id);
-    return exerciseConfig?.sets || (currentBlock as any).globalSets;
+    // Default to 3 sets if neither exerciseConfig nor globalSets are defined
+    return exerciseConfig?.sets || (currentBlock as any).globalSets || 3;
   };
 
   // Get target reps/duration for a specific exercise in current block
