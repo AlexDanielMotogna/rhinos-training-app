@@ -36,11 +36,22 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Collapse,
+  ListItemIcon,
+  Divider,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import CategoryIcon from '@mui/icons-material/Category';
+import GroupsIcon from '@mui/icons-material/Groups';
+import SettingsIcon from '@mui/icons-material/Settings';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useI18n } from '../i18n/I18nProvider';
 import type { Exercise, ExerciseCategory, Position, MuscleGroup } from '../types/exercise';
 import type { TrainingTemplate, TrainingAssignment } from '../types/trainingBuilder';
@@ -92,6 +103,11 @@ interface TrainingType {
 export const Admin: React.FC = () => {
   const { t, locale } = useI18n();
   const [activeTab, setActiveTab] = useState(0);
+  const [exercisesMenuOpen, setExercisesMenuOpen] = useState(true);
+  const [trainingMenuOpen, setTrainingMenuOpen] = useState(false);
+  const [teamMenuOpen, setTeamMenuOpen] = useState(false);
+  const [systemMenuOpen, setSystemMenuOpen] = useState(false);
+  const [contentMenuOpen, setContentMenuOpen] = useState(false);
   const user = getUser();
 
   // Exercise Management State
@@ -1137,29 +1153,124 @@ export const Admin: React.FC = () => {
         {t('admin.coachOnlyAccess')}
       </Alert>
 
-      <Tabs
-        value={activeTab}
-        onChange={(_, value) => setActiveTab(value)}
-        sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
-        variant="scrollable"
-        scrollButtons="auto"
-      >
-        <Tab label={t('admin.trainingBuilderTab')} />
-        <Tab label="Assign Programs" />
-        <Tab label={t('admin.exercisesTab')} />
-        <Tab label={t('admin.exerciseCategoriesTab')} />
-        <Tab label={t('admin.sessionsTab')} />
-        <Tab label={t('admin.trainingTypesTab')} />
-        <Tab label={t('admin.policiesTab')} />
-        <Tab label={t('admin.blockInfoTab')} />
-        <Tab label={t('admin.teamSettingsTab')} />
-        <Tab label={t('admin.aiCoachTab')} />
-        <Tab label={t('admin.pointsSystemTab')} />
-        <Tab label={t('admin.drillbookTab')} />
-        <Tab label={t('admin.equipmentTab')} />
-        <Tab label={t('admin.drillCategoriesTab')} />
-        <Tab label="Video Tags" />
-      </Tabs>
+      <Grid container spacing={3}>
+        {/* Left Sidebar Menu */}
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ position: 'sticky', top: 16 }}>
+            <List component="nav">
+              {/* Exercises Menu */}
+              <ListItemButton onClick={() => setExercisesMenuOpen(!exercisesMenuOpen)}>
+                <ListItemIcon><FitnessCenterIcon /></ListItemIcon>
+                <ListItemText primary="Exercises" />
+                {exercisesMenuOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={exercisesMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 2} onClick={() => setActiveTab(2)}>
+                    <ListItemText primary={t('admin.exercisesTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 3} onClick={() => setActiveTab(3)}>
+                    <ListItemText primary={t('admin.exerciseCategoriesTab')} />
+                  </ListItemButton>
+                </List>
+              </Collapse>
+
+              <Divider />
+
+              {/* Training Menu */}
+              <ListItemButton onClick={() => setTrainingMenuOpen(!trainingMenuOpen)}>
+                <ListItemIcon><CategoryIcon /></ListItemIcon>
+                <ListItemText primary="Training" />
+                {trainingMenuOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={trainingMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 0} onClick={() => setActiveTab(0)}>
+                    <ListItemText primary={t('admin.trainingBuilderTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 1} onClick={() => setActiveTab(1)}>
+                    <ListItemText primary="Assign Programs" />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 5} onClick={() => setActiveTab(5)}>
+                    <ListItemText primary={t('admin.trainingTypesTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 7} onClick={() => setActiveTab(7)}>
+                    <ListItemText primary={t('admin.blockInfoTab')} />
+                  </ListItemButton>
+                </List>
+              </Collapse>
+
+              <Divider />
+
+              {/* Team Menu */}
+              <ListItemButton onClick={() => setTeamMenuOpen(!teamMenuOpen)}>
+                <ListItemIcon><GroupsIcon /></ListItemIcon>
+                <ListItemText primary="Team" />
+                {teamMenuOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={teamMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 4} onClick={() => setActiveTab(4)}>
+                    <ListItemText primary={t('admin.sessionsTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 6} onClick={() => setActiveTab(6)}>
+                    <ListItemText primary={t('admin.policiesTab')} />
+                  </ListItemButton>
+                </List>
+              </Collapse>
+
+              <Divider />
+
+              {/* System Menu */}
+              <ListItemButton onClick={() => setSystemMenuOpen(!systemMenuOpen)}>
+                <ListItemIcon><SettingsIcon /></ListItemIcon>
+                <ListItemText primary="System" />
+                {systemMenuOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={systemMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 8} onClick={() => setActiveTab(8)}>
+                    <ListItemText primary={t('admin.teamSettingsTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 9} onClick={() => setActiveTab(9)}>
+                    <ListItemText primary={t('admin.aiCoachTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 10} onClick={() => setActiveTab(10)}>
+                    <ListItemText primary={t('admin.pointsSystemTab')} />
+                  </ListItemButton>
+                </List>
+              </Collapse>
+
+              <Divider />
+
+              {/* Content Menu */}
+              <ListItemButton onClick={() => setContentMenuOpen(!contentMenuOpen)}>
+                <ListItemIcon><LibraryBooksIcon /></ListItemIcon>
+                <ListItemText primary="Content" />
+                {contentMenuOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={contentMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 11} onClick={() => setActiveTab(11)}>
+                    <ListItemText primary={t('admin.drillbookTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => setActiveTab(12)}>
+                    <ListItemText primary={t('admin.equipmentTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 13} onClick={() => setActiveTab(13)}>
+                    <ListItemText primary={t('admin.drillCategoriesTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 14} onClick={() => setActiveTab(14)}>
+                    <ListItemText primary="Video Tags" />
+                  </ListItemButton>
+                </List>
+              </Collapse>
+            </List>
+          </Paper>
+        </Grid>
+
+        {/* Main Content Area */}
+        <Grid item xs={12} md={9}>
 
       {/* Training Builder Tab */}
       {activeTab === 0 && (
@@ -3404,6 +3515,8 @@ export const Admin: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
