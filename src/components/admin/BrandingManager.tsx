@@ -10,17 +10,33 @@ import {
   Alert,
   Avatar,
   Divider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  FormHelperText,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { getUser } from '../../services/userProfile';
-import { getTeamBranding, updateTeamBranding } from '../../services/teamSettings';
-import type { TeamBranding } from '../../types/teamSettings';
+import {
+  getTeamBranding,
+  updateTeamBranding,
+  getTeamSettings,
+  updateTeamSettings,
+  getTeamLevelLabel,
+  getTeamCategoryLabel
+} from '../../services/teamSettings';
+import type { TeamBranding, TeamLevel, TeamCategory, SeasonPhase } from '../../types/teamSettings';
 import { DEFAULT_TEAM_BRANDING } from '../../types/teamSettings';
 
 export const BrandingManager: React.FC = () => {
   const user = getUser();
+  const teamSettings = getTeamSettings();
   const [branding, setBranding] = useState<TeamBranding>(getTeamBranding());
+  const [teamLevel, setTeamLevel] = useState<TeamLevel>(teamSettings.teamLevel);
+  const [teamCategory, setTeamCategory] = useState<TeamCategory>(teamSettings.teamCategory);
+  const [seasonPhase, setSeasonPhase] = useState<SeasonPhase>(teamSettings.seasonPhase);
   const [showSuccess, setShowSuccess] = useState(false);
   const [previewLogo, setPreviewLogo] = useState(branding.logoUrl || '');
 
@@ -28,17 +44,26 @@ export const BrandingManager: React.FC = () => {
     setPreviewLogo(branding.logoUrl || '');
   }, [branding.logoUrl]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!user) return;
 
-    updateTeamBranding(branding, user.name);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      // Update team settings (season phase, level, category)
+      await updateTeamSettings(seasonPhase, teamLevel, teamCategory, user.name);
 
-    // Reload page to apply changes
-    setTimeout(() => {
-      window.location.reload();
-    }, 1500);
+      // Update branding
+      await updateTeamBranding(branding, user.name);
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+
+      // Reload page to apply changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    }
   };
 
   const handleReset = () => {
@@ -80,6 +105,46 @@ export const BrandingManager: React.FC = () => {
                 helperText="This will appear in the browser tab title and navigation"
                 sx={{ mb: 2 }}
               />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Team Classification */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Team Classification
+              </Typography>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Team Level</InputLabel>
+                <Select
+                  value={teamLevel}
+                  label="Team Level"
+                  onChange={(e) => setTeamLevel(e.target.value as TeamLevel)}
+                >
+                  <MenuItem value="amateur">Amateur</MenuItem>
+                  <MenuItem value="semi-pro">Semi-Pro</MenuItem>
+                  <MenuItem value="pro">Professional</MenuItem>
+                  <MenuItem value="youth">Youth</MenuItem>
+                  <MenuItem value="recreational">Recreational</MenuItem>
+                </Select>
+                <FormHelperText>Competitive level of the team</FormHelperText>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Team Category</InputLabel>
+                <Select
+                  value={teamCategory}
+                  label="Team Category"
+                  onChange={(e) => setTeamCategory(e.target.value as TeamCategory)}
+                >
+                  <MenuItem value="juvenil">Juvenil (Youth/Junior)</MenuItem>
+                  <MenuItem value="principal">Principal (First Team)</MenuItem>
+                  <MenuItem value="reserves">Reserves (Second Team)</MenuItem>
+                  <MenuItem value="academy">Academy (Development)</MenuItem>
+                </Select>
+                <FormHelperText>Age/organizational classification</FormHelperText>
+              </FormControl>
             </CardContent>
           </Card>
         </Grid>

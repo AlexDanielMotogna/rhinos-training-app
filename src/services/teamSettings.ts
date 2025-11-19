@@ -1,4 +1,4 @@
-import type { TeamSettings, SeasonPhase, TeamLevel, TeamBranding } from '../types/teamSettings';
+import type { TeamSettings, SeasonPhase, TeamLevel, TeamCategory, TeamBranding } from '../types/teamSettings';
 import { DEFAULT_TEAM_SETTINGS, DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
 import { teamSettingsService as teamSettingsApi } from './api';
 import { isOnline } from './sync';
@@ -26,6 +26,7 @@ export async function syncTeamSettingsFromBackend(): Promise<void> {
     const settings: TeamSettings = {
       seasonPhase: backendSettings.seasonPhase as SeasonPhase,
       teamLevel: backendSettings.teamLevel as TeamLevel,
+      teamCategory: backendSettings.teamCategory as TeamCategory,
       aiApiKey: backendSettings.aiApiKey,
       branding: {
         teamName: backendSettings.teamName,
@@ -78,6 +79,7 @@ export function getTeamSettings(): TeamSettings {
 export async function updateTeamSettings(
   seasonPhase: SeasonPhase,
   teamLevel: TeamLevel,
+  teamCategory: TeamCategory,
   updatedBy?: string
 ): Promise<TeamSettings> {
   if (isOnline()) {
@@ -85,6 +87,7 @@ export async function updateTeamSettings(
       const backendSettings = await teamSettingsApi.update({
         seasonPhase,
         teamLevel,
+        teamCategory,
       });
 
       // Sync to update cache
@@ -222,12 +225,32 @@ export function getTeamLevelLabel(level: TeamLevel): string {
       return 'Amateur';
     case 'semi-pro':
       return 'Semi-Pro';
-    case 'college':
-      return 'College';
     case 'pro':
       return 'Professional';
+    case 'youth':
+      return 'Youth';
+    case 'recreational':
+      return 'Recreational';
     default:
       return level;
+  }
+}
+
+/**
+ * Get team category display name
+ */
+export function getTeamCategoryLabel(category: TeamCategory): string {
+  switch (category) {
+    case 'juvenil':
+      return 'Juvenil';
+    case 'principal':
+      return 'Principal';
+    case 'reserves':
+      return 'Reserves';
+    case 'academy':
+      return 'Academy';
+    default:
+      return category;
   }
 }
 
@@ -258,10 +281,30 @@ export function getTeamLevelDescription(level: TeamLevel): string {
       return 'Amateur level: Recreational/hobby sport, limited training time, focus on enjoyment and fitness.';
     case 'semi-pro':
       return 'Semi-professional level: Competitive standards, part-time training, balance with work/life commitments.';
-    case 'college':
-      return 'College level: NCAA/university standards, structured training programs, competitive athletics with academic balance.';
     case 'pro':
       return 'Professional level: Elite standards, full-time training, high expectations for performance and professionalism.';
+    case 'youth':
+      return 'Youth level: Focus on development, age-appropriate training, long-term athlete development.';
+    case 'recreational':
+      return 'Recreational level: Casual participation, social focus, flexible training schedule.';
+    default:
+      return '';
+  }
+}
+
+/**
+ * Get team category description for AI context
+ */
+export function getTeamCategoryDescription(category: TeamCategory): string {
+  switch (category) {
+    case 'juvenil':
+      return 'Juvenil: Youth/Junior team, focus on player development and age-appropriate training.';
+    case 'principal':
+      return 'Principal: First team/Main squad, highest competitive level within the club.';
+    case 'reserves':
+      return 'Reserves: Reserve/Second team, competitive development pathway to first team.';
+    case 'academy':
+      return 'Academy: Development squad, focus on fundamental skills and long-term player development.';
     default:
       return '';
   }
