@@ -1233,11 +1233,11 @@ export const Admin: React.FC = () => {
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 11} onClick={() => setActiveTab(11)}>
                     <ListItemText primary={t('admin.drillbookTab')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => setActiveTab(12)}>
-                    <ListItemText primary={t('admin.equipmentTab')} />
-                  </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 13} onClick={() => setActiveTab(13)}>
                     <ListItemText primary={t('admin.drillCategoriesTab')} />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => setActiveTab(12)}>
+                    <ListItemText primary={t('admin.equipmentTab')} />
                   </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 15} onClick={() => setActiveTab(15)}>
                     <ListItemText primary={t('nav.videosAdmin')} />
