@@ -12,8 +12,11 @@ import {
   ListItemIcon,
   ListItemText,
   Container,
+  Collapse,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -28,6 +31,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import GroupsIcon from '@mui/icons-material/Groups';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SportsFootballIcon from '@mui/icons-material/SportsFootball';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -41,7 +45,8 @@ import { notificationService } from '../services/api';
 import { isOnline } from '../services/sync';
 import type { Notification } from '../types/notification';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
-import { getTeamBranding } from '../services/teamSettings';
+import { getTeamBrandingAsync } from '../services/teamSettings';
+import type { TeamBranding } from '../types/teamSettings';
 import { toastService } from '../services/toast';
 
 interface AppShellProps {
@@ -54,8 +59,18 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [branding, setBranding] = useState<TeamBranding | null>(null);
   const user = getUser();
-  const branding = getTeamBranding();
+
+  // Load team branding from database
+  useEffect(() => {
+    const loadBranding = async () => {
+      const brandingData = await getTeamBrandingAsync();
+      setBranding(brandingData);
+    };
+    loadBranding();
+  }, []);
 
   useEffect(() => {
     // Load notifications from backend
@@ -98,23 +113,23 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   const menuItems = [
     { key: 'myTraining', label: t('nav.myTraining'), icon: <FitnessCenterIcon />, path: '/training', showForAll: true },
-    { key: 'myCalendar', label: 'My Calendar', icon: <CalendarMonthIcon />, path: '/stats', showForAll: true },
+    { key: 'myCalendar', label: t('nav.myCalendar'), icon: <CalendarMonthIcon />, path: '/stats', showForAll: true },
     { key: 'tests', label: t('nav.tests'), icon: <AssessmentIcon />, path: '/tests', showForAll: true },
     { key: 'profile', label: t('nav.profile'), icon: <PersonIcon />, path: '/profile', showForAll: true },
     { key: 'team', label: t('nav.team'), icon: <GroupIcon />, path: '/team', showForAll: true },
+    { key: 'spielplan', label: t('nav.spielplan'), icon: <CalendarTodayIcon />, path: '/spielplan', showForAll: true },
     { key: 'trainingSessions', label: t('nav.trainingSessions'), icon: <GroupsIcon />, path: '/training-sessions', showForAll: true },
+    { key: 'drillbook', label: t('nav.drillbook'), icon: <SportsFootballIcon />, path: '/drillbook', showForAll: true },
     { key: 'leaderboard', label: t('nav.leaderboard'), icon: <LeaderboardIcon />, path: '/leaderboard', showForAll: true },
     { key: 'videos', label: t('nav.videos'), icon: <OndemandVideoIcon />, path: '/videos', showForAll: true },
-    { key: 'drillSessions', label: t('nav.drillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions', showForAll: false, coachOnly: true },
-    { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports', showForAll: false, coachOnly: true },
-    { key: 'videosAdmin', label: t('nav.videosAdmin'), icon: <VideoLibraryIcon />, path: '/videos-admin', showForAll: false, coachOnly: true },
-    { key: 'admin', label: t('nav.admin'), icon: <AdminPanelSettingsIcon />, path: '/admin', showForAll: false, coachOnly: true },
-    { key: 'configuration', label: 'Configuration', icon: <SettingsIcon />, path: '/configuration', showForAll: false, coachOnly: true },
   ];
 
-  const visibleMenuItems = menuItems.filter(item =>
-    item.showForAll || (item.coachOnly && user?.role === 'coach')
-  );
+  const adminMenuItems = [
+    { key: 'admin', label: t('nav.coachPanel'), icon: <AdminPanelSettingsIcon />, path: '/admin', description: t('nav.coachPanelDesc') },
+    { key: 'drillSessionsManage', label: t('nav.manageDrillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions-manage' },
+    { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports' },
+    { key: 'configuration', label: t('nav.configuration'), icon: <SettingsIcon />, path: '/configuration' },
+  ];
 
   const handleNavigation = (path: string) => {
     // Close drawer immediately for better UX
@@ -239,8 +254,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <Box
           sx={{ width: 250 }}
           role="presentation"
-          onClick={() => setDrawerOpen(false)}
-          onKeyDown={() => setDrawerOpen(false)}
         >
           <Box
             sx={{
@@ -252,15 +265,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
               <Box
                 component="img"
-                src={branding.logoUrl || RhinosLogo}
-                alt={`${branding.appName} Logo`}
+                src={branding?.logoUrl || RhinosLogo}
+                alt={`${branding?.appName || 'App'} Logo`}
                 sx={{
                   width: 40,
                   height: 40,
                   objectFit: 'contain',
                 }}
               />
-              <Typography variant="h6">{branding.appName || t('app.title')}</Typography>
+              <Typography variant="h6">{branding?.appName || t('app.title')}</Typography>
             </Box>
             {user && (
               <Box sx={{ pl: 0.5 }}>
@@ -275,7 +288,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </Box>
 
           <List>
-            {visibleMenuItems.map((item) => (
+            {menuItems.map((item) => (
               <ListItem key={item.key} disablePadding>
                 <ListItemButton
                   selected={location.pathname === item.path}
@@ -288,6 +301,42 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 </ListItemButton>
               </ListItem>
             ))}
+
+            {/* Admin Menu (Coach Only) */}
+            {user?.role === 'coach' && (
+              <>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={(e) => {
+                    e.stopPropagation();
+                    setAdminMenuOpen(!adminMenuOpen);
+                  }}>
+                    <ListItemIcon>
+                      <AdminPanelSettingsIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={t('nav.admin')} />
+                    {adminMenuOpen ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+                </ListItem>
+                <Collapse in={adminMenuOpen} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {adminMenuItems.map((item) => (
+                      <ListItem key={item.key} disablePadding>
+                        <ListItemButton
+                          sx={{ pl: 4 }}
+                          selected={location.pathname === item.path}
+                          onClick={() => handleNavigation(item.path)}
+                        >
+                          <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit', minWidth: 40 }}>
+                            {item.icon}
+                          </ListItemIcon>
+                          <ListItemText primary={item.label} />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
+              </>
+            )}
 
             <ListItem disablePadding>
               <ListItemButton onClick={handleLogout}>

@@ -82,9 +82,9 @@ export const Team: React.FC = () => {
                     </Box>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip label={`${player.age} years`} size="small" />
-                    <Chip label={`${player.weightKg} kg`} size="small" />
-                    <Chip label={`${player.heightCm} cm`} size="small" />
+                    <Chip label={t('team.years', { age: player.age })} size="small" />
+                    <Chip label={t('team.weightUnit', { weight: player.weightKg })} size="small" />
+                    <Chip label={t('team.heightUnit', { height: player.heightCm })} size="small" />
                   </Box>
                 </CardContent>
               </CardActionArea>

@@ -1,89 +1,32 @@
 /**
  * Training Sessions Service
- * Manages team and private training sessions with backend + IndexedDB + localStorage support
+ * Manages team and private training sessions - REQUIRES INTERNET CONNECTION
+ * Note: Only workout tracking uses offline storage, not training sessions themselves
  */
 
 import type { TrainingSession, RSVPStatus, CheckInStatus } from '../types/trainingSession';
 import { addNotification } from './mock';
 import { trainingSessionService } from './api';
-import { db, addToOutbox } from './db';
 import { isOnline } from './sync';
 
-const SESSIONS_KEY = 'rhinos_training_sessions';
-
 /**
- * Get all training sessions
- * Priority: Backend (if online) -> IndexedDB -> localStorage
+ * Get all training sessions from backend
+ * REQUIRES INTERNET CONNECTION - Training sessions do not use offline caching
  */
 export async function getAllSessions(): Promise<TrainingSession[]> {
-  const online = isOnline();
+  if (!isOnline()) {
+    console.log('⚠️ Training Sessions require internet connection');
+    throw new Error('Training Sessions require internet connection');
+  }
 
   try {
-    if (online) {
-      // Fetch from backend
-      console.log('🔄 Fetching training sessions from backend...');
-      const backendSessions = await trainingSessionService.getAll() as TrainingSession[];
-
-      // Get current local sessions to preserve local-only changes
-      const localSessions = await db.trainingSessions.toArray();
-
-      // Merge: backend sessions take priority, but preserve local-only sessions
-      const mergedSessions: TrainingSession[] = [];
-      const processedIds = new Set<string>();
-
-      // Add all backend sessions (they're authoritative)
-      for (const backendSession of backendSessions) {
-        mergedSessions.push(backendSession);
-        processedIds.add(backendSession.id);
-      }
-
-      // Add any local-only sessions not in backend (shouldn't happen often, but just in case)
-      for (const localSession of localSessions) {
-        if (!processedIds.has(localSession.id)) {
-          console.log('[SESSIONS] Found local-only session:', localSession.id);
-          mergedSessions.push(localSession as TrainingSession);
-        }
-      }
-
-      // Update caches with merged data
-      await db.trainingSessions.clear();
-      await db.trainingSessions.bulkPut(mergedSessions.map(s => ({
-        ...s,
-        version: 1,
-        updatedAt: new Date().toISOString(),
-      })));
-      localStorage.setItem(SESSIONS_KEY, JSON.stringify(mergedSessions));
-
-      console.log(`✅ Loaded ${mergedSessions.length} sessions from backend`);
-      return mergedSessions;
-    } else {
-      // Load from IndexedDB cache
-      console.log('📦 Loading sessions from cache...');
-      const cached = await db.trainingSessions.toArray();
-
-      if (cached.length > 0) {
-        console.log(`📦 Loaded ${cached.length} sessions from IndexedDB`);
-        return cached as TrainingSession[];
-      }
-
-      // Fallback to localStorage
-      const stored = localStorage.getItem(SESSIONS_KEY);
-      const sessions = stored ? JSON.parse(stored) : [];
-      console.log(`📦 Loaded ${sessions.length} sessions from localStorage`);
-      return sessions;
-    }
+    console.log('🔄 Fetching training sessions from backend...');
+    const backendSessions = await trainingSessionService.getAll() as TrainingSession[];
+    console.log(`✅ Loaded ${backendSessions.length} sessions from backend`);
+    return backendSessions;
   } catch (error) {
-    console.error('❌ Failed to load sessions:', error);
-
-    // Fallback to IndexedDB
-    const cached = await db.trainingSessions.toArray();
-    if (cached.length > 0) {
-      return cached as TrainingSession[];
-    }
-
-    // Last resort: localStorage
-    const stored = localStorage.getItem(SESSIONS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    console.error('❌ Failed to load sessions from backend:', error);
+    throw error;
   }
 }
 
@@ -120,136 +63,73 @@ export async function getPrivateSessions(): Promise<TrainingSession[]> {
 
 /**
  * Create a new training session
+ * REQUIRES INTERNET CONNECTION
  */
 export async function createSession(session: Omit<TrainingSession, 'id' | 'createdAt'>): Promise<TrainingSession> {
-  const online = isOnline();
-
-  const newSession: TrainingSession = {
-    ...session,
-    id: `session-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-    checkIns: session.sessionCategory === 'team' ? [] : undefined,
-  };
-
-  // Save to localStorage first (immediate feedback)
-  const sessions = await getAllSessions();
-  sessions.push(newSession);
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-
-  // Save to IndexedDB
-  await db.trainingSessions.put({
-    ...newSession,
-    updatedAt: new Date().toISOString(),
-  });
-
-  // Try to save to backend
-  if (online) {
-    try {
-      const created = await trainingSessionService.create({
-        creatorId: session.creatorId,
-        creatorName: session.creatorName,
-        sessionCategory: session.sessionCategory,
-        type: session.type,
-        title: session.title,
-        location: session.location,
-        address: session.address,
-        date: session.date,
-        time: session.time,
-        description: session.description,
-        attendees: session.attendees,
-      }) as TrainingSession;
-
-      console.log('✅ Session saved to backend:', created.id);
-
-      // Update local caches with backend ID
-      newSession.id = created.id;
-      await db.trainingSessions.put({
-        ...created,
-        updatedAt: created.updatedAt || new Date().toISOString(),
-      });
-    } catch (error) {
-      console.warn('⚠️ Failed to save session to backend, will sync later:', error);
-      await addToOutbox('trainingSession', 'create', newSession);
-    }
-  } else {
-    // Queue for sync when online
-    await addToOutbox('trainingSession', 'create', newSession);
-    console.log('📦 Session queued for sync when online');
+  if (!isOnline()) {
+    throw new Error('Internet connection required to create training sessions');
   }
 
-  // Notify all players about the new session
-  notifyNewSession(newSession);
+  try {
+    const created = await trainingSessionService.create({
+      creatorId: session.creatorId,
+      creatorName: session.creatorName,
+      sessionCategory: session.sessionCategory,
+      type: session.type,
+      title: session.title,
+      location: session.location,
+      address: session.address,
+      date: session.date,
+      time: session.time,
+      description: session.description,
+      attendees: session.attendees,
+    }) as TrainingSession;
 
-  return newSession;
+    console.log('✅ Session created on backend:', created.id);
+
+    // Notify all players about the new session
+    notifyNewSession(created);
+
+    return created;
+  } catch (error) {
+    console.error('❌ Failed to create session:', error);
+    throw error;
+  }
 }
 
 /**
  * Update RSVP status for a session
+ * REQUIRES INTERNET CONNECTION
  */
 export async function updateRSVP(sessionId: string, userId: string, userName: string, status: RSVPStatus): Promise<void> {
-  const online = isOnline();
-
-  // Update local cache first
-  const sessions = await getAllSessions();
-  const session = sessions.find(s => s.id === sessionId);
-
-  if (!session) return;
-
-  // Find or add attendee
-  const attendeeIndex = session.attendees.findIndex(a => a.userId === userId);
-
-  if (attendeeIndex >= 0) {
-    session.attendees[attendeeIndex].status = status;
-  } else {
-    session.attendees.push({ userId, userName, status });
+  if (!isOnline()) {
+    throw new Error('Internet connection required to update RSVP');
   }
 
-  // Update caches
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-  await db.trainingSessions.put({
-    ...session,
-    updatedAt: new Date().toISOString(),
-  });
-
-  // Try to update backend
-  if (online) {
-    try {
-      await trainingSessionService.updateRSVP(sessionId, userId, status);
-      console.log('✅ RSVP updated on backend');
-    } catch (error) {
-      console.warn('⚠️ Failed to update RSVP on backend, will sync later:', error);
-      await addToOutbox('trainingSession', 'rsvp', { sessionId, userId, status });
-    }
-  } else {
-    await addToOutbox('trainingSession', 'rsvp', { sessionId, userId, status });
-    console.log('📦 RSVP queued for sync when online');
+  try {
+    await trainingSessionService.updateRSVP(sessionId, userId, status);
+    console.log('✅ RSVP updated on backend');
+  } catch (error) {
+    console.error('❌ Failed to update RSVP:', error);
+    throw error;
   }
 }
 
 /**
  * Delete a training session
+ * REQUIRES INTERNET CONNECTION
  */
 export async function deleteSession(sessionId: string): Promise<void> {
-  const online = isOnline();
+  if (!isOnline()) {
+    throw new Error('Internet connection required to delete training sessions');
+  }
 
-  // Remove from caches
-  const sessions = await getAllSessions();
-  const filtered = sessions.filter(s => s.id !== sessionId);
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered));
-  await db.trainingSessions.delete(sessionId);
-
-  // Try to delete from backend
-  if (online) {
-    try {
-      await trainingSessionService.delete(sessionId);
-      console.log('✅ Session deleted from backend');
-    } catch (error) {
-      console.warn('⚠️ Failed to delete session from backend:', error);
-      await addToOutbox('trainingSession', 'delete', { sessionId });
-    }
-  } else {
-    await addToOutbox('trainingSession', 'delete', { sessionId });
-    console.log('📦 Delete queued for sync when online');
+  try {
+    await trainingSessionService.delete(sessionId);
+    console.log('✅ Session deleted from backend');
+  } catch (error) {
+    console.error('❌ Failed to delete session:', error);
+    throw error;
   }
 }
 
@@ -269,55 +149,19 @@ export function canCheckIn(session: TrainingSession): boolean {
 
 /**
  * Check in user to a team session
+ * REQUIRES INTERNET CONNECTION
  */
 export async function checkInToSession(sessionId: string, userId: string, userName: string): Promise<void> {
-  const online = isOnline();
-
-  const sessions = await getAllSessions();
-  const session = sessions.find(s => s.id === sessionId);
-
-  if (!session || session.sessionCategory !== 'team') return;
-
-  // Initialize checkIns array if not exists
-  if (!session.checkIns) {
-    session.checkIns = [];
+  if (!isOnline()) {
+    throw new Error('Internet connection required to check in');
   }
 
-  // Check if already checked in
-  const existingCheckIn = session.checkIns.find(c => c.userId === userId);
-  if (existingCheckIn) return;
-
-  // Determine status based on time
-  const now = new Date();
-  const sessionStart = new Date(`${session.date}T${session.time}`);
-  const status: CheckInStatus = now <= sessionStart ? 'on_time' : 'late';
-
-  session.checkIns.push({
-    userId,
-    userName,
-    checkedInAt: now.toISOString(),
-    status,
-  });
-
-  // Update caches
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-  await db.trainingSessions.put({
-    ...session,
-    updatedAt: new Date().toISOString(),
-  });
-
-  // Try to update backend
-  if (online) {
-    try {
-      await trainingSessionService.checkIn(sessionId, userId);
-      console.log('✅ Check-in saved to backend');
-    } catch (error) {
-      console.warn('⚠️ Failed to save check-in to backend, will sync later:', error);
-      await addToOutbox('trainingSession', 'checkin', { sessionId, userId });
-    }
-  } else {
-    await addToOutbox('trainingSession', 'checkin', { sessionId, userId });
-    console.log('📦 Check-in queued for sync when online');
+  try {
+    await trainingSessionService.checkIn(sessionId, userId);
+    console.log('✅ Check-in saved to backend');
+  } catch (error) {
+    console.error('❌ Failed to check in:', error);
+    throw error;
   }
 }
 

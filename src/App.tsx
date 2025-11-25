@@ -81,6 +81,7 @@ const Team = createLazyComponent(() => import('./pages/Team').then(m => ({ defau
 const TrainingSessions = createLazyComponent(() => import('./pages/TrainingSessions').then(m => ({ default: m.TrainingSessions })), 'TrainingSessions');
 const Configuration = createLazyComponent(() => import('./pages/Configuration').then(m => ({ default: m.Configuration })), 'Configuration');
 const DrillSessions = createLazyComponent(() => import('./components/DrillTrainingPlan').then(m => ({ default: m.DrillTrainingPlan })), 'DrillSessions');
+const Spielplan = createLazyComponent(() => import('./pages/Spielplan').then(m => ({ default: m.Spielplan })), 'Spielplan');
 
 function App() {
   // Initialize drill data on app startup
@@ -257,6 +258,7 @@ function App() {
               <Route element={<AppShell><ErrorBoundary><Suspense fallback={<LoadingSpinner />}><Outlet /></Suspense></ErrorBoundary></AppShell>}>
                 <Route path="/training" element={<MyTraining />} />
                 <Route path="/stats" element={<MyStats />} />
+                <Route path="/spielplan" element={<Spielplan />} />
                 <Route path="/tests" element={<Tests />} />
                 <Route path="/tests/strength" element={<TestsStrength />} />
                 <Route path="/tests/speed" element={<TestsSpeed />} />

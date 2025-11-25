@@ -232,7 +232,8 @@ model TeamSettings {
 
   // Season and team configuration
   seasonPhase    String   @default("off-season") // 'off-season' | 'pre-season' | 'in-season'
-  teamLevel      String   @default("varsity") // 'jv' | 'varsity' | 'elite'
+  teamLevel      String   @default("amateur") // 'amateur' | 'semi-pro' | 'pro' | 'youth' | 'recreational'
+  teamCategory   String   @default("principal") // 'juvenil' | 'principal' | 'reserves' | 'academy'
 
   // Optional AI API key for team-wide AI features
   aiApiKey       String?
@@ -656,4 +657,28 @@ model DrillTrainingSession {
 
   @@index([createdBy])
   @@index([date])
+}
+
+// Match/Game model for Spielplan (Season Schedule)
+model Match {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  spielnummer  String   @unique // Game number (e.g., "25201")
+  homeTeam     String   // Home team name
+  awayTeam     String   // Away team name
+  date         String   // Date of match (YYYY-MM-DD format)
+  kickoff      String   // Kickoff time (HH:mm format)
+  spielort     String   // Location/Stadium
+  week         Int      // Week number (1-8)
+  weekLabel    String   // Week label (e.g., "Woche 1 - 29./30.März")
+  conference   String   // Conference (A, B, C, D)
+  isRelegation Boolean  @default(false) // Relegation game
+  isSemifinal  Boolean  @default(false) // Semifinal
+  isIronBowl   Boolean  @default(false) // Iron Bowl (Championship)
+  createdBy    String   @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([date])
+  @@index([week])
+  @@index([conference])
 }

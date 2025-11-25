@@ -13,8 +13,18 @@ export type SeasonPhase =
 export type TeamLevel =
   | 'amateur'         // Amateur/hobby level, club teams
   | 'semi-pro'        // Semi-professional leagues
-  | 'college'         // College level (NCAA, European university leagues)
-  | 'pro';            // Professional league (NFL, European pro leagues)
+  | 'pro'             // Professional league (NFL, European pro leagues)
+  | 'youth'           // Youth teams
+  | 'recreational';   // Recreational/casual teams
+
+/**
+ * Team Category - age/organizational classification
+ */
+export type TeamCategory =
+  | 'juvenil'         // Youth/Junior teams
+  | 'principal'       // First team/Main squad
+  | 'reserves'        // Reserve/Second team
+  | 'academy';        // Academy/Development squad
 
 /**
  * Team branding configuration
@@ -33,6 +43,7 @@ export interface TeamBranding {
 export interface TeamSettings {
   seasonPhase: SeasonPhase;
   teamLevel: TeamLevel;
+  teamCategory: TeamCategory;
   aiApiKey?: string;        // Team-wide OpenAI API key (configured by admin)
   branding?: TeamBranding;  // Team branding configuration
   updatedAt?: string;
@@ -55,5 +66,6 @@ export const DEFAULT_TEAM_BRANDING: TeamBranding = {
 export const DEFAULT_TEAM_SETTINGS: TeamSettings = {
   seasonPhase: 'off-season',
   teamLevel: 'amateur',
+  teamCategory: 'principal',
   branding: DEFAULT_TEAM_BRANDING,
 };
