@@ -66,8 +66,13 @@ router.get('/', async (req, res) => {
         return true;
       }
 
-      // Private sessions: only creator and attendees can see
+      // Private sessions: creator, attendees, AND coaches can see
       if (session.sessionCategory === 'private') {
+        // Coaches can see all private sessions to monitor team activities
+        if (user.role === 'coach') {
+          return true;
+        }
+
         // Check if user is creator
         if (session.creatorId === userId) {
           return true;
@@ -119,13 +124,21 @@ router.get('/:id', async (req, res) => {
 
     // Check access for private sessions
     if (session.sessionCategory === 'private') {
-      // Check if user is creator or attendee
-      const attendees = session.attendees as any[];
-      const isCreator = session.creatorId === userId;
-      const isAttendee = attendees?.some(a => a.userId === userId);
+      // Get user to check role
+      const user = await prisma.user.findUnique({ where: { id: userId } });
 
-      if (!isCreator && !isAttendee) {
-        return res.status(403).json({ error: 'Access denied to this private session' });
+      // Coaches can see all private sessions
+      if (user?.role === 'coach') {
+        // Allow access
+      } else {
+        // For non-coaches, check if user is creator or attendee
+        const attendees = session.attendees as any[];
+        const isCreator = session.creatorId === userId;
+        const isAttendee = attendees?.some(a => a.userId === userId);
+
+        if (!isCreator && !isAttendee) {
+          return res.status(403).json({ error: 'Access denied to this private session' });
+        }
       }
     }
 
@@ -169,21 +182,24 @@ router.post('/', async (req, res) => {
       },
     });
 
-    // Auto-create attendance poll for the session
-    const expiresAt = new Date(data.date);
-    expiresAt.setHours(23, 59, 59, 999); // Expires at end of session date
+    // Auto-create attendance poll ONLY for team sessions
+    // Private sessions don't need polls since they work differently
+    if (data.sessionCategory === 'team') {
+      const expiresAt = new Date(data.date);
+      expiresAt.setHours(23, 59, 59, 999); // Expires at end of session date
 
-    await prisma.attendancePoll.create({
-      data: {
-        sessionId: session.id,
-        sessionName: data.title,
-        sessionDate: data.date,
-        createdBy: userId,
-        createdAt: new Date().toISOString(),
-        expiresAt: expiresAt.toISOString(),
-        isActive: true,
-      },
-    });
+      await prisma.attendancePoll.create({
+        data: {
+          sessionId: session.id,
+          sessionName: data.title,
+          sessionDate: data.date,
+          createdBy: userId,
+          createdAt: new Date().toISOString(),
+          expiresAt: expiresAt.toISOString(),
+          isActive: true,
+        },
+      });
+    }
 
     // Send notifications based on session category
     let playersToNotify: Array<{ id: string; preferredLanguage: string | null }> = [];
