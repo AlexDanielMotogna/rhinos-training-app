@@ -594,6 +594,9 @@ model Drill {
   // Resources
   sketchUrl     String?  // Cloudinary URL for drill diagram/sketch
   sketchPublicId String? // Cloudinary public_id for deletion
+  videoUrl      String?  // YouTube video URL
+  imageUrl      String?  // Cloudinary URL for drill thumbnail image
+  imagePublicId String?  // Cloudinary public_id for image deletion
 
   // Organization
   difficulty    String   // 'basic' | 'advanced' | 'complex'
@@ -671,6 +674,8 @@ model Match {
   week         Int      // Week number (1-8)
   weekLabel    String   // Week label (e.g., "Woche 1 - 29./30.März")
   conference   String   // Conference (A, B, C, D)
+  homeScore    Int?     // Home team score (null if not played yet)
+  awayScore    Int?     // Away team score (null if not played yet)
   isRelegation Boolean  @default(false) // Relegation game
   isSemifinal  Boolean  @default(false) // Semifinal
   isIronBowl   Boolean  @default(false) // Iron Bowl (Championship)

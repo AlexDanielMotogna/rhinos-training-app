@@ -23,6 +23,9 @@ const createDrillSchema = z.object({
   trainingContext: z.string().optional(),
   sketchUrl: z.string().optional(),
   sketchPublicId: z.string().optional(),
+  videoUrl: z.string().optional(),
+  imageUrl: z.string().optional(),
+  imagePublicId: z.string().optional(),
 });
 
 const updateDrillSchema = z.object({
@@ -41,6 +44,9 @@ const updateDrillSchema = z.object({
   trainingContext: z.string().optional(),
   sketchUrl: z.string().optional(),
   sketchPublicId: z.string().optional(),
+  videoUrl: z.string().optional(),
+  imageUrl: z.string().optional(),
+  imagePublicId: z.string().optional(),
 });
 
 // GET /api/drills - Get all drills (authenticated)
@@ -276,6 +282,67 @@ router.post('/:id/upload-sketch', authenticate, upload.single('sketch'), async (
   } catch (error) {
     console.error('[DRILLS] Upload sketch error:', error);
     res.status(500).json({ error: 'Failed to upload sketch' });
+  }
+});
+
+// POST /api/drills/:id/upload-image - Upload drill thumbnail image (coach only)
+router.post('/:id/upload-image', authenticate, upload.single('image'), async (req, res) => {
+  try {
+    console.log('[DRILLS] Upload image request received for drill:', req.params.id);
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    console.log('[DRILLS] User authenticated:', { email: user.email, role: user.role });
+
+    // Only coaches can upload drill images
+    if (user.role !== 'coach') {
+      console.warn('[DRILLS] Non-coach user attempted upload:', user.email);
+      return res.status(403).json({ error: 'Only coaches can upload drill images' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Check if drill exists
+    const existingDrill = await prisma.drill.findUnique({
+      where: { id },
+    });
+
+    if (!existingDrill) {
+      return res.status(404).json({ error: 'Drill not found' });
+    }
+
+    // Delete old image if exists
+    if (existingDrill.imagePublicId) {
+      try {
+        await deleteImage(existingDrill.imagePublicId as string);
+      } catch (error) {
+        console.warn('[DRILLS] Failed to delete old image:', error);
+      }
+    }
+
+    // Upload new image (reuse the uploadDrillSketch function, it works for any image)
+    const { url, publicId } = await uploadDrillSketch(req.file.buffer, `${id}_image`);
+
+    // Update drill with new image URL
+    const updatedDrill = await prisma.drill.update({
+      where: { id },
+      data: {
+        imageUrl: url,
+        imagePublicId: publicId,
+      },
+    });
+
+    console.log(`[DRILLS] Image uploaded for drill: ${updatedDrill.name} by ${user.email}`);
+    res.json({
+      imageUrl: url,
+      imagePublicId: publicId,
+      drill: updatedDrill,
+    });
+  } catch (error) {
+    console.error('[DRILLS] Upload image error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
   }
 });
 

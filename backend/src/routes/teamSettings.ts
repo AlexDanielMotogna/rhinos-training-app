@@ -13,7 +13,8 @@ const updateTeamSettingsSchema = z.object({
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').optional(),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').optional(),
   seasonPhase: z.enum(['off-season', 'pre-season', 'in-season']).optional(),
-  teamLevel: z.enum(['jv', 'varsity', 'elite']).optional(),
+  teamLevel: z.enum(['amateur', 'semi-pro', 'pro', 'youth', 'recreational']).optional(),
+  teamCategory: z.enum(['juvenil', 'principal', 'reserves', 'academy']).optional(),
   aiApiKey: z.string().optional(),
 });
 
@@ -32,7 +33,8 @@ router.get('/', authenticate, async (req, res) => {
           primaryColor: '#1976d2',
           secondaryColor: '#dc004e',
           seasonPhase: 'off-season',
-          teamLevel: 'varsity',
+          teamLevel: 'amateur',
+          teamCategory: 'principal',
         },
       });
     }
@@ -68,7 +70,8 @@ router.put('/', authenticate, async (req, res) => {
           primaryColor: validatedData.primaryColor || '#1976d2',
           secondaryColor: validatedData.secondaryColor || '#dc004e',
           seasonPhase: validatedData.seasonPhase || 'off-season',
-          teamLevel: validatedData.teamLevel || 'varsity',
+          teamLevel: validatedData.teamLevel || 'amateur',
+          teamCategory: validatedData.teamCategory || 'principal',
           aiApiKey: validatedData.aiApiKey,
           updatedBy: user.userId,
         },

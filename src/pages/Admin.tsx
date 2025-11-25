@@ -2859,15 +2859,40 @@ export const Admin: React.FC = () => {
 
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1 }}>
                     {currentBlock.exerciseIds.map((exerciseId) => {
-                      const exercise = getFilteredExercises(newTemplateData.trainingTypeId).find(ex => ex.id === exerciseId);
+                      // Search in ALL exercises, not just filtered ones, to handle exercises from different training types
+                      const exercise = exercises.find(ex => ex.id === exerciseId);
                       const config = currentBlock.exerciseConfigs?.find(c => c.exerciseId === exerciseId);
                       const unit = config?.unit || 'reps';
 
+                      // Handler to remove this exercise from the block
+                      const handleRemoveExercise = () => {
+                        const newExerciseIds = currentBlock.exerciseIds.filter(id => id !== exerciseId);
+                        const newConfigs = (currentBlock.exerciseConfigs || []).filter(c => c.exerciseId !== exerciseId);
+                        setCurrentBlock({
+                          ...currentBlock,
+                          exerciseIds: newExerciseIds,
+                          exerciseConfigs: newConfigs
+                        });
+                      };
+
                       return (
-                        <Box key={exerciseId} sx={{ display: 'flex', flexDirection: 'column', gap: 1, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                          <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.875rem' }}>
-                            {exercise?.name}
-                          </Typography>
+                        <Box key={exerciseId} sx={{ display: 'flex', flexDirection: 'column', gap: 1, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, position: 'relative' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.875rem' }}>
+                              {exercise?.name || `Unknown Exercise (${exerciseId})`}
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              onClick={handleRemoveExercise}
+                              sx={{
+                                color: 'error.main',
+                                '&:hover': { backgroundColor: 'error.light', color: 'error.contrastText' }
+                              }}
+                              title="Remove exercise from block"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
 
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             {/* Sets Field */}

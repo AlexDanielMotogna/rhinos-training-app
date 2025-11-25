@@ -104,11 +104,35 @@ export async function updateTeamSettings(
 }
 
 /**
- * Get team branding configuration
+ * Get team branding configuration (from cache - for sync contexts)
  */
 export function getTeamBranding(): TeamBranding {
   const settings = getTeamSettings();
   return settings.branding || DEFAULT_TEAM_BRANDING;
+}
+
+/**
+ * Get team branding configuration directly from database (async)
+ * Always fetches from backend, falls back to cache if offline
+ */
+export async function getTeamBrandingAsync(): Promise<TeamBranding> {
+  if (isOnline()) {
+    try {
+      const backendSettings = await teamSettingsApi.get();
+      return {
+        teamName: backendSettings.teamName,
+        appName: backendSettings.appName || 'Rhinos Training',
+        logoUrl: backendSettings.logoUrl,
+        faviconUrl: backendSettings.faviconUrl,
+        primaryColor: backendSettings.primaryColor,
+        secondaryColor: backendSettings.secondaryColor,
+      };
+    } catch (error) {
+      console.warn('Failed to fetch team branding from database, using cache:', error);
+      return getTeamBranding();
+    }
+  }
+  return getTeamBranding();
 }
 
 /**

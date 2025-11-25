@@ -14,6 +14,9 @@ export type CreateDrillData = {
   trainingContext?: string;
   sketchUrl?: string;
   sketchPublicId?: string;
+  videoUrl?: string; // YouTube video URL for demonstration
+  imageUrl?: string; // Cloudinary URL for drill thumbnail
+  imagePublicId?: string; // Cloudinary public_id for deletion
 };
 
 export interface Equipment {
@@ -40,6 +43,9 @@ export interface Drill {
   difficulty: DrillDifficulty;
   sketchUrl?: string; // URL to uploaded image/sketch
   sketchPublicId?: string; // Cloudinary public_id for deletion
+  videoUrl?: string; // YouTube video URL for demonstration
+  imageUrl?: string; // Cloudinary URL for drill thumbnail
+  imagePublicId?: string; // Cloudinary public_id for image deletion
   description: string;
   coachingPoints: string;
   trainingContext?: string; // Optional (Warm-up, Individual, Team Period, etc.)
