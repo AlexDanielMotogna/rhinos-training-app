@@ -329,12 +329,17 @@ export async function cleanupOldData(): Promise<void> {
 }
 
 /**
- * Get active training assignments for a player
+ * Get active training assignments for a player or all assignments for coaches
  */
-export async function getPlayerAssignments(playerId: string): Promise<LocalTrainingAssignment[]> {
+export async function getPlayerAssignments(playerId: string, userRole?: 'player' | 'coach'): Promise<LocalTrainingAssignment[]> {
   const allAssignments = await db.trainingAssignments.toArray();
 
-  // Filter assignments that include this player
+  // Coaches see ALL active assignments
+  if (userRole === 'coach') {
+    return allAssignments.filter(a => a.active);
+  }
+
+  // Players only see assignments they are included in
   return allAssignments.filter(a =>
     a.active &&
     a.playerIds.includes(playerId)

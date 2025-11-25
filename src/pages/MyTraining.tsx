@@ -132,13 +132,19 @@ export const MyTraining: React.FC = () => {
             const allAssignments = await assignmentService.getAll() as any[];
             const today = new Date().toISOString().split('T')[0];
 
-            // Filter active assignments for this player
-            playerAssignments = allAssignments.filter((a: any) =>
-              a.active &&
-              a.playerIds?.includes(user.id) &&
-              a.startDate <= today &&
-              (!a.endDate || a.endDate >= today)
-            );
+            // Filter active assignments
+            // - Coaches see ALL active assignments
+            // - Players only see assignments they are included in
+            playerAssignments = allAssignments.filter((a: any) => {
+              const isActive = a.active && a.startDate <= today && (!a.endDate || a.endDate >= today);
+              if (!isActive) return false;
+
+              // Coaches see all active assignments
+              if (user.role === 'coach') return true;
+
+              // Players only see their assigned sessions
+              return a.playerIds?.includes(user.id);
+            });
 
             // Cache assignments in IndexedDB
             await db.trainingAssignments.bulkPut(
@@ -161,13 +167,13 @@ export const MyTraining: React.FC = () => {
             console.warn('⚠️ API failed, falling back to cache:', apiError);
             // If API fails but we're online, fall back to cache
             types = await getCachedTrainingTypes();
-            playerAssignments = await getPlayerAssignments(user.id);
+            playerAssignments = await getPlayerAssignments(user.id, user.role);
             console.log('📦 Loaded from cache (API error)');
           }
         } else {
           // Offline: Load from cache
           types = await getCachedTrainingTypes();
-          playerAssignments = await getPlayerAssignments(user.id);
+          playerAssignments = await getPlayerAssignments(user.id, user.role);
           console.log('📦 Loaded from offline cache');
         }
 
