@@ -87,12 +87,6 @@ interface TeamSession {
   address?: string; // City/address (e.g., "Frankfurt am Main, Sportplatz 1")
 }
 
-interface Policy {
-  maxFreeSessionsPerDay: number;
-  maxFreeSharePctPerWeek: number;
-  allowedCategories: ExerciseCategory[];
-}
-
 interface TrainingType {
   id: string;
   key: string;
@@ -269,14 +263,6 @@ export const Admin: React.FC = () => {
     };
     loadTeamSessions();
   }, []);
-
-  // Policies Management State
-  const [policies, setPolicies] = useState<Policy>({
-    maxFreeSessionsPerDay: 2,
-    maxFreeSharePctPerWeek: 40,
-    allowedCategories: ['Strength', 'Speed', 'Conditioning', 'Mobility', 'Recovery'],
-  });
-  const [policiesModified, setPoliciesModified] = useState(false);
 
   // Training Types Management State
   const [trainingTypes, setTrainingTypes] = useState<TrainingType[]>([]);
@@ -657,18 +643,6 @@ export const Admin: React.FC = () => {
       setTimeout(() => {
         setPopulationResult(null);
       }, 10000);
-    }
-  };
-
-  // Policies Management Handlers
-  const handleSavePolicies = () => {
-    try {
-      // In real app, would save to backend
-      setPoliciesModified(false);
-      toastService.updated('Policies');
-    } catch (error) {
-      console.error('Failed to save policies:', error);
-      toastService.updateError('policies', error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -1214,9 +1188,6 @@ export const Admin: React.FC = () => {
                 <List component="div" disablePadding>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 4} onClick={() => setActiveTab(4)}>
                     <ListItemText primary={t('admin.sessionsTab')} />
-                  </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 6} onClick={() => setActiveTab(6)}>
-                    <ListItemText primary={t('admin.policiesTab')} />
                   </ListItemButton>
                 </List>
               </Collapse>
@@ -1865,108 +1836,6 @@ export const Admin: React.FC = () => {
               </Grid>
             ))}
           </Grid>
-        </Box>
-      )}
-
-      {/* Policies Management Tab */}
-      {activeTab === 6 && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 3 }}>
-            {t('admin.trainingPolicies')}
-          </Typography>
-
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Box>
-                  <Typography variant="subtitle1" gutterBottom>
-                    {t('admin.maxFreeSessionsPerDay')}
-                  </Typography>
-                  <TextField
-                    type="number"
-                    value={policies.maxFreeSessionsPerDay}
-                    onChange={(e) => {
-                      setPolicies({ ...policies, maxFreeSessionsPerDay: Number(e.target.value) });
-                      setPoliciesModified(true);
-                    }}
-                    inputProps={{ min: 0, max: 10 }}
-                    fullWidth
-                  />
-                </Box>
-
-                <Box>
-                  <Typography variant="subtitle1" gutterBottom>
-                    {t('admin.maxFreeSharePctPerWeek')}
-                  </Typography>
-                  <TextField
-                    type="number"
-                    value={policies.maxFreeSharePctPerWeek}
-                    onChange={(e) => {
-                      setPolicies({ ...policies, maxFreeSharePctPerWeek: Number(e.target.value) });
-                      setPoliciesModified(true);
-                    }}
-                    inputProps={{ min: 0, max: 100 }}
-                    fullWidth
-                    helperText="%"
-                  />
-                </Box>
-
-                <Box>
-                  <Typography variant="subtitle1" gutterBottom>
-                    {t('admin.allowedCategories')}
-                  </Typography>
-                  <FormControl fullWidth>
-                    <Select
-                      multiple
-                      value={policies.allowedCategories}
-                      onChange={(e) => {
-                        setPolicies({ ...policies, allowedCategories: e.target.value as ExerciseCategory[] });
-                        setPoliciesModified(true);
-                      }}
-                      renderValue={(selected) => (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {selected.map((value) => (
-                            <Chip key={value} label={value} size="small" />
-                          ))}
-                        </Box>
-                      )}
-                      MenuProps={{
-                        PaperProps: {
-                          style: {
-                            maxHeight: 300,
-                          },
-                        },
-                      }}
-                    >
-                      {exerciseCategories.map((cat) => (
-                        <MenuItem key={cat.key || cat.name} value={cat.key || cat.name}>
-                          {cat.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Click outside or press ESC to close
-                    </Typography>
-                  </FormControl>
-                </Box>
-
-                {policiesModified && (
-                  <Alert severity="warning">
-                    {t('admin.unsavedChanges')}
-                  </Alert>
-                )}
-
-                <Button
-                  variant="contained"
-                  onClick={handleSavePolicies}
-                  disabled={!policiesModified}
-                  fullWidth
-                >
-                  {t('admin.savePolicies')}
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
         </Box>
       )}
 

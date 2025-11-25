@@ -246,14 +246,6 @@ model TeamSettings {
 // POINTS SYSTEM CONFIGURATION (Online)
 // ========================================
 
-model PointsPolicy {
-  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
-  maxFreeSessionsWeek Int      @default(2)
-  complianceRules     Json     // Configuration for compliance calculations
-
-  updatedAt           DateTime @updatedAt
-}
-
 model PointsConfig {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
   weeklyTarget  Int      @default(20)
