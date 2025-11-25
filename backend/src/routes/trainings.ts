@@ -4,6 +4,7 @@ import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { createNotificationsForUsers } from './notifications.js';
 import { t, formatSessionMessage, formatPrivateSessionTitle } from '../utils/i18n.js';
+import { sseManager } from '../utils/sseManager.js';
 
 const router = express.Router();
 
@@ -379,6 +380,21 @@ router.post('/:id/rsvp', async (req, res) => {
       where: { id },
       data: { attendees: attendees as any },
     });
+
+    // Broadcast RSVP update via SSE to all clients watching training sessions
+    sseManager.broadcastToAll('rsvp-update', {
+      sessionId: id,
+      sessionCategory: updated.sessionCategory,
+      attendee: {
+        userId,
+        userName: user.name,
+        status,
+      },
+      action: existingIndex >= 0 ? 'updated' : 'added',
+      attendees: updated.attendees,
+    });
+
+    console.log(`[TRAININGS] RSVP ${existingIndex >= 0 ? 'updated' : 'added'} for session ${id}, broadcasting to ${sseManager.getClientCount()} clients`);
 
     res.json({
       ...updated,
