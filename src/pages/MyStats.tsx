@@ -179,19 +179,27 @@ export const MyStats: React.FC = () => {
     setSelectedSessions([]);
   };
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDays = [
+    t('stats.weekDays.sun'),
+    t('stats.weekDays.mon'),
+    t('stats.weekDays.tue'),
+    t('stats.weekDays.wed'),
+    t('stats.weekDays.thu'),
+    t('stats.weekDays.fri'),
+    t('stats.weekDays.sat')
+  ];
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       <Typography variant="h4" gutterBottom sx={{ px: 1 }}>
-        My Calendar
+        {t('stats.myCalendar')}
       </Typography>
 
       <Paper sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
         {/* Calendar Header */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="h6" sx={{ mb: 1, px: 1 }}>
-            Training Calendar
+            {t('stats.trainingCalendar')}
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1 }}>
             <Chip
@@ -333,7 +341,7 @@ export const MyStats: React.FC = () => {
         {/* Legend */}
         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap', justifyContent: 'center', px: 1 }}>
           <Chip
-            label="Team Workout"
+            label={t('stats.teamWorkout')}
             size="small"
             sx={{
               backgroundColor: workoutTypeColors.coach,
@@ -343,7 +351,7 @@ export const MyStats: React.FC = () => {
             }}
           />
           <Chip
-            label="Free Workout"
+            label={t('stats.freeWorkout')}
             size="small"
             sx={{
               backgroundColor: workoutTypeColors.player,
@@ -353,7 +361,7 @@ export const MyStats: React.FC = () => {
             }}
           />
           <Chip
-            label="Team Session"
+            label={t('stats.teamSession')}
             size="small"
             sx={{
               backgroundColor: workoutTypeColors.team,
@@ -363,7 +371,7 @@ export const MyStats: React.FC = () => {
             }}
           />
           <Chip
-            label="Private Session"
+            label={t('stats.privateSession')}
             size="small"
             sx={{
               backgroundColor: workoutTypeColors.personal,
@@ -402,7 +410,7 @@ export const MyStats: React.FC = () => {
           {selectedSessions.length > 0 && (
             <>
               <Typography variant="h6" sx={{ mb: 2, mt: 1 }}>
-                Training Sessions
+                {t('stats.trainingSessions')}
               </Typography>
               {selectedSessions.map((session) => (
                 <Card key={session.id} sx={{ mb: 2, border: 2, borderColor: session.sessionCategory === 'team' ? workoutTypeColors.team : workoutTypeColors.personal }}>
@@ -413,7 +421,7 @@ export const MyStats: React.FC = () => {
                           {session.title}
                         </Typography>
                         <Chip
-                          label={session.sessionCategory === 'team' ? 'Team Session' : 'Private Session'}
+                          label={session.sessionCategory === 'team' ? t('stats.teamSession') : t('stats.privateSession')}
                           size="small"
                           sx={{
                             backgroundColor: session.sessionCategory === 'team' ? workoutTypeColors.team : workoutTypeColors.personal,
@@ -442,7 +450,7 @@ export const MyStats: React.FC = () => {
           {selectedWorkouts.length > 0 && (
             <>
               <Typography variant="h6" sx={{ mb: 2, mt: selectedSessions.length > 0 ? 0 : 1 }}>
-                Workouts
+                {t('stats.workoutsSection')}
               </Typography>
             </>
           )}
@@ -459,13 +467,13 @@ export const MyStats: React.FC = () => {
                     )}
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       <Chip
-                        label={workout.source === 'coach' ? 'Team Workout' : 'Free Workout'}
+                        label={workout.source === 'coach' ? t('stats.teamWorkout') : t('stats.freeWorkout')}
                         size="small"
                         color={workout.source === 'coach' ? 'success' : 'secondary'}
                       />
                       {workout.source === 'coach' && workout.completionPercentage !== undefined && (
                         <Chip
-                          label={`${workout.completionPercentage}% completed`}
+                          label={t('stats.completed', { percentage: workout.completionPercentage })}
                           size="small"
                           color={
                             workout.completionPercentage >= 70 ? 'success' :
@@ -517,13 +525,13 @@ export const MyStats: React.FC = () => {
 
                           {entry.rpe && (
                             <Typography variant="caption" sx={{ display: 'block', mt: 0.5, pl: 1, color: 'text.secondary' }}>
-                              Effort: {entry.rpe}/10 {entry.rpe >= 8 ? '(Hard)' : entry.rpe >= 6 ? '(Moderate)' : '(Easy)'}
+                              {t('workout.rpe')}: {entry.rpe}/10 {entry.rpe >= 8 ? t('stats.effortHard') : entry.rpe >= 6 ? t('stats.effortModerate') : t('stats.effortEasy')}
                             </Typography>
                           )}
 
                           {entry.notes && (
                             <Typography variant="caption" sx={{ display: 'block', mt: 0.5, pl: 1, color: 'text.secondary', fontStyle: 'italic' }}>
-                              Note: {entry.notes}
+                              {t('stats.note')} {entry.notes}
                             </Typography>
                           )}
                         </Box>

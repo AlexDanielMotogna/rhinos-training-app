@@ -45,7 +45,8 @@ import { notificationService } from '../services/api';
 import { isOnline } from '../services/sync';
 import type { Notification } from '../types/notification';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
-import { getTeamBranding } from '../services/teamSettings';
+import { getTeamBrandingAsync } from '../services/teamSettings';
+import type { TeamBranding } from '../types/teamSettings';
 import { toastService } from '../services/toast';
 
 interface AppShellProps {
@@ -59,8 +60,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [branding, setBranding] = useState<TeamBranding | null>(null);
   const user = getUser();
-  const branding = getTeamBranding();
+
+  // Load team branding from database
+  useEffect(() => {
+    const loadBranding = async () => {
+      const brandingData = await getTeamBrandingAsync();
+      setBranding(brandingData);
+    };
+    loadBranding();
+  }, []);
 
   useEffect(() => {
     // Load notifications from backend
@@ -103,21 +113,22 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   const menuItems = [
     { key: 'myTraining', label: t('nav.myTraining'), icon: <FitnessCenterIcon />, path: '/training', showForAll: true },
-    { key: 'myCalendar', label: 'My Calendar', icon: <CalendarMonthIcon />, path: '/stats', showForAll: true },
-    { key: 'spielplan', label: 'Spielplan', icon: <CalendarTodayIcon />, path: '/spielplan', showForAll: true },
+    { key: 'myCalendar', label: t('nav.myCalendar'), icon: <CalendarMonthIcon />, path: '/stats', showForAll: true },
     { key: 'tests', label: t('nav.tests'), icon: <AssessmentIcon />, path: '/tests', showForAll: true },
     { key: 'profile', label: t('nav.profile'), icon: <PersonIcon />, path: '/profile', showForAll: true },
     { key: 'team', label: t('nav.team'), icon: <GroupIcon />, path: '/team', showForAll: true },
+    { key: 'spielplan', label: t('nav.spielplan'), icon: <CalendarTodayIcon />, path: '/spielplan', showForAll: true },
     { key: 'trainingSessions', label: t('nav.trainingSessions'), icon: <GroupsIcon />, path: '/training-sessions', showForAll: true },
-    { key: 'drillSessions', label: t('nav.drillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions', showForAll: true },
+    { key: 'drillbook', label: t('nav.drillbook'), icon: <SportsFootballIcon />, path: '/drillbook', showForAll: true },
     { key: 'leaderboard', label: t('nav.leaderboard'), icon: <LeaderboardIcon />, path: '/leaderboard', showForAll: true },
     { key: 'videos', label: t('nav.videos'), icon: <OndemandVideoIcon />, path: '/videos', showForAll: true },
   ];
 
   const adminMenuItems = [
-    { key: 'admin', label: 'Coach Panel', icon: <AdminPanelSettingsIcon />, path: '/admin', description: 'Exercises, Training, Settings' },
+    { key: 'admin', label: t('nav.coachPanel'), icon: <AdminPanelSettingsIcon />, path: '/admin', description: t('nav.coachPanelDesc') },
+    { key: 'drillSessionsManage', label: t('nav.manageDrillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions-manage' },
     { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports' },
-    { key: 'configuration', label: 'Configuration', icon: <SettingsIcon />, path: '/configuration' },
+    { key: 'configuration', label: t('nav.configuration'), icon: <SettingsIcon />, path: '/configuration' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -254,15 +265,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
               <Box
                 component="img"
-                src={branding.logoUrl || RhinosLogo}
-                alt={`${branding.appName} Logo`}
+                src={branding?.logoUrl || RhinosLogo}
+                alt={`${branding?.appName || 'App'} Logo`}
                 sx={{
                   width: 40,
                   height: 40,
                   objectFit: 'contain',
                 }}
               />
-              <Typography variant="h6">{branding.appName || t('app.title')}</Typography>
+              <Typography variant="h6">{branding?.appName || t('app.title')}</Typography>
             </Box>
             {user && (
               <Box sx={{ pl: 0.5 }}>
@@ -302,7 +313,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                     <ListItemIcon>
                       <AdminPanelSettingsIcon />
                     </ListItemIcon>
-                    <ListItemText primary="Admin" />
+                    <ListItemText primary={t('nav.admin')} />
                     {adminMenuOpen ? <ExpandLess /> : <ExpandMore />}
                   </ListItemButton>
                 </ListItem>
