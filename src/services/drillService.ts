@@ -84,6 +84,8 @@ export const drillService = {
           difficulty: drill.difficulty,
           trainingContext: drill.trainingContext,
           sketchUrl: drill.sketchUrl,
+          videoUrl: drill.videoUrl,
+          imageUrl: drill.imageUrl,
         });
 
         // Normalize equipment field
@@ -190,6 +192,33 @@ export const drillService = {
       }
     } else {
       throw new Error('Cannot upload sketch while offline');
+    }
+  },
+
+  async uploadImage(drillId: string, file: File): Promise<{ imageUrl: string; imagePublicId: string }> {
+    if (isOnline()) {
+      try {
+        const result = await drillApi.uploadImage(drillId, file);
+
+        // Update local cache with new image URL
+        const drills = this.getAllDrills();
+        const index = drills.findIndex(d => d.id === drillId);
+        if (index !== -1) {
+          drills[index].imageUrl = result.imageUrl;
+          drills[index].imagePublicId = result.imagePublicId;
+          localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
+        }
+
+        return {
+          imageUrl: result.imageUrl,
+          imagePublicId: result.imagePublicId,
+        };
+      } catch (error) {
+        console.error('Failed to upload image to backend:', error);
+        throw error;
+      }
+    } else {
+      throw new Error('Cannot upload image while offline');
     }
   },
 

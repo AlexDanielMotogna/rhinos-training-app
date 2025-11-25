@@ -20,7 +20,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { getUser } from '../../services/userProfile';
 import {
-  getTeamBranding,
+  getTeamBrandingAsync,
   updateTeamBranding,
   getTeamSettings,
   updateTeamSettings,
@@ -29,16 +29,27 @@ import {
 } from '../../services/teamSettings';
 import type { TeamBranding, TeamLevel, TeamCategory, SeasonPhase } from '../../types/teamSettings';
 import { DEFAULT_TEAM_BRANDING } from '../../types/teamSettings';
+import { toastService } from '../../services/toast';
 
 export const BrandingManager: React.FC = () => {
   const user = getUser();
   const teamSettings = getTeamSettings();
-  const [branding, setBranding] = useState<TeamBranding>(getTeamBranding());
+  const [branding, setBranding] = useState<TeamBranding>(DEFAULT_TEAM_BRANDING);
   const [teamLevel, setTeamLevel] = useState<TeamLevel>(teamSettings.teamLevel);
   const [teamCategory, setTeamCategory] = useState<TeamCategory>(teamSettings.teamCategory);
   const [seasonPhase, setSeasonPhase] = useState<SeasonPhase>(teamSettings.seasonPhase);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [previewLogo, setPreviewLogo] = useState(branding.logoUrl || '');
+  const [previewLogo, setPreviewLogo] = useState('');
+
+  // Load branding from database on mount
+  useEffect(() => {
+    const loadBranding = async () => {
+      const brandingData = await getTeamBrandingAsync();
+      setBranding(brandingData);
+      setPreviewLogo(brandingData.logoUrl || '');
+    };
+    loadBranding();
+  }, []);
 
   useEffect(() => {
     setPreviewLogo(branding.logoUrl || '');
@@ -54,6 +65,7 @@ export const BrandingManager: React.FC = () => {
       // Update branding
       await updateTeamBranding(branding, user.name);
 
+      toastService.success('Settings saved successfully! Page will reload to apply changes.');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
 
@@ -63,6 +75,8 @@ export const BrandingManager: React.FC = () => {
       }, 1500);
     } catch (error) {
       console.error('Failed to save settings:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save settings';
+      toastService.error(`Error: ${errorMessage}`);
     }
   };
 

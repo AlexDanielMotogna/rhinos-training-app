@@ -797,6 +797,45 @@ export const drillService = {
     console.log('[API] Upload successful:', result);
     return result;
   },
+
+  async uploadImage(id: string, file: File) {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.error('[API] No authentication token found');
+      throw new Error('No authentication token found. Please log in again.');
+    }
+
+    console.log('[API] Uploading image for drill:', id, 'File size:', file.size, 'bytes');
+    console.log('[API] Token exists:', !!token, 'Token length:', token.length);
+
+    const response = await fetch(`${API_URL}/drills/${id}/upload-image`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    console.log('[API] Upload response status:', response.status);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        const errorBody = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[API] 401 Unauthorized. Error body:', errorBody);
+        throw new Error('Authentication failed. Please log in again.');
+      }
+      const error = await response.json().catch(() => ({ error: 'Failed to upload image' }));
+      console.error('[API] Upload failed:', error);
+      throw new Error(error.error || 'Failed to upload image');
+    }
+
+    const result = await response.json();
+    console.log('[API] Upload successful:', result);
+    return result;
+  },
 };
 
 // ========================================

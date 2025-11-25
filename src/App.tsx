@@ -13,7 +13,9 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { getUser } from './services/userProfile';
 import type { HardNotification as HardNotificationType } from './types/notification';
 import type { AttendancePoll } from './types/attendancePoll';
-import { getTeamBranding } from './services/teamSettings';
+import { getTeamBrandingAsync } from './services/teamSettings';
+import type { TeamBranding } from './types/teamSettings';
+import { DEFAULT_TEAM_BRANDING } from './types/teamSettings';
 import { initializeDrillData } from './services/drillDataInit';
 import { getActivePoll, hasUserVoted } from './services/attendancePollService';
 import { cleanupMockNotifications } from './services/mock';
@@ -80,7 +82,8 @@ const VideosAdmin = createLazyComponent(() => import('./pages/VideosAdmin').then
 const Team = createLazyComponent(() => import('./pages/Team').then(m => ({ default: m.Team })), 'Team');
 const TrainingSessions = createLazyComponent(() => import('./pages/TrainingSessions').then(m => ({ default: m.TrainingSessions })), 'TrainingSessions');
 const Configuration = createLazyComponent(() => import('./pages/Configuration').then(m => ({ default: m.Configuration })), 'Configuration');
-const DrillSessions = createLazyComponent(() => import('./components/DrillTrainingPlan').then(m => ({ default: m.DrillTrainingPlan })), 'DrillSessions');
+const DrillSessionsManage = createLazyComponent(() => import('./components/DrillTrainingPlan').then(m => ({ default: m.DrillTrainingPlan })), 'DrillSessionsManage');
+const DrillbookView = createLazyComponent(() => import('./pages/DrillbookView').then(m => ({ default: m.DrillbookView })), 'DrillbookView');
 const Spielplan = createLazyComponent(() => import('./pages/Spielplan').then(m => ({ default: m.Spielplan })), 'Spielplan');
 
 function App() {
@@ -91,28 +94,35 @@ function App() {
   //   initializeDrillData();
   // }, []);
 
+  // State for branding loaded from database
+  const [branding, setBranding] = useState<TeamBranding>(DEFAULT_TEAM_BRANDING);
+
   // Clean up old mock data on app startup
   useEffect(() => {
     cleanupMockNotifications();
   }, []);
 
-  // Initialize branding (favicon and title) on app startup
+  // Initialize branding from database on app startup
   useEffect(() => {
-    const branding = getTeamBranding();
+    const loadBranding = async () => {
+      const brandingData = await getTeamBrandingAsync();
+      setBranding(brandingData);
 
-    // Update document title
-    if (branding.appName) {
-      document.title = branding.appName;
-    }
+      // Update document title
+      if (brandingData.appName) {
+        document.title = brandingData.appName;
+      }
 
-    // Update favicon
-    if (branding.faviconUrl) {
-      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
-      link.type = 'image/x-icon';
-      link.rel = 'shortcut icon';
-      link.href = branding.faviconUrl;
-      document.getElementsByTagName('head')[0].appendChild(link);
-    }
+      // Update favicon
+      if (brandingData.faviconUrl) {
+        const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        link.href = brandingData.faviconUrl;
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+    };
+    loadBranding();
   }, []);
 
   const [currentUser, setCurrentUser] = useState(() => getUser());
@@ -218,11 +228,10 @@ function App() {
     }
   };
 
-  // Create dynamic theme based on branding
+  // Create dynamic theme based on branding from database
   const theme = useMemo(() => {
-    const branding = getTeamBranding();
     return createDynamicTheme(branding);
-  }, []); // Empty dependency array - theme only created once on mount
+  }, [branding]); // Re-create theme when branding changes
 
   return (
     <ThemeProvider theme={theme}>
@@ -268,6 +277,7 @@ function App() {
                 <Route path="/profile/:playerId" element={<Profile />} />
                 <Route path="/team" element={<Team />} />
                 <Route path="/training-sessions" element={<TrainingSessions />} />
+                <Route path="/drillbook" element={<DrillbookView />} />
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
                 <Route path="/videos" element={<Videos />} />
@@ -304,10 +314,10 @@ function App() {
                   }
                 />
                 <Route
-                  path="/drill-sessions"
+                  path="/drill-sessions-manage"
                   element={
                     currentUser.role === 'coach'
-                      ? <DrillSessions />
+                      ? <DrillSessionsManage />
                       : <Navigate to="/training" replace />
                   }
                 />
