@@ -23,6 +23,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import PersonIcon from '@mui/icons-material/Person';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import SportsIcon from '@mui/icons-material/Sports';
 import DescriptionIcon from '@mui/icons-material/Description';
 import LogoutIcon from '@mui/icons-material/Logout';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
@@ -125,7 +126,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   ];
 
   const adminMenuItems = [
-    { key: 'admin', label: t('nav.coachPanel'), icon: <AdminPanelSettingsIcon />, path: '/admin', description: t('nav.coachPanelDesc') },
+    { key: 'admin', label: t('nav.coachPanel'), icon: <SportsIcon />, path: '/admin', description: t('nav.coachPanelDesc') },
     { key: 'drillSessionsManage', label: t('nav.manageDrillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions-manage' },
     { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports' },
     { key: 'configuration', label: t('nav.configuration'), icon: <SettingsIcon />, path: '/configuration' },
