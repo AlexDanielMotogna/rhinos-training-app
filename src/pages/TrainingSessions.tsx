@@ -725,44 +725,64 @@ export const TrainingSessions: React.FC = () => {
                     </Typography>
                   )}
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AvatarGroup max={4}>
+                  {/* Attendees list - show names in mobile */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                      {goingCount} {t('trainingSessions.going')}:
+                    </Typography>
+                    {goingCount > 0 ? (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {session.attendees
                           .filter(a => a.status === 'going')
                           .map((attendee) => (
-                            <Tooltip key={attendee.userId} title={attendee.userName}>
-                              <Avatar sx={{ width: 32, height: 32, fontSize: 14 }}>
-                                {attendee.userName.charAt(0)}
-                              </Avatar>
-                            </Tooltip>
+                            <Chip
+                              key={attendee.userId}
+                              label={attendee.userName}
+                              size="small"
+                              avatar={<Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>{attendee.userName.charAt(0)}</Avatar>}
+                              sx={{ fontSize: '0.75rem' }}
+                            />
                           ))}
-                      </AvatarGroup>
-                      <Typography variant="body2" color="text.secondary">
-                        {goingCount} {t('trainingSessions.going')}
+                      </Box>
+                    ) : (
+                      <Typography variant="caption" color="text.disabled">
+                        {t('trainingSessions.noAttendees')}
                       </Typography>
-                    </Box>
+                    )}
+                  </Box>
 
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant={userStatus === 'going' ? 'contained' : 'outlined'}
-                        color="success"
-                        startIcon={<CheckCircleIcon />}
-                        onClick={() => handleRSVP(session.id, 'going')}
-                      >
+                  {/* RSVP Buttons - compact in mobile */}
+                  <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, justifyContent: 'flex-end' }}>
+                    <Button
+                      size="small"
+                      variant={userStatus === 'going' ? 'contained' : 'outlined'}
+                      color="success"
+                      onClick={() => handleRSVP(session.id, 'going')}
+                      sx={{
+                        minWidth: { xs: 'auto', sm: '100px' },
+                        px: { xs: 1.5, sm: 2 },
+                      }}
+                    >
+                      <CheckCircleIcon sx={{ fontSize: { xs: 18, sm: 20 }, mr: { xs: 0, sm: 0.5 } }} />
+                      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
                         {t('trainingSessions.going')}
-                      </Button>
-                      <Button
-                        size="small"
-                        variant={userStatus === 'not-going' ? 'contained' : 'outlined'}
-                        color="error"
-                        startIcon={<CancelIcon />}
-                        onClick={() => handleRSVP(session.id, 'not-going')}
-                      >
+                      </Box>
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={userStatus === 'not-going' ? 'contained' : 'outlined'}
+                      color="error"
+                      onClick={() => handleRSVP(session.id, 'not-going')}
+                      sx={{
+                        minWidth: { xs: 'auto', sm: '120px' },
+                        px: { xs: 1.5, sm: 2 },
+                      }}
+                    >
+                      <CancelIcon sx={{ fontSize: { xs: 18, sm: 20 }, mr: { xs: 0, sm: 0.5 } }} />
+                      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
                         {t('trainingSessions.notGoing')}
-                      </Button>
-                    </Box>
+                      </Box>
+                    </Button>
                   </Box>
                 </CardContent>
               </Card>

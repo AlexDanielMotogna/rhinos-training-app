@@ -742,6 +742,7 @@ export const messagesEN = {
   'trainingSessions.yourSession': 'Your Session',
   'trainingSessions.going': 'Going',
   'trainingSessions.notGoing': 'Not Going',
+  'trainingSessions.noAttendees': 'No one confirmed yet',
   'trainingSessions.today': 'Today',
   'trainingSessions.tomorrow': 'Tomorrow',
   'trainingSessions.teamSessions': 'Team Sessions',

@@ -730,6 +730,7 @@ export const messagesDE = {
   'trainingSessions.yourSession': 'Deine Einheit',
   'trainingSessions.going': 'Dabei',
   'trainingSessions.notGoing': 'Nicht dabei',
+  'trainingSessions.noAttendees': 'Noch niemand bestätigt',
   'trainingSessions.today': 'Heute',
   'trainingSessions.tomorrow': 'Morgen',
   'trainingSessions.teamSessions': 'Team-Einheiten',
