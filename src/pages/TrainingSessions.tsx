@@ -106,10 +106,35 @@ export const TrainingSessions: React.FC = () => {
     }
   }, [sessionPolls]);
 
-  // Subscribe to live poll updates via SSE
+  // Handle RSVP updates from SSE
+  const handleRSVPUpdate = useCallback((data: any) => {
+    console.log('[TrainingSessions] Received RSVP update via SSE:', data);
+
+    // Update the appropriate session list based on category
+    if (data.sessionCategory === 'private') {
+      setPrivateSessions(prev =>
+        prev.map(session =>
+          session.id === data.sessionId
+            ? { ...session, attendees: data.attendees }
+            : session
+        )
+      );
+    } else if (data.sessionCategory === 'team') {
+      setTeamSessions(prev =>
+        prev.map(session =>
+          session.id === data.sessionId
+            ? { ...session, attendees: data.attendees }
+            : session
+        )
+      );
+    }
+  }, []);
+
+  // Subscribe to live updates via SSE (polls for team, RSVP for private)
   usePollSSE({
-    enabled: activeTab === 0, // Only when viewing team sessions
+    enabled: true, // Always enabled for both tabs
     onVoteUpdate: handleVoteUpdate,
+    onRSVPUpdate: handleRSVPUpdate,
     onConnected: () => {
       console.log('[TrainingSessions] Connected to SSE');
     },

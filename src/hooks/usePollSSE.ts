@@ -17,9 +17,22 @@ interface VoteUpdate {
   action: 'created' | 'updated';
 }
 
+interface RSVPUpdate {
+  sessionId: string;
+  sessionCategory: 'team' | 'private';
+  attendee: {
+    userId: string;
+    userName: string;
+    status: 'going' | 'maybe' | 'not-going';
+  };
+  action: 'added' | 'updated';
+  attendees: any[];
+}
+
 interface UsePollSSEOptions {
   pollId?: string; // If specified, only listen to this poll
   onVoteUpdate?: (data: VoteUpdate) => void;
+  onRSVPUpdate?: (data: RSVPUpdate) => void;
   onConnected?: () => void;
   onError?: (error: Event) => void;
   enabled?: boolean; // Default true
@@ -29,6 +42,7 @@ export function usePollSSE(options: UsePollSSEOptions = {}) {
   const {
     pollId,
     onVoteUpdate,
+    onRSVPUpdate,
     onConnected,
     onError,
     enabled = true,
@@ -80,6 +94,16 @@ export function usePollSSE(options: UsePollSSEOptions = {}) {
           onVoteUpdate?.(data);
         } catch (error) {
           console.error('[SSE] Error parsing vote update:', error);
+        }
+      });
+
+      eventSource.addEventListener('rsvp-update', (event) => {
+        try {
+          const data = JSON.parse(event.data) as RSVPUpdate;
+          console.log('[SSE] Received RSVP update:', data);
+          onRSVPUpdate?.(data);
+        } catch (error) {
+          console.error('[SSE] Error parsing RSVP update:', error);
         }
       });
 
