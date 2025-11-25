@@ -27,6 +27,7 @@ import leaderboardRoutes from './routes/leaderboard.js';
 import exerciseCategoryRoutes from './routes/exerciseCategories.js';
 import reportsRoutes from './routes/reports.js';
 import matchRoutes from './routes/matches.js';
+import sseRoutes from './routes/sse.js';
 import { startCronJobs } from './utils/cronJobs.js';
 
 // Load environment variables
@@ -100,6 +101,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/exercise-categories', exerciseCategoryRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/matches', matchRoutes);
+app.use('/api/sse', sseRoutes);
 
 // 404 handler
 app.use((req, res) => {

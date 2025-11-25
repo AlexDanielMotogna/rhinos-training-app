@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -49,6 +49,7 @@ import type { TrainingSession, SessionType, RSVPStatus } from '../types/training
 import type { Position } from '../types/exercise';
 import type { AttendancePollVote } from '../types/attendancePoll';
 import { toastService } from '../services/toast';
+import { usePollSSE } from '../hooks/usePollSSE';
 
 // Position groupings for unit counts
 const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OL'];
@@ -81,6 +82,41 @@ export const TrainingSessions: React.FC = () => {
     loadSessions();
     loadPolls();
   }, []);
+
+  // Handle vote updates from SSE
+  const handleVoteUpdate = useCallback(async (data: any) => {
+    console.log('[TrainingSessions] Received vote update via SSE:', data);
+    // Find the poll by pollId
+    let targetPoll: any = null;
+    sessionPolls.forEach((poll, sessionId) => {
+      if (poll.id === data.pollId) {
+        targetPoll = poll;
+      }
+    });
+
+    if (targetPoll) {
+      const results = await getPollResults(targetPoll.id);
+      if (results) {
+        setPollResults(prev => {
+          const newMap = new Map(prev);
+          newMap.set(targetPoll.id, results);
+          return newMap;
+        });
+      }
+    }
+  }, [sessionPolls]);
+
+  // Subscribe to live poll updates via SSE
+  usePollSSE({
+    enabled: activeTab === 0, // Only when viewing team sessions
+    onVoteUpdate: handleVoteUpdate,
+    onConnected: () => {
+      console.log('[TrainingSessions] Connected to SSE');
+    },
+    onError: (error) => {
+      console.error('[TrainingSessions] SSE error:', error);
+    },
+  });
 
   const loadPolls = async () => {
     const polls = await getAllPolls();

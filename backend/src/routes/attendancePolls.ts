@@ -4,6 +4,7 @@ import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { createNotificationsForUsers } from './notifications.js';
 import { t, formatPollMessage } from '../utils/i18n.js';
+import { sseManager } from '../utils/sseManager.js';
 
 const router = express.Router();
 
@@ -207,7 +208,7 @@ router.post('/:id/vote', async (req, res) => {
         },
       });
     } else {
-      // Create new vote  
+      // Create new vote
       vote = await prisma.attendancePollVote.create({
         data: {
           pollId: id,
@@ -219,6 +220,21 @@ router.post('/:id/vote', async (req, res) => {
         },
       });
     }
+
+    // Broadcast vote update via SSE to all clients watching this poll
+    sseManager.broadcastToPoll(id, 'vote-update', {
+      pollId: id,
+      vote: {
+        userId: vote.userId,
+        userName: vote.userName,
+        userPosition: vote.userPosition,
+        option: vote.option,
+        timestamp: vote.timestamp,
+      },
+      action: existingVote ? 'updated' : 'created',
+    });
+
+    console.log(`[POLLS] Vote ${existingVote ? 'updated' : 'created'} for poll ${id}, broadcasting to ${sseManager.getPollClientCount(id)} clients`);
 
     res.json(vote);
   } catch (error) {
