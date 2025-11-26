@@ -455,8 +455,8 @@ export const messagesDE = {
   'training.noProgramAssigned': 'Noch kein Trainingsprogramm zugewiesen. Kontaktieren Sie Ihren Trainer, um mit einem personalisierten Trainingsplan zu beginnen.',
 
   // MyTraining session tabs
-  'training.mySessions': 'Meine Sitzungen',
-  'training.teamSessions': 'Team-Sitzungen',
+  'training.mySessions': 'Mein Training',
+  'training.teamSessions': 'Team-Training',
   'training.mySessionsInfo': 'Hier verfolgen Sie Ihre persönlichen freien Einheiten. Fügen Sie benutzerdefinierte Trainingseinheiten hinzu und sehen Sie Ihren Trainingsverlauf.',
   'training.coachPlan': 'Trainerplan',
 

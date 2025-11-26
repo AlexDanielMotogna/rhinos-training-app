@@ -59,7 +59,7 @@ export function usePollSSE(options: UsePollSSEOptions = {}) {
     }
 
     // Get auth token
-    const token = localStorage.getItem('rhinos_auth_token');
+    const token = localStorage.getItem('auth_token');
     if (!token) {
       console.warn('[SSE] No auth token found, cannot connect');
       return;

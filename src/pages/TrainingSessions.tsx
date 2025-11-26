@@ -131,8 +131,9 @@ export const TrainingSessions: React.FC = () => {
   }, []);
 
   // Subscribe to live updates via SSE (polls for team, RSVP for private)
+  // Only enable SSE when user is authenticated
   usePollSSE({
-    enabled: true, // Always enabled for both tabs
+    enabled: !!currentUser, // Only enable when user is authenticated
     onVoteUpdate: handleVoteUpdate,
     onRSVPUpdate: handleRSVPUpdate,
     onConnected: () => {

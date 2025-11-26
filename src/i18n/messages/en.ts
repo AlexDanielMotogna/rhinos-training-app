@@ -467,8 +467,8 @@ export const messagesEN = {
   'training.noProgramAssigned': 'No training program assigned yet. Contact your coach to get started with a personalized training plan.',
 
   // MyTraining session tabs
-  'training.mySessions': 'My Sessions',
-  'training.teamSessions': 'Team Sessions',
+  'training.mySessions': 'My Training',
+  'training.teamSessions': 'Team Training',
   'training.mySessionsInfo': 'This is where you track your personal free sessions. Add custom workouts and view your training history.',
   'training.coachPlan': 'Coach Plan',
 

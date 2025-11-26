@@ -33,8 +33,18 @@ export default defineConfig({
         // Cache strategies
         runtimeCaching: [
           {
-            // API calls
-            urlPattern: /^https?:\/\/localhost:5000\/api\/.*/i,
+            // API calls (excluding SSE endpoints)
+            urlPattern: ({ url }) => {
+              // Match both localhost and production API URLs
+              const isApiUrl = url.pathname.startsWith('/api/') &&
+                              !url.pathname.startsWith('/api/sse/');
+
+              // Check if it's localhost or Railway domain
+              const isValidOrigin = url.origin === 'http://localhost:5000' ||
+                                   url.hostname.includes('railway.app');
+
+              return isApiUrl && isValidOrigin;
+            },
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
