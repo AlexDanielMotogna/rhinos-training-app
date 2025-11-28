@@ -1,8 +1,5 @@
 // API service for backend communication
-// VITE_API_URL should be the base URL without /api (e.g., https://example.com)
-const API_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export interface SignupData {
   email: string;

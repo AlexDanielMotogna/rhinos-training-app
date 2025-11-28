@@ -65,11 +65,11 @@ export function usePollSSE(options: UsePollSSEOptions = {}) {
       return;
     }
 
-    // Build URL
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    // Build URL - VITE_API_URL already includes /api
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const url = pollId
-      ? `${baseUrl}/api/sse/polls/${pollId}`
-      : `${baseUrl}/api/sse/polls`;
+      ? `${baseUrl}/sse/polls/${pollId}`
+      : `${baseUrl}/sse/polls`;
 
     console.log(`[SSE] Connecting to ${url}`);
 
