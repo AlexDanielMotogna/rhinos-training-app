@@ -9,11 +9,6 @@ const DRILLS_STORAGE_KEY = 'rhinos_drills';
 // ========================================
 
 export async function syncDrillsFromBackend(): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping drills sync');
-    return;
-  }
-
   try {
     console.log('🔄 Syncing drills from backend...');
     const backendDrills = await drillApi.getAll() as any[];

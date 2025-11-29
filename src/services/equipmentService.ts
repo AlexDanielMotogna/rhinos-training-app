@@ -9,11 +9,6 @@ const EQUIPMENT_STORAGE_KEY = 'rhinos_equipment';
 // ========================================
 
 export async function syncEquipmentFromBackend(): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping equipment sync');
-    return;
-  }
-
   try {
     console.log('🔄 Syncing equipment from backend...');
     const backendEquipment = await equipmentApi.getAll();

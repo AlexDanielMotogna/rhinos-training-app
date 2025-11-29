@@ -19,11 +19,6 @@ export interface DrillCategory {
 // ========================================
 
 export async function syncDrillCategoriesFromBackend(): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping drill categories sync');
-    return;
-  }
-
   try {
     console.log('🔄 Syncing drill categories from backend...');
     const backendCategories = await drillCategoryApi.getAll() as DrillCategory[];

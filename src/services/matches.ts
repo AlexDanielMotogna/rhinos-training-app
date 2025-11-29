@@ -10,10 +10,6 @@ const STORAGE_KEY = 'rhinos_matches';
 
 // Helper to sync matches from backend to localStorage
 async function syncMatchesFromBackend(): Promise<Match[]> {
-  if (!isOnline()) {
-    return getMatchesFromStorage();
-  }
-
   try {
     const response = await fetch(`${API_BASE_URL}/api/matches`, {
       credentials: 'include',
