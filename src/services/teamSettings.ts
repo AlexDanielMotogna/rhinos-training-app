@@ -1,7 +1,6 @@
 import type { TeamSettings, SeasonPhase, TeamLevel, TeamCategory, TeamBranding } from '../types/teamSettings';
 import { DEFAULT_TEAM_SETTINGS, DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
 import { teamSettingsService as teamSettingsApi } from './api';
-import { isOnline } from './sync';
 
 const STORAGE_KEY = 'rhinos_team_settings';
 

@@ -7,7 +7,6 @@ import type {
   PointCategoryType,
 } from '../types/pointsSystem';
 import { pointsConfigService, leaderboardService } from './api';
-import { isOnline } from './sync';
 
 /**
  * Get ISO week string for a given date
@@ -242,11 +241,6 @@ function savePlayerWeeklyPoints(userId: string, week: string, points: PlayerWeek
  * Sync player's weekly points to backend
  */
 async function syncWeeklyPointsToBackend(points: PlayerWeeklyPoints): Promise<void> {
-  if (!isOnline()) {
-    console.log('[POINTS] Offline - skipping backend sync');
-    return;
-  }
-
   try {
     // Transform breakdown to match backend schema
     const breakdown = points.breakdown.map(b => ({

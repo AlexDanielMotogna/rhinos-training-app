@@ -5,7 +5,6 @@
 
 import type { UserPlanTemplate, UserPlanPayload } from '../types/userPlan';
 import { userPlanService } from './api';
-import { isOnline, addToOutbox } from './sync';
 
 const USER_PLANS_KEY = 'rhinos_user_plans';
 const SYNCING_PLANS_KEY = 'rhinos_syncing_plans';

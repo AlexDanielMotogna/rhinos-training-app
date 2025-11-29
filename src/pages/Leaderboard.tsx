@@ -20,7 +20,6 @@ import {
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useI18n } from '../i18n/I18nProvider';
 import { leaderboardService } from '../services/api';
-import { isOnline } from '../services/sync';
 import type { Position } from '../types/exercise';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
@@ -51,12 +50,6 @@ export const Leaderboard: React.FC = () => {
 
   useEffect(() => {
     const loadLeaderboard = async () => {
-      if (!isOnline()) {
-        console.log('[LEADERBOARD] Offline - cannot load leaderboard');
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         const response = await leaderboardService.getCurrentWeek();

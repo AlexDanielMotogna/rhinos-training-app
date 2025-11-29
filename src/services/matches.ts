@@ -1,5 +1,4 @@
 import type { Match, MatchFormData } from '../types/match';
-import { isOnline } from './sync';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 const STORAGE_KEY = 'rhinos_matches';

@@ -1,5 +1,4 @@
 import { drillCategoryService as drillCategoryApi } from './api';
-import { isOnline } from './sync';
 
 const DRILL_CATEGORIES_STORAGE_KEY = 'rhinos_drill_categories';
 

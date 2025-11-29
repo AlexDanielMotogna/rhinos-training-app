@@ -1,7 +1,6 @@
 import type { WorkoutReport } from './workoutAnalysis';
 import type { WorkoutSource, WorkoutEntry } from '../types/workout';
 import { workoutReportService } from './api';
-import { isOnline } from './sync';
 
 const REPORTS_KEY = 'rhinos_workout_reports';
 const SAVING_REPORTS_KEY = 'rhinos_saving_reports'; // Track reports being saved to prevent duplicates

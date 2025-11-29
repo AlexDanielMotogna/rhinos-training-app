@@ -1,6 +1,5 @@
 import { Equipment } from '../types/drill';
 import { equipmentService as equipmentApi } from './api';
-import { isOnline } from './sync';
 
 const EQUIPMENT_STORAGE_KEY = 'rhinos_equipment';
 

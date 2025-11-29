@@ -17,7 +17,6 @@ import { useI18n } from '../../i18n/I18nProvider';
 import { getReportsByUser, deleteWorkoutReport, syncWorkoutReportsFromBackend, type SavedWorkoutReport } from '../../services/workoutReports';
 import { WorkoutReportDialog } from './WorkoutReportDialog';
 import type { WorkoutSource } from '../../types/workout';
-import { isOnline } from '../../services/sync';
 
 interface ReportsHistoryProps {
   userId: string;

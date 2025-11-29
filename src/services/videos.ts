@@ -1,7 +1,6 @@
 import type { Video, VideoProgress } from '../types/video';
 import { sanitizeYouTubeUrl, extractYouTubeVideoId } from './yt';
 import { videoService } from './api';
-import { isOnline } from './sync';
 
 const VIDEOS_STORAGE_KEY = 'rhinos_videos';
 const VIDEO_PROGRESS_STORAGE_KEY = 'rhinos_video_progress';

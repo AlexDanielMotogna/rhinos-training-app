@@ -38,13 +38,6 @@ import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
 import { getUser } from '../services/userProfile';
 import { assignmentService, trainingTypeService, workoutService } from '../services/api';
-import {
-  getCachedTrainingTypes,
-  getPlayerAssignments,
-  db,
-  addToOutbox,
-} from '../services/db';
-import { isOnline } from '../services/sync';
 import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, syncWorkoutLogsFromBackend, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, getUserPlansFromBackend, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, TemplateBlock } from '../types/template';
@@ -109,7 +102,6 @@ export const MyTraining: React.FC = () => {
     const loadData = async () => {
       if (!user) return;
 
-      const online = isOnline();
       console.log(`📡 Loading data - ${online ? 'ONLINE' : 'OFFLINE'} mode`);
 
       try {
@@ -120,14 +112,6 @@ export const MyTraining: React.FC = () => {
           // Online: Fetch from API and cache
           try {
             types = await trainingTypeService.getAll() as any[];
-
-            // Cache training types in IndexedDB
-            await db.trainingTypes.bulkPut(
-              types.map((tt: any) => ({
-                ...tt,
-                syncedAt: new Date().toISOString(),
-              }))
-            );
 
             const allAssignments = await assignmentService.getAll() as any[];
             const today = new Date().toISOString().split('T')[0];
@@ -146,15 +130,7 @@ export const MyTraining: React.FC = () => {
               return a.playerIds?.includes(user.id);
             });
 
-            // Cache assignments in IndexedDB
-            await db.trainingAssignments.bulkPut(
-              allAssignments.map((a: any) => ({
-                ...a,
-                syncedAt: new Date().toISOString(),
-              }))
-            );
-
-            console.log('✅ Loaded from API and cached');
+            console.log('✅ Loaded from API');
 
             // Sync workout logs and reports from backend
             await syncWorkoutLogsFromBackend(user.id);
@@ -519,17 +495,8 @@ export const MyTraining: React.FC = () => {
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
 
       // Save to IndexedDB for offline persistence
-      await db.workouts.put({
-        ...workoutLog,
-        planId: workoutLog.planTemplateId,
-        trainingType: 'strength',
-        completedAt: workoutLog.createdAt,
-        exercises: workoutLog.entries,
-        syncedAt: new Date().toISOString(),
-      });
 
       // Try to save to backend (will work if online)
-      const online = isOnline();
       if (online) {
         try {
           await workoutService.create({
@@ -546,10 +513,8 @@ export const MyTraining: React.FC = () => {
           console.log('✅ Player workout saved to backend');
         } catch (error) {
           console.warn('⚠️ Failed to save player workout to backend, will sync later:', error);
-          await addToOutbox('workout', 'create', workoutLog);
         }
       } else {
-        await addToOutbox('workout', 'create', workoutLog);
         console.log('📦 Player workout queued for sync when online');
       }
 
@@ -666,17 +631,8 @@ export const MyTraining: React.FC = () => {
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
 
       // Save to IndexedDB for offline persistence
-      await db.workouts.put({
-        ...workoutLog,
-        planId: workoutLog.planName,
-        trainingType: activeTab === 'strength_conditioning' ? 'strength' : 'sprints',
-        completedAt: workoutLog.createdAt,
-        exercises: workoutLog.entries,
-        syncedAt: new Date().toISOString(),
-      });
 
       // Try to save to backend (will work if online)
-      const online = isOnline();
       if (online) {
         try {
           await workoutService.create({
@@ -693,11 +649,9 @@ export const MyTraining: React.FC = () => {
         } catch (error) {
           console.warn('⚠️ Failed to save workout to backend, will sync later:', error);
           // Add to outbox for later sync
-          await addToOutbox('workout', 'create', workoutLog);
         }
       } else {
         // Offline: add to outbox for later sync
-        await addToOutbox('workout', 'create', workoutLog);
         console.log('📦 Workout queued for sync when online');
       }
 
@@ -791,17 +745,8 @@ export const MyTraining: React.FC = () => {
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
 
       // Save to IndexedDB for offline persistence
-      await db.workouts.put({
-        ...workoutLog,
-        planId: workoutLog.planName,
-        trainingType: activeTab === 'strength_conditioning' ? 'strength' : 'sprints',
-        completedAt: workoutLog.createdAt,
-        exercises: workoutLog.entries,
-        syncedAt: new Date().toISOString(),
-      });
 
       // Try to save to backend (will work if online)
-      const online = isOnline();
       if (online) {
         try {
           await workoutService.create({
@@ -817,10 +762,8 @@ export const MyTraining: React.FC = () => {
           console.log('✅ Workout saved to backend');
         } catch (error) {
           console.warn('⚠️ Failed to save workout to backend, will sync later:', error);
-          await addToOutbox('workout', 'create', workoutLog);
         }
       } else {
-        await addToOutbox('workout', 'create', workoutLog);
         console.log('📦 Workout queued for sync when online');
       }
 

@@ -35,7 +35,6 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useI18n } from '../i18n/I18nProvider';
 import { getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from '../services/reports';
 import { reportsService } from '../services/api';
-import { isOnline } from '../services/sync';
 import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod, PlayerStatus } from '../types/report';
 import type { Position } from '../types/exercise';
 

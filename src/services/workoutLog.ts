@@ -1,6 +1,5 @@
 import type { WorkoutEntry, WorkoutPayload } from '../types/workout';
 import { workoutService } from './api';
-import { isOnline } from './sync';
 
 const WORKOUTS_KEY = 'rhinos_workouts';
 const DELETED_LOGS_KEY = 'rhinos_deleted_logs'; // Track logs deleted by user

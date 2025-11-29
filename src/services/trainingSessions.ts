@@ -7,18 +7,11 @@
 import type { TrainingSession, RSVPStatus, CheckInStatus } from '../types/trainingSession';
 import { addNotification } from './mock';
 import { trainingSessionService } from './api';
-import { isOnline } from './sync';
 
 /**
  * Get all training sessions from backend
- * REQUIRES INTERNET CONNECTION - Training sessions do not use offline caching
  */
 export async function getAllSessions(): Promise<TrainingSession[]> {
-  if (!isOnline()) {
-    console.log('⚠️ Training Sessions require internet connection');
-    throw new Error('Training Sessions require internet connection');
-  }
-
   try {
     console.log('🔄 Fetching training sessions from backend...');
     const backendSessions = await trainingSessionService.getAll() as TrainingSession[];
@@ -63,13 +56,8 @@ export async function getPrivateSessions(): Promise<TrainingSession[]> {
 
 /**
  * Create a new training session
- * REQUIRES INTERNET CONNECTION
  */
 export async function createSession(session: Omit<TrainingSession, 'id' | 'createdAt'>): Promise<TrainingSession> {
-  if (!isOnline()) {
-    throw new Error('Internet connection required to create training sessions');
-  }
-
   try {
     const created = await trainingSessionService.create({
       creatorId: session.creatorId,
@@ -102,9 +90,6 @@ export async function createSession(session: Omit<TrainingSession, 'id' | 'creat
  * REQUIRES INTERNET CONNECTION
  */
 export async function updateRSVP(sessionId: string, userId: string, userName: string, status: RSVPStatus): Promise<void> {
-  if (!isOnline()) {
-    throw new Error('Internet connection required to update RSVP');
-  }
 
   try {
     await trainingSessionService.updateRSVP(sessionId, userId, status);
@@ -117,13 +102,8 @@ export async function updateRSVP(sessionId: string, userId: string, userName: st
 
 /**
  * Delete a training session
- * REQUIRES INTERNET CONNECTION
  */
 export async function deleteSession(sessionId: string): Promise<void> {
-  if (!isOnline()) {
-    throw new Error('Internet connection required to delete training sessions');
-  }
-
   try {
     await trainingSessionService.delete(sessionId);
     console.log('✅ Session deleted from backend');
@@ -149,13 +129,8 @@ export function canCheckIn(session: TrainingSession): boolean {
 
 /**
  * Check in user to a team session
- * REQUIRES INTERNET CONNECTION
  */
 export async function checkInToSession(sessionId: string, userId: string, userName: string): Promise<void> {
-  if (!isOnline()) {
-    throw new Error('Internet connection required to check in');
-  }
-
   try {
     await trainingSessionService.checkIn(sessionId, userId);
     console.log('✅ Check-in saved to backend');

@@ -23,8 +23,6 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import AddIcon from '@mui/icons-material/Add';
 import { globalCatalog } from '../../services/catalog';
 import { exerciseService } from '../../services/api';
-import { db } from '../../services/db';
-import { isOnline } from '../../services/sync';
 import type { Exercise, ExerciseCategory, MuscleGroup } from '../../types/exercise';
 import { sanitizeYouTubeUrl } from '../../services/yt';
 import { ExerciseFormDialog } from '../exercise/ExerciseFormDialog';

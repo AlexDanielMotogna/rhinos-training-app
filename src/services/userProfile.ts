@@ -1,6 +1,5 @@
 import type { MockUser } from './mock';
 import { userService } from './api';
-import { isOnline } from './sync';
 
 // Re-export MockUser as User (keeping backward compatibility for now)
 export type { MockUser };

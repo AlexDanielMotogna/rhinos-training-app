@@ -20,7 +20,6 @@ import { useI18n } from '../../i18n/I18nProvider';
 import type { Exercise, ExerciseCategory, MuscleGroup } from '../../types/exercise';
 import { exerciseService } from '../../services/api';
 import { toastService } from '../../services/toast';
-import { isOnline } from '../../services/sync';
 
 interface ExerciseFormDialogProps {
   open: boolean;

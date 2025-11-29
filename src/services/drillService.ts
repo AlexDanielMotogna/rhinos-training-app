@@ -1,6 +1,5 @@
 import { Drill, DrillResourceSummary, CreateDrillData } from '../types/drill';
 import { drillService as drillApi } from './api';
-import { isOnline } from './sync';
 
 const DRILLS_STORAGE_KEY = 'rhinos_drills';
 

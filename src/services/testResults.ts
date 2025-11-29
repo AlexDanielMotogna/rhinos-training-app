@@ -1,5 +1,4 @@
 import { testResultService } from './api';
-import { isOnline } from './sync';
 
 const TEST_STORAGE_KEYS = {
   strength: 'lastStrengthTest',
