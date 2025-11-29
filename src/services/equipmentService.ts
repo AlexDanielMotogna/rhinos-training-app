@@ -1,3 +1,4 @@
+import { isOnline } from './online';
 import { Equipment } from '../types/drill';
 import { equipmentService as equipmentApi } from './api';
 

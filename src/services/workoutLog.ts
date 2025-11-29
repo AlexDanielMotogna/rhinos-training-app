@@ -1,3 +1,4 @@
+import { isOnline } from './online';
 import type { WorkoutEntry, WorkoutPayload } from '../types/workout';
 import { workoutService } from './api';
 
@@ -224,11 +225,6 @@ export function restoreWorkoutLog(logId: string): void {
  * Sync workout logs from backend to localStorage
  */
 export async function syncWorkoutLogsFromBackend(userId: string): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping workout logs sync');
-    return;
-  }
-
   try {
     console.log('🔄 Syncing workout logs from backend...');
     const backendLogs = await workoutService.getAll({ userId }) as WorkoutLog[];

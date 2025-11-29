@@ -1,3 +1,4 @@
+import { isOnline } from './online';
 import type { MockUser } from './mock';
 import { userService } from './api';
 

@@ -1,3 +1,4 @@
+import { isOnline } from './online';
 import type { Video, VideoProgress } from '../types/video';
 import { sanitizeYouTubeUrl, extractYouTubeVideoId } from './yt';
 import { videoService } from './api';

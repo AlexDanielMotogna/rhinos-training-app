@@ -1,3 +1,4 @@
+import { isOnline } from './online';
 import { Drill, DrillResourceSummary, CreateDrillData } from '../types/drill';
 import { drillService as drillApi } from './api';
 

@@ -24,22 +24,16 @@ export function getUserPlans(userId: string): UserPlanTemplate[] {
  */
 export async function getUserPlansFromBackend(userId: string): Promise<UserPlanTemplate[]> {
   console.log('[USER PLANS] 🚀 Starting getUserPlansFromBackend for user:', userId);
-  
-  console.log('[USER PLANS] 🌐 Online status:', online);
-  
-  if (online) {
-    try {
-      console.log('[USER PLANS] 📡 Loading plans from backend for user:', userId);
-      await syncUserPlansFromBackend(userId);
-      console.log('[USER PLANS] ✅ Synced plans from backend successfully');
-    } catch (error) {
-      console.error('[USER PLANS] ❌ Failed to load from backend:', error);
-      console.warn('[USER PLANS] ⚠️ Falling back to localStorage');
-    }
-  } else {
-    console.log('[USER PLANS] 📱 Offline - using localStorage only');
+
+  try {
+    console.log('[USER PLANS] 📡 Loading plans from backend for user:', userId);
+    await syncUserPlansFromBackend(userId);
+    console.log('[USER PLANS] ✅ Synced plans from backend successfully');
+  } catch (error) {
+    console.error('[USER PLANS] ❌ Failed to load from backend:', error);
+    console.warn('[USER PLANS] ⚠️ Falling back to localStorage');
   }
-  
+
   // Return from localStorage (which now contains backend data if sync succeeded)
   const localPlans = getUserPlans(userId);
   console.log('[USER PLANS] 📦 Returning plans from localStorage:', localPlans.length, 'plans');
@@ -184,22 +178,13 @@ export async function deleteUserPlan(planId: string): Promise<boolean> {
   localStorage.setItem(DELETED_PLANS_KEY, JSON.stringify(Array.from(deletedPlans)));
   console.log('[USER PLANS] Marked plan as deleted:', planId);
 
-  // Try to delete from backend if online, or add to outbox if offline
-  
-  if (online) {
-    try {
-      console.log('[USER PLANS] Deleting plan from backend:', planId);
-      await userPlanService.delete(planId);
-      console.log('[USER PLANS] Plan deleted from backend');
-    } catch (error) {
-      console.warn('[USER PLANS] Failed to delete plan from backend, adding to outbox:', error);
-      // If delete failed while online, add to outbox for retry
-      await addToOutbox('userPlan', 'delete', { id: planId });
-    }
-  } else {
-    // Offline: add to outbox for sync when online
-    console.log('[USER PLANS] Offline - adding deletion to outbox for later sync');
-    await addToOutbox('userPlan', 'delete', { id: planId });
+  // Try to delete from backend
+  try {
+    console.log('[USER PLANS] Deleting plan from backend:', planId);
+    await userPlanService.delete(planId);
+    console.log('[USER PLANS] Plan deleted from backend');
+  } catch (error) {
+    console.warn('[USER PLANS] Failed to delete plan from backend:', error);
   }
 
   return true;

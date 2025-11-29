@@ -1,3 +1,4 @@
+import { isOnline } from './online';
 import { testResultService } from './api';
 
 const TEST_STORAGE_KEYS = {

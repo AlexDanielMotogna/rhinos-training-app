@@ -22,7 +22,8 @@
       "Bash(timeout 5 npx prisma db push:*)",
       "Bash(npx tsx:*)",
       "Bash(del nul 2)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

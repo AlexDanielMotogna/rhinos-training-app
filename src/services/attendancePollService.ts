@@ -1,6 +1,6 @@
 /**
  * Attendance Poll Service
- * Manages attendance polls with backend + IndexedDB + localStorage support
+ * Manages attendance polls with backend + localStorage support
  */
 
 import type { AttendancePoll, AttendancePollVote, AttendancePollResults } from '../types/attendancePoll';
@@ -9,18 +9,14 @@ import { attendancePollService as apiService } from './api';
 const STORAGE_KEY = 'attendancePolls';
 
 /**
- * Get all polls
- * Priority: Backend (if online) -> IndexedDB -> localStorage
+ * Get all polls from backend
  */
 export const getAllPolls = async (): Promise<AttendancePoll[]> => {
   try {
     console.log('[POLLS] Fetching polls from backend...');
     const polls = await apiService.getAll() as AttendancePoll[];
 
-    // Update caches
-      ...p,
-      updatedAt: new Date().toISOString(),
-    })));
+    // Update localStorage cache
     localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
 
     console.log(`[POLLS] Loaded ${polls.length} polls from backend`);
@@ -28,12 +24,7 @@ export const getAllPolls = async (): Promise<AttendancePoll[]> => {
   } catch (error) {
     console.error('[POLLS ERROR] Failed to load polls:', error);
 
-    // Fallback to IndexedDB
-    if (cached.length > 0) {
-      return cached as AttendancePoll[];
-    }
-
-    // Last resort: localStorage
+    // Fallback to localStorage
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   }
@@ -45,19 +36,11 @@ export const getAllPolls = async (): Promise<AttendancePoll[]> => {
 export const getActivePoll = async (): Promise<AttendancePoll | null> => {
   try {
     const poll = await apiService.getActive() as AttendancePoll | null;
-
-    // Update cache if poll exists
-    if (poll) {
-        ...poll,
-        updatedAt: new Date().toISOString(),
-      });
-    }
-
     return poll;
   } catch (error) {
     console.error('[POLLS ERROR] Failed to get active poll:', error);
 
-    // Fallback to cache
+    // Fallback to localStorage cache
     const polls = await getAllPolls();
     const now = new Date().toISOString();
     const activePolls = polls.filter(p => p.isActive && p.expiresAt > now);
@@ -72,16 +55,11 @@ export const getActivePoll = async (): Promise<AttendancePoll | null> => {
 export const getPollById = async (id: string): Promise<AttendancePoll | null> => {
   try {
     const poll = await apiService.getById(id) as AttendancePoll;
-
-    // Update cache
-      ...poll,
-      updatedAt: new Date().toISOString(),
-    });
-
     return poll;
   } catch (error) {
     console.error('[POLLS ERROR] Failed to get poll:', error);
 
+    // Fallback to localStorage
     const polls = await getAllPolls();
     return polls.find(p => p.id === id) || null;
   }
@@ -97,29 +75,6 @@ export const createPoll = async (
   createdBy: string,
   expiresAt: string
 ): Promise<AttendancePoll> => {
-  const newPoll: AttendancePoll = {
-    id: `poll-${Date.now()}`,
-    sessionId,
-    sessionName,
-    sessionDate,
-    createdBy,
-    createdAt: new Date().toISOString(),
-    expiresAt,
-    isActive: true,
-    votes: [],
-  };
-
-  // Save to localStorage first (immediate feedback)
-  const polls = await getAllPolls();
-  polls.push(newPoll);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
-
-  // Save to IndexedDB
-    ...newPoll,
-    updatedAt: new Date().toISOString(),
-  });
-
-  // Try to save to backend
   try {
     const created = await apiService.create({
       sessionId,
@@ -130,24 +85,20 @@ export const createPoll = async (
 
     console.log('[POLLS] Poll saved to backend:', created.id);
 
-    // Update local caches with backend ID
-    newPoll.id = created.id;
-      ...created,
-      updatedAt: new Date().toISOString(),
-    });
+    // Update localStorage cache
+    const polls = await getAllPolls();
+    polls.push(created);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
 
     return created;
   } catch (error) {
-    console.warn('[POLLS] Failed to save poll to backend, will sync later:', error);
-    await addToOutbox('attendancePoll', 'create', newPoll);
+    console.error('[POLLS] Failed to create poll:', error);
+    throw error;
   }
-
-  return newPoll;
 };
 
 /**
  * Check if user has voted in a poll
- * Priority: Backend (if online) -> Local cache
  */
 export const hasUserVoted = async (pollId: string, userId: string): Promise<boolean> => {
   try {
@@ -155,12 +106,7 @@ export const hasUserVoted = async (pollId: string, userId: string): Promise<bool
     const poll = await apiService.getById(pollId) as AttendancePoll;
 
     if (poll) {
-      // Update local cache with fresh backend data
-        ...poll,
-        updatedAt: new Date().toISOString(),
-      });
-
-      // Also update localStorage cache
+      // Update localStorage cache
       const polls = await getAllPolls();
       const pollIndex = polls.findIndex(p => p.id === pollId);
       if (pollIndex !== -1) {
@@ -169,17 +115,18 @@ export const hasUserVoted = async (pollId: string, userId: string): Promise<bool
       }
 
       const hasVoted = poll.votes?.some(v => v.userId === userId) || false;
-      console.log('[POLLS] User has voted (from backend):', hasVoted);
+      console.log('[POLLS] User has voted:', hasVoted);
       return hasVoted;
     }
-  } catch (error) {
-    console.error('[POLLS] CRITICAL: Failed to check vote status from backend:', error);
-    // When backend fails, we should NOT trust local cache
-    // Return false to be safe and show the poll again
     return false;
-  }
+  } catch (error) {
+    console.error('[POLLS] Failed to check vote status:', error);
 
-  return false;
+    // Fallback to localStorage cache
+    const poll = await getPollById(pollId);
+    if (!poll) return false;
+    return poll.votes.some(v => v.userId === userId);
+  }
 };
 
 /**
@@ -191,61 +138,56 @@ export const submitVote = async (
   userName: string,
   option: 'training' | 'present' | 'absent'
 ): Promise<boolean> => {
-  // Update local cache first
-  const polls = await getAllPolls();
-  const pollIndex = polls.findIndex(p => p.id === pollId);
-
-  if (pollIndex === -1) return false;
-
-  const poll = polls[pollIndex];
-
-  // Check if user already voted
-  const existingVoteIndex = poll.votes.findIndex(v => v.userId === userId);
-
-  // Get user position from current logged in user
-  // Note: userId should always be the current authenticated user's ID
-  const { getUser } = await import('./mock');
-  const currentUser = getUser();
-
-  // Validate that the userId matches the current user (security check)
-  if (currentUser?.id !== userId) {
-    console.warn('[POLLS] UserId mismatch - security issue detected');
-    return false;
-  }
-
-  const newVote: AttendancePollVote = {
-    userId,
-    userName,
-    option,
-    timestamp: new Date().toISOString(),
-    userPosition: currentUser?.position || undefined,
-  };
-
-  if (existingVoteIndex !== -1) {
-    // Update existing vote
-    poll.votes[existingVoteIndex] = newVote;
-  } else {
-    // Add new vote
-    poll.votes.push(newVote);
-  }
-
-  // Update caches
-  polls[pollIndex] = poll;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
-    ...poll,
-    updatedAt: new Date().toISOString(),
-  });
-
-  // Try to update backend
   try {
     await apiService.vote(pollId, option);
     console.log('[POLLS] Vote saved to backend');
-  } catch (error) {
-    console.warn('[POLLS] Failed to save vote to backend, will sync later:', error);
-    await addToOutbox('attendancePoll', 'vote', { pollId, userId, option });
-  }
 
-  return true;
+    // Update local cache
+    const polls = await getAllPolls();
+    const pollIndex = polls.findIndex(p => p.id === pollId);
+
+    if (pollIndex !== -1) {
+      const poll = polls[pollIndex];
+
+      // Check if user already voted
+      const existingVoteIndex = poll.votes.findIndex(v => v.userId === userId);
+
+      // Get user position from current logged in user
+      const { getUser } = await import('./mock');
+      const currentUser = getUser();
+
+      // Validate that the userId matches the current user (security check)
+      if (currentUser?.id !== userId) {
+        console.warn('[POLLS] UserId mismatch - security issue detected');
+        return false;
+      }
+
+      const newVote: AttendancePollVote = {
+        userId,
+        userName,
+        option,
+        timestamp: new Date().toISOString(),
+        userPosition: currentUser?.position || undefined,
+      };
+
+      if (existingVoteIndex !== -1) {
+        // Update existing vote
+        poll.votes[existingVoteIndex] = newVote;
+      } else {
+        // Add new vote
+        poll.votes.push(newVote);
+      }
+
+      // Update cache
+      polls[pollIndex] = poll;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[POLLS] Failed to save vote:', error);
+    return false;
+  }
 };
 
 /**
@@ -259,98 +201,88 @@ export const getPollResults = async (pollId: string): Promise<AttendancePollResu
     return results;
   } catch (error) {
     console.error('[POLLS] Failed to get results from backend:', error);
-    // Continue to local calculation as fallback
+
+    // Fallback: Calculate results from local cache
+    console.log('[POLLS] Calculating results from local cache...');
+    const poll = await getPollById(pollId);
+    if (!poll) return null;
+
+    const results: AttendancePollResults = {
+      training: 0,
+      present: 0,
+      absent: 0,
+      totalVotes: poll.votes.length,
+      voters: {
+        training: [],
+        present: [],
+        absent: [],
+      },
+    };
+
+    poll.votes.forEach(vote => {
+      if (vote.option === 'training') {
+        results.training++;
+        results.voters.training.push(vote);
+      } else if (vote.option === 'present') {
+        results.present++;
+        results.voters.present.push(vote);
+      } else if (vote.option === 'absent') {
+        results.absent++;
+        results.voters.absent.push(vote);
+      }
+    });
+
+    console.log('[POLLS] Results from local cache:', results);
+    return results;
   }
-
-  // Calculate results from local poll data (backend failed)
-  console.log('[POLLS] Calculating results from local cache...');
-  const poll = await getPollById(pollId);
-  if (!poll) return null;
-
-  const results: AttendancePollResults = {
-    training: 0,
-    present: 0,
-    absent: 0,
-    totalVotes: poll.votes.length,
-    voters: {
-      training: [],
-      present: [],
-      absent: [],
-    },
-  };
-
-  poll.votes.forEach(vote => {
-    if (vote.option === 'training') {
-      results.training++;
-      results.voters.training.push(vote);
-    } else if (vote.option === 'present') {
-      results.present++;
-      results.voters.present.push(vote);
-    } else if (vote.option === 'absent') {
-      results.absent++;
-      results.voters.absent.push(vote);
-    }
-  });
-
-  console.log('[POLLS] Results from local cache:', results);
-  return results;
 };
 
 /**
  * Close/deactivate a poll
  */
 export const closePoll = async (pollId: string): Promise<boolean> => {
-  // Update local cache
-  const polls = await getAllPolls();
-  const pollIndex = polls.findIndex(p => p.id === pollId);
-
-  if (pollIndex === -1) return false;
-
-  polls[pollIndex].isActive = false;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
-    ...polls[pollIndex],
-    updatedAt: new Date().toISOString(),
-  });
-
-  // Try to update backend
   try {
     await apiService.close(pollId);
     console.log('[POLLS] Poll closed on backend');
-  } catch (error) {
-    console.warn('[POLLS] Failed to close poll on backend:', error);
-    await addToOutbox('attendancePoll', 'close', { pollId });
-  }
 
-  return true;
+    // Update local cache
+    const polls = await getAllPolls();
+    const pollIndex = polls.findIndex(p => p.id === pollId);
+
+    if (pollIndex !== -1) {
+      polls[pollIndex].isActive = false;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[POLLS] Failed to close poll:', error);
+    return false;
+  }
 };
 
 /**
  * Delete poll
  */
 export const deletePoll = async (pollId: string): Promise<boolean> => {
-  // Remove from caches
-  const polls = await getAllPolls();
-  const filteredPolls = polls.filter(p => p.id !== pollId);
-
-  if (filteredPolls.length === polls.length) return false;
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredPolls));
-
-  // Try to delete from backend
   try {
     await apiService.delete(pollId);
     console.log('[POLLS] Poll deleted from backend');
-  } catch (error) {
-    console.warn('[POLLS] Failed to delete poll from backend:', error);
-    await addToOutbox('attendancePoll', 'delete', { pollId });
-  }
 
-  return true;
+    // Remove from local cache
+    const polls = await getAllPolls();
+    const filteredPolls = polls.filter(p => p.id !== pollId);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredPolls));
+
+    return true;
+  } catch (error) {
+    console.error('[POLLS] Failed to delete poll:', error);
+    return false;
+  }
 };
 
 /**
  * Get user's vote in a poll
- * Priority: Backend (if online) -> Local cache
  */
 export const getUserVote = async (pollId: string, userId: string): Promise<AttendancePollVote | null> => {
   try {
@@ -358,12 +290,7 @@ export const getUserVote = async (pollId: string, userId: string): Promise<Atten
     const poll = await apiService.getById(pollId) as AttendancePoll;
 
     if (poll) {
-      // Update local cache with fresh backend data
-        ...poll,
-        updatedAt: new Date().toISOString(),
-      });
-
-      // Also update localStorage cache
+      // Update localStorage cache
       const polls = await getAllPolls();
       const pollIndex = polls.findIndex(p => p.id === pollId);
       if (pollIndex !== -1) {
@@ -375,12 +302,13 @@ export const getUserVote = async (pollId: string, userId: string): Promise<Atten
       console.log('[POLLS] User vote from backend:', userVote ? userVote.option : 'no vote');
       return userVote;
     }
-  } catch (error) {
-    console.error('[POLLS] CRITICAL: Failed to get user vote from backend:', error);
-    // When backend fails, we should NOT trust local cache
-    // Return null to be safe and show the poll again
     return null;
-  }
+  } catch (error) {
+    console.error('[POLLS] Failed to get user vote:', error);
 
-  return null;
+    // Fallback to local cache
+    const poll = await getPollById(pollId);
+    if (!poll) return null;
+    return poll.votes.find(v => v.userId === userId) || null;
+  }
 };

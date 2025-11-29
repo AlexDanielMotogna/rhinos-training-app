@@ -1,3 +1,4 @@
+import { isOnline } from './online';
 import type { WorkoutReport } from './workoutAnalysis';
 import type { WorkoutSource, WorkoutEntry } from '../types/workout';
 import { workoutReportService } from './api';
