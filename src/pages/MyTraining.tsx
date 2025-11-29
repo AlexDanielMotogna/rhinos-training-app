@@ -97,75 +97,49 @@ export const MyTraining: React.FC = () => {
     user ? getWorkoutLogsByUser(user.id) : []
   );
 
-  // Load training types and assignments from backend (with offline support)
+  // Load training types and assignments from backend
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
 
-      console.log(`📡 Loading data - ${online ? 'ONLINE' : 'OFFLINE'} mode`);
+      console.log('📡 Loading data from backend...');
 
       try {
-        let types: any[] = [];
-        let playerAssignments: any[] = [];
+        // Fetch from API
+        const types = await trainingTypeService.getAll() as any[];
 
-        if (online) {
-          // Online: Fetch from API and cache
-          try {
-            types = await trainingTypeService.getAll() as any[];
-
-            const allAssignments = await assignmentService.getAll() as any[];
-            const today = new Date().toISOString().split('T')[0];
-
-            // Filter active assignments
-            // - Coaches see ALL active assignments
-            // - Players only see assignments they are included in
-            playerAssignments = allAssignments.filter((a: any) => {
-              const isActive = a.active && a.startDate <= today && (!a.endDate || a.endDate >= today);
-              if (!isActive) return false;
-
-              // Coaches see all active assignments
-              if (user.role === 'coach') return true;
-
-              // Players only see their assigned sessions
-              return a.playerIds?.includes(user.id);
-            });
-
-            console.log('✅ Loaded from API');
-
-            // Sync workout logs and reports from backend
-            await syncWorkoutLogsFromBackend(user.id);
-            await syncWorkoutReportsFromBackend(user.id);
-            // Note: User plans sync is now handled automatically by getUserPlansFromBackend
-
-            // Refresh local state after sync
-            refreshWorkoutHistory();
-          } catch (apiError) {
-            console.warn('⚠️ API failed, falling back to cache:', apiError);
-            // If API fails but we're online, fall back to cache
-            types = await getCachedTrainingTypes();
-            playerAssignments = await getPlayerAssignments(user.id, user.role);
-            console.log('📦 Loaded from cache (API error)');
-          }
-        } else {
-          // Offline: Load from cache
-          types = await getCachedTrainingTypes();
-          playerAssignments = await getPlayerAssignments(user.id, user.role);
-          console.log('📦 Loaded from offline cache');
-        }
-
-        // Filter only active assignments with dates
+        const allAssignments = await assignmentService.getAll() as any[];
         const today = new Date().toISOString().split('T')[0];
-        const activeFiltered = playerAssignments.filter((a: any) =>
-          a.active &&
-          a.startDate <= today &&
-          (!a.endDate || a.endDate >= today)
-        );
+
+        // Filter active assignments
+        // - Coaches see ALL active assignments
+        // - Players only see assignments they are included in
+        const playerAssignments = allAssignments.filter((a: any) => {
+          const isActive = a.active && a.startDate <= today && (!a.endDate || a.endDate >= today);
+          if (!isActive) return false;
+
+          // Coaches see all active assignments
+          if (user.role === 'coach') return true;
+
+          // Players only see their assigned sessions
+          return a.playerIds?.includes(user.id);
+        });
+
+        console.log('✅ Loaded from API');
+
+        // Sync workout logs and reports from backend
+        await syncWorkoutLogsFromBackend(user.id);
+        await syncWorkoutReportsFromBackend(user.id);
+
+        // Refresh local state after sync
+        refreshWorkoutHistory();
 
         setTrainingTypes(types);
-        setActiveAssignments(activeFiltered);
-        console.log('🎯 Loaded assignments:', activeFiltered);
+        setActiveAssignments(playerAssignments);
+        console.log('🎯 Loaded assignments:', playerAssignments);
       } catch (error) {
         console.error('❌ Error loading data:', error);
+        toastService.error('Failed to load training data');
       }
     };
 

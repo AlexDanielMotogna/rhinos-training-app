@@ -24,7 +24,7 @@ export function getUserPlans(userId: string): UserPlanTemplate[] {
  */
 export async function getUserPlansFromBackend(userId: string): Promise<UserPlanTemplate[]> {
   console.log('[USER PLANS] 🚀 Starting getUserPlansFromBackend for user:', userId);
-  const online = isOnline();
+  
   console.log('[USER PLANS] 🌐 Online status:', online);
   
   if (online) {
@@ -77,7 +77,7 @@ export async function createUserPlan(payload: UserPlanPayload): Promise<UserPlan
   localStorage.setItem(USER_PLANS_KEY, JSON.stringify(allPlans));
 
   // Try to save to backend if online
-  const online = isOnline();
+  
   if (online) {
     try {
       console.log('[USER PLANS] Saving plan to backend:', newPlan.name);
@@ -131,7 +131,7 @@ export async function updateUserPlan(planId: string, updates: Partial<UserPlanPa
   localStorage.setItem(USER_PLANS_KEY, JSON.stringify(allPlans));
 
   // Try to update backend if online
-  const online = isOnline();
+  
   if (online) {
     try {
       console.log('[USER PLANS] Updating plan on backend:', planId);
@@ -185,7 +185,7 @@ export async function deleteUserPlan(planId: string): Promise<boolean> {
   console.log('[USER PLANS] Marked plan as deleted:', planId);
 
   // Try to delete from backend if online, or add to outbox if offline
-  const online = isOnline();
+  
   if (online) {
     try {
       console.log('[USER PLANS] Deleting plan from backend:', planId);
@@ -242,7 +242,7 @@ export async function duplicateUserPlan(planId: string): Promise<UserPlanTemplat
  * Merges backend data with local cache
  */
 export async function syncUserPlansFromBackend(userId: string): Promise<void> {
-  const online = isOnline();
+  
 
   if (!online) {
     console.log('[USER PLANS] Offline - skipping backend sync');

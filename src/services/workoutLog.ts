@@ -163,7 +163,7 @@ export async function deleteWorkoutLog(logId: string): Promise<void> {
   console.log('[WORKOUT LOGS] Marked log as deleted:', logId);
 
   // Try to delete from backend if online
-  const online = isOnline();
+  
   if (online) {
     try {
       console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
@@ -192,7 +192,7 @@ export async function hardDeleteWorkoutLog(logId: string): Promise<void> {
   console.log('[WORKOUT LOGS] Marked log as hard deleted:', logId);
 
   // Try to delete from backend if online
-  const online = isOnline();
+  
   if (online) {
     try {
       console.log('[WORKOUT LOGS] Deleting log from backend:', logId);

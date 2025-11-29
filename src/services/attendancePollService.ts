@@ -18,8 +18,6 @@ export const getAllPolls = async (): Promise<AttendancePoll[]> => {
     const polls = await apiService.getAll() as AttendancePoll[];
 
     // Update caches
-    await db.attendancePolls.clear();
-    await db.attendancePolls.bulkPut(polls.map(p => ({
       ...p,
       updatedAt: new Date().toISOString(),
     })));
@@ -31,7 +29,6 @@ export const getAllPolls = async (): Promise<AttendancePoll[]> => {
     console.error('[POLLS ERROR] Failed to load polls:', error);
 
     // Fallback to IndexedDB
-    const cached = await db.attendancePolls.toArray();
     if (cached.length > 0) {
       return cached as AttendancePoll[];
     }
@@ -51,7 +48,6 @@ export const getActivePoll = async (): Promise<AttendancePoll | null> => {
 
     // Update cache if poll exists
     if (poll) {
-      await db.attendancePolls.put({
         ...poll,
         updatedAt: new Date().toISOString(),
       });
@@ -78,7 +74,6 @@ export const getPollById = async (id: string): Promise<AttendancePoll | null> =>
     const poll = await apiService.getById(id) as AttendancePoll;
 
     // Update cache
-    await db.attendancePolls.put({
       ...poll,
       updatedAt: new Date().toISOString(),
     });
@@ -120,7 +115,6 @@ export const createPoll = async (
   localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
 
   // Save to IndexedDB
-  await db.attendancePolls.put({
     ...newPoll,
     updatedAt: new Date().toISOString(),
   });
@@ -138,7 +132,6 @@ export const createPoll = async (
 
     // Update local caches with backend ID
     newPoll.id = created.id;
-    await db.attendancePolls.put({
       ...created,
       updatedAt: new Date().toISOString(),
     });
@@ -163,7 +156,6 @@ export const hasUserVoted = async (pollId: string, userId: string): Promise<bool
 
     if (poll) {
       // Update local cache with fresh backend data
-      await db.attendancePolls.put({
         ...poll,
         updatedAt: new Date().toISOString(),
       });
@@ -240,7 +232,6 @@ export const submitVote = async (
   // Update caches
   polls[pollIndex] = poll;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
-  await db.attendancePolls.put({
     ...poll,
     updatedAt: new Date().toISOString(),
   });
@@ -317,7 +308,6 @@ export const closePoll = async (pollId: string): Promise<boolean> => {
 
   polls[pollIndex].isActive = false;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(polls));
-  await db.attendancePolls.put({
     ...polls[pollIndex],
     updatedAt: new Date().toISOString(),
   });
@@ -345,7 +335,6 @@ export const deletePoll = async (pollId: string): Promise<boolean> => {
   if (filteredPolls.length === polls.length) return false;
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredPolls));
-  await db.attendancePolls.delete(pollId);
 
   // Try to delete from backend
   try {
@@ -370,7 +359,6 @@ export const getUserVote = async (pollId: string, userId: string): Promise<Atten
 
     if (poll) {
       // Update local cache with fresh backend data
-      await db.attendancePolls.put({
         ...poll,
         updatedAt: new Date().toISOString(),
       });
