@@ -11,9 +11,10 @@ import { AttendancePollModal } from './components/AttendancePollModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { getUser } from './services/userProfile';
+import { MyTraining } from './pages/MyTraining';
 import type { HardNotification as HardNotificationType } from './types/notification';
 import type { AttendancePoll } from './types/attendancePoll';
-import { getTeamBrandingAsync } from './services/teamSettings';
+import { getTeamBrandingAsync, getTeamSettings, updateAgeCategories } from './services/teamSettings';
 import type { TeamBranding } from './types/teamSettings';
 import { DEFAULT_TEAM_BRANDING } from './types/teamSettings';
 import { initializeDrillData } from './services/drillDataInit';
@@ -63,9 +64,9 @@ const createLazyComponent = (
 };
 
 // Lazy load all page components with error handling
+// NOTE: MyTraining is imported directly (not lazy) to avoid double loading spinner
 const Auth = createLazyComponent(() => import('./pages/Auth').then(m => ({ default: m.Auth })), 'Auth');
 const ResetPassword = createLazyComponent(() => import('./pages/ResetPassword'), 'ResetPassword');
-const MyTraining = createLazyComponent(() => import('./pages/MyTraining').then(m => ({ default: m.MyTraining })), 'MyTraining');
 const MyStats = createLazyComponent(() => import('./pages/MyStats').then(m => ({ default: m.MyStats })), 'MyStats');
 const Profile = createLazyComponent(() => import('./pages/Profile').then(m => ({ default: m.Profile })), 'Profile');
 const Attendance = createLazyComponent(() => import('./pages/Attendance').then(m => ({ default: m.Attendance })), 'Attendance');
@@ -100,6 +101,37 @@ function App() {
   // Clean up old mock data on app startup
   useEffect(() => {
     cleanupMockNotifications();
+  }, []);
+
+  // Initialize Rhinos categories on app startup (Kampfmannschaft & Jugend)
+  useEffect(() => {
+    const initializeRhinosCategories = async () => {
+      try {
+        const settings = getTeamSettings();
+
+        // Only initialize if categories are empty
+        if (!settings.allowedCategories || settings.allowedCategories.length === 0) {
+          console.log('🏈 Initializing USR Rhinos categories...');
+          await updateAgeCategories(['Kampfmannschaft', 'Jugend']);
+          console.log('✅ Rhinos categories initialized: Kampfmannschaft, Jugend');
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not initialize categories (backend may not be ready):', error);
+        // Fallback: Initialize in localStorage only
+        const STORAGE_KEY = 'rhinos_team_settings';
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const settings = JSON.parse(stored);
+          if (!settings.allowedCategories || settings.allowedCategories.length === 0) {
+            settings.allowedCategories = ['Kampfmannschaft', 'Jugend'];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+            console.log('✅ Rhinos categories initialized in localStorage');
+          }
+        }
+      }
+    };
+
+    initializeRhinosCategories();
   }, []);
 
   // Initialize branding from database on app startup
