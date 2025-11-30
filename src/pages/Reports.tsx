@@ -37,6 +37,7 @@ import { getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from 
 import { reportsService } from '../services/api';
 import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod, PlayerStatus } from '../types/report';
 import type { Position } from '../types/exercise';
+import { getTeamSettings } from '../services/teamSettings';
 
 type UnitFilter = 'all' | 'offense' | 'defense';
 
@@ -47,9 +48,13 @@ const ALL_POSITIONS: Position[] = [...OFFENSE_POSITIONS, ...DEFENSE_POSITIONS, '
 
 export const Reports: React.FC = () => {
   const { t } = useI18n();
+  const teamSettings = getTeamSettings();
+  const allowedCategories = teamSettings.allowedCategories || [];
+
   const [period, setPeriod] = useState<ReportPeriod>('day');
   const [unitFilter, setUnitFilter] = useState<UnitFilter>('all');
   const [positionFilter, setPositionFilter] = useState<Position | 'all'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<PlayerStatus | 'all'>('all');
   const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
@@ -63,12 +68,6 @@ export const Reports: React.FC = () => {
   }, []);
 
   const loadReports = async () => {
-    if (!isOnline()) {
-      setError('Offline - Cannot load reports');
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
@@ -110,7 +109,7 @@ export const Reports: React.FC = () => {
     return ALL_POSITIONS;
   }, [unitFilter]);
 
-  // Filter players based on unit, position, and status
+  // Filter players based on unit, position, category, and status
   const filteredPlayers = useMemo(() => {
     if (!currentReport) return [];
 
@@ -128,13 +127,18 @@ export const Reports: React.FC = () => {
       filtered = filtered.filter(p => p.position === positionFilter);
     }
 
+    // Apply category filter
+    if (categoryFilter) {
+      filtered = filtered.filter(p => p.ageCategory === categoryFilter);
+    }
+
     // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(p => p.status === statusFilter);
     }
 
     return filtered;
-  }, [currentReport, unitFilter, positionFilter, statusFilter]);
+  }, [currentReport, unitFilter, positionFilter, categoryFilter, statusFilter]);
 
   // Recalculate summary for filtered players
   const filteredSummary = useMemo(() => {
@@ -176,11 +180,6 @@ export const Reports: React.FC = () => {
         <Typography variant="h6" color="error">
           {error}
         </Typography>
-        {!isOnline() && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Reports require an internet connection
-          </Typography>
-        )}
       </Box>
     );
   }
@@ -217,14 +216,14 @@ export const Reports: React.FC = () => {
 
       {/* Filters */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} sm={allowedCategories.length > 0 ? 3 : 4}>
           <Tabs value={unitFilter} onChange={(_, val) => setUnitFilter(val)} variant="fullWidth">
             <Tab label={t('reports.filters.all')} value="all" />
             <Tab label={t('reports.filters.offense')} value="offense" />
             <Tab label={t('reports.filters.defense')} value="defense" />
           </Tabs>
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} sm={allowedCategories.length > 0 ? 3 : 4}>
           <FormControl fullWidth>
             <InputLabel>{t('reports.filters.position')}</InputLabel>
             <Select
@@ -241,7 +240,29 @@ export const Reports: React.FC = () => {
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} sm={4}>
+        {/* Age Category Filter - only show if team has categories configured */}
+        {allowedCategories.length > 0 && (
+          <Grid item xs={12} sm={3}>
+            <FormControl fullWidth>
+              <InputLabel>Age Category</InputLabel>
+              <Select
+                value={categoryFilter}
+                label="Age Category"
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>All Categories</em>
+                </MenuItem>
+                {allowedCategories.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        )}
+        <Grid item xs={12} sm={allowedCategories.length > 0 ? 3 : 4}>
           <FormControl fullWidth>
             <InputLabel>{t('reports.filters.status')}</InputLabel>
             <Select

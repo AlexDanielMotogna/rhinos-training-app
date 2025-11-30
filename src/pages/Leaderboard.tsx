@@ -21,6 +21,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useI18n } from '../i18n/I18nProvider';
 import { leaderboardService } from '../services/api';
 import type { Position } from '../types/exercise';
+import { getTeamSettings } from '../services/teamSettings';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
 
@@ -29,6 +30,7 @@ interface LeaderboardEntry {
   userId: string;
   playerName: string;
   position: string;
+  ageCategory?: string;
   totalPoints: number;
   targetPoints: number;
   workoutDays: number;
@@ -43,8 +45,12 @@ interface LeaderboardEntry {
 
 export const Leaderboard: React.FC = () => {
   const { t } = useI18n();
+  const teamSettings = getTeamSettings();
+  const allowedCategories = teamSettings.allowedCategories || [];
+
   const [window, setWindow] = useState<'7d' | '30d'>('7d');
   const [positionFilter, setPositionFilter] = useState<Position | ''>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,10 +60,16 @@ export const Leaderboard: React.FC = () => {
         setLoading(true);
         const response = await leaderboardService.getCurrentWeek();
 
-        // Filter by position if selected
-        const filtered = positionFilter
-          ? response.leaderboard.filter((entry: LeaderboardEntry) => entry.position === positionFilter)
-          : response.leaderboard;
+        // Filter by position and category
+        let filtered = response.leaderboard;
+
+        if (positionFilter) {
+          filtered = filtered.filter((entry: LeaderboardEntry) => entry.position === positionFilter);
+        }
+
+        if (categoryFilter) {
+          filtered = filtered.filter((entry: LeaderboardEntry) => entry.ageCategory === categoryFilter);
+        }
 
         setData(filtered);
       } catch (error) {
@@ -69,7 +81,7 @@ export const Leaderboard: React.FC = () => {
     };
 
     loadLeaderboard();
-  }, [positionFilter]);
+  }, [positionFilter, categoryFilter]);
 
   return (
     <Box>
@@ -107,6 +119,27 @@ export const Leaderboard: React.FC = () => {
             ))}
           </Select>
         </FormControl>
+
+        {/* Age Category Filter - only show if team has categories configured */}
+        {allowedCategories.length > 0 && (
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Age Category</InputLabel>
+            <Select
+              value={categoryFilter}
+              label="Age Category"
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <MenuItem value="">
+                <em>All Categories</em>
+              </MenuItem>
+              {allowedCategories.map((category) => (
+                <MenuItem key={category} value={category}>
+                  {category}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
       </Box>
 
       <TableContainer component={Paper}>

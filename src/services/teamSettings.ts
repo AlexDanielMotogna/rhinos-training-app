@@ -1,4 +1,3 @@
-import { isOnline } from './online';
 import type { TeamSettings, SeasonPhase, TeamLevel, TeamCategory, TeamBranding } from '../types/teamSettings';
 import { DEFAULT_TEAM_SETTINGS, DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
 import { teamSettingsService as teamSettingsApi } from './api';
@@ -23,6 +22,9 @@ export async function syncTeamSettingsFromBackend(): Promise<void> {
       teamLevel: backendSettings.teamLevel as TeamLevel,
       teamCategory: backendSettings.teamCategory as TeamCategory,
       aiApiKey: backendSettings.aiApiKey,
+      allowedCategories: Array.isArray(backendSettings.allowedCategories)
+        ? backendSettings.allowedCategories
+        : [],
       branding: {
         teamName: backendSettings.teamName,
         appName: backendSettings.appName || 'Rhinos Training',
@@ -146,6 +148,25 @@ export async function updateTeamBranding(
     return getTeamSettings();
   } catch (error) {
     console.error('Failed to update team branding on backend:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update age categories (with backend sync)
+ */
+export async function updateAgeCategories(categories: string[]): Promise<TeamSettings> {
+  try {
+    await teamSettingsApi.update({
+      allowedCategories: categories,
+    });
+
+    // Sync to update cache
+    await syncTeamSettingsFromBackend();
+
+    return getTeamSettings();
+  } catch (error) {
+    console.error('Failed to update age categories on backend:', error);
     throw error;
   }
 }

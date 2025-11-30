@@ -26,6 +26,10 @@ model User {
   heightCm      Float?
   position      String?  // 'RB' | 'WR' | 'LB' | etc.
   sex           String?  // 'male' | 'female'
+  ageCategory   String?  // Player's age category (e.g., 'U13', 'U15', 'Seniors')
+
+  // Coach-specific fields
+  coachCategories String[] @default([]) // Categories this coach manages (e.g., ['U13', 'U15'])
 
   // Contact info
   phone         String?
@@ -58,7 +62,6 @@ model User {
   // Relations
   sessionCreated    TrainingSession[]
   attendanceVotes   AttendancePollVote[]
-  workoutSyncs      WorkoutSync[]
 }
 
 // ========================================
@@ -195,29 +198,6 @@ model VideoTag {
 }
 
 // ========================================
-// WORKOUT SYNC (Offline → Online)
-// ========================================
-
-model WorkoutSync {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @db.ObjectId
-  localId     String   // UUID generated offline
-
-  // Workout data from offline device
-  planId      String?
-  trainingType String? // 'strength' | 'sprints'
-  completedAt String   // ISO datetime when completed offline
-  exercises   Json     // Array of {exerciseId, name, sets: [{reps, kg, rpe}]}
-  notes       String?
-
-  syncedAt    DateTime @default(now())
-
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, localId]) // Prevent duplicate syncs
-}
-
-// ========================================
 // TEAM SETTINGS (Online)
 // ========================================
 
@@ -234,6 +214,12 @@ model TeamSettings {
   seasonPhase    String   @default("off-season") // 'off-season' | 'pre-season' | 'in-season'
   teamLevel      String   @default("amateur") // 'amateur' | 'semi-pro' | 'pro' | 'youth' | 'recreational'
   teamCategory   String   @default("principal") // 'juvenil' | 'principal' | 'reserves' | 'academy'
+
+  // Age categories configuration (SaaS-ready: each team defines their own)
+  // Example: ['U8', 'U10', 'U13', 'U15', 'U17', 'U19', 'Seniors']
+  // Basketball: ['U12', 'U14', 'U16', 'U18', 'Senior']
+  // Handball: ['Minis', 'Cadets', 'Juniors', 'Seniors']
+  allowedCategories Json @default("[]") // Array of category strings
 
   // Optional AI API key for team-wide AI features
   aiApiKey       String?
