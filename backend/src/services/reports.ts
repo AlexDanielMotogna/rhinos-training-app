@@ -172,8 +172,7 @@ export async function generateDailyReport(date: Date = new Date(), categories: s
     select: {
       id: true,
       date: true,
-      startTime: true,
-      endTime: true,
+      time: true,
       location: true,
       address: true,
     },
@@ -199,7 +198,8 @@ export async function generateDailyReport(date: Date = new Date(), categories: s
     // Get assigned plan
     const assignment = await prisma.trainingAssignment.findFirst({
       where: {
-        playerId: user.id,
+        playerIds: { has: user.id },
+        active: true,
       },
       include: {
         template: true,
@@ -289,11 +289,11 @@ export async function generateDailyReport(date: Date = new Date(), categories: s
   // Format team sessions
   const formattedTeamSessions: TeamSession[] = teamSessions.map(session => ({
     date: session.date,
-    startTime: session.startTime,
-    endTime: session.endTime,
+    startTime: session.time,
+    endTime: session.time, // Schema uses single time field
     playersAttended: 0, // Would need attendance tracking
     totalPlayers: totalPlayers,
-    location: session.location,
+    location: session.location || '',
     address: session.address,
   }));
 
@@ -381,7 +381,8 @@ export async function generateWeeklyReport(startDate: Date = new Date(), categor
     // Get assigned plan
     const assignment = await prisma.trainingAssignment.findFirst({
       where: {
-        playerId: user.id,
+        playerIds: { has: user.id },
+        active: true,
       },
       include: {
         template: true,
@@ -562,7 +563,8 @@ export async function generateMonthlyReport(month: string, categories: string[] 
     // Get assigned plan
     const assignment = await prisma.trainingAssignment.findFirst({
       where: {
-        playerId: user.id,
+        playerIds: { has: user.id },
+        active: true,
       },
       include: {
         template: true,
