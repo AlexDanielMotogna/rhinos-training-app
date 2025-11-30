@@ -14,26 +14,42 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
-import { getAllUsers, syncAllUsersFromBackend } from '../services/userProfile';
+import { getAllUsers, syncAllUsersFromBackend, getUser } from '../services/userProfile';
 
 export const Team: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState(getAllUsers());
+  const [currentUser, setCurrentUser] = useState(getUser());
 
   // Sync users from backend on mount
   useEffect(() => {
     const syncUsers = async () => {
       await syncAllUsersFromBackend();
       setUsers(getAllUsers()); // Refresh after sync
+      setCurrentUser(getUser()); // Refresh current user after sync
     };
     syncUsers();
   }, []);
 
+  // Filter players by role
   const players = users.filter(user => user.role === 'player');
 
-  const filteredPlayers = players.filter(player =>
+  // Debug logging
+  console.log('[TEAM] Current user:', currentUser?.name, currentUser?.role, currentUser?.ageCategory);
+  console.log('[TEAM] Total players:', players.length);
+  console.log('[TEAM] Players categories:', players.map(p => ({ name: p.name, cat: p.ageCategory })));
+
+  // Filter by current user's category (players see only their category, coaches see all)
+  const categoryFilteredPlayers = currentUser?.role === 'player' && currentUser.ageCategory
+    ? players.filter(player => player.ageCategory === currentUser.ageCategory)
+    : players;
+
+  console.log('[TEAM] After category filter:', categoryFilteredPlayers.length);
+
+  // Filter by search query
+  const filteredPlayers = categoryFilteredPlayers.filter(player =>
     player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     player.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (player.jerseyNumber && player.jerseyNumber.toString().includes(searchQuery))

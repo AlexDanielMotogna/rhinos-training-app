@@ -126,16 +126,15 @@ export const Profile: React.FC = () => {
     loadTestResults();
   }, [user]);
 
-  // Helper function to load test result from backend or localStorage
+  // Helper function to load test result from backend only (no localStorage)
   const loadTestResult = async (
     testType: string,
     setSummary: (summary: any) => void,
-    localStorageKey: string
+    localStorageKey: string // Keeping parameter for compatibility but not using it
   ) => {
     try {
-      // Try to load from backend first
       console.log(`[PROFILE] Loading ${testType} test from backend...`);
-      
+
       let backendResult;
       if (isViewingOtherPlayer && user) {
         // Loading for another user - use the new endpoint
@@ -145,37 +144,17 @@ export const Profile: React.FC = () => {
         // Loading for current user - use existing endpoint
         backendResult = await testResultService.getLatest(testType);
       }
-      
+
       if (backendResult && typeof backendResult === 'object' && 'testData' in backendResult) {
         const testData = (backendResult as any).testData;
         console.log(`[PROFILE] ✅ Loaded ${testType} test from backend:`, testData);
         setSummary(testData);
-        
-        // Only update localStorage cache for current user's own data
-        if (!isViewingOtherPlayer) {
-          localStorage.setItem(localStorageKey, JSON.stringify(testData));
-        }
-        return;
+      } else {
+        console.log(`[PROFILE] 📭 No ${testType} test data found in backend`);
       }
     } catch (error) {
       console.warn(`[PROFILE] ⚠️ Failed to load ${testType} test from backend:`, error);
-    }
-
-    // Fallback to localStorage (only for current user's own profile)
-    if (!isViewingOtherPlayer) {
-      const localData = localStorage.getItem(localStorageKey);
-      if (localData) {
-        try {
-          console.log(`[PROFILE] 📦 Loading ${testType} test from localStorage`);
-          setSummary(JSON.parse(localData));
-        } catch (e) {
-          console.error(`[PROFILE] ❌ Failed to parse ${testType} test data from localStorage:`, e);
-        }
-      } else {
-        console.log(`[PROFILE] 📭 No ${testType} test data found in backend or localStorage`);
-      }
-    } else {
-      console.log(`[PROFILE] 📭 No ${testType} test data found in backend for visited user`);
+      console.log(`[PROFILE] 📭 No ${testType} test data available`);
     }
   };
 

@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import { messagesEN, MessageKey } from './messages/en';
 import { messagesDE } from './messages/de';
 import { userService } from '../services/api';
-import { isOnline } from '../services/sync';
 
 export type Locale = 'en' | 'de';
 
@@ -37,14 +36,12 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
     setLocaleState(newLocale);
     localStorage.setItem('locale', newLocale);
 
-    // Sync with backend if online
-    if (isOnline()) {
-      try {
-        await userService.updateProfile({ preferredLanguage: newLocale });
-        console.log(`[i18n] Language preference synced to backend: ${newLocale}`);
-      } catch (error) {
-        console.warn('[i18n] Failed to sync language preference to backend:', error);
-      }
+    // Sync with backend
+    try {
+      await userService.updateProfile({ preferredLanguage: newLocale });
+      console.log(`[i18n] Language preference synced to backend: ${newLocale}`);
+    } catch (error) {
+      console.warn('[i18n] Failed to sync language preference to backend:', error);
     }
   }, []);
 

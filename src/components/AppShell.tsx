@@ -37,13 +37,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { NotificationBell } from './NotificationBell';
-import { OfflineIndicator } from './OfflineIndicator';
 import {
   logout,
   getUser,
 } from '../services/mock';
 import { notificationService } from '../services/api';
-import { isOnline } from '../services/sync';
 import type { Notification } from '../types/notification';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 import { getTeamBrandingAsync } from '../services/teamSettings';
@@ -76,11 +74,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   useEffect(() => {
     // Load notifications from backend
     const loadNotifications = async () => {
-      if (!isOnline()) {
-        console.log('[NOTIFICATIONS] Offline - skipping notification sync');
-        return;
-      }
-
       try {
         const backendNotifications = await notificationService.getAll();
 
@@ -152,11 +145,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   const handleMarkAsRead = async (id: string) => {
-    if (!isOnline()) {
-      console.warn('[NOTIFICATIONS] Cannot mark as read while offline');
-      return;
-    }
-
     try {
       await notificationService.markAsRead(id);
 
@@ -170,11 +158,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   const handleMarkAllAsRead = async () => {
-    if (!isOnline()) {
-      console.warn('[NOTIFICATIONS] Cannot mark all as read while offline');
-      return;
-    }
-
     try {
       await notificationService.markAllAsRead();
 
@@ -228,8 +211,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             onMarkAllAsRead={handleMarkAllAsRead}
             onNotificationClick={handleNotificationClick}
           />
-
-          <OfflineIndicator />
 
           <LanguageSwitcher />
 

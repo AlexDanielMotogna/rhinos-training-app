@@ -21,6 +21,8 @@ const signupSchema = z.object({
   heightCm: z.number().optional(),
   position: z.string().optional(),
   sex: z.enum(['male', 'female']).optional(),
+  ageCategory: z.string().optional(),
+  coachCategories: z.array(z.string()).optional(),
 });
 
 const loginSchema = z.object({
@@ -75,6 +77,8 @@ router.post('/signup', async (req, res) => {
         heightCm: data.heightCm,
         position: data.position,
         sex: data.sex,
+        ageCategory: data.ageCategory,
+        coachCategories: data.coachCategories || [],
       },
     });
 
@@ -104,6 +108,8 @@ router.post('/signup', async (req, res) => {
         heightCm: user.heightCm,
         sex: user.sex,
         metricsPublic: user.metricsPublic,
+        ageCategory: user.ageCategory,
+        coachCategories: user.coachCategories,
       },
     });
   } catch (error) {
@@ -164,6 +170,8 @@ router.post('/login', async (req, res) => {
         hudl: user.hudl,
         metricsPublic: user.metricsPublic,
         aiCoachEnabled: user.aiCoachEnabled,
+        ageCategory: user.ageCategory,
+        coachCategories: user.coachCategories,
       },
     });
   } catch (error) {

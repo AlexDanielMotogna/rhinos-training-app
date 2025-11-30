@@ -8,6 +8,7 @@ export interface PlayerDailyReport {
   playerId: string;
   playerName: string;
   position: Position;
+  ageCategory?: string;
   status: PlayerStatus;
   workoutsCompleted: number;
   workoutsAssigned: number; // Based on frequencyPerWeek from assigned training plan

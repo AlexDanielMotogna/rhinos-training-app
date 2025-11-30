@@ -11,6 +11,7 @@ import { AttendancePollModal } from './components/AttendancePollModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { getUser } from './services/userProfile';
+import { MyTraining } from './pages/MyTraining';
 import type { HardNotification as HardNotificationType } from './types/notification';
 import type { AttendancePoll } from './types/attendancePoll';
 import { getTeamBrandingAsync } from './services/teamSettings';
@@ -63,9 +64,9 @@ const createLazyComponent = (
 };
 
 // Lazy load all page components with error handling
+// NOTE: MyTraining is imported directly (not lazy) to avoid double loading spinner
 const Auth = createLazyComponent(() => import('./pages/Auth').then(m => ({ default: m.Auth })), 'Auth');
 const ResetPassword = createLazyComponent(() => import('./pages/ResetPassword'), 'ResetPassword');
-const MyTraining = createLazyComponent(() => import('./pages/MyTraining').then(m => ({ default: m.MyTraining })), 'MyTraining');
 const MyStats = createLazyComponent(() => import('./pages/MyStats').then(m => ({ default: m.MyStats })), 'MyStats');
 const Profile = createLazyComponent(() => import('./pages/Profile').then(m => ({ default: m.Profile })), 'Profile');
 const Attendance = createLazyComponent(() => import('./pages/Attendance').then(m => ({ default: m.Attendance })), 'Attendance');

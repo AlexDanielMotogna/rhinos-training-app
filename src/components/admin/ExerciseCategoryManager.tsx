@@ -19,7 +19,6 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { exerciseCategoryService } from '../../services/api';
-import { isOnline } from '../../services/sync';
 import type { ExerciseCategoryData } from '../../types/exercise';
 
 export const ExerciseCategoryManager: React.FC = () => {
@@ -44,12 +43,6 @@ export const ExerciseCategoryManager: React.FC = () => {
   }, []);
 
   const loadCategories = async () => {
-    if (!isOnline()) {
-      setError('Offline - Cannot load categories');
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       const data = await exerciseCategoryService.getAll();
@@ -95,11 +88,6 @@ export const ExerciseCategoryManager: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!isOnline()) {
-      setError('Offline - Cannot save');
-      return;
-    }
-
     try {
       if (editingCategory) {
         await exerciseCategoryService.update(editingCategory.id, formData);
@@ -119,11 +107,6 @@ export const ExerciseCategoryManager: React.FC = () => {
       return;
     }
 
-    if (!isOnline()) {
-      alert('Offline - Cannot delete');
-      return;
-    }
-
     try {
       await exerciseCategoryService.delete(id);
       await loadCategories();
@@ -135,11 +118,6 @@ export const ExerciseCategoryManager: React.FC = () => {
 
   const handleInitialize = async () => {
     if (!confirm('Initialize default exercise categories? This will add 8 standard categories.')) {
-      return;
-    }
-
-    if (!isOnline()) {
-      alert('Offline - Cannot initialize');
       return;
     }
 

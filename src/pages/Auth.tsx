@@ -13,6 +13,8 @@ import {
   Link,
   Alert,
   CircularProgress,
+  Checkbox,
+  ListItemText,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
@@ -26,9 +28,13 @@ import { toastService } from '../services/toast';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
 
+// Rhinos-specific categories (hardcoded for simplicity)
+const RHINOS_CATEGORIES = ['Kampfmannschaft', 'Jugend'];
+
 export const Auth: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
+
   const [isSignup, setIsSignup] = useState(false);
 
   const [name, setName] = useState('');
@@ -42,6 +48,8 @@ export const Auth: React.FC = () => {
   const [position, setPosition] = useState<Position>('RB');
   const [role, setRole] = useState<'player' | 'coach'>('player');
   const [sex, setSex] = useState<'male' | 'female'>('male');
+  const [ageCategory, setAgeCategory] = useState('');
+  const [coachCategories, setCoachCategories] = useState<string[]>([]);
   const [coachCode, setCoachCode] = useState('');
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,6 +89,8 @@ export const Auth: React.FC = () => {
           heightCm: heightCm ? Number(heightCm) : undefined,
           position: role === 'player' ? position : undefined,
           sex,
+          ageCategory: role === 'player' && ageCategory ? ageCategory : undefined,
+          coachCategories: role === 'coach' && coachCategories.length > 0 ? coachCategories : undefined,
         });
         toastService.success(`Welcome, ${name}! Account created successfully`);
       } else {
@@ -104,8 +114,8 @@ export const Auth: React.FC = () => {
 
   const isValid = isSignup
     ? role === 'coach'
-      ? name && email && password.length >= 6 && confirmPassword && password === confirmPassword && coachCode && birthDate && weightKg && heightCm
-      : name && email && password.length >= 6 && confirmPassword && password === confirmPassword && birthDate && weightKg && heightCm
+      ? name && email && password.length >= 6 && confirmPassword && password === confirmPassword && coachCode && birthDate && weightKg && heightCm && coachCategories.length > 0
+      : name && email && password.length >= 6 && confirmPassword && password === confirmPassword && birthDate && weightKg && heightCm && ageCategory
     : email && password;
 
   return (
@@ -214,6 +224,42 @@ export const Auth: React.FC = () => {
                       </Select>
                     </FormControl>
                   </Box>
+                )}
+
+                {/* Age Category Selection - Always shown for Rhinos */}
+                {role === 'player' ? (
+                  <FormControl required fullWidth>
+                    <InputLabel>Team Category / Mannschaft</InputLabel>
+                    <Select
+                      value={ageCategory}
+                      label="Team Category / Mannschaft"
+                      onChange={(e) => setAgeCategory(e.target.value)}
+                    >
+                      {RHINOS_CATEGORIES.map((category) => (
+                        <MenuItem key={category} value={category}>
+                          {category}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                ) : (
+                  <FormControl required fullWidth>
+                    <InputLabel>Categories You Coach / Kategorien die Sie trainieren</InputLabel>
+                    <Select
+                      multiple
+                      value={coachCategories}
+                      label="Categories You Coach / Kategorien die Sie trainieren"
+                      onChange={(e) => setCoachCategories(typeof e.target.value === 'string' ? [e.target.value] : e.target.value)}
+                      renderValue={(selected) => (selected as string[]).join(', ')}
+                    >
+                      {RHINOS_CATEGORIES.map((category) => (
+                        <MenuItem key={category} value={category}>
+                          <Checkbox checked={coachCategories.includes(category)} />
+                          <ListItemText primary={category} />
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 )}
 
                 {/* Common fields for both players and coaches */}

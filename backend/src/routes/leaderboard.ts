@@ -1,5 +1,4 @@
 import express from 'express';
-import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -8,94 +7,167 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Validation schema for sync request
-const syncWeeklyPointsSchema = z.object({
-  week: z.string().regex(/^\d{4}-W\d{2}$/, 'Week must be in format YYYY-Www'),
-  totalPoints: z.number().min(0),
-  targetPoints: z.number().int().min(0),
-  workoutDays: z.number().int().min(0).max(7),
-  teamTrainingDays: z.number().int().min(0).max(7),
-  coachWorkoutDays: z.number().int().min(0).max(7),
-  personalWorkoutDays: z.number().int().min(0).max(7),
-  breakdown: z.array(z.object({
-    date: z.string(),
-    workoutTitle: z.string(),
-    category: z.string(),
-    points: z.number(),
-    source: z.string(),
-    duration: z.number().optional(),
-    totalSets: z.number().optional(),
-    totalVolume: z.number().optional(),
-    totalDistance: z.number().optional(),
-  })),
-});
+// Helper to get start and end dates for a month
+function getMonthDateRange(year: number, month: number): { startDate: string; endDate: string } {
+  const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+  return { startDate, endDate };
+}
 
 // ========================================
-// GET /api/leaderboard - Get current week leaderboard
+// GET /api/leaderboard - Get current month leaderboard (filtered by category)
 // ========================================
 router.get('/', async (req, res) => {
   try {
-    // Get current ISO week (format: "2025-W03")
+    const user = (req as any).user;
+    const requestedCategory = req.query.category as string | undefined;
     const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
-    const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
-    const currentWeek = `${now.getFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 1-12
+    const currentMonth = `${year}-${month.toString().padStart(2, '0')}`;
+    const { startDate, endDate } = getMonthDateRange(year, month);
 
-    // Get all players' points for current week
-    const weeklyPoints = await prisma.playerWeeklyPoints.findMany({
-      where: { week: currentWeek },
-      orderBy: { totalPoints: 'desc' },
+    // Get user's category info for filtering
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { role: true, ageCategory: true, coachCategories: true },
     });
 
-    // Get user info for each player
-    const userIds = weeklyPoints.map(p => p.userId);
-    const users = await prisma.user.findMany({
-      where: { id: { in: userIds } },
+    // Determine which categories to filter by
+    let categoryFilter: string[] = [];
+
+    // If specific category requested, use it (but only if user has access)
+    if (requestedCategory) {
+      // Players can only see their own category
+      if (dbUser?.role === 'player') {
+        if (dbUser.ageCategory === requestedCategory) {
+          categoryFilter = [requestedCategory];
+        } else {
+          categoryFilter = dbUser.ageCategory ? [dbUser.ageCategory] : [];
+        }
+      }
+      // Coaches can see any of their assigned categories
+      else if (dbUser?.role === 'coach') {
+        if (dbUser.coachCategories?.includes(requestedCategory)) {
+          categoryFilter = [requestedCategory];
+        } else if (dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+          categoryFilter = [dbUser.coachCategories[0]]; // Default to first category
+        }
+      }
+    } else {
+      // No specific category requested - use defaults
+      if (dbUser?.role === 'player' && dbUser?.ageCategory) {
+        categoryFilter = [dbUser.ageCategory];
+      } else if (dbUser?.role === 'coach' && dbUser?.coachCategories && dbUser.coachCategories.length > 0) {
+        // Coaches default to first category instead of all
+        categoryFilter = [dbUser.coachCategories[0]];
+      }
+    }
+
+    // Get users to include based on category (players in category + coaches with that category)
+    let userIdsToInclude: string[] | null = null;
+    if (categoryFilter.length > 0) {
+      // Get players in the category
+      const playersInCategories = await prisma.user.findMany({
+        where: {
+          role: 'player',
+          ageCategory: { in: categoryFilter },
+        },
+        select: { id: true },
+      });
+
+      // Get coaches that have this category assigned (they can also train!)
+      const coachesInCategories = await prisma.user.findMany({
+        where: {
+          role: 'coach',
+          coachCategories: { hasSome: categoryFilter },
+        },
+        select: { id: true },
+      });
+
+      userIdsToInclude = [
+        ...playersInCategories.map(p => p.id),
+        ...coachesInCategories.map(c => c.id),
+      ];
+    }
+
+    // Get all workouts for the month (directly from WorkoutLog)
+    const workoutsWhere: any = {
+      date: { gte: startDate, lte: endDate },
+    };
+    if (userIdsToInclude !== null) {
+      workoutsWhere.userId = { in: userIdsToInclude };
+    }
+
+    const workouts = await prisma.workoutLog.findMany({
+      where: workoutsWhere,
       select: {
-        id: true,
-        name: true,
-        position: true,
+        userId: true,
+        userName: true,
+        date: true,
+        points: true,
       },
     });
 
-    // Build leaderboard with user info
-    const leaderboard = weeklyPoints.map((points, index) => {
-      const user = users.find(u => u.id === points.userId);
+    // Aggregate points by user
+    const userPointsMap = new Map<string, {
+      userName: string;
+      totalPoints: number;
+      workoutDates: Set<string>;
+    }>();
 
-      // Calculate metrics
-      const compliancePct = points.targetPoints > 0
-        ? Math.round((points.totalPoints / points.targetPoints) * 100)
-        : 0;
-
-      const attendancePct = points.workoutDays > 0
-        ? Math.round((points.workoutDays / 7) * 100)
-        : 0;
-
-      const freeSharePct = points.workoutDays > 0
-        ? Math.round((points.personalWorkoutDays / points.workoutDays) * 100)
-        : 0;
-
-      return {
-        rank: index + 1,
-        userId: points.userId,
-        playerName: user?.name || 'Unknown',
-        position: user?.position || 'N/A',
-        totalPoints: points.totalPoints,
-        targetPoints: points.targetPoints,
-        workoutDays: points.workoutDays,
-        compliancePct,
-        attendancePct,
-        freeSharePct,
-        teamTrainingDays: points.teamTrainingDays,
-        coachWorkoutDays: points.coachWorkoutDays,
-        personalWorkoutDays: points.personalWorkoutDays,
-        lastUpdated: points.lastUpdated,
+    workouts.forEach(workout => {
+      const existing = userPointsMap.get(workout.userId) || {
+        userName: workout.userName || 'Unknown',
+        totalPoints: 0,
+        workoutDates: new Set<string>(),
       };
+
+      existing.totalPoints += workout.points || 0;
+      existing.workoutDates.add(workout.date);
+      userPointsMap.set(workout.userId, existing);
     });
 
-    console.log(`[LEADERBOARD] Fetched leaderboard for week ${currentWeek}: ${leaderboard.length} players`);
-    res.json({ week: currentWeek, leaderboard });
+    // Get user info and sort by points
+    const userIds = Array.from(userPointsMap.keys());
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, position: true, ageCategory: true, role: true },
+    });
+
+    // Build and sort leaderboard
+    const leaderboard = Array.from(userPointsMap.entries())
+      .map(([userId, data]) => {
+        const userInfo = users.find(u => u.id === userId);
+        return {
+          userId,
+          playerName: userInfo?.name || data.userName,
+          position: userInfo?.position || '-',
+          ageCategory: userInfo?.ageCategory,
+          role: userInfo?.role || 'player',
+          totalPoints: data.totalPoints,
+          workoutDays: data.workoutDates.size,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .map((entry, index) => ({ rank: index + 1, ...entry }));
+
+    // Determine available categories for the user
+    let availableCategories: string[] = [];
+    if (dbUser?.role === 'player' && dbUser?.ageCategory) {
+      availableCategories = [dbUser.ageCategory];
+    } else if (dbUser?.role === 'coach' && dbUser?.coachCategories) {
+      availableCategories = dbUser.coachCategories;
+    }
+
+    console.log(`[LEADERBOARD] Fetched leaderboard for month ${currentMonth}, category ${categoryFilter[0] || 'all'}: ${leaderboard.length} players`);
+    res.json({
+      month: currentMonth,
+      leaderboard,
+      currentCategory: categoryFilter[0] || null,
+      availableCategories,
+    });
   } catch (error) {
     console.error('[LEADERBOARD] Get leaderboard error:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
@@ -103,145 +175,166 @@ router.get('/', async (req, res) => {
 });
 
 // ========================================
-// GET /api/leaderboard/:week - Get specific week leaderboard
+// GET /api/leaderboard/month/:month - Get specific month leaderboard (filtered by category)
 // ========================================
-router.get('/:week', async (req, res) => {
-  try {
-    const { week } = req.params;
-
-    // Validate week format
-    if (!/^\d{4}-W\d{2}$/.test(week)) {
-      return res.status(400).json({ error: 'Week must be in format YYYY-Www' });
-    }
-
-    // Get all players' points for specified week
-    const weeklyPoints = await prisma.playerWeeklyPoints.findMany({
-      where: { week },
-      orderBy: { totalPoints: 'desc' },
-    });
-
-    // Get user info for each player
-    const userIds = weeklyPoints.map(p => p.userId);
-    const users = await prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: {
-        id: true,
-        name: true,
-        position: true,
-      },
-    });
-
-    // Build leaderboard with user info
-    const leaderboard = weeklyPoints.map((points, index) => {
-      const user = users.find(u => u.id === points.userId);
-
-      // Calculate metrics
-      const compliancePct = points.targetPoints > 0
-        ? Math.round((points.totalPoints / points.targetPoints) * 100)
-        : 0;
-
-      const attendancePct = points.workoutDays > 0
-        ? Math.round((points.workoutDays / 7) * 100)
-        : 0;
-
-      const freeSharePct = points.workoutDays > 0
-        ? Math.round((points.personalWorkoutDays / points.workoutDays) * 100)
-        : 0;
-
-      return {
-        rank: index + 1,
-        userId: points.userId,
-        playerName: user?.name || 'Unknown',
-        position: user?.position || 'N/A',
-        totalPoints: points.totalPoints,
-        targetPoints: points.targetPoints,
-        workoutDays: points.workoutDays,
-        compliancePct,
-        attendancePct,
-        freeSharePct,
-        teamTrainingDays: points.teamTrainingDays,
-        coachWorkoutDays: points.coachWorkoutDays,
-        personalWorkoutDays: points.personalWorkoutDays,
-        lastUpdated: points.lastUpdated,
-      };
-    });
-
-    console.log(`[LEADERBOARD] Fetched leaderboard for week ${week}: ${leaderboard.length} players`);
-    res.json({ week, leaderboard });
-  } catch (error) {
-    console.error('[LEADERBOARD] Get leaderboard for week error:', error);
-    res.status(500).json({ error: 'Failed to fetch leaderboard' });
-  }
-});
-
-// ========================================
-// GET /api/leaderboard/player/:userId - Get player's weekly history
-// ========================================
-router.get('/player/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    // Get all weeks for this player, sorted by most recent first
-    const weeklyPoints = await prisma.playerWeeklyPoints.findMany({
-      where: { userId },
-      orderBy: { week: 'desc' },
-    });
-
-    console.log(`[LEADERBOARD] Fetched player history for ${userId}: ${weeklyPoints.length} weeks`);
-    res.json({ userId, history: weeklyPoints });
-  } catch (error) {
-    console.error('[LEADERBOARD] Get player history error:', error);
-    res.status(500).json({ error: 'Failed to fetch player history' });
-  }
-});
-
-// ========================================
-// POST /api/leaderboard/sync - Sync player's weekly points
-// ========================================
-router.post('/sync', async (req, res) => {
+router.get('/month/:month', async (req, res) => {
   try {
     const user = (req as any).user;
-    const data = syncWeeklyPointsSchema.parse(req.body);
+    const { month } = req.params;
+    const requestedCategory = req.query.category as string | undefined;
 
-    // Upsert player weekly points (create or update)
-    const weeklyPoints = await prisma.playerWeeklyPoints.upsert({
-      where: {
-        userId_week: {
-          userId: user.userId,
-          week: data.week,
+    // Validate month format (YYYY-MM)
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      return res.status(400).json({ error: 'Month must be in format YYYY-MM' });
+    }
+
+    const [yearStr, monthStr] = month.split('-');
+    const year = parseInt(yearStr);
+    const monthNum = parseInt(monthStr);
+    const { startDate, endDate } = getMonthDateRange(year, monthNum);
+
+    // Get user's category info for filtering
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { role: true, ageCategory: true, coachCategories: true },
+    });
+
+    // Determine which categories to filter by
+    let categoryFilter: string[] = [];
+
+    // If specific category requested, use it (but only if user has access)
+    if (requestedCategory) {
+      // Players can only see their own category
+      if (dbUser?.role === 'player') {
+        if (dbUser.ageCategory === requestedCategory) {
+          categoryFilter = [requestedCategory];
+        } else {
+          categoryFilter = dbUser.ageCategory ? [dbUser.ageCategory] : [];
+        }
+      }
+      // Coaches can see any of their assigned categories
+      else if (dbUser?.role === 'coach') {
+        if (dbUser.coachCategories?.includes(requestedCategory)) {
+          categoryFilter = [requestedCategory];
+        } else if (dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+          categoryFilter = [dbUser.coachCategories[0]];
+        }
+      }
+    } else {
+      // No specific category requested - use defaults
+      if (dbUser?.role === 'player' && dbUser?.ageCategory) {
+        categoryFilter = [dbUser.ageCategory];
+      } else if (dbUser?.role === 'coach' && dbUser?.coachCategories && dbUser.coachCategories.length > 0) {
+        categoryFilter = [dbUser.coachCategories[0]];
+      }
+    }
+
+    // Get users to include based on category (players in category + coaches with that category)
+    let userIdsToInclude: string[] | null = null;
+    if (categoryFilter.length > 0) {
+      // Get players in the category
+      const playersInCategories = await prisma.user.findMany({
+        where: {
+          role: 'player',
+          ageCategory: { in: categoryFilter },
         },
-      },
-      update: {
-        totalPoints: data.totalPoints,
-        targetPoints: data.targetPoints,
-        workoutDays: data.workoutDays,
-        teamTrainingDays: data.teamTrainingDays,
-        coachWorkoutDays: data.coachWorkoutDays,
-        personalWorkoutDays: data.personalWorkoutDays,
-        breakdown: data.breakdown,
-        lastUpdated: new Date(),
-      },
-      create: {
-        userId: user.userId,
-        week: data.week,
-        totalPoints: data.totalPoints,
-        targetPoints: data.targetPoints,
-        workoutDays: data.workoutDays,
-        teamTrainingDays: data.teamTrainingDays,
-        coachWorkoutDays: data.coachWorkoutDays,
-        personalWorkoutDays: data.personalWorkoutDays,
-        breakdown: data.breakdown,
+        select: { id: true },
+      });
+
+      // Get coaches that have this category assigned (they can also train!)
+      const coachesInCategories = await prisma.user.findMany({
+        where: {
+          role: 'coach',
+          coachCategories: { hasSome: categoryFilter },
+        },
+        select: { id: true },
+      });
+
+      userIdsToInclude = [
+        ...playersInCategories.map(p => p.id),
+        ...coachesInCategories.map(c => c.id),
+      ];
+    }
+
+    // Get all workouts for the month (directly from WorkoutLog)
+    const workoutsWhere: any = {
+      date: { gte: startDate, lte: endDate },
+    };
+    if (userIdsToInclude !== null) {
+      workoutsWhere.userId = { in: userIdsToInclude };
+    }
+
+    const workouts = await prisma.workoutLog.findMany({
+      where: workoutsWhere,
+      select: {
+        userId: true,
+        userName: true,
+        date: true,
+        points: true,
       },
     });
 
-    console.log(`[LEADERBOARD] Synced points for ${user.email}, week ${data.week}: ${data.totalPoints} points`);
-    res.json(weeklyPoints);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+    // Aggregate points by user
+    const userPointsMap = new Map<string, {
+      userName: string;
+      totalPoints: number;
+      workoutDates: Set<string>;
+    }>();
+
+    workouts.forEach(workout => {
+      const existing = userPointsMap.get(workout.userId) || {
+        userName: workout.userName || 'Unknown',
+        totalPoints: 0,
+        workoutDates: new Set<string>(),
+      };
+
+      existing.totalPoints += workout.points || 0;
+      existing.workoutDates.add(workout.date);
+      userPointsMap.set(workout.userId, existing);
+    });
+
+    // Get user info and sort by points
+    const userIds = Array.from(userPointsMap.keys());
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, position: true, ageCategory: true, role: true },
+    });
+
+    // Build and sort leaderboard
+    const leaderboard = Array.from(userPointsMap.entries())
+      .map(([userId, data]) => {
+        const userInfo = users.find(u => u.id === userId);
+        return {
+          userId,
+          playerName: userInfo?.name || data.userName,
+          position: userInfo?.position || '-',
+          ageCategory: userInfo?.ageCategory,
+          role: userInfo?.role || 'player',
+          totalPoints: data.totalPoints,
+          workoutDays: data.workoutDates.size,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .map((entry, index) => ({ rank: index + 1, ...entry }));
+
+    // Determine available categories for the user
+    let availableCategories: string[] = [];
+    if (dbUser?.role === 'player' && dbUser?.ageCategory) {
+      availableCategories = [dbUser.ageCategory];
+    } else if (dbUser?.role === 'coach' && dbUser?.coachCategories) {
+      availableCategories = dbUser.coachCategories;
     }
-    console.error('[LEADERBOARD] Sync points error:', error);
-    res.status(500).json({ error: 'Failed to sync points' });
+
+    console.log(`[LEADERBOARD] Fetched leaderboard for month ${month}, category ${categoryFilter[0] || 'all'}: ${leaderboard.length} players`);
+    res.json({
+      month,
+      leaderboard,
+      currentCategory: categoryFilter[0] || null,
+      availableCategories,
+    });
+  } catch (error) {
+    console.error('[LEADERBOARD] Get leaderboard for month error:', error);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });
 

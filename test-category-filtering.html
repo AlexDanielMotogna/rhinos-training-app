@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Category Filtering Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #203731; }
+        h2 { color: #FFB612; border-bottom: 2px solid #FFB612; padding-bottom: 10px; }
+        .success { color: #4caf50; font-weight: bold; }
+        .info { color: #2196f3; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #203731;
+            color: white;
+        }
+        tr:hover { background-color: #f5f5f5; }
+        .filter-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        select {
+            padding: 8px 12px;
+            margin: 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-u13 { background: #e3f2fd; color: #1976d2; }
+        .badge-u15 { background: #fff3e0; color: #f57c00; }
+        .badge-u17 { background: #f3e5f5; color: #7b1fa2; }
+        .badge-seniors { background: #e8f5e9; color: #388e3c; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Age Category System - Live Filtering Test</h1>
+
+    <div class="test-section">
+        <h2>Test 1: Category Filter (Leaderboard Simulation)</h2>
+        <div class="filter-controls">
+            <label><strong>Age Category:</strong></label>
+            <select id="categoryFilter" onchange="applyFilters()">
+                <option value="">All Categories</option>
+                <option value="U13">U13</option>
+                <option value="U15">U15</option>
+                <option value="U17">U17</option>
+                <option value="Seniors">Seniors</option>
+            </select>
+
+            <label><strong>Position:</strong></label>
+            <select id="positionFilter" onchange="applyFilters()">
+                <option value="">All Positions</option>
+                <option value="RB">RB</option>
+                <option value="WR">WR</option>
+                <option value="LB">LB</option>
+                <option value="QB">QB</option>
+            </select>
+
+            <span id="filterInfo" class="info"></span>
+        </div>
+
+        <table id="leaderboardTable">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Player</th>
+                    <th>Position</th>
+                    <th>Category</th>
+                    <th>Score</th>
+                    <th>Compliance</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Multi-Sport Category Examples</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+            <div>
+                <h3>🏈 American Football</h3>
+                <ul id="footballCategories"></ul>
+            </div>
+            <div>
+                <h3>🏀 Basketball</h3>
+                <ul id="basketballCategories"></ul>
+            </div>
+            <div>
+                <h3>🤾 Handball</h3>
+                <ul id="handballCategories"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Mock leaderboard data
+        const mockLeaderboard = [
+            { rank: 1, playerName: 'Alex Johnson', position: 'RB', ageCategory: 'U17', score: 95.5, compliance: 98 },
+            { rank: 2, playerName: 'Maria Garcia', position: 'WR', ageCategory: 'U15', score: 92.3, compliance: 95 },
+            { rank: 3, playerName: 'Tom Wilson', position: 'LB', ageCategory: 'Seniors', score: 91.8, compliance: 94 },
+            { rank: 4, playerName: 'Emma Brown', position: 'QB', ageCategory: 'U17', score: 90.2, compliance: 92 },
+            { rank: 5, playerName: 'James Davis', position: 'RB', ageCategory: 'U13', score: 88.5, compliance: 90 },
+            { rank: 6, playerName: 'Sophie Miller', position: 'WR', ageCategory: 'U15', score: 87.9, compliance: 89 },
+            { rank: 7, playerName: 'Michael Lee', position: 'LB', ageCategory: 'Seniors', score: 86.4, compliance: 88 },
+            { rank: 8, playerName: 'Olivia Taylor', position: 'RB', ageCategory: 'U17', score: 85.7, compliance: 87 },
+            { rank: 9, playerName: 'Daniel Anderson', position: 'QB', ageCategory: 'U13', score: 84.2, compliance: 85 },
+            { rank: 10, playerName: 'Isabella White', position: 'WR', ageCategory: 'U15', score: 83.1, compliance: 84 },
+        ];
+
+        const sportCategories = {
+            football: ['U8', 'U10', 'U13', 'U15', 'U17', 'U19', 'Seniors'],
+            basketball: ['U12', 'U14', 'U16', 'U18', 'Senior'],
+            handball: ['Minis', 'Cadets', 'Juniors', 'Seniors']
+        };
+
+        function getCategoryBadgeClass(category) {
+            const categoryLower = category.toLowerCase();
+            if (categoryLower.includes('13')) return 'badge-u13';
+            if (categoryLower.includes('15')) return 'badge-u15';
+            if (categoryLower.includes('17')) return 'badge-u17';
+            if (categoryLower.includes('senior')) return 'badge-seniors';
+            return 'badge-u13';
+        }
+
+        function renderLeaderboard(data) {
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = data.map((player, index) => `
+                <tr>
+                    <td><strong>#${index + 1}</strong></td>
+                    <td>${player.playerName}</td>
+                    <td>${player.position}</td>
+                    <td><span class="badge ${getCategoryBadgeClass(player.ageCategory)}">${player.ageCategory}</span></td>
+                    <td>${player.score.toFixed(1)}</td>
+                    <td>${player.compliance}%</td>
+                </tr>
+            `).join('');
+        }
+
+        function applyFilters() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const positionFilter = document.getElementById('positionFilter').value;
+
+            let filtered = [...mockLeaderboard];
+
+            if (categoryFilter) {
+                filtered = filtered.filter(p => p.ageCategory === categoryFilter);
+            }
+
+            if (positionFilter) {
+                filtered = filtered.filter(p => p.position === positionFilter);
+            }
+
+            renderLeaderboard(filtered);
+
+            const filterInfo = document.getElementById('filterInfo');
+            filterInfo.textContent = `Showing ${filtered.length} of ${mockLeaderboard.length} players`;
+
+            // Update results
+            updateResults(categoryFilter, positionFilter, filtered.length);
+        }
+
+        function updateResults(category, position, count) {
+            const results = document.getElementById('results');
+            const tests = [];
+
+            tests.push(`<p class="success">✅ Filter applied successfully</p>`);
+            tests.push(`<p>Category Filter: <strong>${category || 'All'}</strong></p>`);
+            tests.push(`<p>Position Filter: <strong>${position || 'All'}</strong></p>`);
+            tests.push(`<p>Results: <strong>${count} players</strong></p>`);
+
+            if (category) {
+                const categoryPlayers = mockLeaderboard.filter(p => p.ageCategory === category);
+                tests.push(`<p class="info">ℹ️ Category "${category}" has ${categoryPlayers.length} total players in dataset</p>`);
+            }
+
+            results.innerHTML = tests.join('');
+        }
+
+        function initSportCategories() {
+            const footballList = document.getElementById('footballCategories');
+            footballList.innerHTML = sportCategories.football.map(cat =>
+                `<li><span class="badge ${getCategoryBadgeClass(cat)}">${cat}</span></li>`
+            ).join('');
+
+            const basketballList = document.getElementById('basketballCategories');
+            basketballList.innerHTML = sportCategories.basketball.map(cat =>
+                `<li><span class="badge ${getCategoryBadgeClass(cat)}">${cat}</span></li>`
+            ).join('');
+
+            const handballList = document.getElementById('handballCategories');
+            handballList.innerHTML = sportCategories.handball.map(cat =>
+                `<li><span class="badge ${getCategoryBadgeClass(cat)}">${cat}</span></li>`
+            ).join('');
+        }
+
+        // Initialize
+        renderLeaderboard(mockLeaderboard);
+        initSportCategories();
+        updateResults('', '', mockLeaderboard.length);
+
+        console.log('✅ Age Category Filtering Test Initialized');
+        console.log('📊 Total players:', mockLeaderboard.length);
+        console.log('🏷️ Categories:', [...new Set(mockLeaderboard.map(p => p.ageCategory))]);
+    </script>
+</body>
+</html>

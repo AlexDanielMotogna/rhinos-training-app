@@ -46,6 +46,7 @@ export interface TeamSettings {
   teamCategory: TeamCategory;
   aiApiKey?: string;        // Team-wide OpenAI API key (configured by admin)
   branding?: TeamBranding;  // Team branding configuration
+  allowedCategories?: string[]; // Age/skill categories for players (e.g., ['U13', 'U15', 'Seniors'])
   updatedAt?: string;
   updatedBy?: string;       // Coach who updated settings
 }
@@ -68,4 +69,5 @@ export const DEFAULT_TEAM_SETTINGS: TeamSettings = {
   teamLevel: 'amateur',
   teamCategory: 'principal',
   branding: DEFAULT_TEAM_BRANDING,
+  allowedCategories: [],
 };

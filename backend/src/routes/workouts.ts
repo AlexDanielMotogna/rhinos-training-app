@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { calculatePoints } from '../services/points.js';
 
 const router = express.Router();
 
@@ -72,20 +73,52 @@ const workoutReportSchema = z.object({
 // NOTE: Specific routes (/reports, /plans) must come BEFORE dynamic routes (/:id)
 // to prevent Express from treating "reports" or "plans" as an ID parameter
 
-// GET /api/workouts - Get workout logs (filtered by user role)
+// GET /api/workouts - Get workout logs (filtered by user role and category)
 router.get('/', authenticate, async (req, res) => {
   try {
     const { userId, startDate, endDate } = req.query;
+    const user = (req as any).user;
 
     const where: any = {};
 
     // If player, only show their workouts
-    if (req.user.role === 'player') {
-      where.userId = req.user.userId;
-    } else {
-      // If coach, can filter by userId
-      if (userId) {
-        where.userId = userId;
+    if (user.role === 'player') {
+      where.userId = user.userId;
+    } else if (user.role === 'coach') {
+      // Get coach's categories
+      const coach = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { coachCategories: true },
+      });
+
+      if (coach?.coachCategories && coach.coachCategories.length > 0) {
+        // Get all players in coach's categories
+        const playersInCategories = await prisma.user.findMany({
+          where: {
+            role: 'player',
+            ageCategory: { in: coach.coachCategories },
+          },
+          select: { id: true },
+        });
+        const playerIds = playersInCategories.map(p => p.id);
+
+        // If specific userId is requested, verify it's in coach's categories
+        if (userId) {
+          if (playerIds.includes(userId as string)) {
+            where.userId = userId;
+          } else {
+            // Coach doesn't have access to this player
+            return res.json([]);
+          }
+        } else {
+          // Show all workouts from players in coach's categories
+          where.userId = { in: playerIds };
+        }
+      } else {
+        // Coach with no categories can see all (superuser behavior)
+        if (userId) {
+          where.userId = userId;
+        }
       }
     }
 
@@ -124,23 +157,55 @@ router.get('/', authenticate, async (req, res) => {
 // WORKOUT REPORTS
 // ========================================
 
-// GET /api/workouts/reports - Get workout reports
+// GET /api/workouts/reports - Get workout reports (filtered by category)
 router.get('/reports', authenticate, async (req, res) => {
   try {
     const { userId, source } = req.query;
+    const user = (req as any).user;
 
-    console.log('[BACKEND] GET /workouts/reports - User:', req.user.userId, 'Role:', req.user.role);
+    console.log('[BACKEND] GET /workouts/reports - User:', user.userId, 'Role:', user.role);
     console.log('[BACKEND] Query params - userId:', userId, 'source:', source);
 
     const where: any = {};
 
     // If player, only show their reports
-    if (req.user.role === 'player') {
-      where.userId = req.user.userId;
-    } else {
-      // If coach, can filter by userId
-      if (userId) {
-        where.userId = userId as string;
+    if (user.role === 'player') {
+      where.userId = user.userId;
+    } else if (user.role === 'coach') {
+      // Get coach's categories
+      const coach = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { coachCategories: true },
+      });
+
+      if (coach?.coachCategories && coach.coachCategories.length > 0) {
+        // Get all players in coach's categories
+        const playersInCategories = await prisma.user.findMany({
+          where: {
+            role: 'player',
+            ageCategory: { in: coach.coachCategories },
+          },
+          select: { id: true },
+        });
+        const playerIds = playersInCategories.map(p => p.id);
+
+        // If specific userId is requested, verify it's in coach's categories
+        if (userId) {
+          if (playerIds.includes(userId as string)) {
+            where.userId = userId as string;
+          } else {
+            // Coach doesn't have access to this player
+            return res.json([]);
+          }
+        } else {
+          // Show all reports from players in coach's categories
+          where.userId = { in: playerIds };
+        }
+      } else {
+        // Coach with no categories can see all (superuser behavior)
+        if (userId) {
+          where.userId = userId as string;
+        }
       }
     }
 
@@ -396,15 +461,25 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Calculate points based on workout characteristics
+    const { points, category } = calculatePoints({
+      duration: data.duration || 0,
+      source: data.source,
+      entries: data.entries || [],
+    });
+
     const workout = await prisma.workoutLog.create({
       data: {
         ...data,
         userId: req.user.userId,
         userName: user.name,
+        points,
+        pointsCategory: category,
         createdAt: new Date().toISOString(),
       },
     });
 
+    console.log(`[WORKOUT] Created workout with ${points} points (${category})`);
     res.status(201).json(workout);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -435,9 +510,20 @@ router.patch('/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Recalculate points if relevant fields changed
+    let pointsData = {};
+    if (data.entries || data.duration || data.source) {
+      const { points, category } = calculatePoints({
+        duration: data.duration ?? existing.duration ?? 0,
+        source: (data.source ?? existing.source) as 'coach' | 'player',
+        entries: data.entries ?? existing.entries ?? [],
+      });
+      pointsData = { points, pointsCategory: category };
+    }
+
     const workout = await prisma.workoutLog.update({
       where: { id },
-      data,
+      data: { ...data, ...pointsData },
     });
 
     res.json(workout);
