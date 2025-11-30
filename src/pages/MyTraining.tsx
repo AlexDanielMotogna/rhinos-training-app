@@ -47,7 +47,6 @@ import { sanitizeYouTubeUrl } from '../services/yt';
 import { analyzeWorkout, estimateWorkoutDuration, type WorkoutReport } from '../services/workoutAnalysis';
 import { saveWorkoutReport } from '../services/workoutReports';
 import { generateAIWorkoutReport, getAPIKey } from '../services/aiInsights';
-import { addWorkoutPoints } from '../services/pointsSystem';
 
 type SessionView = 'my' | 'team';
 type MySessionTab = 'plans' | 'history' | 'reports';
@@ -270,31 +269,6 @@ export const MyTraining: React.FC = () => {
       );
       await saveWorkoutReport(user.id, t('training.freeSessions'), report, 'player', payload.entries);
 
-      // Add points to player's weekly total
-      const totalSets = payload.entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
-      const totalVolume = payload.entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
-        }
-        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
-      }, 0);
-      const totalDistance = payload.entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
-        }
-        return sum + (e.distance || 0);
-      }, 0);
-      addWorkoutPoints(
-        user.id,
-        t('training.freeSessions'),
-        duration,
-        'personal',
-        totalSets,
-        totalVolume,
-        totalDistance > 0 ? totalDistance : undefined,
-        payload.notes
-      );
-
       setWorkoutReport(report);
       setLastWorkoutTitle(t('training.freeSessions'));
       setShowWorkoutReport(true);
@@ -491,31 +465,6 @@ export const MyTraining: React.FC = () => {
       // Save report to localStorage and backend
       await saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
 
-      // Add points to player's weekly total
-      const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
-      const totalVolume = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
-        }
-        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
-      }, 0);
-      const totalDistance = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
-        }
-        return sum + (e.distance || 0);
-      }, 0);
-      addWorkoutPoints(
-        user.id,
-        startingPlan.name,
-        duration,
-        'personal',
-        totalSets,
-        totalVolume,
-        totalDistance > 0 ? totalDistance : undefined,
-        notes
-      );
-
       setWorkoutReport(report);
       setLastWorkoutTitle(startingPlan.name);
       setShowWorkoutReport(true);
@@ -619,31 +568,6 @@ export const MyTraining: React.FC = () => {
       // Save report to localStorage and backend
       await saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
 
-      // Add points to player's weekly total
-      const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
-      const totalVolume = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
-        }
-        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
-      }, 0);
-      const totalDistance = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
-        }
-        return sum + (e.distance || 0);
-      }, 0);
-      addWorkoutPoints(
-        user.id,
-        selectedBlock.title,
-        duration,
-        'coach',
-        totalSets,
-        totalVolume,
-        totalDistance > 0 ? totalDistance : undefined,
-        notes
-      );
-
       setWorkoutReport(report);
       setLastWorkoutTitle(selectedBlock.title);
       setShowWorkoutReport(true);
@@ -724,31 +648,6 @@ export const MyTraining: React.FC = () => {
       );
 
       await saveWorkoutReport(user.id, dayName, report, 'coach', entries);
-
-      // Add points to player's weekly total
-      const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
-      const totalVolume = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
-        }
-        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
-      }, 0);
-      const totalDistance = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
-        }
-        return sum + (e.distance || 0);
-      }, 0);
-      addWorkoutPoints(
-        user.id,
-        dayName,
-        duration,
-        'coach',
-        totalSets,
-        totalVolume,
-        totalDistance > 0 ? totalDistance : undefined,
-        notes
-      );
 
       setWorkoutReport(report);
       setLastWorkoutTitle(dayName);

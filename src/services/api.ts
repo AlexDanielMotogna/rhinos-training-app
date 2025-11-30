@@ -1108,17 +1108,10 @@ export const notificationService = {
  */
 export const leaderboardService = {
   /**
-   * Get current week leaderboard
+   * Get current month leaderboard
    */
   async getCurrentWeek() {
     return apiCall('/leaderboard');
-  },
-
-  /**
-   * Get leaderboard for a specific week
-   */
-  async getWeek(week: string) {
-    return apiCall(`/leaderboard/${week}`);
   },
 
   /**
@@ -1126,42 +1119,6 @@ export const leaderboardService = {
    */
   async getMonth(month: string) {
     return apiCall(`/leaderboard/month/${month}`);
-  },
-
-  /**
-   * Get player's weekly history
-   */
-  async getPlayerHistory(userId: string) {
-    return apiCall(`/leaderboard/player/${userId}`);
-  },
-
-  /**
-   * Sync player's weekly points to backend
-   */
-  async syncWeeklyPoints(data: {
-    week: string;
-    totalPoints: number;
-    targetPoints: number;
-    workoutDays: number;
-    teamTrainingDays: number;
-    coachWorkoutDays: number;
-    personalWorkoutDays: number;
-    breakdown: Array<{
-      date: string;
-      workoutTitle: string;
-      category: string;
-      points: number;
-      source: string;
-      duration?: number;
-      totalSets?: number;
-      totalVolume?: number;
-      totalDistance?: number;
-    }>;
-  }) {
-    return apiCall('/leaderboard/sync', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
   },
 };
 

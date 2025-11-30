@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { calculatePoints } from '../services/points.js';
 
 const router = express.Router();
 
@@ -460,15 +461,25 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Calculate points based on workout characteristics
+    const { points, category } = calculatePoints({
+      duration: data.duration || 0,
+      source: data.source,
+      entries: data.entries || [],
+    });
+
     const workout = await prisma.workoutLog.create({
       data: {
         ...data,
         userId: req.user.userId,
         userName: user.name,
+        points,
+        pointsCategory: category,
         createdAt: new Date().toISOString(),
       },
     });
 
+    console.log(`[WORKOUT] Created workout with ${points} points (${category})`);
     res.status(201).json(workout);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -499,9 +510,20 @@ router.patch('/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Recalculate points if relevant fields changed
+    let pointsData = {};
+    if (data.entries || data.duration || data.source) {
+      const { points, category } = calculatePoints({
+        duration: data.duration ?? existing.duration ?? 0,
+        source: (data.source ?? existing.source) as 'coach' | 'player',
+        entries: data.entries ?? existing.entries ?? [],
+      });
+      pointsData = { points, pointsCategory: category };
+    }
+
     const workout = await prisma.workoutLog.update({
       where: { id },
-      data,
+      data: { ...data, ...pointsData },
     });
 
     res.json(workout);

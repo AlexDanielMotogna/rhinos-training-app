@@ -378,12 +378,16 @@ model WorkoutLog {
   date                 String   // ISO date when workout was completed
   entries              Json     // Array of WorkoutEntry with setData
   notes                String?
-  source               String   // 'coach' | 'player'
+  source               String   // 'coach' | 'player' | 'team'
   planTemplateId       String?  // Reference to template/plan used
   planName             String?  // Name of the plan/block
   duration             Int?     // Duration in minutes
   planMetadata         Json?    // {totalExercises, totalTargetSets}
   completionPercentage Int?     // 0-100 completion percentage
+
+  // Points system (calculated automatically)
+  points               Float    @default(0) // Points earned for this workout
+  pointsCategory       String?  // 'light' | 'moderate' | 'team' | 'intensive'
 
   createdAt            String   // ISO datetime when log was created
   syncedAt             DateTime @default(now()) // When synced to backend
