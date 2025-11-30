@@ -72,20 +72,52 @@ const workoutReportSchema = z.object({
 // NOTE: Specific routes (/reports, /plans) must come BEFORE dynamic routes (/:id)
 // to prevent Express from treating "reports" or "plans" as an ID parameter
 
-// GET /api/workouts - Get workout logs (filtered by user role)
+// GET /api/workouts - Get workout logs (filtered by user role and category)
 router.get('/', authenticate, async (req, res) => {
   try {
     const { userId, startDate, endDate } = req.query;
+    const user = (req as any).user;
 
     const where: any = {};
 
     // If player, only show their workouts
-    if (req.user.role === 'player') {
-      where.userId = req.user.userId;
-    } else {
-      // If coach, can filter by userId
-      if (userId) {
-        where.userId = userId;
+    if (user.role === 'player') {
+      where.userId = user.userId;
+    } else if (user.role === 'coach') {
+      // Get coach's categories
+      const coach = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { coachCategories: true },
+      });
+
+      if (coach?.coachCategories && coach.coachCategories.length > 0) {
+        // Get all players in coach's categories
+        const playersInCategories = await prisma.user.findMany({
+          where: {
+            role: 'player',
+            ageCategory: { in: coach.coachCategories },
+          },
+          select: { id: true },
+        });
+        const playerIds = playersInCategories.map(p => p.id);
+
+        // If specific userId is requested, verify it's in coach's categories
+        if (userId) {
+          if (playerIds.includes(userId as string)) {
+            where.userId = userId;
+          } else {
+            // Coach doesn't have access to this player
+            return res.json([]);
+          }
+        } else {
+          // Show all workouts from players in coach's categories
+          where.userId = { in: playerIds };
+        }
+      } else {
+        // Coach with no categories can see all (superuser behavior)
+        if (userId) {
+          where.userId = userId;
+        }
       }
     }
 
@@ -124,23 +156,55 @@ router.get('/', authenticate, async (req, res) => {
 // WORKOUT REPORTS
 // ========================================
 
-// GET /api/workouts/reports - Get workout reports
+// GET /api/workouts/reports - Get workout reports (filtered by category)
 router.get('/reports', authenticate, async (req, res) => {
   try {
     const { userId, source } = req.query;
+    const user = (req as any).user;
 
-    console.log('[BACKEND] GET /workouts/reports - User:', req.user.userId, 'Role:', req.user.role);
+    console.log('[BACKEND] GET /workouts/reports - User:', user.userId, 'Role:', user.role);
     console.log('[BACKEND] Query params - userId:', userId, 'source:', source);
 
     const where: any = {};
 
     // If player, only show their reports
-    if (req.user.role === 'player') {
-      where.userId = req.user.userId;
-    } else {
-      // If coach, can filter by userId
-      if (userId) {
-        where.userId = userId as string;
+    if (user.role === 'player') {
+      where.userId = user.userId;
+    } else if (user.role === 'coach') {
+      // Get coach's categories
+      const coach = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { coachCategories: true },
+      });
+
+      if (coach?.coachCategories && coach.coachCategories.length > 0) {
+        // Get all players in coach's categories
+        const playersInCategories = await prisma.user.findMany({
+          where: {
+            role: 'player',
+            ageCategory: { in: coach.coachCategories },
+          },
+          select: { id: true },
+        });
+        const playerIds = playersInCategories.map(p => p.id);
+
+        // If specific userId is requested, verify it's in coach's categories
+        if (userId) {
+          if (playerIds.includes(userId as string)) {
+            where.userId = userId as string;
+          } else {
+            // Coach doesn't have access to this player
+            return res.json([]);
+          }
+        } else {
+          // Show all reports from players in coach's categories
+          where.userId = { in: playerIds };
+        }
+      } else {
+        // Coach with no categories can see all (superuser behavior)
+        if (userId) {
+          where.userId = userId as string;
+        }
       }
     }
 

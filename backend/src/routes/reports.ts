@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { generateDailyReport, generateWeeklyReport, generateMonthlyReport } from '../services/reports.js';
+import prisma from '../utils/prisma.js';
 
 const router = express.Router();
 
@@ -18,6 +19,13 @@ router.get('/daily/:date?', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Only coaches can access reports' });
     }
 
+    // Get coach's categories for filtering
+    const coach = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { coachCategories: true },
+    });
+    const categories = coach?.coachCategories || [];
+
     const date = req.params.date ? new Date(req.params.date) : new Date();
 
     // Validate date
@@ -25,9 +33,9 @@ router.get('/daily/:date?', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
     }
 
-    console.log(`[REPORTS] Generating daily report for ${date.toISOString().split('T')[0]}`);
+    console.log(`[REPORTS] Generating daily report for ${date.toISOString().split('T')[0]}, categories: ${categories.join(', ') || 'all'}`);
 
-    const report = await generateDailyReport(date);
+    const report = await generateDailyReport(date, categories);
 
     res.json(report);
   } catch (error) {
@@ -50,6 +58,13 @@ router.get('/weekly/:startDate?', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Only coaches can access reports' });
     }
 
+    // Get coach's categories for filtering
+    const coach = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { coachCategories: true },
+    });
+    const categories = coach?.coachCategories || [];
+
     let startDate: Date;
 
     if (req.params.startDate) {
@@ -68,9 +83,9 @@ router.get('/weekly/:startDate?', authenticate, async (req, res) => {
       startDate.setHours(0, 0, 0, 0);
     }
 
-    console.log(`[REPORTS] Generating weekly report starting from ${startDate.toISOString().split('T')[0]}`);
+    console.log(`[REPORTS] Generating weekly report starting from ${startDate.toISOString().split('T')[0]}, categories: ${categories.join(', ') || 'all'}`);
 
-    const report = await generateWeeklyReport(startDate);
+    const report = await generateWeeklyReport(startDate, categories);
 
     res.json(report);
   } catch (error) {
@@ -93,6 +108,13 @@ router.get('/monthly/:month?', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Only coaches can access reports' });
     }
 
+    // Get coach's categories for filtering
+    const coach = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { coachCategories: true },
+    });
+    const categories = coach?.coachCategories || [];
+
     let month: string;
 
     if (req.params.month) {
@@ -108,9 +130,9 @@ router.get('/monthly/:month?', authenticate, async (req, res) => {
       month = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
     }
 
-    console.log(`[REPORTS] Generating monthly report for ${month}`);
+    console.log(`[REPORTS] Generating monthly report for ${month}, categories: ${categories.join(', ') || 'all'}`);
 
-    const report = await generateMonthlyReport(month);
+    const report = await generateMonthlyReport(month, categories);
 
     res.json(report);
   } catch (error) {

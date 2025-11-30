@@ -143,13 +143,20 @@ function getISOWeek(date: Date): string {
 
 /**
  * Generate Daily Report for a specific date
+ * @param date - The date to generate the report for
+ * @param categories - Optional array of age categories to filter by (empty = all)
  */
-export async function generateDailyReport(date: Date = new Date()): Promise<DailyReport> {
+export async function generateDailyReport(date: Date = new Date(), categories: string[] = []): Promise<DailyReport> {
   const dateStr = date.toISOString().split('T')[0];
 
-  // Get all players
+  // Get players, filtered by category if specified
+  const userWhere: any = { role: 'player' };
+  if (categories.length > 0) {
+    userWhere.ageCategory = { in: categories };
+  }
+
   const users = await prisma.user.findMany({
-    where: { role: 'player' },
+    where: userWhere,
     select: {
       id: true,
       name: true,
@@ -313,8 +320,10 @@ export async function generateDailyReport(date: Date = new Date()): Promise<Dail
 
 /**
  * Generate Weekly Report for a specific start date
+ * @param startDate - The start date of the week
+ * @param categories - Optional array of age categories to filter by (empty = all)
  */
-export async function generateWeeklyReport(startDate: Date = new Date()): Promise<WeeklyReport> {
+export async function generateWeeklyReport(startDate: Date = new Date(), categories: string[] = []): Promise<WeeklyReport> {
   // Calculate week range
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + 6);
@@ -322,9 +331,14 @@ export async function generateWeeklyReport(startDate: Date = new Date()): Promis
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
 
-  // Get all players
+  // Get players, filtered by category if specified
+  const userWhere: any = { role: 'player' };
+  if (categories.length > 0) {
+    userWhere.ageCategory = { in: categories };
+  }
+
   const users = await prisma.user.findMany({
-    where: { role: 'player' },
+    where: userWhere,
     select: {
       id: true,
       name: true,
@@ -495,8 +509,10 @@ export async function generateWeeklyReport(startDate: Date = new Date()): Promis
 
 /**
  * Generate Monthly Report for a specific month (YYYY-MM)
+ * @param month - The month in YYYY-MM format
+ * @param categories - Optional array of age categories to filter by (empty = all)
  */
-export async function generateMonthlyReport(month: string): Promise<MonthlyReport> {
+export async function generateMonthlyReport(month: string, categories: string[] = []): Promise<MonthlyReport> {
   // Parse month (format: YYYY-MM)
   const [year, monthNum] = month.split('-').map(Number);
   const startDate = new Date(year, monthNum - 1, 1);
@@ -505,9 +521,14 @@ export async function generateMonthlyReport(month: string): Promise<MonthlyRepor
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
 
-  // Get all players
+  // Get players, filtered by category if specified
+  const userWhere: any = { role: 'player' };
+  if (categories.length > 0) {
+    userWhere.ageCategory = { in: categories };
+  }
+
   const users = await prisma.user.findMany({
-    where: { role: 'player' },
+    where: userWhere,
     select: {
       id: true,
       name: true,
