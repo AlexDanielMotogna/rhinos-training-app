@@ -118,9 +118,48 @@ export const Leaderboard: React.FC = () => {
         {t('leaderboard.title')}
       </Typography>
 
+      {/* Points System Info - Collapsed by default */}
+      <Accordion sx={{ mb: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <InfoOutlinedIcon color="primary" fontSize="small" />
+            <Typography variant="body2" fontWeight={500}>
+              {t('leaderboard.howPointsWork')}
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            {t('leaderboard.pointsDescription')}
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Chip
+              label={`${t('leaderboard.pointsLight')}: 1 ${t('leaderboard.pointsUnit')}`}
+              size="small"
+              sx={{ backgroundColor: '#90CAF9' }}
+            />
+            <Chip
+              label={`${t('leaderboard.pointsModerate')}: 2 ${t('leaderboard.pointsUnit')}`}
+              size="small"
+              sx={{ backgroundColor: '#FFB74D' }}
+            />
+            <Chip
+              label={`${t('leaderboard.pointsTeam')}: 2.5 ${t('leaderboard.pointsUnit')}`}
+              size="small"
+              sx={{ backgroundColor: '#66BB6A', color: 'white' }}
+            />
+            <Chip
+              label={`${t('leaderboard.pointsIntensive')}: 3 ${t('leaderboard.pointsUnit')}`}
+              size="small"
+              sx={{ backgroundColor: '#EF5350', color: 'white' }}
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
       {/* Month selector */}
-      <Box sx={{ mb: 3 }}>
-        <FormControl sx={{ minWidth: 200 }}>
+      <Box sx={{ mb: 2 }}>
+        <FormControl sx={{ minWidth: 200 }} size="small">
           <InputLabel>{t('leaderboard.month')}</InputLabel>
           <Select
             value={selectedMonth}
@@ -205,50 +244,6 @@ export const Leaderboard: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* Points System Documentation */}
-      <Accordion sx={{ mt: 3 }}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InfoOutlinedIcon color="primary" />
-            <Typography fontWeight={500}>
-              {t('leaderboard.howPointsWork')}
-            </Typography>
-          </Box>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {t('leaderboard.pointsDescription')}
-          </Typography>
-
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            <Chip
-              label={`${t('leaderboard.pointsLight')}: 1 ${t('leaderboard.pointsUnit')}`}
-              size="small"
-              sx={{ backgroundColor: '#90CAF9' }}
-            />
-            <Chip
-              label={`${t('leaderboard.pointsModerate')}: 2 ${t('leaderboard.pointsUnit')}`}
-              size="small"
-              sx={{ backgroundColor: '#FFB74D' }}
-            />
-            <Chip
-              label={`${t('leaderboard.pointsTeam')}: 2.5 ${t('leaderboard.pointsUnit')}`}
-              size="small"
-              sx={{ backgroundColor: '#66BB6A', color: 'white' }}
-            />
-            <Chip
-              label={`${t('leaderboard.pointsIntensive')}: 3 ${t('leaderboard.pointsUnit')}`}
-              size="small"
-              sx={{ backgroundColor: '#EF5350', color: 'white' }}
-            />
-          </Box>
-
-          <Typography variant="body2" color="text.secondary">
-            <strong>{t('leaderboard.maxDaily')}:</strong> {t('leaderboard.maxDailyDescription')}
-          </Typography>
-        </AccordionDetails>
-      </Accordion>
     </Box>
   );
 };
