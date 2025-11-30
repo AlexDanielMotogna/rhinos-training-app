@@ -1,4 +1,3 @@
-import { isOnline } from './online';
 import type { WorkoutEntry, WorkoutPayload } from '../types/workout';
 import { workoutService } from './api';
 
@@ -163,16 +162,13 @@ export async function deleteWorkoutLog(logId: string): Promise<void> {
   localStorage.setItem(DELETED_LOGS_KEY, JSON.stringify(Array.from(deletedLogs)));
   console.log('[WORKOUT LOGS] Marked log as deleted:', logId);
 
-  // Try to delete from backend if online
-  
-  if (online) {
-    try {
-      console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
-      await workoutService.delete(logId);
-      console.log('[WORKOUT LOGS] Log deleted from backend');
-    } catch (error) {
-      console.warn('[WORKOUT LOGS] Failed to delete log from backend:', error);
-    }
+  // Try to delete from backend
+  try {
+    console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
+    await workoutService.delete(logId);
+    console.log('[WORKOUT LOGS] Log deleted from backend');
+  } catch (error) {
+    console.warn('[WORKOUT LOGS] Failed to delete log from backend:', error);
   }
 }
 
@@ -192,16 +188,13 @@ export async function hardDeleteWorkoutLog(logId: string): Promise<void> {
   localStorage.setItem(DELETED_LOGS_KEY, JSON.stringify(Array.from(deletedLogs)));
   console.log('[WORKOUT LOGS] Marked log as hard deleted:', logId);
 
-  // Try to delete from backend if online
-  
-  if (online) {
-    try {
-      console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
-      await workoutService.delete(logId);
-      console.log('[WORKOUT LOGS] Log deleted from backend');
-    } catch (error) {
-      console.warn('[WORKOUT LOGS] Failed to delete log from backend:', error);
-    }
+  // Try to delete from backend
+  try {
+    console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
+    await workoutService.delete(logId);
+    console.log('[WORKOUT LOGS] Log deleted from backend');
+  } catch (error) {
+    console.warn('[WORKOUT LOGS] Failed to delete log from backend:', error);
   }
 }
 

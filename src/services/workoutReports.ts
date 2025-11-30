@@ -1,11 +1,14 @@
-import { isOnline } from './online';
+/**
+ * Workout reports service - backend only
+ */
+
 import type { WorkoutReport } from './workoutAnalysis';
 import type { WorkoutSource, WorkoutEntry } from '../types/workout';
 import { workoutReportService } from './api';
 
 const REPORTS_KEY = 'rhinos_workout_reports';
-const SAVING_REPORTS_KEY = 'rhinos_saving_reports'; // Track reports being saved to prevent duplicates
-const DELETED_REPORTS_KEY = 'rhinos_deleted_reports'; // Track reports deleted by user
+const SAVING_REPORTS_KEY = 'rhinos_saving_reports';
+const DELETED_REPORTS_KEY = 'rhinos_deleted_reports';
 
 export interface SavedWorkoutReport extends WorkoutReport {
   id: string;
@@ -13,9 +16,9 @@ export interface SavedWorkoutReport extends WorkoutReport {
   workoutTitle: string;
   dateISO: string;
   createdAt: string;
-  source: WorkoutSource; // 'coach' or 'player'
-  entries: WorkoutEntry[]; // Store workout entries for AI analysis
-  backendSynced?: boolean; // Track if report was synced to backend
+  source: WorkoutSource;
+  entries: WorkoutEntry[];
+  backendSynced?: boolean;
 }
 
 /**
@@ -161,75 +164,70 @@ export async function saveWorkoutReport(
     allReports.push(savedReport);
     localStorage.setItem(REPORTS_KEY, JSON.stringify(allReports));
 
-    // Try to save to backend if online
-    if (isOnline()) {
-      try {
-        console.log('🔄 Saving workout report to backend...');
-        const backendReport = await workoutReportService.create({
-          userId: savedReport.userId,
-          workoutTitle: savedReport.workoutTitle,
-          date: savedReport.dateISO, // Send as 'date' for backend
-          source: savedReport.source,
-          duration: savedReport.duration,
+    try {
+      console.log('🔄 Saving workout report to backend...');
+      const backendReport = await workoutReportService.create({
+        userId: savedReport.userId,
+        workoutTitle: savedReport.workoutTitle,
+        date: savedReport.dateISO,
+        source: savedReport.source,
+        duration: savedReport.duration,
 
-          // Performance scores
-          intensityScore: savedReport.intensityScore,
-          workCapacityScore: savedReport.workCapacityScore,
-          athleticQualityScore: savedReport.athleticQualityScore,
-          positionRelevanceScore: savedReport.positionRelevanceScore,
+        // Performance scores
+        intensityScore: savedReport.intensityScore,
+        workCapacityScore: savedReport.workCapacityScore,
+        athleticQualityScore: savedReport.athleticQualityScore,
+        positionRelevanceScore: savedReport.positionRelevanceScore,
 
-          // Breakdown
-          totalVolume: savedReport.totalVolume || 0,
-          totalDistance: savedReport.totalDistance,
-          avgRPE: savedReport.avgRPE || 5,
-          setsCompleted: savedReport.setsCompleted || 0,
-          setsPlanned: savedReport.setsPlanned || 0,
+        // Breakdown
+        totalVolume: savedReport.totalVolume || 0,
+        totalDistance: savedReport.totalDistance,
+        avgRPE: savedReport.avgRPE || 5,
+        setsCompleted: savedReport.setsCompleted || 0,
+        setsPlanned: savedReport.setsPlanned || 0,
 
-          // Athletic focus
-          powerWork: savedReport.powerWork || 0,
-          strengthWork: savedReport.strengthWork || 0,
-          speedWork: savedReport.speedWork || 0,
+        // Athletic focus
+        powerWork: savedReport.powerWork || 0,
+        strengthWork: savedReport.strengthWork || 0,
+        speedWork: savedReport.speedWork || 0,
 
-          // Highlights
-          strengths: savedReport.strengths || [],
-          warnings: savedReport.warnings || [],
+        // Highlights
+        strengths: savedReport.strengths || [],
+        warnings: savedReport.warnings || [],
 
-          // Progress comparison
-          volumeChange: savedReport.volumeChange,
-          intensityChange: savedReport.intensityChange,
+        // Progress comparison
+        volumeChange: savedReport.volumeChange,
+        intensityChange: savedReport.intensityChange,
 
-          // Recovery
-          recoveryDemand: savedReport.recoveryDemand,
-          recommendedRestHours: savedReport.recommendedRestHours || 24,
-          sessionValid: savedReport.sessionValid !== false,
+        // Recovery
+        recoveryDemand: savedReport.recoveryDemand,
+        recommendedRestHours: savedReport.recommendedRestHours || 24,
+        sessionValid: savedReport.sessionValid !== false,
 
-          // AI Insights
-          coachInsights: savedReport.coachInsights || '',
+        // AI Insights
+        coachInsights: savedReport.coachInsights || '',
 
-          // Metadata
-          aiGenerated: (savedReport as any).aiGenerated || false,
-          workoutEntries: savedReport.entries,
-          createdAt: savedReport.createdAt,
-        });
+        // Metadata
+        aiGenerated: (savedReport as any).aiGenerated || false,
+        workoutEntries: savedReport.entries,
+        createdAt: savedReport.createdAt,
+      });
 
-        console.log('✅ Workout report saved to backend:', backendReport);
+      console.log('✅ Workout report saved to backend:', backendReport);
 
-        // Update local report with backend ID and mark as synced
-        if (backendReport && typeof backendReport === 'object' && 'id' in backendReport) {
-          savedReport.id = (backendReport as any).id;
-          savedReport.backendSynced = true;
-          // Update localStorage with backend ID
-          const updatedReports = allReports.map(r =>
-            r.createdAt === savedReport.createdAt && r.userId === userId ? savedReport : r
-          );
-          localStorage.setItem(REPORTS_KEY, JSON.stringify(updatedReports));
-        }
-      } catch (error) {
-        console.warn('⚠️ Failed to save workout report to backend:', error);
-        // Report is still saved locally, will sync later if needed
+      // Update local report with backend ID and mark as synced
+      if (backendReport && typeof backendReport === 'object' && 'id' in backendReport) {
+        savedReport.id = (backendReport as any).id;
+        savedReport.backendSynced = true;
+        // Update localStorage with backend ID
+        const updatedReports = allReports.map(r =>
+          r.createdAt === savedReport.createdAt && r.userId === userId ? savedReport : r
+        );
+        localStorage.setItem(REPORTS_KEY, JSON.stringify(updatedReports));
       }
-    } else {
-      console.log('📦 Workout report saved locally, will sync when online');
+    } catch (error) {
+      console.warn('⚠️ Failed to save workout report to backend:', error);
+      // Report is still saved locally
     }
 
     removeFromSavingList(reportKey);
@@ -255,16 +253,13 @@ export async function deleteWorkoutReport(reportId: string): Promise<void> {
   localStorage.setItem(DELETED_REPORTS_KEY, JSON.stringify(Array.from(deletedReports)));
   console.log('[WORKOUT REPORTS] Marked report as deleted:', reportId);
 
-  // Try to delete from backend if online
-  const online = isOnline();
-  if (online) {
-    try {
-      console.log('[WORKOUT REPORTS] Deleting report from backend:', reportId);
-      await workoutReportService.delete(reportId);
-      console.log('[WORKOUT REPORTS] Report deleted from backend');
-    } catch (error) {
-      console.warn('[WORKOUT REPORTS] Failed to delete report from backend:', error);
-    }
+  try {
+    console.log('[WORKOUT REPORTS] Deleting report from backend:', reportId);
+    await workoutReportService.delete(reportId);
+    console.log('[WORKOUT REPORTS] Report deleted from backend');
+  } catch (error) {
+    console.warn('[WORKOUT REPORTS] Failed to delete report from backend:', error);
+    throw error;
   }
 }
 
@@ -280,11 +275,6 @@ export function getLatestReport(userId: string): SavedWorkoutReport | null {
  * Sync workout reports from backend to localStorage
  */
 export async function syncWorkoutReportsFromBackend(userId: string): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping workout reports sync');
-    return;
-  }
-
   try {
     console.log('🔄 Syncing workout reports from backend...');
     const backendReports = await workoutReportService.getAll({ userId }) as any[];
@@ -321,9 +311,9 @@ export async function syncWorkoutReportsFromBackend(userId: string): Promise<voi
       // Transform backend format to frontend format
       const transformedReport: SavedWorkoutReport = {
         ...backendReport,
-        // Handle date field (old reports might not have it, generate from createdAt)
+        // Handle date field
         dateISO: backendReport.date || backendReport.dateISO || (backendReport.createdAt ? backendReport.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
-        // Handle entries field (backend uses workoutEntries)
+        // Handle entries field
         entries: backendReport.workoutEntries || backendReport.entries || [],
         backendSynced: true,
       };

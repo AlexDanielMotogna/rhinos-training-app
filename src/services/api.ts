@@ -14,6 +14,8 @@ export interface SignupData {
   heightCm?: number;
   position?: string;
   sex?: 'male' | 'female';
+  ageCategory?: string;
+  coachCategories?: string[];
 }
 
 export interface LoginData {
@@ -42,6 +44,8 @@ export interface AuthResponse {
     hudl?: string;
     metricsPublic?: boolean;
     aiCoachEnabled?: boolean;
+    ageCategory?: string;
+    coachCategories?: string[];
   };
 }
 
@@ -1115,6 +1119,13 @@ export const leaderboardService = {
    */
   async getWeek(week: string) {
     return apiCall(`/leaderboard/${week}`);
+  },
+
+  /**
+   * Get leaderboard for a specific month (YYYY-MM format)
+   */
+  async getMonth(month: string) {
+    return apiCall(`/leaderboard/month/${month}`);
   },
 
   /**

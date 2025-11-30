@@ -85,6 +85,10 @@ model TrainingSession {
   attendees       Json     // Array of {userId, userName, status: RSVPStatus}
   // checkIns field removed - attendance is now tracked via AttendancePoll votes
 
+  // Age category filtering (SaaS-ready)
+  // Categories this session is visible to (empty = all categories)
+  ageCategories   String[] @default([])
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -144,6 +148,10 @@ model Video {
   routes      String[] @default([])
   coverages   String[] @default([])
   runs        String[] @default([])
+
+  // Age category filtering (SaaS-ready)
+  // Categories this video is visible to (empty = all categories)
+  ageCategories String[] @default([])
 
   // Metadata
   createdBy   String   @db.ObjectId
@@ -327,6 +335,10 @@ model TrainingTemplate {
   blocks           Json     // Array of TemplateBlock
   isActive         Boolean  @default(true)
   createdBy        String   @db.ObjectId
+
+  // Age category filtering (SaaS-ready)
+  // Categories this template is visible to (empty = all categories)
+  ageCategories    String[] @default([])
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -580,6 +592,10 @@ model Drill {
   difficulty    String   // 'basic' | 'advanced' | 'complex'
   trainingContext String? // 'Warm-up' | 'Individual' | 'Team Period' | etc.
 
+  // Age category filtering (SaaS-ready)
+  // Categories this drill is visible to (empty = all categories)
+  ageCategories String[] @default([])
+
   // Metadata
   createdBy     String   @db.ObjectId
   createdAt     DateTime @default(now())
@@ -632,6 +648,11 @@ model DrillTrainingSession {
   date      String   // Date of the session (YYYY-MM-DD format)
   drills    String[] // Array of drill IDs
   notes     String?  // Optional notes for the session
+
+  // Age category filtering (SaaS-ready)
+  // Categories this session is visible to (empty = all categories)
+  ageCategories String[] @default([])
+
   createdBy String   @db.ObjectId
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

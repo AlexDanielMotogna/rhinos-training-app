@@ -20,10 +20,43 @@ import {
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useI18n } from '../i18n/I18nProvider';
 import { leaderboardService } from '../services/api';
+import { getUser } from '../services/userProfile';
 import type { Position } from '../types/exercise';
-import { getTeamSettings } from '../services/teamSettings';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
+
+// Month names for i18n
+const MONTH_KEYS = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december'
+];
+
+// App launch date - only show months from this date onwards
+const APP_LAUNCH_YEAR = 2025;
+const APP_LAUNCH_MONTH = 1; // January 2025
+
+// Generate month options from app launch to current month
+const getMonthOptions = (t: (key: string) => string) => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const months = [];
+
+  // Start from app launch date, go up to current month
+  for (let year = APP_LAUNCH_YEAR; year <= currentYear; year++) {
+    const startMonth = (year === APP_LAUNCH_YEAR) ? APP_LAUNCH_MONTH : 1;
+    const endMonth = (year === currentYear) ? currentMonth : 12;
+
+    for (let m = startMonth; m <= endMonth; m++) {
+      const monthStr = `${year}-${m.toString().padStart(2, '0')}`;
+      const monthName = t(`months.${MONTH_KEYS[m - 1]}`);
+      months.push({ value: monthStr, label: `${monthName} ${year}` });
+    }
+  }
+
+  // Reverse to show most recent first
+  return months.reverse();
+};
 
 interface LeaderboardEntry {
   rank: number;
@@ -45,23 +78,58 @@ interface LeaderboardEntry {
 
 export const Leaderboard: React.FC = () => {
   const { t } = useI18n();
-  const teamSettings = getTeamSettings();
-  const allowedCategories = teamSettings.allowedCategories || [];
+  const currentUser = getUser();
+  const monthOptions = getMonthOptions(t);
 
-  const [window, setWindow] = useState<'7d' | '30d'>('7d');
+  // Default to current month
+  const now = new Date();
+  const defaultMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+
+  const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth);
   const [positionFilter, setPositionFilter] = useState<Position | ''>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [data, setData] = useState<LeaderboardEntry[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadLeaderboard = async () => {
       try {
         setLoading(true);
-        const response = await leaderboardService.getCurrentWeek();
+        // Load leaderboard for selected month (or current month by default)
+        const response = selectedMonth === defaultMonth
+          ? await leaderboardService.getCurrentWeek() // This now returns current month
+          : await leaderboardService.getMonth(selectedMonth);
 
-        // Filter by position and category
-        let filtered = response.leaderboard;
+        // Filter leaderboard by user's allowed categories
+        let allowedLeaderboard = response.leaderboard;
+
+        if (currentUser) {
+          if (currentUser.role === 'player' && currentUser.ageCategory) {
+            // Players see only their category
+            allowedLeaderboard = response.leaderboard.filter(
+              (entry: LeaderboardEntry) => entry.ageCategory === currentUser.ageCategory
+            );
+          } else if (currentUser.role === 'coach' && currentUser.coachCategories && currentUser.coachCategories.length > 0) {
+            // Coaches see only their assigned categories
+            allowedLeaderboard = response.leaderboard.filter(
+              (entry: LeaderboardEntry) => entry.ageCategory && currentUser.coachCategories!.includes(entry.ageCategory)
+            );
+          }
+        }
+
+        // Extract unique categories from allowed leaderboard data
+        const categories = Array.from(
+          new Set(
+            allowedLeaderboard
+              .map((entry: LeaderboardEntry) => entry.ageCategory)
+              .filter((cat): cat is string => !!cat)
+          )
+        ).sort();
+        setAvailableCategories(categories);
+
+        // Apply additional filters (position and category)
+        let filtered = allowedLeaderboard;
 
         if (positionFilter) {
           filtered = filtered.filter((entry: LeaderboardEntry) => entry.position === positionFilter);
@@ -81,7 +149,7 @@ export const Leaderboard: React.FC = () => {
     };
 
     loadLeaderboard();
-  }, [positionFilter, categoryFilter]);
+  }, [selectedMonth, positionFilter, categoryFilter]);
 
   return (
     <Box>
@@ -90,15 +158,18 @@ export const Leaderboard: React.FC = () => {
       </Typography>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>{t('leaderboard.window')}</InputLabel>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>{t('leaderboard.month')}</InputLabel>
           <Select
-            value={window}
-            label={t('leaderboard.window')}
-            onChange={(e) => setWindow(e.target.value as '7d' | '30d')}
+            value={selectedMonth}
+            label={t('leaderboard.month')}
+            onChange={(e) => setSelectedMonth(e.target.value)}
           >
-            <MenuItem value="7d">{t('leaderboard.7d')}</MenuItem>
-            <MenuItem value="30d">{t('leaderboard.30d')}</MenuItem>
+            {monthOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 
@@ -120,8 +191,8 @@ export const Leaderboard: React.FC = () => {
           </Select>
         </FormControl>
 
-        {/* Age Category Filter - only show if team has categories configured */}
-        {allowedCategories.length > 0 && (
+        {/* Age Category Filter - only show if categories exist in data */}
+        {availableCategories.length > 0 && (
           <FormControl sx={{ minWidth: 200 }}>
             <InputLabel>Age Category</InputLabel>
             <Select
@@ -132,7 +203,7 @@ export const Leaderboard: React.FC = () => {
               <MenuItem value="">
                 <em>All Categories</em>
               </MenuItem>
-              {allowedCategories.map((category) => (
+              {availableCategories.map((category) => (
                 <MenuItem key={category} value={category}>
                   {category}
                 </MenuItem>

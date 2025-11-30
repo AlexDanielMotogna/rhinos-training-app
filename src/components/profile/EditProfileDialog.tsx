@@ -16,7 +16,6 @@ import { useI18n } from '../../i18n/I18nProvider';
 import { saveUser, calculateAge, type MockUser } from '../../services/userProfile';
 import { updateUserProfile } from '../../services/userProfile';
 import { toastService } from '../../services/toast';
-import { getTeamSettings } from '../../services/teamSettings';
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -32,8 +31,8 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   onSave,
 }) => {
   const { t } = useI18n();
-  const teamSettings = getTeamSettings();
-  const allowedCategories = teamSettings.allowedCategories || [];
+  // Hardcoded categories for USR Rhinos - backend handles validation
+  const allowedCategories = ['Kampfmannschaft', 'Jugend'];
 
   const [name, setName] = useState(user.name);
   const [jerseyNumber, setJerseyNumber] = useState(user.jerseyNumber?.toString() || '');

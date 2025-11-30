@@ -17,12 +17,20 @@ const templateSchema = z.object({
   weeklyNotes: z.string().optional().nullable(),
   blocks: z.array(z.any()), // Array of TemplateBlock (validated on frontend)
   isActive: z.boolean().optional().default(true),
+  ageCategories: z.array(z.string()).optional().default([]), // Categories this template is visible to
 });
 
 // GET /api/templates - Get all templates
 router.get('/', authenticate, async (req, res) => {
   try {
     const { trainingType, position, season } = req.query;
+    const user = (req as any).user;
+
+    // Get user's category info for filtering
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { role: true, ageCategory: true, coachCategories: true },
+    });
 
     const where: any = {};
 
@@ -43,12 +51,32 @@ router.get('/', authenticate, async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
+    // Filter templates by user's category
+    let filteredTemplates = templates;
+    if (dbUser) {
+      if (dbUser.role === 'player' && dbUser.ageCategory) {
+        // Players see templates that: have no category restriction OR include their category
+        filteredTemplates = templates.filter(template => {
+          const templateCategories = (template as any).ageCategories || [];
+          return templateCategories.length === 0 || templateCategories.includes(dbUser.ageCategory);
+        });
+      } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+        // Coaches see templates that: have no category restriction OR overlap with their categories
+        filteredTemplates = templates.filter(template => {
+          const templateCategories = (template as any).ageCategories || [];
+          return templateCategories.length === 0 ||
+            templateCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+        });
+      }
+      // If no category set, show all templates (admin/superuser behavior)
+    }
+
     // Get all training types to enrich templates
     const trainingTypes = await prisma.trainingType.findMany();
     const typeMap = new Map(trainingTypes.map(tt => [tt.id, tt]));
 
     // Transform templates to match frontend expectations
-    const enrichedTemplates = templates.map(template => {
+    const enrichedTemplates = filteredTemplates.map(template => {
       const trainingType = typeMap.get(template.trainingType);
 
       // Use new positions array, fallback to legacy position field, then default
@@ -68,6 +96,7 @@ router.get('/', authenticate, async (req, res) => {
         frequencyPerWeek: template.frequencyPerWeek || '2-3',
         weeklyNotes: template.weeklyNotes || '',
         active: template.isActive,
+        ageCategories: (template as any).ageCategories || [],
         createdAt: template.createdAt,
         updatedAt: template.updatedAt,
       };
@@ -106,17 +135,31 @@ router.get('/:id', authenticate, async (req, res) => {
 // POST /api/templates - Create new template (Coach only)
 router.post('/', authenticate, async (req, res) => {
   try {
+    const user = (req as any).user;
+
     // Check if user is coach
-    if (req.user.role !== 'coach') {
+    if (user.role !== 'coach') {
       return res.status(403).json({ error: 'Only coaches can create templates' });
     }
 
     const data = templateSchema.parse(req.body);
 
+    // Get coach's categories to auto-assign if not provided
+    const coach = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { coachCategories: true },
+    });
+
+    // Use provided categories or default to coach's categories
+    const ageCategories = (data.ageCategories && data.ageCategories.length > 0)
+      ? data.ageCategories
+      : (coach?.coachCategories || []);
+
     const template = await prisma.trainingTemplate.create({
       data: {
         ...data,
-        createdBy: req.user.userId,
+        ageCategories: ageCategories,
+        createdBy: user.userId,
       },
     });
 
@@ -139,10 +182,12 @@ router.post('/', authenticate, async (req, res) => {
       frequencyPerWeek: template.frequencyPerWeek || '2-3',
       weeklyNotes: template.weeklyNotes || '',
       active: template.isActive,
+      ageCategories: ageCategories,
       createdAt: template.createdAt,
       updatedAt: template.updatedAt,
     };
 
+    console.log(`[TEMPLATES] Template created by ${user.email}, categories: ${ageCategories.join(', ') || 'all'}`);
     res.status(201).json(enriched);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -156,8 +201,10 @@ router.post('/', authenticate, async (req, res) => {
 // PATCH /api/templates/:id - Update template (Coach only)
 router.patch('/:id', authenticate, async (req, res) => {
   try {
+    const user = (req as any).user;
+
     // Check if user is coach
-    if (req.user.role !== 'coach') {
+    if (user.role !== 'coach') {
       return res.status(403).json({ error: 'Only coaches can update templates' });
     }
 
@@ -214,8 +261,10 @@ router.patch('/:id', authenticate, async (req, res) => {
 // DELETE /api/templates/:id - Delete template (Coach only)
 router.delete('/:id', authenticate, async (req, res) => {
   try {
+    const user = (req as any).user;
+
     // Check if user is coach
-    if (req.user.role !== 'coach') {
+    if (user.role !== 'coach') {
       return res.status(403).json({ error: 'Only coaches can delete templates' });
     }
 

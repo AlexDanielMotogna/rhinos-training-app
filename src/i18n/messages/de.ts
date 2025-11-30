@@ -62,6 +62,20 @@ export const messagesDE = {
   'common.success': 'Erfolg',
   'common.goBack': 'Zurück',
 
+  // Months
+  'months.january': 'Januar',
+  'months.february': 'Februar',
+  'months.march': 'März',
+  'months.april': 'April',
+  'months.may': 'Mai',
+  'months.june': 'Juni',
+  'months.july': 'Juli',
+  'months.august': 'August',
+  'months.september': 'September',
+  'months.october': 'Oktober',
+  'months.november': 'November',
+  'months.december': 'Dezember',
+
   // Auth
   'auth.login': 'Anmelden',
   'auth.signup': 'Registrieren',
@@ -317,6 +331,7 @@ export const messagesDE = {
   // Leaderboard
   'leaderboard.title': 'Bestenliste',
   'leaderboard.window': 'Zeitfenster',
+  'leaderboard.month': 'Monat',
   'leaderboard.rank': 'Rang',
   'leaderboard.player': 'Spieler',
   'leaderboard.pos': 'Pos',
@@ -833,7 +848,6 @@ export const messagesDE = {
   'equipment.confirmDelete': 'Möchten Sie dieses Equipment wirklich löschen?',
   'equipment.noEquipment': 'Noch kein Equipment konfiguriert. Fügen Sie Equipment hinzu, das Sie für Übungen verwenden.',
   'equipment.uploadImageError': 'Fehler beim Hochladen des Bildes. Bitte versuchen Sie es erneut.',
-  'equipment.uploadImageOffline': 'Bild kann nicht offline hochgeladen werden. Bitte Internetverbindung herstellen.',
   'equipment.saveError': 'Fehler beim Speichern des Equipments. Bitte versuchen Sie es erneut.',
   'equipment.deleteError': 'Fehler beim Löschen des Equipments. Bitte versuchen Sie es erneut.',
   'equipment.optimizingImage': 'Bild wird optimiert...',
@@ -877,7 +891,6 @@ export const messagesDE = {
   'drills.sketch': 'Drill-Skizze',
   'drills.generatedBy': 'Erstellt von Rhinos Training App',
   'drills.uploadSketchError': 'Fehler beim Hochladen der Skizze. Bitte versuchen Sie es erneut.',
-  'drills.uploadSketchOffline': 'Skizze kann nicht offline hochgeladen werden. Bitte Internetverbindung herstellen.',
   'drills.saveError': 'Fehler beim Speichern des Drills. Bitte versuchen Sie es erneut.',
   'drills.deleteError': 'Fehler beim Löschen des Drills. Bitte versuchen Sie es erneut.',
   'drills.optimizingImage': 'Bild wird optimiert...',

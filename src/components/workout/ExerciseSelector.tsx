@@ -1,4 +1,3 @@
-import { isOnline } from '../../services/online';
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import {

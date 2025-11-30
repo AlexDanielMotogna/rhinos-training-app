@@ -4,9 +4,7 @@ import App from './App';
 import { registerServiceWorker } from './services/serviceWorkerRegistration';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 );
 
 // Register service worker for PWA notifications (PRODUCTION ONLY)

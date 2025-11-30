@@ -14,7 +14,7 @@ import { getUser } from './services/userProfile';
 import { MyTraining } from './pages/MyTraining';
 import type { HardNotification as HardNotificationType } from './types/notification';
 import type { AttendancePoll } from './types/attendancePoll';
-import { getTeamBrandingAsync, getTeamSettings, updateAgeCategories } from './services/teamSettings';
+import { getTeamBrandingAsync } from './services/teamSettings';
 import type { TeamBranding } from './types/teamSettings';
 import { DEFAULT_TEAM_BRANDING } from './types/teamSettings';
 import { initializeDrillData } from './services/drillDataInit';
@@ -101,37 +101,6 @@ function App() {
   // Clean up old mock data on app startup
   useEffect(() => {
     cleanupMockNotifications();
-  }, []);
-
-  // Initialize Rhinos categories on app startup (Kampfmannschaft & Jugend)
-  useEffect(() => {
-    const initializeRhinosCategories = async () => {
-      try {
-        const settings = getTeamSettings();
-
-        // Only initialize if categories are empty
-        if (!settings.allowedCategories || settings.allowedCategories.length === 0) {
-          console.log('🏈 Initializing USR Rhinos categories...');
-          await updateAgeCategories(['Kampfmannschaft', 'Jugend']);
-          console.log('✅ Rhinos categories initialized: Kampfmannschaft, Jugend');
-        }
-      } catch (error) {
-        console.warn('⚠️ Could not initialize categories (backend may not be ready):', error);
-        // Fallback: Initialize in localStorage only
-        const STORAGE_KEY = 'rhinos_team_settings';
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const settings = JSON.parse(stored);
-          if (!settings.allowedCategories || settings.allowedCategories.length === 0) {
-            settings.allowedCategories = ['Kampfmannschaft', 'Jugend'];
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-            console.log('✅ Rhinos categories initialized in localStorage');
-          }
-        }
-      }
-    };
-
-    initializeRhinosCategories();
   }, []);
 
   // Initialize branding from database on app startup

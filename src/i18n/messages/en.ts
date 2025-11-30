@@ -60,6 +60,20 @@ export const messagesEN = {
   'common.loading': 'Loading...',
   'common.error': 'Error',
   'common.success': 'Success',
+
+  // Months
+  'months.january': 'January',
+  'months.february': 'February',
+  'months.march': 'March',
+  'months.april': 'April',
+  'months.may': 'May',
+  'months.june': 'June',
+  'months.july': 'July',
+  'months.august': 'August',
+  'months.september': 'September',
+  'months.october': 'October',
+  'months.november': 'November',
+  'months.december': 'December',
   'common.back': 'Back to Team',
   'common.goBack': 'Back',
 
@@ -329,6 +343,7 @@ export const messagesEN = {
   // Leaderboard
   'leaderboard.title': 'Leaderboard',
   'leaderboard.window': 'Time Window',
+  'leaderboard.month': 'Month',
   'leaderboard.rank': 'Rank',
   'leaderboard.player': 'Player',
   'leaderboard.pos': 'Pos',

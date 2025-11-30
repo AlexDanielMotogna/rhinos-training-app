@@ -7,7 +7,6 @@ import type { UserPlanTemplate, UserPlanPayload } from '../types/userPlan';
 import { userPlanService } from './api';
 
 const USER_PLANS_KEY = 'rhinos_user_plans';
-const SYNCING_PLANS_KEY = 'rhinos_syncing_plans';
 const DELETED_PLANS_KEY = 'rhinos_deleted_plans'; // Track plans deleted by user
 
 /**
@@ -20,25 +19,30 @@ export function getUserPlans(userId: string): UserPlanTemplate[] {
 }
 
 /**
- * Get all plans for a user (async - tries backend first, falls back to localStorage)
+ * Get all plans for a user from backend
  */
 export async function getUserPlansFromBackend(userId: string): Promise<UserPlanTemplate[]> {
-  console.log('[USER PLANS] 🚀 Starting getUserPlansFromBackend for user:', userId);
+  console.log('[USER PLANS] Loading plans from backend for user:', userId);
 
   try {
-    console.log('[USER PLANS] 📡 Loading plans from backend for user:', userId);
-    await syncUserPlansFromBackend(userId);
-    console.log('[USER PLANS] ✅ Synced plans from backend successfully');
-  } catch (error) {
-    console.error('[USER PLANS] ❌ Failed to load from backend:', error);
-    console.warn('[USER PLANS] ⚠️ Falling back to localStorage');
-  }
+    const backendPlans = await userPlanService.getAll() as UserPlanTemplate[];
 
-  // Return from localStorage (which now contains backend data if sync succeeded)
-  const localPlans = getUserPlans(userId);
-  console.log('[USER PLANS] 📦 Returning plans from localStorage:', localPlans.length, 'plans');
-  console.log('[USER PLANS] 📋 Plan details:', localPlans.map(p => ({ id: p.id, name: p.name, userId: p.userId })));
-  return localPlans;
+    // Filter plans for this user (backend returns all user's plans already)
+    const userBackendPlans = backendPlans.filter(p => p.userId === userId);
+
+    // Update localStorage cache
+    const allPlans = JSON.parse(localStorage.getItem(USER_PLANS_KEY) || '[]');
+    const otherPlans = allPlans.filter((p: UserPlanTemplate) => p.userId !== userId);
+    const mergedPlans = [...otherPlans, ...userBackendPlans];
+    localStorage.setItem(USER_PLANS_KEY, JSON.stringify(mergedPlans));
+
+    console.log('[USER PLANS] Loaded', userBackendPlans.length, 'plans from backend');
+    return userBackendPlans;
+  } catch (error) {
+    console.error('[USER PLANS] Failed to load from backend:', error);
+    // Fallback to localStorage
+    return getUserPlans(userId);
+  }
 }
 
 /**
@@ -70,11 +74,9 @@ export async function createUserPlan(payload: UserPlanPayload): Promise<UserPlan
   allPlans.push(newPlan);
   localStorage.setItem(USER_PLANS_KEY, JSON.stringify(allPlans));
 
-  // Try to save to backend if online
-  
-  if (online) {
-    try {
-      console.log('[USER PLANS] Saving plan to backend:', newPlan.name);
+  // Try to save to backend
+  try {
+    console.log('[USER PLANS] Saving plan to backend:', newPlan.name);
       const backendPlan = await userPlanService.create({
         name: newPlan.name,
         trainingType: 'custom', // Default training type
@@ -94,9 +96,9 @@ export async function createUserPlan(payload: UserPlanPayload): Promise<UserPlan
       }
 
       console.log('[USER PLANS] Plan saved to backend:', backendPlan.id);
-    } catch (error) {
-      console.warn('[USER PLANS] Failed to save plan to backend, will sync later:', error);
-    }
+  } catch (error) {
+    console.error('[USER PLANS] Failed to save plan to backend:', error);
+    // Continue with localStorage version
   }
 
   return newPlan;
@@ -124,33 +126,21 @@ export async function updateUserPlan(planId: string, updates: Partial<UserPlanPa
   allPlans[index] = updatedPlan;
   localStorage.setItem(USER_PLANS_KEY, JSON.stringify(allPlans));
 
-  // Try to update backend if online
-  
-  if (online) {
-    try {
-      console.log('[USER PLANS] Updating plan on backend:', planId);
-      console.log('[USER PLANS] Update payload:', {
-        name: updatedPlan.name,
-        exerciseCount: updatedPlan.exercises.length,
-        exercises: updatedPlan.exercises
-      });
-      await userPlanService.update(planId, {
-        name: updatedPlan.name,
-        trainingType: 'custom',
-        exercises: updatedPlan.exercises,
-        notes: '',
-        timesCompleted: updatedPlan.timesCompleted,
-        updatedAt: updatedPlan.updatedAt,
-      });
-      console.log('[USER PLANS] ✅ Plan updated successfully on backend');
-    } catch (error) {
-      console.error('[USER PLANS] ❌ FAILED to update plan on backend:', error);
-      console.error('[USER PLANS] ⚠️  WARNING: Changes are only saved locally. They will be lost if backend sync happens before reconnection.');
-      // TODO: Add to outbox for retry
-      throw error; // Re-throw to let caller know update failed
-    }
-  } else {
-    console.warn('[USER PLANS] Offline - changes saved locally only');
+  // Update backend
+  try {
+    console.log('[USER PLANS] Updating plan on backend:', planId);
+    await userPlanService.update(planId, {
+      name: updatedPlan.name,
+      trainingType: 'custom',
+      exercises: updatedPlan.exercises,
+      notes: '',
+      timesCompleted: updatedPlan.timesCompleted,
+      updatedAt: updatedPlan.updatedAt,
+    });
+    console.log('[USER PLANS] Plan updated successfully on backend');
+  } catch (error) {
+    console.error('[USER PLANS] Failed to update plan on backend:', error);
+    throw error;
   }
 
   return updatedPlan;
@@ -222,188 +212,3 @@ export async function duplicateUserPlan(planId: string): Promise<UserPlanTemplat
   return duplicatedPlan;
 }
 
-/**
- * Sync user plans from backend
- * Merges backend data with local cache
- */
-export async function syncUserPlansFromBackend(userId: string): Promise<void> {
-  
-
-  if (!online) {
-    console.log('[USER PLANS] Offline - skipping backend sync');
-    return;
-  }
-
-  try {
-    console.log('[USER PLANS] 📡 Starting sync from backend for user:', userId);
-    const backendPlans = await userPlanService.getAll() as any[];
-    console.log(`[USER PLANS] 📥 API response: ${backendPlans.length} plans from backend`);
-    console.log('[USER PLANS] 🔍 Raw backend data:', backendPlans);
-
-    // Get current local plans
-    const data = localStorage.getItem(USER_PLANS_KEY);
-    const localPlans: UserPlanTemplate[] = data ? JSON.parse(data) : [];
-
-    // Create a map of backend plans by ID
-    const backendPlanMap = new Map<string, any>();
-    backendPlans.forEach(plan => {
-      backendPlanMap.set(plan.id, plan);
-    });
-
-    // Get list of deleted plans to filter them out
-    const deletedData = localStorage.getItem(DELETED_PLANS_KEY);
-    const deletedPlans = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
-
-    // Merge: backend plans take precedence
-    const mergedPlans: UserPlanTemplate[] = [];
-    const processedIds = new Set<string>();
-
-    // Add backend plans (merge with local if local is newer)
-    for (const backendPlan of backendPlans) {
-      // Skip plans that were marked as deleted by user
-      if (deletedPlans.has(backendPlan.id)) {
-        console.log('[USER PLANS] Skipping plan marked as deleted:', backendPlan.id, backendPlan.name);
-        continue;
-      }
-
-      // Check if we have a local version of this plan
-      const localVersion = localPlans.find(p => p.id === backendPlan.id);
-
-      let finalPlan: UserPlanTemplate;
-
-      if (localVersion) {
-        // Compare timestamps to see which is newer
-        const localTime = new Date(localVersion.updatedAt).getTime();
-        const backendTime = new Date(backendPlan.updatedAt).getTime();
-
-        if (localTime > backendTime) {
-          // Local is newer - keep local and sync to backend
-          console.log('[USER PLANS] Local version is newer, keeping local and syncing to backend:', localVersion.id, localVersion.name);
-          finalPlan = localVersion;
-
-          // Try to sync newer local version to backend
-          try {
-            await userPlanService.update(localVersion.id, {
-              name: localVersion.name,
-              trainingType: 'custom',
-              exercises: localVersion.exercises,
-              notes: '',
-              timesCompleted: localVersion.timesCompleted,
-              updatedAt: localVersion.updatedAt,
-            });
-            console.log('[USER PLANS] ✅ Synced newer local version to backend');
-          } catch (error) {
-            console.error('[USER PLANS] ❌ Failed to sync newer local version:', error);
-          }
-        } else {
-          // Backend is newer or same - use backend
-          console.log('[USER PLANS] Backend version is newer or same, using backend:', backendPlan.id, backendPlan.name);
-          finalPlan = {
-            id: backendPlan.id,
-            userId: backendPlan.userId,
-            name: backendPlan.name,
-            exercises: backendPlan.exercises || [],
-            warmupMinutes: backendPlan.warmupMinutes,
-            createdAt: backendPlan.createdAt,
-            updatedAt: backendPlan.updatedAt,
-            lastUsed: backendPlan.lastUsed,
-            timesCompleted: backendPlan.timesCompleted || 0,
-          };
-        }
-      } else {
-        // No local version - use backend
-        finalPlan = {
-          id: backendPlan.id,
-          userId: backendPlan.userId,
-          name: backendPlan.name,
-          exercises: backendPlan.exercises || [],
-          warmupMinutes: backendPlan.warmupMinutes,
-          createdAt: backendPlan.createdAt,
-          updatedAt: backendPlan.updatedAt,
-          lastUsed: backendPlan.lastUsed,
-          timesCompleted: backendPlan.timesCompleted || 0,
-        };
-      }
-
-      mergedPlans.push(finalPlan);
-      processedIds.add(finalPlan.id);
-    }
-
-    // Get currently syncing plans to prevent duplicates
-    const syncingData = localStorage.getItem(SYNCING_PLANS_KEY);
-    const syncingPlans = new Set<string>(syncingData ? JSON.parse(syncingData) : []);
-
-    // Add local-only plans (not yet synced to backend)
-    for (const localPlan of localPlans) {
-      if (!processedIds.has(localPlan.id)) {
-        // Skip plans that were marked as deleted
-        if (deletedPlans.has(localPlan.id)) {
-          console.log('[USER PLANS] Plan was deleted by user, removing from local cache:', localPlan.id, localPlan.name);
-          continue;
-        }
-
-        // Check if this plan has a MongoDB ID (24 hex chars)
-        const isMongoId = /^[0-9a-f]{24}$/i.test(localPlan.id);
-
-        if (isMongoId) {
-          // This plan was deleted from backend, don't re-upload it
-          console.log('[USER PLANS] Plan was deleted from backend, removing from local cache:', localPlan.id, localPlan.name);
-          // Don't add to mergedPlans - this will remove it from localStorage
-          continue;
-        }
-
-        // Check if already syncing this plan
-        const planKey = `${localPlan.name}-${localPlan.createdAt}`;
-        if (syncingPlans.has(planKey)) {
-          console.warn('[USER PLANS] Plan already being synced, skipping:', planKey);
-          continue;
-        }
-
-        console.log('[USER PLANS] Found local-only plan (new), will sync to backend:', localPlan.id);
-
-        // Mark as syncing
-        syncingPlans.add(planKey);
-        localStorage.setItem(SYNCING_PLANS_KEY, JSON.stringify(Array.from(syncingPlans)));
-
-        // Try to sync to backend
-        try {
-          const backendPlan = await userPlanService.create({
-            name: localPlan.name,
-            trainingType: 'custom', // Default training type
-            exercises: localPlan.exercises,
-            notes: '',
-            timesCompleted: localPlan.timesCompleted,
-            createdAt: localPlan.createdAt,
-            updatedAt: localPlan.updatedAt,
-          });
-          console.log('[USER PLANS] Local plan synced to backend:', backendPlan);
-
-          // Update local plan with backend ID to prevent future duplicates
-          const updatedPlan: UserPlanTemplate = {
-            ...localPlan,
-            id: backendPlan.id, // Use backend ID from now on
-          };
-          mergedPlans.push(updatedPlan);
-          processedIds.add(backendPlan.id);
-
-          // Remove from syncing set (success)
-          syncingPlans.delete(planKey);
-        } catch (error) {
-          console.warn('[USER PLANS] Failed to sync local plan to backend:', error);
-          // If sync failed, keep local plan as-is
-          mergedPlans.push(localPlan);
-          // Remove from syncing set (failed, can retry later)
-          syncingPlans.delete(planKey);
-        }
-
-        localStorage.setItem(SYNCING_PLANS_KEY, JSON.stringify(Array.from(syncingPlans)));
-      }
-    }
-
-    // Save merged plans to localStorage
-    localStorage.setItem(USER_PLANS_KEY, JSON.stringify(mergedPlans));
-    console.log(`[USER PLANS] Sync complete - ${mergedPlans.length} total plans`);
-  } catch (error) {
-    console.error('[USER PLANS] Failed to sync from backend:', error);
-  }
-}

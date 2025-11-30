@@ -1,4 +1,3 @@
-import { isOnline } from './online';
 import { drillCategoryService as drillCategoryApi } from './api';
 
 const DRILL_CATEGORIES_STORAGE_KEY = 'rhinos_drill_categories';
@@ -59,87 +58,71 @@ export const drillCategoryService = {
   },
 
   async createCategory(data: { name: string; nameDE?: string; color?: string; key: string }): Promise<DrillCategory> {
-    if (isOnline()) {
-      try {
-        // Create on backend
-        const newCategory = await drillCategoryApi.create(data) as DrillCategory;
+    try {
+      // Create on backend
+      const newCategory = await drillCategoryApi.create(data) as DrillCategory;
 
-        // Update local cache
-        const categories = this.getAllCategories();
-        categories.push(newCategory);
-        localStorage.setItem(DRILL_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+      // Update local cache
+      const categories = this.getAllCategories();
+      categories.push(newCategory);
+      localStorage.setItem(DRILL_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
 
-        return newCategory;
-      } catch (error) {
-        console.error('Failed to create category on backend:', error);
-        throw error;
-      }
-    } else {
-      throw new Error('Cannot create category while offline');
+      return newCategory;
+    } catch (error) {
+      console.error('Failed to create category on backend:', error);
+      throw error;
     }
   },
 
   async updateCategory(id: string, data: { name?: string; nameDE?: string; color?: string; key?: string }): Promise<DrillCategory> {
-    if (isOnline()) {
-      try {
-        // Update on backend
-        const updatedCategory = await drillCategoryApi.update(id, data) as DrillCategory;
+    try {
+      // Update on backend
+      const updatedCategory = await drillCategoryApi.update(id, data) as DrillCategory;
 
-        // Update local cache
-        const categories = this.getAllCategories();
-        const index = categories.findIndex(c => c.id === id);
-        if (index !== -1) {
-          categories[index] = updatedCategory;
-          localStorage.setItem(DRILL_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
-        }
-
-        return updatedCategory;
-      } catch (error) {
-        console.error('Failed to update category on backend:', error);
-        throw error;
+      // Update local cache
+      const categories = this.getAllCategories();
+      const index = categories.findIndex(c => c.id === id);
+      if (index !== -1) {
+        categories[index] = updatedCategory;
+        localStorage.setItem(DRILL_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
       }
-    } else {
-      throw new Error('Cannot update category while offline');
+
+      return updatedCategory;
+    } catch (error) {
+      console.error('Failed to update category on backend:', error);
+      throw error;
     }
   },
 
   async deleteCategory(id: string): Promise<boolean> {
-    if (isOnline()) {
-      try {
-        // Delete from backend
-        await drillCategoryApi.delete(id);
+    try {
+      // Delete from backend
+      await drillCategoryApi.delete(id);
 
-        // Update local cache
-        const categories = this.getAllCategories();
-        const filtered = categories.filter(c => c.id !== id);
-        localStorage.setItem(DRILL_CATEGORIES_STORAGE_KEY, JSON.stringify(filtered));
+      // Update local cache
+      const categories = this.getAllCategories();
+      const filtered = categories.filter(c => c.id !== id);
+      localStorage.setItem(DRILL_CATEGORIES_STORAGE_KEY, JSON.stringify(filtered));
 
-        return true;
-      } catch (error) {
-        console.error('Failed to delete category from backend:', error);
-        throw error;
-      }
-    } else {
-      throw new Error('Cannot delete category while offline');
+      return true;
+    } catch (error) {
+      console.error('Failed to delete category from backend:', error);
+      throw error;
     }
   },
 
   async seedCategories(): Promise<{ created: string[]; skipped: string[] }> {
-    if (isOnline()) {
-      try {
-        // Seed on backend
-        const result = await drillCategoryApi.seed() as { created: string[]; skipped: string[]; };
+    try {
+      // Seed on backend
+      const result = await drillCategoryApi.seed() as { created: string[]; skipped: string[]; };
 
-        // Sync to update local cache
-        await syncDrillCategoriesFromBackend();
+      // Sync to update local cache
+      await syncDrillCategoriesFromBackend();
 
-        return result;
-      } catch (error) {
-        console.error('Failed to seed categories on backend:', error);
-        throw error;
-      }
-    } else {
-      throw new Error('Cannot seed categories while offline');
+      return result;
+    } catch (error) {
+      console.error('Failed to seed categories on backend:', error);
+      throw error;
     }
   },
 };

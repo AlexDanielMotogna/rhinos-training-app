@@ -25,15 +25,15 @@ import { authService } from '../services/api';
 import type { Position } from '../types/exercise';
 import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 import { toastService } from '../services/toast';
-import { getTeamSettings } from '../services/teamSettings';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
+
+// Rhinos-specific categories (hardcoded for simplicity)
+const RHINOS_CATEGORIES = ['Kampfmannschaft', 'Jugend'];
 
 export const Auth: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const teamSettings = getTeamSettings();
-  const allowedCategories = teamSettings.allowedCategories || [];
 
   const [isSignup, setIsSignup] = useState(false);
 
@@ -114,8 +114,8 @@ export const Auth: React.FC = () => {
 
   const isValid = isSignup
     ? role === 'coach'
-      ? name && email && password.length >= 6 && confirmPassword && password === confirmPassword && coachCode && birthDate && weightKg && heightCm && (allowedCategories.length === 0 || coachCategories.length > 0)
-      : name && email && password.length >= 6 && confirmPassword && password === confirmPassword && birthDate && weightKg && heightCm && (allowedCategories.length === 0 || ageCategory)
+      ? name && email && password.length >= 6 && confirmPassword && password === confirmPassword && coachCode && birthDate && weightKg && heightCm && coachCategories.length > 0
+      : name && email && password.length >= 6 && confirmPassword && password === confirmPassword && birthDate && weightKg && heightCm && ageCategory
     : email && password;
 
   return (
@@ -226,44 +226,40 @@ export const Auth: React.FC = () => {
                   </Box>
                 )}
 
-                {/* Age Category Selection - Required if team has categories configured */}
-                {allowedCategories.length > 0 && (
-                  <>
-                    {role === 'player' ? (
-                      <FormControl required fullWidth>
-                        <InputLabel>Team Category / Mannschaft</InputLabel>
-                        <Select
-                          value={ageCategory}
-                          label="Team Category / Mannschaft"
-                          onChange={(e) => setAgeCategory(e.target.value)}
-                        >
-                          {allowedCategories.map((category) => (
-                            <MenuItem key={category} value={category}>
-                              {category}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    ) : (
-                      <FormControl required fullWidth>
-                        <InputLabel>Categories You Coach / Kategorien die Sie trainieren</InputLabel>
-                        <Select
-                          multiple
-                          value={coachCategories}
-                          label="Categories You Coach / Kategorien die Sie trainieren"
-                          onChange={(e) => setCoachCategories(typeof e.target.value === 'string' ? [e.target.value] : e.target.value)}
-                          renderValue={(selected) => (selected as string[]).join(', ')}
-                        >
-                          {allowedCategories.map((category) => (
-                            <MenuItem key={category} value={category}>
-                              <Checkbox checked={coachCategories.includes(category)} />
-                              <ListItemText primary={category} />
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    )}
-                  </>
+                {/* Age Category Selection - Always shown for Rhinos */}
+                {role === 'player' ? (
+                  <FormControl required fullWidth>
+                    <InputLabel>Team Category / Mannschaft</InputLabel>
+                    <Select
+                      value={ageCategory}
+                      label="Team Category / Mannschaft"
+                      onChange={(e) => setAgeCategory(e.target.value)}
+                    >
+                      {RHINOS_CATEGORIES.map((category) => (
+                        <MenuItem key={category} value={category}>
+                          {category}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                ) : (
+                  <FormControl required fullWidth>
+                    <InputLabel>Categories You Coach / Kategorien die Sie trainieren</InputLabel>
+                    <Select
+                      multiple
+                      value={coachCategories}
+                      label="Categories You Coach / Kategorien die Sie trainieren"
+                      onChange={(e) => setCoachCategories(typeof e.target.value === 'string' ? [e.target.value] : e.target.value)}
+                      renderValue={(selected) => (selected as string[]).join(', ')}
+                    >
+                      {RHINOS_CATEGORIES.map((category) => (
+                        <MenuItem key={category} value={category}>
+                          <Checkbox checked={coachCategories.includes(category)} />
+                          <ListItemText primary={category} />
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 )}
 
                 {/* Common fields for both players and coaches */}

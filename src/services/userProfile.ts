@@ -1,4 +1,7 @@
-import { isOnline } from './online';
+/**
+ * User profile service - backend only
+ */
+
 import type { MockUser } from './mock';
 import { userService } from './api';
 
@@ -8,7 +11,6 @@ export type User = MockUser;
 
 const CURRENT_USER_KEY = 'currentUser';
 const ALL_USERS_KEY = 'rhinos_users';
-const SYNCING_PROFILE_KEY = 'rhinos_syncing_profile';
 
 /**
  * Calculate age from birth date
@@ -26,7 +28,6 @@ export function calculateAge(birthDate: string): number {
 
 /**
  * Get current user - alias for backward compatibility
- * Use getCurrentUser() instead
  */
 export function getUser(): MockUser | null {
   return getCurrentUser();
@@ -90,7 +91,6 @@ export function saveUserLocal(user: MockUser): void {
 
 /**
  * Save user - alias for backward compatibility
- * Use updateUserProfile() for backend sync instead
  */
 export function saveUser(user: MockUser): void {
   saveUserLocal(user);
@@ -98,7 +98,6 @@ export function saveUser(user: MockUser): void {
 
 /**
  * Update current user profile with backend sync
- * This is the main function to use when updating user profile
  */
 export async function updateUserProfile(updates: Partial<MockUser>): Promise<MockUser | null> {
   const currentUser = getCurrentUser();
@@ -117,54 +116,31 @@ export async function updateUserProfile(updates: Partial<MockUser>): Promise<Moc
   saveUserLocal(updatedUser);
   console.log('[USER PROFILE] User profile updated locally');
 
-  // Try to sync with backend if online
-  const online = isOnline();
-  if (online) {
-    try {
-      console.log('[USER PROFILE] Syncing user profile to backend...');
-      const backendUser = await userService.updateProfile(updates);
+  try {
+    console.log('[USER PROFILE] Syncing user profile to backend...');
+    const backendUser = await userService.updateProfile(updates);
 
-      // Merge backend response with local data
-      const mergedUser: MockUser = {
-        ...updatedUser,
-        ...backendUser,
-      };
+    // Merge backend response with local data
+    const mergedUser: MockUser = {
+      ...updatedUser,
+      ...backendUser,
+    };
 
-      // Update local storage with backend data
-      saveUserLocal(mergedUser);
-      console.log('[USER PROFILE] User profile synced to backend successfully');
-      return mergedUser;
-    } catch (error) {
-      console.warn('[USER PROFILE] Failed to sync to backend, keeping local changes:', error);
-      // Keep local changes even if backend sync fails
-      return updatedUser;
-    }
-  } else {
-    console.log('[USER PROFILE] Offline - profile saved locally only');
-    return updatedUser;
+    // Update local storage with backend data
+    saveUserLocal(mergedUser);
+    console.log('[USER PROFILE] User profile synced to backend successfully');
+    return mergedUser;
+  } catch (error) {
+    console.warn('[USER PROFILE] Failed to sync to backend:', error);
+    throw error;
   }
 }
 
 /**
  * Sync user profile from backend to localStorage
- * This should be called on app startup and when coming back online
  */
 export async function syncUserProfileFromBackend(): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping user profile sync');
-    return;
-  }
-
-  // Check if already syncing to prevent duplicate calls
-  const isSyncing = localStorage.getItem(SYNCING_PROFILE_KEY);
-  if (isSyncing === 'true') {
-    console.log('[USER PROFILE] Already syncing, skipping duplicate call');
-    return;
-  }
-
   try {
-    // Set syncing flag
-    localStorage.setItem(SYNCING_PROFILE_KEY, 'true');
     console.log('🔄 Syncing user profile from backend...');
 
     const backendUser = await userService.getProfile() as any;
@@ -201,22 +177,13 @@ export async function syncUserProfileFromBackend(): Promise<void> {
     console.log('✅ User profile synced from backend');
   } catch (error) {
     console.error('❌ Failed to sync user profile from backend:', error);
-  } finally {
-    // Clear syncing flag
-    localStorage.removeItem(SYNCING_PROFILE_KEY);
   }
 }
 
 /**
  * Sync all users from backend (for team directory)
- * This should be called when viewing the team page
  */
 export async function syncAllUsersFromBackend(): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping all users sync');
-    return;
-  }
-
   try {
     console.log('🔄 Syncing all users from backend...');
     const backendUsersResponse = await userService.getAllUsers();
@@ -253,24 +220,20 @@ export async function getUserById(userId: string): Promise<MockUser | null> {
     return localUser;
   }
 
-  // If not found locally and online, try backend
-  if (isOnline()) {
-    try {
-      const backendUser = await userService.getUserById(userId) as MockUser;
+  // Try backend
+  try {
+    const backendUser = await userService.getUserById(userId) as MockUser;
 
-      // Save to local cache
-      if (backendUser) {
-        const allUsers = getAllUsers();
-        allUsers.push(backendUser);
-        localStorage.setItem(ALL_USERS_KEY, JSON.stringify(allUsers));
-      }
-
-      return backendUser;
-    } catch (error) {
-      console.error('[USER PROFILE] Failed to fetch user from backend:', error);
-      return null;
+    // Save to local cache
+    if (backendUser) {
+      const allUsers = getAllUsers();
+      allUsers.push(backendUser);
+      localStorage.setItem(ALL_USERS_KEY, JSON.stringify(allUsers));
     }
-  }
 
-  return null;
+    return backendUser;
+  } catch (error) {
+    console.error('[USER PROFILE] Failed to fetch user from backend:', error);
+    return null;
+  }
 }

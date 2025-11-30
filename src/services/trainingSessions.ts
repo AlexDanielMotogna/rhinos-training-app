@@ -1,7 +1,6 @@
 /**
  * Training Sessions Service
- * Manages team and private training sessions - REQUIRES INTERNET CONNECTION
- * Note: Only workout tracking uses offline storage, not training sessions themselves
+ * Manages team and private training sessions
  */
 
 import type { TrainingSession, RSVPStatus, CheckInStatus } from '../types/trainingSession';
@@ -87,7 +86,6 @@ export async function createSession(session: Omit<TrainingSession, 'id' | 'creat
 
 /**
  * Update RSVP status for a session
- * REQUIRES INTERNET CONNECTION
  */
 export async function updateRSVP(sessionId: string, userId: string, userName: string, status: RSVPStatus): Promise<void> {
 

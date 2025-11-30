@@ -35,11 +35,9 @@ export const ReportsHistory: React.FC<ReportsHistoryProps> = ({ userId, source }
     const loadReports = async () => {
       setLoading(true);
 
-      // If online, sync from backend first
-      if (isOnline()) {
-        console.log('[REPORTS] Syncing reports from backend...');
-        await syncWorkoutReportsFromBackend(userId);
-      }
+      // Sync from backend first
+      console.log('[REPORTS] Syncing reports from backend...');
+      await syncWorkoutReportsFromBackend(userId);
 
       // Then load from localStorage (which now has synced data)
       const loadedReports = getReportsByUser(userId, source);

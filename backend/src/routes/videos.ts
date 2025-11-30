@@ -21,6 +21,7 @@ const createVideoSchema = z.object({
   createdBy: z.string(),
   order: z.number().default(0),
   isPinned: z.boolean().default(false),
+  ageCategories: z.array(z.string()).default([]), // Categories this video is visible to
 });
 
 const updateVideoSchema = z.object({
@@ -37,17 +38,24 @@ const updateVideoSchema = z.object({
   runs: z.array(z.string()).optional(),
   order: z.number().optional(),
   isPinned: z.boolean().optional(),
+  ageCategories: z.array(z.string()).optional(), // Categories this video is visible to
 });
 
 // GET /api/videos - Get all videos
 router.get('/', authenticate, async (req, res) => {
   try {
     const { type } = req.query;
+    const user = (req as any).user;
+
+    // Get user's category info for filtering
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { role: true, ageCategory: true, coachCategories: true },
+    });
 
     const where: any = {};
 
     // If player, only show published videos
-    const user = (req as any).user;
     if (user.role === 'player') {
       where.status = 'published';
     }
@@ -66,7 +74,27 @@ router.get('/', authenticate, async (req, res) => {
       ],
     });
 
-    res.json(videos);
+    // Filter videos by user's category
+    let filteredVideos = videos;
+    if (dbUser) {
+      if (dbUser.role === 'player' && dbUser.ageCategory) {
+        // Players see videos that: have no category restriction OR include their category
+        filteredVideos = videos.filter(video => {
+          const videoCategories = (video as any).ageCategories || [];
+          return videoCategories.length === 0 || videoCategories.includes(dbUser.ageCategory);
+        });
+      } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+        // Coaches see videos that: have no category restriction OR overlap with their categories
+        filteredVideos = videos.filter(video => {
+          const videoCategories = (video as any).ageCategories || [];
+          return videoCategories.length === 0 ||
+            videoCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+        });
+      }
+      // If no category set, show all videos (admin/superuser behavior)
+    }
+
+    res.json(filteredVideos);
   } catch (error) {
     console.error('[VIDEOS] Get videos error:', error);
     res.status(500).json({ error: 'Failed to fetch videos' });
@@ -111,6 +139,17 @@ router.post('/', authenticate, async (req, res) => {
 
     const data = createVideoSchema.parse(req.body);
 
+    // Get coach's categories to auto-assign if not provided
+    const coach = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { coachCategories: true },
+    });
+
+    // Use provided categories or default to coach's categories
+    const ageCategories = data.ageCategories.length > 0
+      ? data.ageCategories
+      : (coach?.coachCategories || []);
+
     const video = await prisma.video.create({
       data: {
         title: data.title,
@@ -127,10 +166,11 @@ router.post('/', authenticate, async (req, res) => {
         createdBy: data.createdBy,
         order: data.order,
         isPinned: data.isPinned,
+        ageCategories: ageCategories,
       },
     });
 
-    console.log(`[VIDEOS] Video created: ${video.title} by ${user.email}`);
+    console.log(`[VIDEOS] Video created: ${video.title} by ${user.email}, categories: ${ageCategories.join(', ') || 'all'}`);
     res.status(201).json(video);
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -35,9 +35,9 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useI18n } from '../i18n/I18nProvider';
 import { getStatusColor, getStatusIcon, getTrendDirection, getTrendColor } from '../services/reports';
 import { reportsService } from '../services/api';
+import { getUser } from '../services/userProfile';
 import type { DailyReport, WeeklyReport, MonthlyReport, ReportPeriod, PlayerStatus } from '../types/report';
 import type { Position } from '../types/exercise';
-import { getTeamSettings } from '../services/teamSettings';
 
 type UnitFilter = 'all' | 'offense' | 'defense';
 
@@ -48,8 +48,7 @@ const ALL_POSITIONS: Position[] = [...OFFENSE_POSITIONS, ...DEFENSE_POSITIONS, '
 
 export const Reports: React.FC = () => {
   const { t } = useI18n();
-  const teamSettings = getTeamSettings();
-  const allowedCategories = teamSettings.allowedCategories || [];
+  const currentUser = getUser();
 
   const [period, setPeriod] = useState<ReportPeriod>('day');
   const [unitFilter, setUnitFilter] = useState<UnitFilter>('all');
@@ -62,6 +61,7 @@ export const Reports: React.FC = () => {
   const [sessionCarouselIndex, setSessionCarouselIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
   useEffect(() => {
     loadReports();
@@ -79,9 +79,43 @@ export const Reports: React.FC = () => {
         reportsService.getMonthlyReport(),
       ]);
 
-      setDailyReport(daily);
-      setWeeklyReport(weekly);
-      setMonthlyReport(monthly);
+      // Filter reports by user's allowed categories
+      const filterPlayersByCategory = (players: any[]) => {
+        if (!currentUser) return players;
+
+        if (currentUser.role === 'player' && currentUser.ageCategory) {
+          // Players see only their category
+          return players.filter((p: any) => p.ageCategory === currentUser.ageCategory);
+        } else if (currentUser.role === 'coach' && currentUser.coachCategories && currentUser.coachCategories.length > 0) {
+          // Coaches see only their assigned categories
+          return players.filter((p: any) => p.ageCategory && currentUser.coachCategories!.includes(p.ageCategory));
+        }
+
+        return players;
+      };
+
+      const filteredDaily = daily ? { ...daily, players: filterPlayersByCategory(daily.players) } : null;
+      const filteredWeekly = weekly ? { ...weekly, players: filterPlayersByCategory(weekly.players) } : null;
+      const filteredMonthly = monthly ? { ...monthly, players: filterPlayersByCategory(monthly.players) } : null;
+
+      setDailyReport(filteredDaily);
+      setWeeklyReport(filteredWeekly);
+      setMonthlyReport(filteredMonthly);
+
+      // Extract unique categories from filtered reports
+      const allPlayers = [
+        ...(filteredDaily?.players || []),
+        ...(filteredWeekly?.players || []),
+        ...(filteredMonthly?.players || []),
+      ];
+      const categories = Array.from(
+        new Set(
+          allPlayers
+            .map((p: any) => p.ageCategory)
+            .filter((cat): cat is string => !!cat)
+        )
+      ).sort();
+      setAvailableCategories(categories);
     } catch (err: any) {
       console.error('[REPORTS] Load error:', err);
       setError(err.message || 'Failed to load reports');
@@ -216,14 +250,14 @@ export const Reports: React.FC = () => {
 
       {/* Filters */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={allowedCategories.length > 0 ? 3 : 4}>
+        <Grid item xs={12} sm={availableCategories.length > 0 ? 3 : 4}>
           <Tabs value={unitFilter} onChange={(_, val) => setUnitFilter(val)} variant="fullWidth">
             <Tab label={t('reports.filters.all')} value="all" />
             <Tab label={t('reports.filters.offense')} value="offense" />
             <Tab label={t('reports.filters.defense')} value="defense" />
           </Tabs>
         </Grid>
-        <Grid item xs={12} sm={allowedCategories.length > 0 ? 3 : 4}>
+        <Grid item xs={12} sm={availableCategories.length > 0 ? 3 : 4}>
           <FormControl fullWidth>
             <InputLabel>{t('reports.filters.position')}</InputLabel>
             <Select
@@ -241,7 +275,7 @@ export const Reports: React.FC = () => {
           </FormControl>
         </Grid>
         {/* Age Category Filter - only show if team has categories configured */}
-        {allowedCategories.length > 0 && (
+        {availableCategories.length > 0 && (
           <Grid item xs={12} sm={3}>
             <FormControl fullWidth>
               <InputLabel>Age Category</InputLabel>
@@ -253,7 +287,7 @@ export const Reports: React.FC = () => {
                 <MenuItem value="">
                   <em>All Categories</em>
                 </MenuItem>
-                {allowedCategories.map((category) => (
+                {availableCategories.map((category: string) => (
                   <MenuItem key={category} value={category}>
                     {category}
                   </MenuItem>
@@ -262,7 +296,7 @@ export const Reports: React.FC = () => {
             </FormControl>
           </Grid>
         )}
-        <Grid item xs={12} sm={allowedCategories.length > 0 ? 3 : 4}>
+        <Grid item xs={12} sm={availableCategories.length > 0 ? 3 : 4}>
           <FormControl fullWidth>
             <InputLabel>{t('reports.filters.status')}</InputLabel>
             <Select

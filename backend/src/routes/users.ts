@@ -28,6 +28,8 @@ router.get('/me', authenticate, async (req, res) => {
         hudl: true,
         metricsPublic: true,
         aiCoachEnabled: true,
+        ageCategory: true,
+        coachCategories: true,
         createdAt: true,
       },
     });
@@ -59,6 +61,8 @@ router.get('/', authenticate, async (req, res) => {
         heightCm: true,
         sex: true,
         metricsPublic: true,
+        ageCategory: true,
+        coachCategories: true,
       },
       orderBy: [
         { role: 'asc' }, // Coaches first
@@ -96,6 +100,8 @@ router.get('/:id', authenticate, async (req, res) => {
         tiktok: true,
         hudl: true,
         metricsPublic: true,
+        ageCategory: true,
+        coachCategories: true,
         createdAt: true,
       },
     });
@@ -174,6 +180,8 @@ router.patch('/me', authenticate, async (req, res) => {
         hudl: true,
         metricsPublic: true,
         aiCoachEnabled: true,
+        ageCategory: true,
+        coachCategories: true,
       },
     });
 

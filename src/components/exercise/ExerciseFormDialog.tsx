@@ -95,11 +95,6 @@ export const ExerciseFormDialog: React.FC<ExerciseFormDialogProps> = ({
       return;
     }
 
-    if (!isOnline()) {
-      toastService.error('You must be online to add exercises');
-      return;
-    }
-
     setIsSaving(true);
     try {
       if (editingExercise) {
