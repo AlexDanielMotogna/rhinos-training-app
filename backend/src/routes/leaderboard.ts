@@ -21,6 +21,7 @@ function getMonthDateRange(year: number, month: number): { startDate: string; en
 router.get('/', async (req, res) => {
   try {
     const user = (req as any).user;
+    const requestedCategory = req.query.category as string | undefined;
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1; // 1-12
@@ -35,15 +36,39 @@ router.get('/', async (req, res) => {
 
     // Determine which categories to filter by
     let categoryFilter: string[] = [];
-    if (dbUser?.role === 'player' && dbUser?.ageCategory) {
-      categoryFilter = [dbUser.ageCategory];
-    } else if (dbUser?.role === 'coach' && dbUser?.coachCategories && dbUser.coachCategories.length > 0) {
-      categoryFilter = dbUser.coachCategories;
+
+    // If specific category requested, use it (but only if user has access)
+    if (requestedCategory) {
+      // Players can only see their own category
+      if (dbUser?.role === 'player') {
+        if (dbUser.ageCategory === requestedCategory) {
+          categoryFilter = [requestedCategory];
+        } else {
+          categoryFilter = dbUser.ageCategory ? [dbUser.ageCategory] : [];
+        }
+      }
+      // Coaches can see any of their assigned categories
+      else if (dbUser?.role === 'coach') {
+        if (dbUser.coachCategories?.includes(requestedCategory)) {
+          categoryFilter = [requestedCategory];
+        } else if (dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+          categoryFilter = [dbUser.coachCategories[0]]; // Default to first category
+        }
+      }
+    } else {
+      // No specific category requested - use defaults
+      if (dbUser?.role === 'player' && dbUser?.ageCategory) {
+        categoryFilter = [dbUser.ageCategory];
+      } else if (dbUser?.role === 'coach' && dbUser?.coachCategories && dbUser.coachCategories.length > 0) {
+        // Coaches default to first category instead of all
+        categoryFilter = [dbUser.coachCategories[0]];
+      }
     }
 
-    // Get players to include based on category
-    let playerIdsToInclude: string[] | null = null;
+    // Get users to include based on category (players in category + coaches with that category)
+    let userIdsToInclude: string[] | null = null;
     if (categoryFilter.length > 0) {
+      // Get players in the category
       const playersInCategories = await prisma.user.findMany({
         where: {
           role: 'player',
@@ -51,15 +76,28 @@ router.get('/', async (req, res) => {
         },
         select: { id: true },
       });
-      playerIdsToInclude = playersInCategories.map(p => p.id);
+
+      // Get coaches that have this category assigned (they can also train!)
+      const coachesInCategories = await prisma.user.findMany({
+        where: {
+          role: 'coach',
+          coachCategories: { hasSome: categoryFilter },
+        },
+        select: { id: true },
+      });
+
+      userIdsToInclude = [
+        ...playersInCategories.map(p => p.id),
+        ...coachesInCategories.map(c => c.id),
+      ];
     }
 
     // Get all workouts for the month (directly from WorkoutLog)
     const workoutsWhere: any = {
       date: { gte: startDate, lte: endDate },
     };
-    if (playerIdsToInclude !== null) {
-      workoutsWhere.userId = { in: playerIdsToInclude };
+    if (userIdsToInclude !== null) {
+      workoutsWhere.userId = { in: userIdsToInclude };
     }
 
     const workouts = await prisma.workoutLog.findMany({
@@ -95,7 +133,7 @@ router.get('/', async (req, res) => {
     const userIds = Array.from(userPointsMap.keys());
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { id: true, name: true, position: true, ageCategory: true },
+      select: { id: true, name: true, position: true, ageCategory: true, role: true },
     });
 
     // Build and sort leaderboard
@@ -107,6 +145,7 @@ router.get('/', async (req, res) => {
           playerName: userInfo?.name || data.userName,
           position: userInfo?.position || '-',
           ageCategory: userInfo?.ageCategory,
+          role: userInfo?.role || 'player',
           totalPoints: data.totalPoints,
           workoutDays: data.workoutDates.size,
         };
@@ -114,8 +153,21 @@ router.get('/', async (req, res) => {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .map((entry, index) => ({ rank: index + 1, ...entry }));
 
-    console.log(`[LEADERBOARD] Fetched leaderboard for month ${currentMonth}: ${leaderboard.length} players`);
-    res.json({ month: currentMonth, leaderboard });
+    // Determine available categories for the user
+    let availableCategories: string[] = [];
+    if (dbUser?.role === 'player' && dbUser?.ageCategory) {
+      availableCategories = [dbUser.ageCategory];
+    } else if (dbUser?.role === 'coach' && dbUser?.coachCategories) {
+      availableCategories = dbUser.coachCategories;
+    }
+
+    console.log(`[LEADERBOARD] Fetched leaderboard for month ${currentMonth}, category ${categoryFilter[0] || 'all'}: ${leaderboard.length} players`);
+    res.json({
+      month: currentMonth,
+      leaderboard,
+      currentCategory: categoryFilter[0] || null,
+      availableCategories,
+    });
   } catch (error) {
     console.error('[LEADERBOARD] Get leaderboard error:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
@@ -129,6 +181,7 @@ router.get('/month/:month', async (req, res) => {
   try {
     const user = (req as any).user;
     const { month } = req.params;
+    const requestedCategory = req.query.category as string | undefined;
 
     // Validate month format (YYYY-MM)
     if (!/^\d{4}-\d{2}$/.test(month)) {
@@ -148,15 +201,38 @@ router.get('/month/:month', async (req, res) => {
 
     // Determine which categories to filter by
     let categoryFilter: string[] = [];
-    if (dbUser?.role === 'player' && dbUser?.ageCategory) {
-      categoryFilter = [dbUser.ageCategory];
-    } else if (dbUser?.role === 'coach' && dbUser?.coachCategories && dbUser.coachCategories.length > 0) {
-      categoryFilter = dbUser.coachCategories;
+
+    // If specific category requested, use it (but only if user has access)
+    if (requestedCategory) {
+      // Players can only see their own category
+      if (dbUser?.role === 'player') {
+        if (dbUser.ageCategory === requestedCategory) {
+          categoryFilter = [requestedCategory];
+        } else {
+          categoryFilter = dbUser.ageCategory ? [dbUser.ageCategory] : [];
+        }
+      }
+      // Coaches can see any of their assigned categories
+      else if (dbUser?.role === 'coach') {
+        if (dbUser.coachCategories?.includes(requestedCategory)) {
+          categoryFilter = [requestedCategory];
+        } else if (dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+          categoryFilter = [dbUser.coachCategories[0]];
+        }
+      }
+    } else {
+      // No specific category requested - use defaults
+      if (dbUser?.role === 'player' && dbUser?.ageCategory) {
+        categoryFilter = [dbUser.ageCategory];
+      } else if (dbUser?.role === 'coach' && dbUser?.coachCategories && dbUser.coachCategories.length > 0) {
+        categoryFilter = [dbUser.coachCategories[0]];
+      }
     }
 
-    // Get players to include based on category
-    let playerIdsToInclude: string[] | null = null;
+    // Get users to include based on category (players in category + coaches with that category)
+    let userIdsToInclude: string[] | null = null;
     if (categoryFilter.length > 0) {
+      // Get players in the category
       const playersInCategories = await prisma.user.findMany({
         where: {
           role: 'player',
@@ -164,15 +240,28 @@ router.get('/month/:month', async (req, res) => {
         },
         select: { id: true },
       });
-      playerIdsToInclude = playersInCategories.map(p => p.id);
+
+      // Get coaches that have this category assigned (they can also train!)
+      const coachesInCategories = await prisma.user.findMany({
+        where: {
+          role: 'coach',
+          coachCategories: { hasSome: categoryFilter },
+        },
+        select: { id: true },
+      });
+
+      userIdsToInclude = [
+        ...playersInCategories.map(p => p.id),
+        ...coachesInCategories.map(c => c.id),
+      ];
     }
 
     // Get all workouts for the month (directly from WorkoutLog)
     const workoutsWhere: any = {
       date: { gte: startDate, lte: endDate },
     };
-    if (playerIdsToInclude !== null) {
-      workoutsWhere.userId = { in: playerIdsToInclude };
+    if (userIdsToInclude !== null) {
+      workoutsWhere.userId = { in: userIdsToInclude };
     }
 
     const workouts = await prisma.workoutLog.findMany({
@@ -208,7 +297,7 @@ router.get('/month/:month', async (req, res) => {
     const userIds = Array.from(userPointsMap.keys());
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { id: true, name: true, position: true, ageCategory: true },
+      select: { id: true, name: true, position: true, ageCategory: true, role: true },
     });
 
     // Build and sort leaderboard
@@ -220,6 +309,7 @@ router.get('/month/:month', async (req, res) => {
           playerName: userInfo?.name || data.userName,
           position: userInfo?.position || '-',
           ageCategory: userInfo?.ageCategory,
+          role: userInfo?.role || 'player',
           totalPoints: data.totalPoints,
           workoutDays: data.workoutDates.size,
         };
@@ -227,8 +317,21 @@ router.get('/month/:month', async (req, res) => {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .map((entry, index) => ({ rank: index + 1, ...entry }));
 
-    console.log(`[LEADERBOARD] Fetched leaderboard for month ${month}: ${leaderboard.length} players`);
-    res.json({ month, leaderboard });
+    // Determine available categories for the user
+    let availableCategories: string[] = [];
+    if (dbUser?.role === 'player' && dbUser?.ageCategory) {
+      availableCategories = [dbUser.ageCategory];
+    } else if (dbUser?.role === 'coach' && dbUser?.coachCategories) {
+      availableCategories = dbUser.coachCategories;
+    }
+
+    console.log(`[LEADERBOARD] Fetched leaderboard for month ${month}, category ${categoryFilter[0] || 'all'}: ${leaderboard.length} players`);
+    res.json({
+      month,
+      leaderboard,
+      currentCategory: categoryFilter[0] || null,
+      availableCategories,
+    });
   } catch (error) {
     console.error('[LEADERBOARD] Get leaderboard for month error:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });

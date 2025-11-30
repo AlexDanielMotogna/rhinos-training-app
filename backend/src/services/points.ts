@@ -8,9 +8,9 @@
 // Fixed point values
 const POINTS = {
   light: 1,       // Light sessions (yoga, walking, stretching, <30min)
-  moderate: 2,    // Moderate sessions (gym, jogging, 30-90min)
+  moderate: 2,    // Moderate sessions (gym, jogging, 30-60min)
   team: 2.5,      // Team training sessions
-  intensive: 3,   // Intensive sessions (>90min or high volume)
+  intensive: 3,   // Intensive sessions (≥60min or high volume)
 } as const;
 
 export type PointsCategory = keyof typeof POINTS;
@@ -70,7 +70,7 @@ export function determineCategory(workout: WorkoutData): PointsCategory {
   const totalSets = calculateTotalSets(entries);
 
   // Intensive: Long duration OR high volume
-  if (duration >= 90 || totalVolume > 5000) {
+  if (duration >= 60 || totalVolume > 5000) {
     return 'intensive';
   }
 

@@ -1110,15 +1110,17 @@ export const leaderboardService = {
   /**
    * Get current month leaderboard
    */
-  async getCurrentWeek() {
-    return apiCall('/leaderboard');
+  async getCurrentWeek(category?: string) {
+    const params = category ? `?category=${encodeURIComponent(category)}` : '';
+    return apiCall(`/leaderboard${params}`);
   },
 
   /**
    * Get leaderboard for a specific month (YYYY-MM format)
    */
-  async getMonth(month: string) {
-    return apiCall(`/leaderboard/month/${month}`);
+  async getMonth(month: string, category?: string) {
+    const params = category ? `?category=${encodeURIComponent(category)}` : '';
+    return apiCall(`/leaderboard/month/${month}${params}`);
   },
 };
 
@@ -1200,29 +1202,11 @@ export const exerciseCategoryService = {
  */
 export const reportsService = {
   /**
-   * Get daily report for a specific date
-   * @param date - Date in YYYY-MM-DD format (optional, defaults to today)
+   * Get weekly overview - simple view of who trained each day
+   * @param startDate - Week start date in YYYY-MM-DD format (optional, defaults to current week)
    */
-  async getDailyReport(date?: string) {
-    const endpoint = date ? `/reports/daily/${date}` : '/reports/daily';
-    return apiCall(endpoint);
-  },
-
-  /**
-   * Get weekly report starting from a specific date
-   * @param startDate - Start date in YYYY-MM-DD format (optional, defaults to current week)
-   */
-  async getWeeklyReport(startDate?: string) {
-    const endpoint = startDate ? `/reports/weekly/${startDate}` : '/reports/weekly';
-    return apiCall(endpoint);
-  },
-
-  /**
-   * Get monthly report for a specific month
-   * @param month - Month in YYYY-MM format (optional, defaults to current month)
-   */
-  async getMonthlyReport(month?: string) {
-    const endpoint = month ? `/reports/monthly/${month}` : '/reports/monthly';
+  async getWeeklyOverview(startDate?: string) {
+    const endpoint = startDate ? `/reports/weekly-overview/${startDate}` : '/reports/weekly-overview';
     return apiCall(endpoint);
   },
 };

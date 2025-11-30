@@ -65,6 +65,7 @@ interface LeaderboardEntry {
   playerName: string;
   position: string;
   ageCategory?: string;
+  role?: string;
   totalPoints: number;
   workoutDays: number;
 }
@@ -79,6 +80,8 @@ export const Leaderboard: React.FC = () => {
   const defaultMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
 
   const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,13 +89,22 @@ export const Leaderboard: React.FC = () => {
     const loadLeaderboard = async () => {
       try {
         setLoading(true);
-        // Load leaderboard for selected month
+        // Load leaderboard for selected month and category
         const response = selectedMonth === defaultMonth
-          ? await leaderboardService.getCurrentWeek()
-          : await leaderboardService.getMonth(selectedMonth);
+          ? await leaderboardService.getCurrentWeek(selectedCategory || undefined)
+          : await leaderboardService.getMonth(selectedMonth, selectedCategory || undefined);
 
         // Backend already filters by user's category, just use the data
         setData(response.leaderboard || []);
+
+        // Update available categories from response
+        if (response.availableCategories) {
+          setAvailableCategories(response.availableCategories);
+          // Set default category if not already set
+          if (!selectedCategory && response.currentCategory) {
+            setSelectedCategory(response.currentCategory);
+          }
+        }
       } catch (error) {
         console.error('[LEADERBOARD] Failed to load:', error);
         setData([]);
@@ -102,7 +114,7 @@ export const Leaderboard: React.FC = () => {
     };
 
     loadLeaderboard();
-  }, [selectedMonth]);
+  }, [selectedMonth, selectedCategory]);
 
   // Get medal color for top 3
   const getMedalColor = (rank: number) => {
@@ -157,8 +169,8 @@ export const Leaderboard: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Month selector */}
-      <Box sx={{ mb: 2 }}>
+      {/* Filters: Month and Category */}
+      <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <FormControl sx={{ minWidth: 200 }} size="small">
           <InputLabel>{t('leaderboard.month')}</InputLabel>
           <Select
@@ -173,6 +185,24 @@ export const Leaderboard: React.FC = () => {
             ))}
           </Select>
         </FormControl>
+
+        {/* Category selector - only show if multiple categories available */}
+        {availableCategories.length > 1 && (
+          <FormControl sx={{ minWidth: 180 }} size="small">
+            <InputLabel>{t('leaderboard.category')}</InputLabel>
+            <Select
+              value={selectedCategory}
+              label={t('leaderboard.category')}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              {availableCategories.map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
       </Box>
 
       <TableContainer component={Paper}>
@@ -229,7 +259,12 @@ export const Leaderboard: React.FC = () => {
                     </Box>
                   </TableCell>
                   <TableCell sx={{ fontWeight: row.rank <= 3 ? 600 : 400 }}>
-                    {row.playerName}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {row.playerName}
+                      {row.role === 'coach' && (
+                        <Chip label={t('leaderboard.coach')} size="small" color="secondary" sx={{ height: 20, fontSize: '0.7rem' }} />
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell>{row.position || '-'}</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>
