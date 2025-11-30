@@ -14,8 +14,14 @@ import {
   TableHead,
   TableRow,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Chip,
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useI18n } from '../i18n/I18nProvider';
 import { leaderboardService } from '../services/api';
 import { getUser } from '../services/userProfile';
@@ -199,6 +205,50 @@ export const Leaderboard: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Points System Documentation */}
+      <Accordion sx={{ mt: 3 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <InfoOutlinedIcon color="primary" />
+            <Typography fontWeight={500}>
+              {t('leaderboard.howPointsWork')}
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {t('leaderboard.pointsDescription')}
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            <Chip
+              label={`${t('leaderboard.pointsLight')}: 1 ${t('leaderboard.pointsUnit')}`}
+              size="small"
+              sx={{ backgroundColor: '#90CAF9' }}
+            />
+            <Chip
+              label={`${t('leaderboard.pointsModerate')}: 2 ${t('leaderboard.pointsUnit')}`}
+              size="small"
+              sx={{ backgroundColor: '#FFB74D' }}
+            />
+            <Chip
+              label={`${t('leaderboard.pointsTeam')}: 2.5 ${t('leaderboard.pointsUnit')}`}
+              size="small"
+              sx={{ backgroundColor: '#66BB6A', color: 'white' }}
+            />
+            <Chip
+              label={`${t('leaderboard.pointsIntensive')}: 3 ${t('leaderboard.pointsUnit')}`}
+              size="small"
+              sx={{ backgroundColor: '#EF5350', color: 'white' }}
+            />
+          </Box>
+
+          <Typography variant="body2" color="text.secondary">
+            <strong>{t('leaderboard.maxDaily')}:</strong> {t('leaderboard.maxDailyDescription')}
+          </Typography>
+        </AccordionDetails>
+      </Accordion>
     </Box>
   );
 };

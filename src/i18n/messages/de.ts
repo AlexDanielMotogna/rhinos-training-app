@@ -336,6 +336,15 @@ export const messagesDE = {
   'leaderboard.points': 'Punkte',
   'leaderboard.daysTrained': 'Tage trainiert',
   'leaderboard.noData': 'Noch keine Daten. Trainiere um im Ranking zu erscheinen!',
+  'leaderboard.howPointsWork': 'Wie werden Punkte berechnet?',
+  'leaderboard.pointsDescription': 'Punkte werden basierend auf Art und Intensität deines Trainings vergeben. Das Ranking zeigt die Gesamtpunkte des ausgewählten Monats.',
+  'leaderboard.pointsLight': 'Leicht (Yoga, Spazieren)',
+  'leaderboard.pointsModerate': 'Moderat (Gym, Joggen)',
+  'leaderboard.pointsTeam': 'Teamtraining',
+  'leaderboard.pointsIntensive': 'Intensiv (>90min)',
+  'leaderboard.pointsUnit': 'Pkt',
+  'leaderboard.maxDaily': 'Tageslimit',
+  'leaderboard.maxDailyDescription': 'Maximal 3 Punkte pro Tag. Trainiere regelmäßig um im Ranking aufzusteigen!',
 
   // Coach
   'coach.activate': 'Aktivieren',

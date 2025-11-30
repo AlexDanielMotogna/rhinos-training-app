@@ -348,6 +348,15 @@ export const messagesEN = {
   'leaderboard.points': 'Points',
   'leaderboard.daysTrained': 'Days Trained',
   'leaderboard.noData': 'No leaderboard data available yet. Complete some workouts to see rankings!',
+  'leaderboard.howPointsWork': 'How are points calculated?',
+  'leaderboard.pointsDescription': 'Points are awarded based on the type and intensity of your workout. The ranking shows the total points earned during the selected month.',
+  'leaderboard.pointsLight': 'Light (Yoga, Walking)',
+  'leaderboard.pointsModerate': 'Moderate (Gym, Jogging)',
+  'leaderboard.pointsTeam': 'Team Training',
+  'leaderboard.pointsIntensive': 'Intensive (>90min)',
+  'leaderboard.pointsUnit': 'pts',
+  'leaderboard.maxDaily': 'Daily Limit',
+  'leaderboard.maxDailyDescription': 'Maximum 3 points per day. Train consistently throughout the month to climb the rankings!',
 
   // Coach
   'coach.activate': 'Activate',
