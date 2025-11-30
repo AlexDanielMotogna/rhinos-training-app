@@ -59,7 +59,6 @@ import type { TrainingTemplate, TrainingAssignment } from '../types/trainingBuil
 import { getUser } from '../services/userProfile';
 import { exerciseService, templateService, assignmentService, userService, trainingTypeService, exerciseCategoryService } from '../services/api';
 import { BlockInfoManager } from '../components/admin/BlockInfoManager';
-import { PointsSystemManager } from '../components/admin/PointsSystemManager';
 import { AgeCategoryManager } from '../components/admin/AgeCategoryManager';
 import { getAllBlockInfo } from '../services/blockInfo';
 import { DrillManager } from '../components/DrillManager';
@@ -1242,9 +1241,6 @@ export const Admin: React.FC = () => {
                   </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 9} onClick={() => setActiveTab(9)}>
                     <ListItemText primary={t('admin.aiCoachTab')} />
-                  </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 10} onClick={() => setActiveTab(10)}>
-                    <ListItemText primary={t('admin.pointsSystemTab')} />
                   </ListItemButton>
                 </List>
               </Collapse>
@@ -3125,9 +3121,6 @@ export const Admin: React.FC = () => {
           </Card>
         </Box>
       )}
-
-      {/* Points System Configuration Tab */}
-      {activeTab === 10 && <PointsSystemManager />}
 
       {/* Age Categories Tab */}
       {activeTab === 17 && <AgeCategoryManager />}

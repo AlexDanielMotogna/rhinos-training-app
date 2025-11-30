@@ -342,25 +342,11 @@ export const messagesEN = {
 
   // Leaderboard
   'leaderboard.title': 'Leaderboard',
-  'leaderboard.window': 'Time Window',
   'leaderboard.month': 'Month',
-  'leaderboard.rank': 'Rank',
   'leaderboard.player': 'Player',
   'leaderboard.pos': 'Pos',
-  'leaderboard.score': 'Score',
-  'leaderboard.compliance': 'Compliance',
-  'leaderboard.attendance': 'Attendance',
-  'leaderboard.freeShare': 'Free Share',
-  'leaderboard.filterByPosition': 'Filter by Position',
-  'leaderboard.allPositions': 'All Positions',
-  'leaderboard.7d': 'Last 7 Days',
-  'leaderboard.30d': 'Last 30 Days',
-  'leaderboard.rankInfo': 'Player ranking based on overall score. Higher scores rank better.',
-  'leaderboard.posInfo': 'Player position on the team (RB, WR, QB, etc.)',
-  'leaderboard.scoreInfo': 'Overall performance score (0-100). Calculated from training quality, volume, and consistency.',
-  'leaderboard.complianceInfo': 'Percentage of coach-assigned workouts completed. Higher compliance means better adherence to the training plan.',
-  'leaderboard.attendanceInfo': 'Percentage of team training sessions attended. Shows commitment and team participation.',
-  'leaderboard.freeShareInfo': 'Percentage of total training that is self-directed (not from coach plan). Lower is usually better - shows focus on assigned work.',
+  'leaderboard.points': 'Points',
+  'leaderboard.daysTrained': 'Days Trained',
   'leaderboard.noData': 'No leaderboard data available yet. Complete some workouts to see rankings!',
 
   // Coach

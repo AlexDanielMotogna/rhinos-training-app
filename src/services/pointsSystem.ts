@@ -1,12 +1,26 @@
 import type {
-  PointsConfig,
-  PointCategory,
   PlayerWeeklyPoints,
   PointsBreakdown,
-  PlayerPointsProgress,
   PointCategoryType,
+  PlayerPointsProgress,
 } from '../types/pointsSystem';
-import { pointsConfigService, leaderboardService } from './api';
+import { leaderboardService } from './api';
+
+/**
+ * Fixed Points Configuration
+ * Simple and consistent point values for all teams
+ */
+const POINTS_CONFIG = {
+  // Points per workout type
+  light: 1,       // Light sessions (yoga, walking, stretching)
+  moderate: 2,    // Moderate sessions (gym, jogging)
+  team: 2.5,      // Team training sessions
+  intensive: 3,   // Intensive sessions (>90min or high volume)
+
+  // Limits
+  maxDailyPoints: 3,  // Max points per day
+  weeklyTarget: 20,   // Target points per week
+} as const;
 
 /**
  * Get ISO week string for a given date
@@ -19,55 +33,6 @@ function getISOWeek(date: Date): string {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
-}
-
-/**
- * Get points configuration from backend
- */
-export async function getPointsConfig(): Promise<PointsConfig> {
-  try {
-    return await pointsConfigService.get() as PointsConfig;
-  } catch (error) {
-    console.error('Error loading points config:', error);
-    // Return default if error
-    return {
-      weeklyTarget: 20,
-      maxDailyPoints: 3,
-      categories: [],
-      colorScale: {
-        low: '#ef5350',
-        medium: '#ffa726',
-        high: '#66bb6a',
-      },
-    };
-  }
-}
-
-/**
- * Update points configuration (admin only)
- */
-export async function updatePointsConfig(config: PointsConfig, updatedBy: string): Promise<PointsConfig> {
-  const updated: PointsConfig = {
-    ...config,
-    updatedAt: new Date().toISOString(),
-    updatedBy,
-  };
-  return await pointsConfigService.update(updated) as PointsConfig;
-}
-
-/**
- * Reset points configuration to default (admin only)
- */
-export async function resetPointsConfig(): Promise<void> {
-  await pointsConfigService.reset();
-}
-
-/**
- * Get all active point categories
- */
-export async function getActiveCategories(): Promise<PointCategory[]> {
-  const config = await getPointsConfig();
-  return config.categories.filter(cat => cat.active);
 }
 
 /**
@@ -101,21 +66,17 @@ export function determinePointCategory(
 }
 
 /**
- * Calculate points for a workout
+ * Calculate points for a workout using fixed values
  */
-export async function calculateWorkoutPoints(
+export function calculateWorkoutPoints(
   duration: number,
   source: 'team' | 'coach' | 'personal',
   totalSets: number,
   totalVolume: number,
   totalDistance?: number,
-): Promise<{ categoryType: PointCategoryType; points: number }> {
-  const config = await getPointsConfig();
+): { categoryType: PointCategoryType; points: number } {
   const categoryType = determinePointCategory(duration, source, totalSets, totalVolume, totalDistance);
-
-  const category = config.categories.find(c => c.type === categoryType);
-  const points = category?.points || 1;
-
+  const points = POINTS_CONFIG[categoryType];
   return { categoryType, points };
 }
 
@@ -132,15 +93,14 @@ export async function addWorkoutPoints(
   totalDistance?: number,
   notes?: string,
 ): Promise<PlayerWeeklyPoints> {
-  const config = await getPointsConfig();
-  const currentWeek = getISOWeek(new Date()); // "2025-W03"
-  const today = new Date().toISOString().slice(0, 10); // "2025-01-19"
+  const currentWeek = getISOWeek(new Date());
+  const today = new Date().toISOString().slice(0, 10);
 
   // Get existing points for this week
   const existing = getPlayerWeeklyPoints(userId, currentWeek);
 
   // Calculate points for this workout
-  const { categoryType, points } = await calculateWorkoutPoints(
+  const { categoryType, points } = calculateWorkoutPoints(
     duration,
     source,
     totalSets,
@@ -152,10 +112,10 @@ export async function addWorkoutPoints(
   const existingToday = existing.breakdown.filter(b => b.date === today);
   const pointsToday = existingToday.reduce((sum, b) => sum + b.points, 0);
 
-  // Apply daily maximum if configured
+  // Apply daily maximum
   let finalPoints = points;
-  if (config.maxDailyPoints && pointsToday + points > config.maxDailyPoints) {
-    finalPoints = Math.max(0, config.maxDailyPoints - pointsToday);
+  if (pointsToday + points > POINTS_CONFIG.maxDailyPoints) {
+    finalPoints = Math.max(0, POINTS_CONFIG.maxDailyPoints - pointsToday);
   }
 
   // Create new breakdown entry
@@ -214,12 +174,12 @@ export function getPlayerWeeklyPoints(userId: string, week: string): PlayerWeekl
     }
   }
 
-  // Return empty structure with default target
+  // Return empty structure with fixed target
   return {
     userId,
     week,
     totalPoints: 0,
-    targetPoints: 20, // Default, should be loaded from backend config
+    targetPoints: POINTS_CONFIG.weeklyTarget,
     workoutDays: 0,
     teamTrainingDays: 0,
     coachWorkoutDays: 0,
@@ -272,17 +232,23 @@ async function syncWeeklyPointsToBackend(points: PlayerWeeklyPoints): Promise<vo
   }
 }
 
+// Fixed color scale for progress indicators
+const COLOR_SCALE = {
+  low: '#ef5350',    // Red - below 50%
+  medium: '#ffa726', // Orange - 50-80%
+  high: '#66bb6a',   // Green - above 80%
+};
+
 /**
  * Get all players' progress for a specific week
  */
-export async function getAllPlayersProgress(week: string): Promise<PlayerPointsProgress[]> {
+export function getAllPlayersProgress(week: string): PlayerPointsProgress[] {
   // Get all users from localStorage
   const usersStr = localStorage.getItem('users');
   if (!usersStr) return [];
 
   try {
     const users = JSON.parse(usersStr);
-    const config = await getPointsConfig();
 
     const progress: PlayerPointsProgress[] = users
       .filter((u: any) => u.role === 'player')
@@ -291,11 +257,11 @@ export async function getAllPlayersProgress(week: string): Promise<PlayerPointsP
         const progressPercentage = Math.min(100, (weeklyPoints.totalPoints / weeklyPoints.targetPoints) * 100);
 
         // Determine color based on progress
-        let color = config.colorScale.low;
+        let color = COLOR_SCALE.low;
         if (progressPercentage >= 80) {
-          color = config.colorScale.high;
+          color = COLOR_SCALE.high;
         } else if (progressPercentage >= 50) {
-          color = config.colorScale.medium;
+          color = COLOR_SCALE.medium;
         }
 
         // Get last workout date
@@ -312,7 +278,7 @@ export async function getAllPlayersProgress(week: string): Promise<PlayerPointsP
           targetPoints: weeklyPoints.targetPoints,
           progressPercentage,
           color,
-          rank: 0, // Will be calculated after sorting
+          rank: 0,
           daysActive: weeklyPoints.workoutDays,
           lastWorkout,
         };
@@ -334,8 +300,8 @@ export async function getAllPlayersProgress(week: string): Promise<PlayerPointsP
 /**
  * Get player's progress for current week
  */
-export async function getPlayerProgress(userId: string): Promise<PlayerPointsProgress | null> {
+export function getPlayerProgress(userId: string): PlayerPointsProgress | null {
   const currentWeek = getISOWeek(new Date());
-  const allProgress = await getAllPlayersProgress(currentWeek);
+  const allProgress = getAllPlayersProgress(currentWeek);
   return allProgress.find(p => p.userId === userId) || null;
 }
