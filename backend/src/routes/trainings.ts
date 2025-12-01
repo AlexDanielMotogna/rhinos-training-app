@@ -284,6 +284,20 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Broadcast new session via SSE to all clients for real-time updates
+    sseManager.broadcastToAll('session-created', {
+      session: {
+        ...session,
+        attendees: session.attendees as any,
+        version: 1,
+        updatedAt: session.updatedAt.toISOString(),
+      },
+      creatorId: userId,
+      creatorName: user.name,
+    });
+
+    console.log(`[TRAININGS] Session created: ${session.id}, broadcasting to ${sseManager.getClientCount()} clients`);
+
     res.status(201).json({
       ...session,
       attendees: session.attendees as any,
@@ -360,6 +374,14 @@ router.delete('/:id', async (req, res) => {
     }
 
     await prisma.trainingSession.delete({ where: { id } });
+
+    // Broadcast session deleted via SSE to all clients for real-time updates
+    sseManager.broadcastToAll('session-deleted', {
+      sessionId: id,
+      sessionCategory: existing.sessionCategory,
+    });
+
+    console.log(`[TRAININGS] Session deleted: ${id}, broadcasting to ${sseManager.getClientCount()} clients`);
 
     res.json({ message: 'Training session deleted' });
   } catch (error) {
