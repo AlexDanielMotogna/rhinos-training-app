@@ -29,10 +29,23 @@ interface RSVPUpdate {
   attendees: any[];
 }
 
+interface SessionCreatedUpdate {
+  session: any;
+  creatorId: string;
+  creatorName: string;
+}
+
+interface SessionDeletedUpdate {
+  sessionId: string;
+  sessionCategory: 'team' | 'private';
+}
+
 interface UsePollSSEOptions {
   pollId?: string; // If specified, only listen to this poll
   onVoteUpdate?: (data: VoteUpdate) => void;
   onRSVPUpdate?: (data: RSVPUpdate) => void;
+  onSessionCreated?: (data: SessionCreatedUpdate) => void;
+  onSessionDeleted?: (data: SessionDeletedUpdate) => void;
   onConnected?: () => void;
   onError?: (error: Event) => void;
   enabled?: boolean; // Default true
@@ -43,6 +56,8 @@ export function usePollSSE(options: UsePollSSEOptions = {}) {
     pollId,
     onVoteUpdate,
     onRSVPUpdate,
+    onSessionCreated,
+    onSessionDeleted,
     onConnected,
     onError,
     enabled = true,
@@ -59,7 +74,7 @@ export function usePollSSE(options: UsePollSSEOptions = {}) {
     }
 
     // Get auth token
-    const token = localStorage.getItem('rhinos_auth_token');
+    const token = localStorage.getItem('auth_token');
     if (!token) {
       console.warn('[SSE] No auth token found, cannot connect');
       return;
@@ -107,6 +122,26 @@ export function usePollSSE(options: UsePollSSEOptions = {}) {
         }
       });
 
+      eventSource.addEventListener('session-created', (event) => {
+        try {
+          const data = JSON.parse(event.data) as SessionCreatedUpdate;
+          console.log('[SSE] Received session created:', data);
+          onSessionCreated?.(data);
+        } catch (error) {
+          console.error('[SSE] Error parsing session created:', error);
+        }
+      });
+
+      eventSource.addEventListener('session-deleted', (event) => {
+        try {
+          const data = JSON.parse(event.data) as SessionDeletedUpdate;
+          console.log('[SSE] Received session deleted:', data);
+          onSessionDeleted?.(data);
+        } catch (error) {
+          console.error('[SSE] Error parsing session deleted:', error);
+        }
+      });
+
       eventSource.onerror = (error) => {
         console.error('[SSE] Connection error:', error);
         onError?.(error);
@@ -130,7 +165,7 @@ export function usePollSSE(options: UsePollSSEOptions = {}) {
     } catch (error) {
       console.error('[SSE] Error creating EventSource:', error);
     }
-  }, [pollId, onVoteUpdate, onConnected, onError, enabled]);
+  }, [pollId, onVoteUpdate, onRSVPUpdate, onSessionCreated, onSessionDeleted, onConnected, onError, enabled]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
