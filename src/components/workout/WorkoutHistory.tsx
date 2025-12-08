@@ -16,6 +16,8 @@ import {
   CardMedia,
   Dialog,
   DialogContent,
+  DialogTitle,
+  CardActionArea,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -23,6 +25,8 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import CloseIcon from '@mui/icons-material/Close';
 import { useI18n } from '../../i18n/I18nProvider';
 import { useNavigate } from 'react-router-dom';
 import { getYouTubeThumbnail, sanitizeYouTubeUrl } from '../../services/yt';
@@ -43,8 +47,9 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
 }) => {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [dateFilter, setDateFilter] = useState<DateFilter>('30days');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutLog | null>(null);
 
   // Filter workouts by date range
   const filterWorkoutsByDate = (workouts: WorkoutLog[]): WorkoutLog[] => {
@@ -128,11 +133,218 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
     }
   };
 
+  // Calculate workout summary stats
+  const getWorkoutSummary = (workout: WorkoutLog) => {
+    const totalExercises = workout.entries.length;
+    const totalSets = workout.entries.reduce((sum, entry) => {
+      if (entry.setData) return sum + entry.setData.length;
+      return sum + (entry.sets || 0);
+    }, 0);
+    return { totalExercises, totalSets };
+  };
+
+  // Render compact card for list view
+  const renderCompactCard = (workout: WorkoutLog) => {
+    const { totalExercises, totalSets } = getWorkoutSummary(workout);
+    const time = new Date(workout.createdAt).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    return (
+      <Card key={workout.id} sx={{ mb: 1.5 }}>
+        <CardActionArea onClick={() => setSelectedWorkout(workout)}>
+          <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Left side - Info */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {/* Plan name or title */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>
+                  {workout.planName || (workout.source === 'coach' ? t('workout.coachPlan') : t('workout.freeSession'))}
+                </Typography>
+
+                {/* Time and stats */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <AccessTimeIcon sx={{ fontSize: '0.9rem', color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                      {time}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                    •
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                    {totalExercises} {totalExercises === 1 ? 'exercise' : 'exercises'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                    •
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                    {totalSets} sets
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Right side - Chips */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                <Chip
+                  label={workout.source === 'coach' ? 'Coach' : 'Free'}
+                  size="small"
+                  color={workout.source === 'coach' ? 'primary' : 'secondary'}
+                  sx={{ height: 20, fontSize: '0.65rem' }}
+                />
+                {workout.completionPercentage !== undefined && (
+                  <Chip
+                    label={`${workout.completionPercentage}%`}
+                    size="small"
+                    color={
+                      workout.completionPercentage >= 70 ? 'success' :
+                      workout.completionPercentage >= 40 ? 'warning' : 'error'
+                    }
+                    sx={{ height: 20, fontSize: '0.65rem' }}
+                  />
+                )}
+              </Box>
+            </Box>
+          </CardContent>
+        </CardActionArea>
+      </Card>
+    );
+  };
+
+  // Render full workout details in dialog
+  const renderWorkoutDetails = (workout: WorkoutLog) => {
+    return (
+      <Box>
+        {/* Exercise entries */}
+        {workout.entries.map((entry, idx) => {
+          const thumbnailUrl = entry.youtubeUrl
+            ? getYouTubeThumbnail(entry.youtubeUrl)
+            : undefined;
+
+          return (
+            <Box key={idx} sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+                {/* Exercise Name and Data */}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1rem', mb: 0.5 }}>
+                    {entry.name}
+                  </Typography>
+
+                  {/* Set-by-set data */}
+                  {entry.setData && entry.setData.length > 0 ? (
+                    <Box sx={{ pl: 1 }}>
+                      {entry.setData.length === 1 ? (
+                        <Typography variant="body2" sx={{ fontSize: '0.9rem', color: 'text.primary' }}>
+                          {entry.setData[0].reps && `${entry.setData[0].reps} reps`}
+                          {entry.setData[0].reps && entry.setData[0].kg && ' × '}
+                          {entry.setData[0].kg && `${entry.setData[0].kg}kg`}
+                          {entry.setData[0].durationSec && `${entry.setData[0].durationSec} seconds`}
+                        </Typography>
+                      ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                          {entry.setData.map((set, setIdx) => (
+                            <Typography
+                              key={setIdx}
+                              variant="body2"
+                              sx={{ fontSize: '0.85rem', color: 'text.primary' }}
+                            >
+                              Set {set.setNumber}:{' '}
+                              {set.reps && `${set.reps} reps`}
+                              {set.reps && set.kg && ' × '}
+                              {set.kg && `${set.kg}kg`}
+                              {set.durationSec && `${set.durationSec} seconds`}
+                            </Typography>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem', pl: 1 }}>
+                      {entry.sets && entry.reps && `${entry.sets} sets × ${entry.reps} reps`}
+                      {entry.kg && ` with ${entry.kg}kg`}
+                      {entry.durationSec && ` for ${entry.durationSec} seconds`}
+                    </Typography>
+                  )}
+
+                  {/* RPE */}
+                  {entry.rpe && (
+                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.8rem', pl: 1, color: 'text.secondary' }}>
+                      Effort: {entry.rpe}/10 {entry.rpe >= 8 ? '(Hard)' : entry.rpe >= 6 ? '(Moderate)' : '(Easy)'}
+                    </Typography>
+                  )}
+
+                  {/* Exercise notes */}
+                  {entry.notes && (
+                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.8rem', pl: 1, color: 'text.secondary', fontStyle: 'italic' }}>
+                      Note: {entry.notes}
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* YouTube Thumbnail */}
+                {thumbnailUrl && entry.youtubeUrl && (
+                  <Box
+                    data-thumbnail-container
+                    onClick={() => handleVideoClick(entry.youtubeUrl!)}
+                    sx={{
+                      position: 'relative',
+                      width: 70,
+                      height: 70,
+                      flexShrink: 0,
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      backgroundColor: 'grey.900',
+                      cursor: 'pointer',
+                      '&:hover': { opacity: 0.8 },
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      image={thumbnailUrl}
+                      alt={entry.name}
+                      onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                        const parent = e.currentTarget.closest('[data-thumbnail-container]') as HTMLElement;
+                        if (parent) parent.style.display = 'none';
+                      }}
+                      sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        color: 'white',
+                        opacity: 0.9,
+                      }}
+                    >
+                      <PlayCircleOutlineIcon sx={{ fontSize: 28 }} />
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+
+              {idx < workout.entries.length - 1 && <Divider sx={{ mt: 1.5, mb: 1 }} />}
+            </Box>
+          );
+        })}
+
+        {/* Workout notes */}
+        {workout.notes && (
+          <Alert severity="info" sx={{ mt: 2, fontSize: '0.85rem' }}>
+            {workout.notes}
+          </Alert>
+        )}
+      </Box>
+    );
+  };
+
   return (
     <Box>
-      {/* Filter Controls - Mobile Optimized */}
+      {/* Filter Controls */}
       <Box sx={{ mb: 2 }}>
-        {/* First Row: Filter and Count */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <FilterListIcon color="action" sx={{ fontSize: '1.2rem' }} />
           <FormControl size="small" sx={{ minWidth: 150, flex: 1, maxWidth: 200 }}>
@@ -155,7 +367,6 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
           </Typography>
         </Box>
 
-        {/* Second Row: See Calendar Button */}
         <Button
           variant="outlined"
           size="small"
@@ -174,236 +385,115 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
         </Alert>
       ) : (
         sortedDates.map((date) => (
-        <Box key={date} sx={{ mb: 3 }}>
-          {/* Date Header - Mobile Optimized */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
-            <FitnessCenterIcon color="primary" sx={{ fontSize: '1.2rem' }} />
-            <Typography variant="h6" color="primary.main" sx={{ fontSize: '1rem', fontWeight: 600 }}>
-              {formatDate(date)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5, fontSize: '0.75rem' }}>
-              {groupedByDate[date].length} {groupedByDate[date].length === 1 ? 'workout' : 'workouts'}
-            </Typography>
+          <Box key={date} sx={{ mb: 3 }}>
+            {/* Date Header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
+              <FitnessCenterIcon color="primary" sx={{ fontSize: '1.2rem' }} />
+              <Typography variant="h6" color="primary.main" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+                {formatDate(date)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5, fontSize: '0.75rem' }}>
+                {groupedByDate[date].length} {groupedByDate[date].length === 1 ? 'workout' : 'workouts'}
+              </Typography>
+            </Box>
+
+            {/* Compact workout cards */}
+            {groupedByDate[date].map((workout) => renderCompactCard(workout))}
           </Box>
-
-          {/* Workouts for this date - Mobile Optimized */}
-          {groupedByDate[date].map((workout) => (
-            <Card key={workout.id} sx={{ mb: 1.5 }}>
-              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                {/* Header with date, chip and time */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1 }}>
-                    {/* Date and time */}
-                    <Typography variant="body2" sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.primary' }}>
-                      {new Date(workout.date).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })} at {new Date(workout.createdAt).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </Typography>
-
-                    {/* Plan Name */}
-                    {workout.planName && (
-                      <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 500, color: 'primary.main' }}>
-                        {workout.planName}
-                      </Typography>
-                    )}
-
-                    {/* Chips */}
-                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <Chip
-                        label={workout.source === 'coach' ? t('workout.coachPlan') : t('workout.freeSession')}
-                        size="small"
-                        color={workout.source === 'coach' ? 'primary' : 'secondary'}
-                        sx={{ height: 22, fontSize: '0.7rem' }}
-                      />
-                      {workout.completionPercentage !== undefined && (
-                        <Chip
-                          label={`${workout.completionPercentage}% completed`}
-                          size="small"
-                          color={
-                            workout.completionPercentage >= 70 ? 'success' :
-                            workout.completionPercentage >= 40 ? 'warning' : 'error'
-                          }
-                          sx={{ height: 22, fontSize: '0.7rem' }}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-
-                  {/* Action buttons - Compact */}
-                  <Box sx={{ display: 'flex', gap: 0.25 }}>
-                    {onEdit && (
-                      <IconButton
-                        size="small"
-                        onClick={() => onEdit(workout)}
-                        color="primary"
-                        sx={{ padding: 0.5 }}
-                      >
-                        <EditIcon sx={{ fontSize: '1rem' }} />
-                      </IconButton>
-                    )}
-                    {onDelete && (
-                      <IconButton
-                        size="small"
-                        onClick={() => onDelete(workout.id)}
-                        color="error"
-                        sx={{ padding: 0.5 }}
-                      >
-                        <DeleteIcon sx={{ fontSize: '1rem' }} />
-                      </IconButton>
-                    )}
-                  </Box>
-                </Box>
-
-                {/* Exercise entries - User-friendly layout */}
-                <Box>
-                  {workout.entries.map((entry, idx) => {
-                    const thumbnailUrl = entry.youtubeUrl
-                      ? getYouTubeThumbnail(entry.youtubeUrl)
-                      : undefined;
-
-                    return (
-                      <Box key={idx} sx={{ mb: 1.5 }}>
-                        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-                          {/* Exercise Name and Data */}
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.9rem', mb: 0.5 }}>
-                              {entry.name}
-                            </Typography>
-
-                            {/* Set-by-set data - User-friendly format */}
-                            {entry.setData && entry.setData.length > 0 ? (
-                              <Box sx={{ pl: 1 }}>
-                                {/* Show details directly - no redundant summary */}
-                                {entry.setData.length === 1 ? (
-                                  // Single set - just show the data
-                                  <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'text.primary' }}>
-                                    {entry.setData[0].reps && `${entry.setData[0].reps} reps`}
-                                    {entry.setData[0].reps && entry.setData[0].kg && ' × '}
-                                    {entry.setData[0].kg && `${entry.setData[0].kg}kg`}
-                                    {entry.setData[0].durationSec && `${entry.setData[0].durationSec} seconds`}
-                                  </Typography>
-                                ) : (
-                                  // Multiple sets - show each set
-                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                                    {entry.setData.map((set, setIdx) => (
-                                      <Typography
-                                        key={setIdx}
-                                        variant="body2"
-                                        sx={{
-                                          fontSize: '0.8rem',
-                                          color: 'text.primary',
-                                        }}
-                                      >
-                                        Set {set.setNumber}:{' '}
-                                        {set.reps && `${set.reps} reps`}
-                                        {set.reps && set.kg && ' × '}
-                                        {set.kg && `${set.kg}kg`}
-                                        {set.durationSec && `${set.durationSec} seconds`}
-                                      </Typography>
-                                    ))}
-                                  </Box>
-                                )}
-                              </Box>
-                            ) : (
-                              // Fallback for old format
-                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', pl: 1 }}>
-                                {entry.sets && entry.reps && `${entry.sets} sets × ${entry.reps} reps`}
-                                {entry.kg && ` with ${entry.kg}kg`}
-                                {entry.durationSec && ` for ${entry.durationSec} seconds`}
-                              </Typography>
-                            )}
-
-                            {/* RPE - User-friendly */}
-                            {entry.rpe && (
-                              <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.75rem', pl: 1, color: 'text.secondary' }}>
-                                Effort: {entry.rpe}/10 {entry.rpe >= 8 ? '(Hard)' : entry.rpe >= 6 ? '(Moderate)' : '(Easy)'}
-                              </Typography>
-                            )}
-
-                            {/* Exercise notes */}
-                            {entry.notes && (
-                              <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.75rem', pl: 1, color: 'text.secondary', fontStyle: 'italic' }}>
-                                Note: {entry.notes}
-                              </Typography>
-                            )}
-                          </Box>
-
-                          {/* YouTube Thumbnail on the right */}
-                          {thumbnailUrl && entry.youtubeUrl ? (
-                            <Box
-                              data-thumbnail-container
-                              onClick={() => handleVideoClick(entry.youtubeUrl!)}
-                              sx={{
-                                position: 'relative',
-                                width: 60,
-                                height: 60,
-                                flexShrink: 0,
-                                borderRadius: 1,
-                                overflow: 'hidden',
-                                backgroundColor: 'grey.900',
-                                cursor: 'pointer',
-                                '&:hover': {
-                                  opacity: 0.8,
-                                  transform: 'scale(1.05)',
-                                  transition: 'all 0.2s ease-in-out',
-                                },
-                              }}
-                            >
-                              <CardMedia
-                                component="img"
-                                image={thumbnailUrl}
-                                alt={entry.name}
-                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                  // Hide broken thumbnail silently - thumbnail box will disappear
-                                  const parent = e.currentTarget.closest('[data-thumbnail-container]') as HTMLElement;
-                                  if (parent) parent.style.display = 'none';
-                                }}
-                                sx={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                }}
-                              />
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  top: '50%',
-                                  left: '50%',
-                                  transform: 'translate(-50%, -50%)',
-                                  color: 'white',
-                                  opacity: 0.9,
-                                }}
-                              >
-                                <PlayCircleOutlineIcon sx={{ fontSize: 24 }} />
-                              </Box>
-                            </Box>
-                          ) : null}
-                        </Box>
-
-                        {idx < workout.entries.length - 1 && <Divider sx={{ mt: 1, mb: 0.5 }} />}
-                      </Box>
-                    );
-                  })}
-                </Box>
-
-                {/* Workout notes - Compact */}
-                {workout.notes && (
-                  <Alert severity="info" sx={{ mt: 1, py: 0.5, fontSize: '0.75rem' }}>
-                    {workout.notes}
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      ))
+        ))
       )}
+
+      {/* Workout Details Dialog */}
+      <Dialog
+        open={Boolean(selectedWorkout)}
+        onClose={() => setSelectedWorkout(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { maxHeight: '90vh' }
+        }}
+      >
+        {selectedWorkout && (
+          <>
+            <DialogTitle sx={{ pb: 1, pr: 6 }}>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {selectedWorkout.planName || (selectedWorkout.source === 'coach' ? t('workout.coachPlan') : t('workout.freeSession'))}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {new Date(selectedWorkout.date).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })} at {new Date(selectedWorkout.createdAt).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, mt: 1 }}>
+                  <Chip
+                    label={selectedWorkout.source === 'coach' ? t('workout.coachPlan') : t('workout.freeSession')}
+                    size="small"
+                    color={selectedWorkout.source === 'coach' ? 'primary' : 'secondary'}
+                    sx={{ height: 24 }}
+                  />
+                  {selectedWorkout.completionPercentage !== undefined && (
+                    <Chip
+                      label={`${selectedWorkout.completionPercentage}% completed`}
+                      size="small"
+                      color={
+                        selectedWorkout.completionPercentage >= 70 ? 'success' :
+                        selectedWorkout.completionPercentage >= 40 ? 'warning' : 'error'
+                      }
+                      sx={{ height: 24 }}
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              {/* Action buttons in header */}
+              <Box sx={{ position: 'absolute', right: 8, top: 8, display: 'flex', gap: 0.5 }}>
+                {onEdit && (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(selectedWorkout);
+                      setSelectedWorkout(null);
+                    }}
+                    color="primary"
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                )}
+                {onDelete && (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(selectedWorkout.id);
+                      setSelectedWorkout(null);
+                    }}
+                    color="error"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                )}
+                <IconButton
+                  size="small"
+                  onClick={() => setSelectedWorkout(null)}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers>
+              {renderWorkoutDetails(selectedWorkout)}
+            </DialogContent>
+          </>
+        )}
+      </Dialog>
 
       {/* Video Dialog */}
       <Dialog
