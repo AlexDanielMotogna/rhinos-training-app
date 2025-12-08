@@ -1015,6 +1015,11 @@ export const teamSettingsService = {
     return apiCall('/team-settings');
   },
 
+  // Public endpoint - no auth required, used for login page branding
+  async getBranding() {
+    return apiCall('/team-settings/branding');
+  },
+
   async update(data: {
     teamName?: string;
     appName?: string;

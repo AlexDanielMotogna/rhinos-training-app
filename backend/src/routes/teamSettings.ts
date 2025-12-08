@@ -6,6 +6,39 @@ import { upload, uploadTeamLogo, uploadImage } from '../utils/cloudinary.js';
 
 const router = express.Router();
 
+// GET /api/team-settings/branding - Get public branding info (no auth required)
+// This is used on the login page to show team logo, name, and colors
+router.get('/branding', async (req, res) => {
+  try {
+    let settings = await prisma.teamSettings.findFirst();
+
+    // If no settings exist, return defaults
+    if (!settings) {
+      return res.json({
+        teamName: 'Rhinos',
+        appName: 'Rhinos Training',
+        primaryColor: '#1976d2',
+        secondaryColor: '#dc004e',
+        logoUrl: null,
+        faviconUrl: null,
+      });
+    }
+
+    // Return only public branding info (no sensitive data like aiApiKey)
+    res.json({
+      teamName: settings.teamName,
+      appName: settings.appName,
+      primaryColor: settings.primaryColor,
+      secondaryColor: settings.secondaryColor,
+      logoUrl: settings.logoUrl,
+      faviconUrl: settings.faviconUrl,
+    });
+  } catch (error) {
+    console.error('[TEAM SETTINGS] Get branding error:', error);
+    res.status(500).json({ error: 'Failed to fetch branding' });
+  }
+});
+
 // Validation schemas
 const updateTeamSettingsSchema = z.object({
   teamName: z.string().min(1).optional(),

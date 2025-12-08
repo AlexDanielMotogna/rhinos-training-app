@@ -106,18 +106,20 @@ export function getTeamBranding(): TeamBranding {
 
 /**
  * Get team branding configuration directly from database (async)
- * Always fetches from backend, falls back to cache if offline
+ * Uses public endpoint - no auth required (works on login page)
+ * Falls back to cache if offline
  */
 export async function getTeamBrandingAsync(): Promise<TeamBranding> {
   try {
-    const backendSettings = await teamSettingsApi.get();
+    // Use public branding endpoint (no auth required)
+    const branding = await teamSettingsApi.getBranding();
     return {
-      teamName: backendSettings.teamName,
-      appName: backendSettings.appName || 'Rhinos Training',
-      logoUrl: backendSettings.logoUrl,
-      faviconUrl: backendSettings.faviconUrl,
-      primaryColor: backendSettings.primaryColor,
-      secondaryColor: backendSettings.secondaryColor,
+      teamName: branding.teamName,
+      appName: branding.appName || 'Rhinos Training',
+      logoUrl: branding.logoUrl,
+      faviconUrl: branding.faviconUrl,
+      primaryColor: branding.primaryColor,
+      secondaryColor: branding.secondaryColor,
     };
   } catch (error) {
     console.warn('Failed to fetch team branding from database, using cache:', error);
