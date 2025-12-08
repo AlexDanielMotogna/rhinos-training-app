@@ -12,9 +12,12 @@ import {
   IconButton,
 } from '@mui/material';
 import { Visibility, VisibilityOff, LockReset } from '@mui/icons-material';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useI18n } from '../i18n/I18nProvider';
 import { authService } from '../services/api';
-import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
+import { getTeamBrandingAsync } from '../services/teamSettings';
+import type { TeamBranding } from '../types/teamSettings';
+import { DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
 
 export default function ResetPassword() {
   const { t } = useI18n();
@@ -29,11 +32,14 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [branding, setBranding] = useState<TeamBranding>(DEFAULT_TEAM_BRANDING);
 
   useEffect(() => {
     if (!token) {
       navigate('/login');
     }
+    // Load branding
+    getTeamBrandingAsync().then(setBranding);
   }, [token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,19 +95,37 @@ export default function ResetPassword() {
               textAlign: 'center',
             }}
           >
-            <Box
-              component="img"
-              src={RhinosLogo}
-              alt="Rhinos Logo"
-              sx={{
-                width: 120,
-                height: 120,
-                objectFit: 'contain',
-                mb: 1,
-                display: 'block',
-                mx: 'auto',
-              }}
-            />
+            {branding.logoUrl ? (
+              <Box
+                component="img"
+                src={branding.logoUrl}
+                alt={`${branding.appName} Logo`}
+                sx={{
+                  width: 120,
+                  height: 120,
+                  objectFit: 'contain',
+                  mb: 1,
+                  display: 'block',
+                  mx: 'auto',
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: '50%',
+                  backgroundColor: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 1,
+                  mx: 'auto',
+                }}
+              >
+                <FitnessCenterIcon sx={{ fontSize: 60, color: 'white' }} />
+              </Box>
+            )}
             <LockReset sx={{ fontSize: 48, color: 'success.main', mb: 2, display: 'block', mx: 'auto' }} />
             <Typography variant="h5" gutterBottom>
               {t('auth.passwordResetSuccess')}
@@ -129,19 +153,37 @@ export default function ResetPassword() {
       <Container maxWidth="sm">
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Box
-              component="img"
-              src={RhinosLogo}
-              alt="Rhinos Logo"
-              sx={{
-                width: 120,
-                height: 120,
-                objectFit: 'contain',
-                mb: 1,
-                display: 'block',
-                mx: 'auto',
-              }}
-            />
+            {branding.logoUrl ? (
+              <Box
+                component="img"
+                src={branding.logoUrl}
+                alt={`${branding.appName} Logo`}
+                sx={{
+                  width: 120,
+                  height: 120,
+                  objectFit: 'contain',
+                  mb: 1,
+                  display: 'block',
+                  mx: 'auto',
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: '50%',
+                  backgroundColor: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 1,
+                  mx: 'auto',
+                }}
+              >
+                <FitnessCenterIcon sx={{ fontSize: 60, color: 'white' }} />
+              </Box>
+            )}
             <LockReset sx={{ fontSize: 48, color: 'primary.main', mb: 2, display: 'block', mx: 'auto' }} />
             <Typography variant="h4" gutterBottom>
               {t('auth.resetPassword')}

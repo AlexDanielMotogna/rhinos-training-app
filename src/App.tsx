@@ -80,7 +80,7 @@ const Videos = createLazyComponent(() => import('./pages/Videos').then(m => ({ d
 const VideosAdmin = createLazyComponent(() => import('./pages/VideosAdmin').then(m => ({ default: m.VideosAdmin })), 'VideosAdmin');
 const Team = createLazyComponent(() => import('./pages/Team').then(m => ({ default: m.Team })), 'Team');
 const TrainingSessions = createLazyComponent(() => import('./pages/TrainingSessions').then(m => ({ default: m.TrainingSessions })), 'TrainingSessions');
-const Configuration = createLazyComponent(() => import('./pages/Configuration').then(m => ({ default: m.Configuration })), 'Configuration');
+const Organization = createLazyComponent(() => import('./pages/Organization').then(m => ({ default: m.Organization })), 'Organization');
 const DrillSessionsManage = createLazyComponent(() => import('./components/DrillTrainingPlan').then(m => ({ default: m.DrillTrainingPlan })), 'DrillSessionsManage');
 const DrillbookView = createLazyComponent(() => import('./pages/DrillbookView').then(m => ({ default: m.DrillbookView })), 'DrillbookView');
 const Spielplan = createLazyComponent(() => import('./pages/Spielplan').then(m => ({ default: m.Spielplan })), 'Spielplan');
@@ -280,10 +280,10 @@ function App() {
                   }
                 />
                 <Route
-                  path="/configuration"
+                  path="/organization"
                   element={
                     currentUser.role === 'coach'
-                      ? <Configuration />
+                      ? <Organization />
                       : <Navigate to="/training" replace />
                   }
                 />

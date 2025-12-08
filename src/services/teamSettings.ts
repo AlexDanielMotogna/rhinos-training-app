@@ -27,7 +27,7 @@ export async function syncTeamSettingsFromBackend(): Promise<void> {
         : [],
       branding: {
         teamName: backendSettings.teamName,
-        appName: backendSettings.appName || 'Rhinos Training',
+        appName: backendSettings.appName || 'TeamTrainer',
         logoUrl: backendSettings.logoUrl,
         faviconUrl: backendSettings.faviconUrl,
         primaryColor: backendSettings.primaryColor,
@@ -115,7 +115,7 @@ export async function getTeamBrandingAsync(): Promise<TeamBranding> {
     const branding = await teamSettingsApi.getBranding();
     return {
       teamName: branding.teamName,
-      appName: branding.appName || 'Rhinos Training',
+      appName: branding.appName || 'TeamTrainer',
       logoUrl: branding.logoUrl,
       faviconUrl: branding.faviconUrl,
       primaryColor: branding.primaryColor,
@@ -141,6 +141,9 @@ export async function updateTeamBranding(
     if (branding.appName) updateData.appName = branding.appName;
     if (branding.primaryColor) updateData.primaryColor = branding.primaryColor;
     if (branding.secondaryColor) updateData.secondaryColor = branding.secondaryColor;
+    // Also save logoUrl and faviconUrl if provided (must be string, not null)
+    if (branding.logoUrl) updateData.logoUrl = branding.logoUrl;
+    if (branding.faviconUrl) updateData.faviconUrl = branding.faviconUrl;
 
     await teamSettingsApi.update(updateData);
 

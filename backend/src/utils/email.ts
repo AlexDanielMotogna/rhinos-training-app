@@ -4,9 +4,11 @@ import * as brevo from '@getbrevo/brevo';
 const apiInstance = new brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
-const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@rhinostraining.com';
-const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Rhinos Training';
+const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@teamtrainer.app';
+const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'TeamTrainer';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+// App name used in emails - can be customized via env var
+const APP_NAME = process.env.APP_NAME || 'TeamTrainer';
 
 export interface SendEmailOptions {
   to: string;
@@ -43,16 +45,16 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #203731; color: white; padding: 20px; text-align: center; }
+        .header { background-color: #1976d2; color: white; padding: 20px; text-align: center; }
         .content { padding: 30px; background-color: #f5f5f5; }
-        .button { display: inline-block; padding: 12px 30px; background-color: #FFB612; color: #203731; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .button { display: inline-block; padding: 12px 30px; background-color: #ff9800; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
         .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>Rhinos Training</h1>
+          <h1>${APP_NAME}</h1>
         </div>
         <div class="content">
           <h2>Password Reset Request</h2>
@@ -69,7 +71,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
           </p>
         </div>
         <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Rhinos Training. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -78,7 +80,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
 
   await sendEmail({
     to: email,
-    subject: 'Reset Your Password - Rhinos Training',
+    subject: `Reset Your Password - ${APP_NAME}`,
     htmlContent,
   });
 }
@@ -91,7 +93,7 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #203731; color: white; padding: 20px; text-align: center; }
+        .header { background-color: #1976d2; color: white; padding: 20px; text-align: center; }
         .content { padding: 30px; background-color: #f5f5f5; }
         .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
       </style>
@@ -99,11 +101,11 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
     <body>
       <div class="container">
         <div class="header">
-          <h1>Welcome to Rhinos Training!</h1>
+          <h1>Welcome to ${APP_NAME}!</h1>
         </div>
         <div class="content">
           <h2>Hey ${name}!</h2>
-          <p>Welcome to the Rhinos Training family! Your account has been successfully created.</p>
+          <p>Welcome to ${APP_NAME}! Your account has been successfully created.</p>
           <p>You can now:</p>
           <ul>
             <li>Track your workouts and progress</li>
@@ -112,10 +114,10 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
             <li>Connect with your teammates</li>
             <li>Access training videos</li>
           </ul>
-          <p>Get ready to dominate the field!</p>
+          <p>Get ready to train!</p>
         </div>
         <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Rhinos Training. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -124,7 +126,7 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
 
   await sendEmail({
     to: email,
-    subject: 'Welcome to Rhinos Training!',
+    subject: `Welcome to ${APP_NAME}!`,
     htmlContent,
   });
 }

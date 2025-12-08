@@ -1,22 +1,46 @@
 import { createTheme } from '@mui/material/styles';
 import type { TeamBranding } from './types/teamSettings';
 
-// Green Bay Packers Color Palette
+/**
+ * Lighten a hex color by a percentage
+ */
+function lightenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, (num >> 16) + amt);
+  const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+  const B = Math.min(255, (num & 0x0000FF) + amt);
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+}
+
+/**
+ * Darken a hex color by a percentage
+ */
+function darkenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max(0, (num >> 16) - amt);
+  const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+  const B = Math.max(0, (num & 0x0000FF) - amt);
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+}
+
+// Default Color Palette (kept for backwards compatibility)
 export const packersColors = {
   gold: {
-    main: '#FFB612',      // Packers Gold
-    light: '#FFC72C',     // Light Gold
-    bright: '#FFD54F',    // Bright Gold
-    dark: '#F2A900',      // Dark Gold
-    darker: '#D49000',    // Darker Gold
-    bronze: '#B87900',    // Bronze Gold
+    main: '#FFB612',
+    light: '#FFC72C',
+    bright: '#FFD54F',
+    dark: '#F2A900',
+    darker: '#D49000',
+    bronze: '#B87900',
   },
   green: {
-    main: '#203731',      // Packers Green
-    light: '#2d4f47',     // Light Green
-    dark: '#152722',      // Dark Green
-    medium: '#1e5b3d',    // Medium Green
-    forest: '#024930',    // Forest Green
+    main: '#203731',
+    light: '#2d4f47',
+    dark: '#152722',
+    medium: '#1e5b3d',
+    forest: '#024930',
   },
 };
 
@@ -38,24 +62,31 @@ export const workoutTypeColors = {
 
 /**
  * Create dynamic theme based on branding configuration
+ * Colors are calculated dynamically from the primary and secondary colors
  */
 export function createDynamicTheme(branding?: TeamBranding) {
-  const primaryColor = branding?.primaryColor || packersColors.green.main;
-  const secondaryColor = branding?.secondaryColor || packersColors.gold.main;
+  const primaryColor = branding?.primaryColor || '#1976d2';
+  const secondaryColor = branding?.secondaryColor || '#ff9800';
+
+  // Calculate light and dark variants dynamically
+  const primaryLight = lightenColor(primaryColor, 20);
+  const primaryDark = darkenColor(primaryColor, 15);
+  const secondaryLight = lightenColor(secondaryColor, 20);
+  const secondaryDark = darkenColor(secondaryColor, 15);
 
   return createTheme({
     palette: {
       primary: {
         main: primaryColor,
-        light: packersColors.green.light,
-        dark: packersColors.green.dark,
+        light: primaryLight,
+        dark: primaryDark,
         contrastText: '#ffffff',
       },
       secondary: {
         main: secondaryColor,
-        light: packersColors.gold.light,
-        dark: packersColors.gold.dark,
-        contrastText: primaryColor,
+        light: secondaryLight,
+        dark: secondaryDark,
+        contrastText: '#000000',
       },
     background: {
       default: '#f5f5f5',

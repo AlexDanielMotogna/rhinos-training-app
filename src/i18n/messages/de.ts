@@ -1,6 +1,6 @@
 export const messagesDE = {
   // App
-  'app.title': 'Rhinos Training',
+  'app.title': 'TeamTrainer',
 
   // Navigation
   'nav.myTraining': 'Mein Training',
@@ -849,7 +849,7 @@ export const messagesDE = {
   'drills.downloadPDF': 'PDF herunterladen',
   'drills.downloadSessionPDF': 'Einheit-PDF herunterladen',
   'drills.sketch': 'Drill-Skizze',
-  'drills.generatedBy': 'Erstellt von Rhinos Training App',
+  'drills.generatedBy': 'Erstellt von TeamTrainer',
   'drills.uploadSketchError': 'Fehler beim Hochladen der Skizze. Bitte versuchen Sie es erneut.',
   'drills.saveError': 'Fehler beim Speichern des Drills. Bitte versuchen Sie es erneut.',
   'drills.deleteError': 'Fehler beim Löschen des Drills. Bitte versuchen Sie es erneut.',
@@ -942,7 +942,7 @@ export const messagesDE = {
   'notifications.coachComment.title': 'Neuer Trainerkommentar',
   'notifications.newVideo.title': 'Neues Video verfügbar',
   'notifications.testNotification.title': 'Test-Benachrichtigung',
-  'notifications.testNotification.body': 'Dies ist eine Test-Benachrichtigung von der Rhinos Training App',
+  'notifications.testNotification.body': 'Dies ist eine Test-Benachrichtigung von TeamTrainer',
 
   // Navigation - Additional
   'nav.myCalendar': 'Mein Kalender',
@@ -950,7 +950,7 @@ export const messagesDE = {
   'nav.coachPanel': 'Trainer-Panel',
   'nav.coachPanelDesc': 'Übungen, Training, Einstellungen',
   'nav.manageDrillSessions': 'Drill-Einheiten verwalten',
-  'nav.configuration': 'Konfiguration',
+  'nav.organization': 'Organisation',
 
   // Drillbook View
   'drillbook.title': 'Drillbook',

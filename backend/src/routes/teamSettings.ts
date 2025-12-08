@@ -15,12 +15,12 @@ router.get('/branding', async (req, res) => {
     // If no settings exist, return defaults
     if (!settings) {
       return res.json({
-        teamName: 'Rhinos',
-        appName: 'Rhinos Training',
+        teamName: 'TeamTrainer',
+        appName: 'TeamTrainer',
         primaryColor: '#1976d2',
-        secondaryColor: '#dc004e',
-        logoUrl: null,
-        faviconUrl: null,
+        secondaryColor: '#ff9800',
+        logoUrl: '/teamtrainer-logo.svg',
+        faviconUrl: '/teamtrainer-logo.svg',
       });
     }
 
@@ -39,16 +39,18 @@ router.get('/branding', async (req, res) => {
   }
 });
 
-// Validation schemas
+// Validation schemas - use nullable().optional() to accept both null and undefined
 const updateTeamSettingsSchema = z.object({
-  teamName: z.string().min(1).optional(),
-  appName: z.string().optional(),
-  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').optional(),
-  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').optional(),
-  seasonPhase: z.enum(['off-season', 'pre-season', 'in-season']).optional(),
-  teamLevel: z.enum(['amateur', 'semi-pro', 'pro', 'youth', 'recreational']).optional(),
-  teamCategory: z.enum(['juvenil', 'principal', 'reserves', 'academy']).optional(),
-  aiApiKey: z.string().optional(),
+  teamName: z.string().min(1).nullable().optional(),
+  appName: z.string().nullable().optional(),
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').nullable().optional(),
+  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').nullable().optional(),
+  seasonPhase: z.enum(['off-season', 'pre-season', 'in-season']).nullable().optional(),
+  teamLevel: z.enum(['amateur', 'semi-pro', 'pro', 'youth', 'recreational']).nullable().optional(),
+  teamCategory: z.enum(['juvenil', 'principal', 'reserves', 'academy']).nullable().optional(),
+  aiApiKey: z.string().nullable().optional(),
+  logoUrl: z.string().nullable().optional(),
+  faviconUrl: z.string().nullable().optional(),
 });
 
 // GET /api/team-settings - Get team settings (authenticated)
@@ -61,10 +63,12 @@ router.get('/', authenticate, async (req, res) => {
     if (!settings) {
       settings = await prisma.teamSettings.create({
         data: {
-          teamName: 'Rhinos',
-          appName: 'Rhinos Training',
+          teamName: 'TeamTrainer',
+          appName: 'TeamTrainer',
           primaryColor: '#1976d2',
-          secondaryColor: '#dc004e',
+          secondaryColor: '#ff9800',
+          logoUrl: '/teamtrainer-logo.svg',
+          faviconUrl: '/teamtrainer-logo.svg',
           seasonPhase: 'off-season',
           teamLevel: 'amateur',
           teamCategory: 'principal',
@@ -98,10 +102,12 @@ router.put('/', authenticate, async (req, res) => {
       // Create new settings with validated data
       settings = await prisma.teamSettings.create({
         data: {
-          teamName: validatedData.teamName || 'Rhinos',
-          appName: validatedData.appName,
+          teamName: validatedData.teamName || 'TeamTrainer',
+          appName: validatedData.appName || 'TeamTrainer',
           primaryColor: validatedData.primaryColor || '#1976d2',
-          secondaryColor: validatedData.secondaryColor || '#dc004e',
+          secondaryColor: validatedData.secondaryColor || '#ff9800',
+          logoUrl: validatedData.logoUrl || '/teamtrainer-logo.svg',
+          faviconUrl: validatedData.faviconUrl || '/teamtrainer-logo.svg',
           seasonPhase: validatedData.seasonPhase || 'off-season',
           teamLevel: validatedData.teamLevel || 'amateur',
           teamCategory: validatedData.teamCategory || 'principal',
@@ -154,9 +160,10 @@ router.post('/logo', authenticate, upload.single('logo'), async (req, res) => {
     if (!settings) {
       settings = await prisma.teamSettings.create({
         data: {
-          teamName: 'Rhinos',
+          teamName: 'TeamTrainer',
+          appName: 'TeamTrainer',
           primaryColor: '#1976d2',
-          secondaryColor: '#dc004e',
+          secondaryColor: '#ff9800',
           logoUrl: result.url,
           updatedBy: user.userId,
         },
@@ -202,9 +209,10 @@ router.post('/favicon', authenticate, upload.single('favicon'), async (req, res)
     if (!settings) {
       settings = await prisma.teamSettings.create({
         data: {
-          teamName: 'Rhinos',
+          teamName: 'TeamTrainer',
+          appName: 'TeamTrainer',
           primaryColor: '#1976d2',
-          secondaryColor: '#dc004e',
+          secondaryColor: '#ff9800',
           faviconUrl: result.url,
           updatedBy: user.userId,
         },

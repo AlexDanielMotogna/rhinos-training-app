@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -16,6 +16,7 @@ import {
   Checkbox,
   ListItemText,
 } from '@mui/material';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
@@ -23,19 +24,22 @@ import { ForgotPasswordDialog } from '../components/ForgotPasswordDialog';
 import { calculateAge } from '../services/userProfile';
 import { authService } from '../services/api';
 import type { Position } from '../types/exercise';
-import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
+import { getTeamBrandingAsync } from '../services/teamSettings';
+import type { TeamBranding } from '../types/teamSettings';
+import { DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
 import { toastService } from '../services/toast';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
 
-// Rhinos-specific categories (hardcoded for simplicity)
-const RHINOS_CATEGORIES = ['Kampfmannschaft', 'Jugend'];
+// Default categories (can be configured per team)
+const DEFAULT_CATEGORIES = ['Kampfmannschaft', 'Jugend'];
 
 export const Auth: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
 
   const [isSignup, setIsSignup] = useState(false);
+  const [branding, setBranding] = useState<TeamBranding>(DEFAULT_TEAM_BRANDING);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -54,6 +58,11 @@ export const Auth: React.FC = () => {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Load branding on mount (public endpoint, no auth required)
+  useEffect(() => {
+    getTeamBrandingAsync().then(setBranding);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,20 +146,36 @@ export const Auth: React.FC = () => {
       <Card sx={{ maxWidth: 450, width: '100%' }}>
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Box
-              component="img"
-              src={RhinosLogo}
-              alt="Rhinos Logo"
-              sx={{
-                width: 120,
-                height: 120,
-                objectFit: 'contain',
-              }}
-            />
+            {branding.logoUrl ? (
+              <Box
+                component="img"
+                src={branding.logoUrl}
+                alt={`${branding.appName} Logo`}
+                sx={{
+                  width: 120,
+                  height: 120,
+                  objectFit: 'contain',
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: '50%',
+                  backgroundColor: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <FitnessCenterIcon sx={{ fontSize: 60, color: 'white' }} />
+              </Box>
+            )}
           </Box>
 
           <Typography variant="h4" align="center" sx={{ mb: 1, color: 'primary.main' }}>
-            {t('app.title')}
+            {branding.appName || t('app.title')}
           </Typography>
 
           <Typography variant="h6" align="center" sx={{ mb: 3 }}>
@@ -235,7 +260,7 @@ export const Auth: React.FC = () => {
                       label="Team Category / Mannschaft"
                       onChange={(e) => setAgeCategory(e.target.value)}
                     >
-                      {RHINOS_CATEGORIES.map((category) => (
+                      {DEFAULT_CATEGORIES.map((category) => (
                         <MenuItem key={category} value={category}>
                           {category}
                         </MenuItem>
@@ -252,7 +277,7 @@ export const Auth: React.FC = () => {
                       onChange={(e) => setCoachCategories(typeof e.target.value === 'string' ? [e.target.value] : e.target.value)}
                       renderValue={(selected) => (selected as string[]).join(', ')}
                     >
-                      {RHINOS_CATEGORIES.map((category) => (
+                      {DEFAULT_CATEGORIES.map((category) => (
                         <MenuItem key={category} value={category}>
                           <Checkbox checked={coachCategories.includes(category)} />
                           <ListItemText primary={category} />

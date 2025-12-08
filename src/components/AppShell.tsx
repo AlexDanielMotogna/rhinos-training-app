@@ -43,9 +43,9 @@ import {
 } from '../services/mock';
 import { notificationService } from '../services/api';
 import type { Notification } from '../types/notification';
-import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
 import { getTeamBrandingAsync } from '../services/teamSettings';
 import type { TeamBranding } from '../types/teamSettings';
+import { DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
 import { toastService } from '../services/toast';
 
 interface AppShellProps {
@@ -122,7 +122,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { key: 'admin', label: t('nav.coachPanel'), icon: <SportsIcon />, path: '/admin', description: t('nav.coachPanelDesc') },
     { key: 'drillSessionsManage', label: t('nav.manageDrillSessions'), icon: <SportsFootballIcon />, path: '/drill-sessions-manage' },
     { key: 'reports', label: t('nav.reports'), icon: <DescriptionIcon />, path: '/reports' },
-    { key: 'configuration', label: t('nav.configuration'), icon: <SettingsIcon />, path: '/configuration' },
+    { key: 'organization', label: t('nav.organization'), icon: <SettingsIcon />, path: '/organization' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -245,16 +245,32 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-              <Box
-                component="img"
-                src={branding?.logoUrl || RhinosLogo}
-                alt={`${branding?.appName || 'App'} Logo`}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  objectFit: 'contain',
-                }}
-              />
+              {branding?.logoUrl ? (
+                <Box
+                  component="img"
+                  src={branding.logoUrl}
+                  alt={`${branding?.appName || 'App'} Logo`}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    objectFit: 'contain',
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    backgroundColor: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <FitnessCenterIcon sx={{ fontSize: 24, color: 'white' }} />
+                </Box>
+              )}
               <Typography variant="h6">{branding?.appName || t('app.title')}</Typography>
             </Box>
             {user && (

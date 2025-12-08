@@ -70,7 +70,8 @@ import { SpielplanManager } from '../components/admin/SpielplanManager';
 import { getTeamSettings, updateTeamSettings, syncTeamSettingsFromBackend } from '../services/teamSettings';
 import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
 import { validateAPIKey } from '../services/aiInsights';
-import RhinosLogo from '../assets/imgs/USR_Allgemein_Quard_Transparent.png';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import { getTeamBranding } from '../services/teamSettings';
 import { NotificationTemplates, getNotificationStatus, requestNotificationPermission } from '../services/notifications';
 import { toastService } from '../services/toast';
 import { createSession, getTeamSessions, deleteSession } from '../services/trainingSessions';
@@ -1106,16 +1107,32 @@ export const Admin: React.FC = () => {
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
-            component="img"
-            src={RhinosLogo}
-            alt="Rhinos Logo"
-            sx={{
-              width: 50,
-              height: 50,
-              objectFit: 'contain',
-            }}
-          />
+          {getTeamBranding().logoUrl ? (
+            <Box
+              component="img"
+              src={getTeamBranding().logoUrl}
+              alt="Logo"
+              sx={{
+                width: 50,
+                height: 50,
+                objectFit: 'contain',
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: 50,
+                height: 50,
+                borderRadius: '50%',
+                backgroundColor: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <FitnessCenterIcon sx={{ fontSize: 30, color: 'white' }} />
+            </Box>
+          )}
           <Typography variant="h4">
             {t('admin.title')}
           </Typography>

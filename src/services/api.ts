@@ -72,8 +72,11 @@ export const apiCall = async <T>(
 ): Promise<T> => {
   const token = getAuthToken();
 
+  // Don't set Content-Type for FormData - browser will set it automatically with boundary
+  const isFormData = options.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string>),
   };
 
