@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -30,14 +30,21 @@ export const ReportsHistory: React.FC<ReportsHistoryProps> = ({ userId, source }
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Track request ID to prevent race conditions
+  const requestIdRef = useRef(0);
+
   // Sync from backend on mount
   useEffect(() => {
     const loadReports = async () => {
+      const currentRequestId = ++requestIdRef.current;
       setLoading(true);
 
       // Sync from backend first
       console.log('[REPORTS] Syncing reports from backend...');
       await syncWorkoutReportsFromBackend(userId);
+
+      // Only update state if this is still the latest request
+      if (currentRequestId !== requestIdRef.current) return;
 
       // Then load from localStorage (which now has synced data)
       const loadedReports = getReportsByUser(userId, source);

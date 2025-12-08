@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -25,6 +25,13 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useI18n } from '../i18n/I18nProvider';
 import { leaderboardService } from '../services/api';
 import { getUser } from '../services/userProfile';
+
+// Calculate current month once (constant for the session)
+const getCurrentMonth = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+};
+const CURRENT_MONTH = getCurrentMonth();
 
 // Month names for i18n
 const MONTH_KEYS = [
@@ -75,24 +82,33 @@ export const Leaderboard: React.FC = () => {
   const currentUser = getUser();
   const monthOptions = getMonthOptions(t);
 
-  // Default to current month
-  const now = new Date();
-  const defaultMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-
-  const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth);
+  const [selectedMonth, setSelectedMonth] = useState<string>(CURRENT_MONTH);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Track request ID to prevent race conditions
+  const requestIdRef = useRef(0);
+
   useEffect(() => {
     const loadLeaderboard = async () => {
+      // Increment request ID to track this specific request
+      const currentRequestId = ++requestIdRef.current;
+
       try {
         setLoading(true);
+
         // Load leaderboard for selected month and category
-        const response = selectedMonth === defaultMonth
+        const response = selectedMonth === CURRENT_MONTH
           ? await leaderboardService.getCurrentWeek(selectedCategory || undefined)
           : await leaderboardService.getMonth(selectedMonth, selectedCategory || undefined);
+
+        // Only update state if this is still the latest request (prevents race condition)
+        if (currentRequestId !== requestIdRef.current) {
+          console.log('[LEADERBOARD] Ignoring stale response');
+          return;
+        }
 
         // Backend already filters by user's category, just use the data
         setData(response.leaderboard || []);
@@ -106,10 +122,16 @@ export const Leaderboard: React.FC = () => {
           }
         }
       } catch (error) {
+        // Only update state if this is still the latest request
+        if (currentRequestId !== requestIdRef.current) return;
+
         console.error('[LEADERBOARD] Failed to load:', error);
         setData([]);
       } finally {
-        setLoading(false);
+        // Only update loading state if this is still the latest request
+        if (currentRequestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
