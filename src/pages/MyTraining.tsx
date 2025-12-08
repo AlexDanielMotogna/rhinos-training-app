@@ -22,6 +22,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import DescriptionIcon from '@mui/icons-material/Description';
+import { useSearchParams } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { toastService } from '../services/toast';
 import { WorkoutBlock } from '../components/workout/WorkoutBlock';
@@ -54,9 +55,52 @@ type TeamSessionTab = 'plan' | 'history' | 'reports';
 
 export const MyTraining: React.FC = () => {
   const { t } = useI18n();
-  const [sessionView, setSessionView] = useState<SessionView>('team');
-  const [mySessionTab, setMySessionTab] = useState<MySessionTab>('plans');
-  const [teamSessionTab, setTeamSessionTab] = useState<TeamSessionTab>('plan');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize from URL params or defaults
+  const getInitialView = (): SessionView => {
+    const view = searchParams.get('view');
+    return view === 'my' || view === 'team' ? view : 'team';
+  };
+
+  const getInitialMyTab = (): MySessionTab => {
+    const tab = searchParams.get('myTab');
+    return tab === 'plans' || tab === 'history' || tab === 'reports' ? tab : 'plans';
+  };
+
+  const getInitialTeamTab = (): TeamSessionTab => {
+    const tab = searchParams.get('teamTab');
+    return tab === 'plan' || tab === 'history' || tab === 'reports' ? tab : 'plan';
+  };
+
+  const [sessionView, setSessionViewState] = useState<SessionView>(getInitialView);
+  const [mySessionTab, setMySessionTabState] = useState<MySessionTab>(getInitialMyTab);
+  const [teamSessionTab, setTeamSessionTabState] = useState<TeamSessionTab>(getInitialTeamTab);
+
+  // Update URL when tabs change
+  const setSessionView = (view: SessionView) => {
+    setSessionViewState(view);
+    setSearchParams(prev => {
+      prev.set('view', view);
+      return prev;
+    }, { replace: true });
+  };
+
+  const setMySessionTab = (tab: MySessionTab) => {
+    setMySessionTabState(tab);
+    setSearchParams(prev => {
+      prev.set('myTab', tab);
+      return prev;
+    }, { replace: true });
+  };
+
+  const setTeamSessionTab = (tab: TeamSessionTab) => {
+    setTeamSessionTabState(tab);
+    setSearchParams(prev => {
+      prev.set('teamTab', tab);
+      return prev;
+    }, { replace: true });
+  };
   const [activeTab, setActiveTab] = useState<TrainingTypeKey>('strength_conditioning');
   // const [template, setTemplate] = useState<PositionTemplate | null>(null); // No longer needed - using assignment.template directly
   const [showFreeSession, setShowFreeSession] = useState(false);
