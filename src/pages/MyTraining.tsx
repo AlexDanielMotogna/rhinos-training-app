@@ -103,6 +103,7 @@ export const MyTraining: React.FC = () => {
   const [workoutHistory, setWorkoutHistory] = useState(() =>
     user ? getWorkoutLogsByUser(user.id) : []
   );
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Load training types and assignments from backend (with offline support)
   useEffect(() => {
@@ -260,6 +261,32 @@ export const MyTraining: React.FC = () => {
       setWorkoutHistory(getWorkoutLogsByUser(user.id));
     }
   };
+
+  // Sync and refresh workout history when switching to history tabs
+  useEffect(() => {
+    const syncAndRefresh = async () => {
+      if (!user) return;
+
+      const shouldSync =
+        (sessionView === 'team' && teamSessionTab === 'history') ||
+        (sessionView === 'my' && mySessionTab === 'history');
+
+      if (shouldSync) {
+        setHistoryLoading(true);
+        console.log('[MY TRAINING] Syncing workout history for tab change...');
+        try {
+          if (isOnline()) {
+            await syncWorkoutLogsFromBackend(user.id);
+          }
+          refreshWorkoutHistory();
+        } finally {
+          setHistoryLoading(false);
+        }
+      }
+    };
+
+    syncAndRefresh();
+  }, [sessionView, teamSessionTab, mySessionTab, user?.id]);
 
   /**
    * Generate workout report - tries AI first, falls back to algorithm
@@ -955,11 +982,17 @@ export const MyTraining: React.FC = () => {
           {/* History Tab */}
           {mySessionTab === 'history' && (
             <Box>
-              <WorkoutHistory
-                workouts={workoutHistory.filter(w => w.source === 'player')}
-                onDelete={handleDeleteWorkout}
-                onEdit={handleEditWorkout}
-              />
+              {historyLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <WorkoutHistory
+                  workouts={workoutHistory.filter(w => w.source === 'player')}
+                  onDelete={handleDeleteWorkout}
+                  onEdit={handleEditWorkout}
+                />
+              )}
             </Box>
           )}
 
@@ -1114,11 +1147,17 @@ export const MyTraining: React.FC = () => {
 
               {/* History Tab */}
               {teamSessionTab === 'history' && (
-                <WorkoutHistory
-                  workouts={workoutHistory.filter(w => w.source === 'coach')}
-                  onDelete={handleDeleteWorkout}
-                  onEdit={handleEditWorkout}
-                />
+                historyLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : (
+                  <WorkoutHistory
+                    workouts={workoutHistory.filter(w => w.source === 'coach')}
+                    onDelete={handleDeleteWorkout}
+                    onEdit={handleEditWorkout}
+                  />
+                )
               )}
 
               {/* My Reports Tab */}
