@@ -29,6 +29,10 @@ export interface MockUser {
   // Privacy Settings
   metricsPublic?: boolean; // Toggle to make metrics visible to other players (default: true)
 
+  // Age Categories (SaaS multi-sport support)
+  ageCategory?: string; // Player's age category (e.g., 'U13', 'U15', 'Seniors')
+  coachCategories?: string[]; // Categories this coach manages (for coaches only)
+
   // AI Coach Configuration (personal - only used if team API not configured)
   aiCoachEnabled?: boolean; // Toggle to enable/disable AI coach
   aiApiKey?: string; // Personal OpenAI API key

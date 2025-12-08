@@ -26,14 +26,45 @@ const voteSchema = z.object({
 // GET /api/attendance-polls - Get all polls
 router.get('/', async (req, res) => {
   try {
+    const user = (req as any).user;
+
+    // Get user's category info for filtering
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { role: true, ageCategory: true, coachCategories: true },
+    });
+
     const polls = await prisma.attendancePoll.findMany({
       include: {
         votes: true,
+        session: {
+          select: { ageCategories: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json(polls);
+    // Filter polls by user's category (based on session's categories)
+    let filteredPolls = polls;
+    if (dbUser) {
+      if (dbUser.role === 'player' && dbUser.ageCategory) {
+        // Players see polls for sessions with no category restriction OR including their category
+        filteredPolls = polls.filter(poll => {
+          const sessionCategories = (poll.session as any)?.ageCategories || [];
+          return sessionCategories.length === 0 || sessionCategories.includes(dbUser.ageCategory);
+        });
+      } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+        // Coaches see polls for sessions with no category restriction OR overlapping with their categories
+        filteredPolls = polls.filter(poll => {
+          const sessionCategories = (poll.session as any)?.ageCategories || [];
+          return sessionCategories.length === 0 ||
+            sessionCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+        });
+      }
+    }
+
+    // Remove session from response to keep original structure
+    res.json(filteredPolls.map(({ session, ...poll }) => poll));
   } catch (error) {
     console.error('[POLLS] Get polls error:', error);
     res.status(500).json({ error: 'Failed to fetch attendance polls' });
@@ -44,19 +75,55 @@ router.get('/', async (req, res) => {
 router.get('/active', async (req, res) => {
   try {
     const now = new Date().toISOString();
+    const user = (req as any).user;
 
-    const activePoll = await prisma.attendancePoll.findFirst({
+    // Get user's category info for filtering
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { role: true, ageCategory: true, coachCategories: true },
+    });
+
+    const activePolls = await prisma.attendancePoll.findMany({
       where: {
         isActive: true,
         expiresAt: { gt: now },
       },
       include: {
         votes: true,
+        session: {
+          select: { ageCategories: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json(activePoll);
+    // Filter by category
+    let filteredPolls = activePolls;
+    if (dbUser) {
+      if (dbUser.role === 'player' && dbUser.ageCategory) {
+        filteredPolls = activePolls.filter(poll => {
+          const sessionCategories = (poll.session as any)?.ageCategories || [];
+          return sessionCategories.length === 0 || sessionCategories.includes(dbUser.ageCategory);
+        });
+      } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+        filteredPolls = activePolls.filter(poll => {
+          const sessionCategories = (poll.session as any)?.ageCategories || [];
+          return sessionCategories.length === 0 ||
+            sessionCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+        });
+      }
+    }
+
+    // Return first active poll for user's category
+    const activePoll = filteredPolls.length > 0 ? filteredPolls[0] : null;
+
+    // Remove session from response
+    if (activePoll) {
+      const { session, ...pollWithoutSession } = activePoll;
+      res.json(pollWithoutSession);
+    } else {
+      res.json(null);
+    }
   } catch (error) {
     console.error('[POLLS] Get active poll error:', error);
     res.status(500).json({ error: 'Failed to fetch active poll' });
@@ -117,15 +184,28 @@ router.post('/', async (req, res) => {
       },
     });
 
-    // Send notifications to all players with their preferred language
-    const allPlayers = await prisma.user.findMany({
-      where: { role: 'player' },
+    // Get session's categories for filtering notifications
+    const session = await prisma.trainingSession.findUnique({
+      where: { id: data.sessionId },
+      select: { ageCategories: true },
+    });
+    const sessionCategories = (session as any)?.ageCategories || [];
+
+    // Send notifications only to players in the same category
+    let playersQuery: any = { role: 'player' };
+    if (sessionCategories.length > 0) {
+      // Only notify players whose category is in the session's categories
+      playersQuery.ageCategory = { in: sessionCategories };
+    }
+
+    const playersToNotify = await prisma.user.findMany({
+      where: playersQuery,
       select: { id: true, preferredLanguage: true },
     });
 
-    if (allPlayers.length > 0) {
+    if (playersToNotify.length > 0) {
       // Create notifications for each player with their preferred language
-      for (const player of allPlayers) {
+      for (const player of playersToNotify) {
         const lang = (player.preferredLanguage as 'de' | 'en') || 'de';
         const title = t('notification.attendancePoll.title', lang);
         const message = formatPollMessage(data.sessionName, data.sessionDate, lang);

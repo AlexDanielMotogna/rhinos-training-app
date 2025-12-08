@@ -23,8 +23,6 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import AddIcon from '@mui/icons-material/Add';
 import { globalCatalog } from '../../services/catalog';
 import { exerciseService } from '../../services/api';
-import { db } from '../../services/db';
-import { isOnline } from '../../services/sync';
 import type { Exercise, ExerciseCategory, MuscleGroup } from '../../types/exercise';
 import { sanitizeYouTubeUrl } from '../../services/yt';
 import { ExerciseFormDialog } from '../exercise/ExerciseFormDialog';
@@ -76,10 +74,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       const backendExercises = await exerciseService.getAll() as Exercise[];
       console.log('📥 Received from backend:', backendExercises.length, 'exercises');
 
-      // Clear and update IndexedDB cache
-      await db.exercises.clear();
-      await db.exercises.bulkPut(backendExercises);
-
       setExercises(backendExercises);
       console.log(`✅ Loaded ${backendExercises.length} exercises from backend`);
     } catch (error) {
@@ -94,51 +88,21 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
       if (!open) return;
 
-      const online = isOnline();
-      console.log('🌐 Online status:', online);
-
       try {
-        if (online) {
-          // Always fetch from backend when online
-          console.log('🔄 Fetching exercises from backend...');
-          const backendExercises = await exerciseService.getAll() as Exercise[];
-          console.log('📥 Received from backend:', backendExercises.length, 'exercises');
-          console.log('📥 Sample exercise with muscle groups:', backendExercises[0]);
-          console.log('📥 Exercises with legs:', backendExercises.filter(e => e.muscleGroups?.includes('legs')).length);
+        // Always fetch from backend
+        console.log('🔄 Fetching exercises from backend...');
+        const backendExercises = await exerciseService.getAll() as Exercise[];
+        console.log('📥 Received from backend:', backendExercises.length, 'exercises');
+        console.log('📥 Sample exercise with muscle groups:', backendExercises[0]);
+        console.log('📥 Exercises with legs:', backendExercises.filter(e => e.muscleGroups?.includes('legs')).length);
 
-          // Cache in IndexedDB
-          await db.exercises.clear();
-          await db.exercises.bulkPut(backendExercises);
-
-          setExercises(backendExercises);
-          console.log(`✅ Loaded ${backendExercises.length} exercises from backend`);
-        } else {
-          // Load from IndexedDB cache when offline
-          console.log('📦 Loading from cache...');
-          const cachedExercises = await db.exercises.toArray();
-
-          if (cachedExercises.length > 0) {
-            setExercises(cachedExercises as Exercise[]);
-            console.log(`📦 Loaded ${cachedExercises.length} exercises from cache`);
-          } else {
-            // Fallback to hardcoded catalog only if offline AND no cache
-            console.warn('⚠️ Offline with no cache - using fallback catalog');
-            setExercises(globalCatalog);
-            console.log(`⚠️ Using fallback catalog (${globalCatalog.length} exercises)`);
-          }
-        }
+        setExercises(backendExercises);
+        console.log(`✅ Loaded ${backendExercises.length} exercises from backend`);
       } catch (error) {
         console.error('❌ Failed to load exercises:', error);
-        // Try to use cache even if backend fails
-        const cachedExercises = await db.exercises.toArray();
-        if (cachedExercises.length > 0) {
-          console.log('📦 Falling back to cached exercises');
-          setExercises(cachedExercises as Exercise[]);
-        } else {
-          // Last resort: hardcoded catalog
-          console.warn('⚠️ Using fallback catalog due to error (${globalCatalog.length} exercises)');
-          setExercises(globalCatalog);
-        }
+        // Fallback to hardcoded catalog
+        console.warn('⚠️ Using fallback catalog due to error (${globalCatalog.length} exercises)');
+        setExercises(globalCatalog);
       }
     };
 

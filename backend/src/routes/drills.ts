@@ -26,6 +26,7 @@ const createDrillSchema = z.object({
   videoUrl: z.string().optional(),
   imageUrl: z.string().optional(),
   imagePublicId: z.string().optional(),
+  ageCategories: z.array(z.string()).default([]), // Categories this drill is visible to
 });
 
 const updateDrillSchema = z.object({
@@ -47,12 +48,20 @@ const updateDrillSchema = z.object({
   videoUrl: z.string().optional(),
   imageUrl: z.string().optional(),
   imagePublicId: z.string().optional(),
+  ageCategories: z.array(z.string()).optional(), // Categories this drill is visible to
 });
 
 // GET /api/drills - Get all drills (authenticated)
 router.get('/', authenticate, async (req, res) => {
   try {
+    const user = (req as any).user;
     const { category, difficulty } = req.query;
+
+    // Get user's category info for filtering
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { role: true, ageCategory: true, coachCategories: true },
+    });
 
     const where: any = {};
     if (category && typeof category === 'string') {
@@ -70,7 +79,27 @@ router.get('/', authenticate, async (req, res) => {
       ],
     });
 
-    res.json(drills);
+    // Filter drills by user's category
+    let filteredDrills = drills;
+    if (dbUser) {
+      if (dbUser.role === 'player' && dbUser.ageCategory) {
+        // Players see drills that: have no category restriction OR include their category
+        filteredDrills = drills.filter(drill => {
+          const drillCategories = (drill as any).ageCategories || [];
+          return drillCategories.length === 0 || drillCategories.includes(dbUser.ageCategory);
+        });
+      } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+        // Coaches see drills that: have no category restriction OR overlap with their categories
+        filteredDrills = drills.filter(drill => {
+          const drillCategories = (drill as any).ageCategories || [];
+          return drillCategories.length === 0 ||
+            drillCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+        });
+      }
+      // If no category set, show all drills (admin/superuser behavior)
+    }
+
+    res.json(filteredDrills);
   } catch (error) {
     console.error('[DRILLS] Get drills error:', error);
     res.status(500).json({ error: 'Failed to fetch drills' });
@@ -102,10 +131,10 @@ router.post('/', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
 
-    console.log('[DRILLS] Create request received from user:', { 
-      email: user.email, 
-      role: user.role, 
-      userId: user.userId 
+    console.log('[DRILLS] Create request received from user:', {
+      email: user.email,
+      role: user.role,
+      userId: user.userId
     });
     console.log('[DRILLS] Request body:', JSON.stringify(req.body, null, 2));
 
@@ -115,6 +144,17 @@ router.post('/', authenticate, async (req, res) => {
     }
 
     const data = createDrillSchema.parse(req.body);
+
+    // Get coach's categories to auto-assign if not provided
+    const coach = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { coachCategories: true },
+    });
+
+    // Use provided categories or default to coach's categories
+    const ageCategories = data.ageCategories.length > 0
+      ? data.ageCategories
+      : (coach?.coachCategories || []);
 
     const drill = await prisma.drill.create({
       data: {
@@ -130,11 +170,12 @@ router.post('/', authenticate, async (req, res) => {
         trainingContext: data.trainingContext,
         sketchUrl: data.sketchUrl,
         sketchPublicId: data.sketchPublicId,
+        ageCategories: ageCategories,
         createdBy: user.userId,
       },
     });
 
-    console.log(`[DRILLS] Drill created: ${drill.name} by ${user.email}`);
+    console.log(`[DRILLS] Drill created: ${drill.name} by ${user.email}, categories: ${ageCategories.join(', ') || 'all'}`);
     res.status(201).json(drill);
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -21,7 +21,11 @@
       "Bash(nul)",
       "Bash(timeout 5 npx prisma db push:*)",
       "Bash(npx tsx:*)",
-      "Bash(del nul 2)"
+      "Bash(del nul 2)",
+      "Bash(python:*)",
+      "Bash(git checkout:*)",
+      "Bash(del \"c:\\Users\\user\\rhinos-training-app\\src\\services\\online.ts\")",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

@@ -20,7 +20,6 @@ import { useI18n } from '../../i18n/I18nProvider';
 import type { Exercise, ExerciseCategory, MuscleGroup } from '../../types/exercise';
 import { exerciseService } from '../../services/api';
 import { toastService } from '../../services/toast';
-import { isOnline } from '../../services/sync';
 
 interface ExerciseFormDialogProps {
   open: boolean;
@@ -93,11 +92,6 @@ export const ExerciseFormDialog: React.FC<ExerciseFormDialogProps> = ({
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toastService.validationError('Exercise name is required');
-      return;
-    }
-
-    if (!isOnline()) {
-      toastService.error('You must be online to add exercises');
       return;
     }
 

@@ -1,5 +1,8 @@
+/**
+ * Test results service - backend only
+ */
+
 import { testResultService } from './api';
-import { isOnline } from './sync';
 
 const TEST_STORAGE_KEYS = {
   strength: 'lastStrengthTest',
@@ -7,8 +10,6 @@ const TEST_STORAGE_KEYS = {
   power: 'lastPowerTest',
   agility: 'lastAgilityTest',
 };
-
-const SYNCING_KEY = 'rhinos_syncing_tests';
 
 /**
  * Save test result locally
@@ -47,7 +48,6 @@ export function getTestResultLocal(testType: string): any | null {
 
 /**
  * Save test result with backend sync
- * This is the main function to use when saving test results
  */
 export async function saveTestResult(
   testType: 'strength' | 'speed' | 'power' | 'agility',
@@ -58,55 +58,33 @@ export async function saveTestResult(
   // Save locally first
   saveTestResultLocal(testType, testData);
 
-  // Try to sync with backend if online
-  const online = isOnline();
-  if (online) {
-    try {
-      console.log('[TEST RESULTS] Syncing test result to backend...', { testType, score, tier });
+  try {
+    console.log('[TEST RESULTS] Syncing test result to backend...', { testType, score, tier });
 
-      const dateISO = testData.dateISO || new Date().toISOString().split('T')[0];
+    const dateISO = testData.dateISO || new Date().toISOString().split('T')[0];
 
-      await testResultService.create({
-        testType,
-        dateISO,
-        testData,
-        score,
-        tier,
-      });
+    await testResultService.create({
+      testType,
+      dateISO,
+      testData,
+      score,
+      tier,
+    });
 
-      console.log('[TEST RESULTS] Test result synced to backend successfully');
-    } catch (error) {
-      console.warn('[TEST RESULTS] Failed to sync to backend, keeping local changes:', error);
-      // Keep local changes even if backend sync fails
-    }
-  } else {
-    console.log('[TEST RESULTS] Offline - test saved locally only');
+    console.log('[TEST RESULTS] Test result synced to backend successfully');
+  } catch (error) {
+    console.warn('[TEST RESULTS] Failed to sync to backend:', error);
+    throw error;
   }
 }
 
 /**
  * Sync test results from backend to localStorage
- * This should be called on app startup and when coming back online
  */
 export async function syncTestResultsFromBackend(): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping test results sync');
-    return;
-  }
-
-  // Check if already syncing to prevent duplicate calls
-  const isSyncing = localStorage.getItem(SYNCING_KEY);
-  if (isSyncing === 'true') {
-    console.log('[TEST RESULTS] Already syncing, skipping duplicate call');
-    return;
-  }
-
   try {
-    // Set syncing flag
-    localStorage.setItem(SYNCING_KEY, 'true');
     console.log('🔄 Syncing test results from backend...');
 
-    // Fetch all test types
     const testTypes: Array<keyof typeof TEST_STORAGE_KEYS> = ['strength', 'speed', 'power', 'agility'];
 
     for (const testType of testTypes) {
@@ -131,16 +109,12 @@ export async function syncTestResultsFromBackend(): Promise<void> {
         }
       } catch (error) {
         console.warn(`⚠️ Failed to sync ${testType} test:`, error);
-        // Continue with other test types
       }
     }
 
     console.log('✅ Test results sync completed');
   } catch (error) {
     console.error('❌ Failed to sync test results from backend:', error);
-  } finally {
-    // Clear syncing flag
-    localStorage.removeItem(SYNCING_KEY);
   }
 }
 
@@ -156,13 +130,14 @@ export async function deleteTestResult(testType: string, testId?: string): Promi
     console.log(`[TEST RESULTS] Test deleted locally: ${testType}`);
   }
 
-  // Try to delete from backend if online and testId is provided
-  if (isOnline() && testId) {
+  // Delete from backend if testId is provided
+  if (testId) {
     try {
       await testResultService.delete(testId);
       console.log('[TEST RESULTS] Test deleted from backend');
     } catch (error) {
       console.warn('[TEST RESULTS] Failed to delete from backend:', error);
+      throw error;
     }
   }
 }

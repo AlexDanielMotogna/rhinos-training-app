@@ -31,12 +31,16 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   onSave,
 }) => {
   const { t } = useI18n();
+  // Hardcoded categories for USR Rhinos - backend handles validation
+  const allowedCategories = ['Kampfmannschaft', 'Jugend'];
+
   const [name, setName] = useState(user.name);
   const [jerseyNumber, setJerseyNumber] = useState(user.jerseyNumber?.toString() || '');
   const [birthDate, setBirthDate] = useState(user.birthDate || '');
   const [weightKg, setWeightKg] = useState(user.weightKg);
   const [heightCm, setHeightCm] = useState(user.heightCm);
   const [sex, setSex] = useState<'male' | 'female'>(user.sex || 'male');
+  const [ageCategory, setAgeCategory] = useState(user.ageCategory || '');
   const [phone, setPhone] = useState(user.phone || '+43');
   const [instagram, setInstagram] = useState(user.instagram || '');
   const [snapchat, setSnapchat] = useState(user.snapchat || '');
@@ -86,6 +90,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
         weightKg: Number(weightKg),
         heightCm: Number(heightCm),
         sex,
+        ageCategory: ageCategory || undefined,
         phone: phone && phone !== '+43' ? phone : undefined,
         instagram: instagram || undefined,
         snapchat: snapchat || undefined,
@@ -156,6 +161,27 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
               <MenuItem value="female">{t('auth.female')}</MenuItem>
             </Select>
           </FormControl>
+
+          {/* Age Category - only show if team has configured categories */}
+          {allowedCategories.length > 0 && (
+            <FormControl fullWidth>
+              <InputLabel>Age Category</InputLabel>
+              <Select
+                value={ageCategory}
+                label="Age Category"
+                onChange={(e) => setAgeCategory(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {allowedCategories.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
             <TextField

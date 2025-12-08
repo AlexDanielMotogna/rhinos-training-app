@@ -1,7 +1,10 @@
+/**
+ * Video service - backend only
+ */
+
 import type { Video, VideoProgress } from '../types/video';
 import { sanitizeYouTubeUrl, extractYouTubeVideoId } from './yt';
 import { videoService } from './api';
-import { isOnline } from './sync';
 
 const VIDEOS_STORAGE_KEY = 'rhinos_videos';
 const VIDEO_PROGRESS_STORAGE_KEY = 'rhinos_video_progress';
@@ -18,62 +21,13 @@ export function getYouTubeVideoId(url: string): string | null {
 
 /**
  * Sync videos from backend to localStorage
- * This should be called on app mount
  */
 export async function syncVideosFromBackend(): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping video sync');
-    return;
-  }
-
   try {
     console.log('🔄 Syncing videos from backend...');
     const backendVideos = await videoService.getAll();
-
-    // Get current local videos
-    const localData = localStorage.getItem(VIDEOS_STORAGE_KEY);
-    const localVideos: any[] = localData ? JSON.parse(localData) : [];
-
-    // Merge: compare timestamps to keep newer version
-    const mergedVideos: any[] = [];
-    const processedIds = new Set<string>();
-
-    // Process backend videos
-    for (const backendVideo of backendVideos) {
-      const localVideo = localVideos.find(v => v.id === backendVideo.id);
-
-      if (localVideo) {
-        // Compare timestamps
-        const localTime = new Date(localVideo.updatedAt).getTime();
-        const backendTime = new Date(backendVideo.updatedAt).getTime();
-
-        if (localTime > backendTime) {
-          // Local is newer (e.g., draft edits) - keep local
-          console.log('[VIDEOS] Local version is newer, keeping local:', localVideo.id);
-          mergedVideos.push(localVideo);
-        } else {
-          // Backend is newer or same - use backend
-          mergedVideos.push(backendVideo);
-        }
-      } else {
-        // No local version - use backend
-        mergedVideos.push(backendVideo);
-      }
-
-      processedIds.add(backendVideo.id);
-    }
-
-    // Add local-only videos (drafts not yet synced)
-    for (const localVideo of localVideos) {
-      if (!processedIds.has(localVideo.id)) {
-        console.log('[VIDEOS] Found local-only video (draft):', localVideo.id);
-        mergedVideos.push(localVideo);
-      }
-    }
-
-    // Save merged videos
-    localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(mergedVideos));
-    console.log(`✅ Videos synced successfully (${mergedVideos.length} videos)`);
+    localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(backendVideos));
+    console.log(`✅ Videos synced successfully (${backendVideos.length} videos)`);
   } catch (error) {
     console.warn('⚠️ Failed to sync videos from backend:', error);
   }
@@ -127,10 +81,6 @@ export async function createVideo(video: {
   order?: number;
   isPinned?: boolean;
 }): Promise<Video> {
-  if (!isOnline()) {
-    throw new Error('Cannot create video while offline');
-  }
-
   try {
     // Sanitize YouTube URL
     const sanitizedUrl = sanitizeYouTubeUrl(video.youtubeUrl) || video.youtubeUrl;
@@ -170,10 +120,6 @@ export async function updateVideo(id: string, updates: {
   order?: number;
   isPinned?: boolean;
 }): Promise<Video> {
-  if (!isOnline()) {
-    throw new Error('Cannot update video while offline');
-  }
-
   try {
     // Sanitize YouTube URL if provided
     const sanitizedUpdates = { ...updates };
@@ -203,10 +149,6 @@ export async function updateVideo(id: string, updates: {
  * Delete video (coach only) - Backend first
  */
 export async function deleteVideo(id: string): Promise<void> {
-  if (!isOnline()) {
-    throw new Error('Cannot delete video while offline');
-  }
-
   try {
     await videoService.delete(id);
 
@@ -265,67 +207,38 @@ export async function updateVideoProgress(
     completed,
   };
 
-  // Save to backend if online
-  if (isOnline()) {
-    try {
-      const backendProgress = await videoService.saveProgress(videoId, progressData);
+  try {
+    const backendProgress = await videoService.saveProgress(videoId, progressData);
 
-      // Update local cache
-      const allProgress = getAllVideoProgress();
-      const existingIndex = allProgress.findIndex(
-        p => p.playerId === playerId && p.videoId === videoId
-      );
+    // Update local cache
+    const allProgress = getAllVideoProgress();
+    const existingIndex = allProgress.findIndex(
+      p => p.playerId === playerId && p.videoId === videoId
+    );
 
-      const progress: VideoProgress = {
-        id: backendProgress.id,
-        videoId,
-        playerId,
-        lastTimestamp: timestamp,
-        totalDuration: duration,
-        percentWatched,
-        completed,
-        lastWatchedAt: new Date().toISOString(),
-      };
+    const progress: VideoProgress = {
+      id: backendProgress.id,
+      videoId,
+      playerId,
+      lastTimestamp: timestamp,
+      totalDuration: duration,
+      percentWatched,
+      completed,
+      lastWatchedAt: new Date().toISOString(),
+    };
 
-      if (existingIndex >= 0) {
-        allProgress[existingIndex] = progress;
-      } else {
-        allProgress.push(progress);
-      }
-
-      localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(allProgress));
-      return progress;
-    } catch (error) {
-      console.warn('Failed to save progress to backend, saving locally:', error);
-      // Fall through to local save
+    if (existingIndex >= 0) {
+      allProgress[existingIndex] = progress;
+    } else {
+      allProgress.push(progress);
     }
+
+    localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(allProgress));
+    return progress;
+  } catch (error) {
+    console.error('Failed to save video progress:', error);
+    throw error;
   }
-
-  // Local save only (offline mode)
-  const allProgress = getAllVideoProgress();
-  const existingIndex = allProgress.findIndex(
-    p => p.playerId === playerId && p.videoId === videoId
-  );
-
-  const progress: VideoProgress = {
-    id: existingIndex >= 0 ? allProgress[existingIndex].id : crypto.randomUUID(),
-    videoId,
-    playerId,
-    lastTimestamp: timestamp,
-    totalDuration: duration,
-    percentWatched,
-    completed,
-    lastWatchedAt: new Date().toISOString(),
-  };
-
-  if (existingIndex >= 0) {
-    allProgress[existingIndex] = progress;
-  } else {
-    allProgress.push(progress);
-  }
-
-  localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(allProgress));
-  return progress;
 }
 
 /**
@@ -340,60 +253,12 @@ export function getPlayerProgressForAllVideos(playerId: string): Record<string, 
 }
 
 /**
- * Sync video progress from backend (optional - for coach viewing player progress)
+ * Sync video progress from backend
  */
 export async function syncVideoProgressFromBackend(userId: string): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping video progress sync');
-    return;
-  }
-
   try {
     const backendProgress = await videoService.getUserProgress(userId);
-
-    // Get current local progress
-    const localData = localStorage.getItem(VIDEO_PROGRESS_STORAGE_KEY);
-    const localProgress: any[] = localData ? JSON.parse(localData) : [];
-
-    // Merge: compare timestamps to keep newer version
-    const mergedProgress: any[] = [];
-    const processedIds = new Set<string>();
-
-    // Process backend progress
-    for (const backendItem of backendProgress) {
-      const localItem = localProgress.find(p => p.videoId === backendItem.videoId);
-
-      if (localItem) {
-        // Compare timestamps
-        const localTime = new Date(localItem.lastWatchedAt).getTime();
-        const backendTime = new Date(backendItem.lastWatchedAt).getTime();
-
-        if (localTime > backendTime) {
-          // Local is newer - keep local
-          console.log('[VIDEO PROGRESS] Local progress is newer for video:', localItem.videoId);
-          mergedProgress.push(localItem);
-        } else {
-          // Backend is newer or same - use backend
-          mergedProgress.push(backendItem);
-        }
-      } else {
-        // No local version - use backend
-        mergedProgress.push(backendItem);
-      }
-
-      processedIds.add(backendItem.videoId);
-    }
-
-    // Add local-only progress (not yet synced)
-    for (const localItem of localProgress) {
-      if (!processedIds.has(localItem.videoId)) {
-        console.log('[VIDEO PROGRESS] Found local-only progress for video:', localItem.videoId);
-        mergedProgress.push(localItem);
-      }
-    }
-
-    // Save merged progress
-    localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(mergedProgress));
+    localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(backendProgress));
     console.log('✅ Video progress synced from backend');
   } catch (error) {
     console.warn('⚠️ Failed to sync video progress:', error);

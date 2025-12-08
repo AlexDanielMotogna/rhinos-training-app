@@ -38,23 +38,15 @@ import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
 import { getUser } from '../services/userProfile';
 import { assignmentService, trainingTypeService, workoutService } from '../services/api';
-import {
-  getCachedTrainingTypes,
-  getPlayerAssignments,
-  db,
-  addToOutbox,
-} from '../services/db';
-import { isOnline } from '../services/sync';
-import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, syncWorkoutLogsFromBackend, type WorkoutLog } from '../services/workoutLog';
+import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, getUserPlansFromBackend, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, TemplateBlock } from '../types/template';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
 import type { UserPlanTemplate, PlanExercise } from '../types/userPlan';
 import { sanitizeYouTubeUrl } from '../services/yt';
 import { analyzeWorkout, estimateWorkoutDuration, type WorkoutReport } from '../services/workoutAnalysis';
-import { saveWorkoutReport, syncWorkoutReportsFromBackend } from '../services/workoutReports';
+import { saveWorkoutReport } from '../services/workoutReports';
 import { generateAIWorkoutReport, getAPIKey } from '../services/aiInsights';
-import { addWorkoutPoints } from '../services/pointsSystem';
 
 type SessionView = 'my' | 'team';
 type MySessionTab = 'plans' | 'history' | 'reports';
@@ -100,114 +92,60 @@ export const MyTraining: React.FC = () => {
   const user = getUser();
   const [trainingTypes, setTrainingTypes] = useState<any[]>([]);
   const [activeAssignments, setActiveAssignments] = useState<any[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(!!user); // Only loading if user exists
   const [workoutHistory, setWorkoutHistory] = useState(() =>
     user ? getWorkoutLogsByUser(user.id) : []
   );
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Load training types and assignments from backend (with offline support)
+  // Load all data from backend in parallel
   useEffect(() => {
     const loadData = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoadingData(false);
+        return;
+      }
 
-      const online = isOnline();
-      console.log(`📡 Loading data - ${online ? 'ONLINE' : 'OFFLINE'} mode`);
+      setIsLoadingData(true);
 
       try {
-        let types: any[] = [];
-        let playerAssignments: any[] = [];
+        // Fetch all data in parallel for better performance
+        const [types, allAssignments, userPlans] = await Promise.all([
+          trainingTypeService.getAll() as Promise<any[]>,
+          assignmentService.getAll() as Promise<any[]>,
+          getUserPlansFromBackend(user.id),
+        ]);
 
-        if (online) {
-          // Online: Fetch from API and cache
-          try {
-            types = await trainingTypeService.getAll() as any[];
-
-            // Cache training types in IndexedDB
-            await db.trainingTypes.bulkPut(
-              types.map((tt: any) => ({
-                ...tt,
-                syncedAt: new Date().toISOString(),
-              }))
-            );
-
-            const allAssignments = await assignmentService.getAll() as any[];
-            const today = new Date().toISOString().split('T')[0];
-
-            // Filter active assignments
-            // - Coaches see ALL active assignments
-            // - Players only see assignments they are included in
-            playerAssignments = allAssignments.filter((a: any) => {
-              const isActive = a.active && a.startDate <= today && (!a.endDate || a.endDate >= today);
-              if (!isActive) return false;
-
-              // Coaches see all active assignments
-              if (user.role === 'coach') return true;
-
-              // Players only see their assigned sessions
-              return a.playerIds?.includes(user.id);
-            });
-
-            // Cache assignments in IndexedDB
-            await db.trainingAssignments.bulkPut(
-              allAssignments.map((a: any) => ({
-                ...a,
-                syncedAt: new Date().toISOString(),
-              }))
-            );
-
-            console.log('✅ Loaded from API and cached');
-
-            // Sync workout logs and reports from backend
-            await syncWorkoutLogsFromBackend(user.id);
-            await syncWorkoutReportsFromBackend(user.id);
-            // Note: User plans sync is now handled automatically by getUserPlansFromBackend
-
-            // Refresh local state after sync
-            refreshWorkoutHistory();
-          } catch (apiError) {
-            console.warn('⚠️ API failed, falling back to cache:', apiError);
-            // If API fails but we're online, fall back to cache
-            types = await getCachedTrainingTypes();
-            playerAssignments = await getPlayerAssignments(user.id, user.role);
-            console.log('📦 Loaded from cache (API error)');
-          }
-        } else {
-          // Offline: Load from cache
-          types = await getCachedTrainingTypes();
-          playerAssignments = await getPlayerAssignments(user.id, user.role);
-          console.log('📦 Loaded from offline cache');
-        }
-
-        // Filter only active assignments with dates
         const today = new Date().toISOString().split('T')[0];
-        const activeFiltered = playerAssignments.filter((a: any) =>
-          a.active &&
-          a.startDate <= today &&
-          (!a.endDate || a.endDate >= today)
-        );
 
+        // Filter active assignments
+        // - Coaches see ALL active assignments
+        // - Players only see assignments they are included in
+        const playerAssignments = allAssignments.filter((a: any) => {
+          const isActive = a.active && a.startDate <= today && (!a.endDate || a.endDate >= today);
+          if (!isActive) return false;
+
+          // Coaches see all active assignments
+          if (user.role === 'coach') return true;
+
+          // Players only see their assigned sessions
+          return a.playerIds?.includes(user.id);
+        });
+
+        // Update all state at once
         setTrainingTypes(types);
-        setActiveAssignments(activeFiltered);
-        console.log('🎯 Loaded assignments:', activeFiltered);
+        setActiveAssignments(playerAssignments);
+        setUserPlans(userPlans);
+        refreshWorkoutHistory();
       } catch (error) {
-        console.error('❌ Error loading data:', error);
+        console.error('Failed to load training data:', error);
+        toastService.error('Failed to load training data');
+      } finally {
+        setIsLoadingData(false);
       }
     };
 
     loadData();
-  }, [user?.id]);
-
-  // Load user plans
-  useEffect(() => {
-    const loadUserPlans = async () => {
-      if (user) {
-        console.log('[MY TRAINING] Loading user plans...');
-        const plans = await getUserPlansFromBackend(user.id);
-        setUserPlans(plans);
-      }
-    };
-    
-    loadUserPlans();
   }, [user?.id]);
 
   const refreshUserPlans = async () => {
@@ -357,31 +295,6 @@ export const MyTraining: React.FC = () => {
         t('training.freeSessions')
       );
       await saveWorkoutReport(user.id, t('training.freeSessions'), report, 'player', payload.entries);
-
-      // Add points to player's weekly total
-      const totalSets = payload.entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
-      const totalVolume = payload.entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
-        }
-        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
-      }, 0);
-      const totalDistance = payload.entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
-        }
-        return sum + (e.distance || 0);
-      }, 0);
-      addWorkoutPoints(
-        user.id,
-        t('training.freeSessions'),
-        duration,
-        'personal',
-        totalSets,
-        totalVolume,
-        totalDistance > 0 ? totalDistance : undefined,
-        payload.notes
-      );
 
       setWorkoutReport(report);
       setLastWorkoutTitle(t('training.freeSessions'));
@@ -540,44 +453,28 @@ export const MyTraining: React.FC = () => {
         completionPercentage,
       };
 
-      // Save to localStorage first (offline support)
+      // Save to localStorage
       const allLogs = getWorkoutLogs();
       allLogs.push(workoutLog);
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
 
-      // Save to IndexedDB for offline persistence
-      await db.workouts.put({
-        ...workoutLog,
-        planId: workoutLog.planTemplateId,
-        trainingType: 'strength',
-        completedAt: workoutLog.createdAt,
-        exercises: workoutLog.entries,
-        syncedAt: new Date().toISOString(),
-      });
-
-      // Try to save to backend (will work if online)
-      const online = isOnline();
-      if (online) {
-        try {
-          await workoutService.create({
-            date: today,
-            entries: workoutLog.entries,
-            notes: workoutLog.notes,
-            source: 'player',
-            planTemplateId: workoutLog.planTemplateId,
-            planName: workoutLog.planName,
-            duration: workoutLog.duration,
-            planMetadata: workoutLog.planMetadata,
-            completionPercentage: workoutLog.completionPercentage,
-          });
-          console.log('✅ Player workout saved to backend');
-        } catch (error) {
-          console.warn('⚠️ Failed to save player workout to backend, will sync later:', error);
-          await addToOutbox('workout', 'create', workoutLog);
-        }
-      } else {
-        await addToOutbox('workout', 'create', workoutLog);
-        console.log('📦 Player workout queued for sync when online');
+      // Save to backend
+      try {
+        await workoutService.create({
+          date: today,
+          entries: workoutLog.entries,
+          notes: workoutLog.notes,
+          source: 'player',
+          planTemplateId: workoutLog.planTemplateId,
+          planName: workoutLog.planName,
+          duration: workoutLog.duration,
+          planMetadata: workoutLog.planMetadata,
+          completionPercentage: workoutLog.completionPercentage,
+        });
+        console.log('✅ Player workout saved to backend');
+      } catch (error) {
+        console.error('Failed to save player workout to backend:', error);
+        throw error;
       }
 
       markPlanAsUsed(startingPlan.id);
@@ -594,31 +491,6 @@ export const MyTraining: React.FC = () => {
 
       // Save report to localStorage and backend
       await saveWorkoutReport(user.id, startingPlan.name, report, 'player', entries);
-
-      // Add points to player's weekly total
-      const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
-      const totalVolume = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
-        }
-        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
-      }, 0);
-      const totalDistance = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
-        }
-        return sum + (e.distance || 0);
-      }, 0);
-      addWorkoutPoints(
-        user.id,
-        startingPlan.name,
-        duration,
-        'personal',
-        totalSets,
-        totalVolume,
-        totalDistance > 0 ? totalDistance : undefined,
-        notes
-      );
 
       setWorkoutReport(report);
       setLastWorkoutTitle(startingPlan.name);
@@ -687,45 +559,27 @@ export const MyTraining: React.FC = () => {
         completionPercentage,
       };
 
-      // Save to localStorage first (offline support)
+      // Save to localStorage
       const allLogs = getWorkoutLogs();
       allLogs.push(workoutLog);
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
 
-      // Save to IndexedDB for offline persistence
-      await db.workouts.put({
-        ...workoutLog,
-        planId: workoutLog.planName,
-        trainingType: activeTab === 'strength_conditioning' ? 'strength' : 'sprints',
-        completedAt: workoutLog.createdAt,
-        exercises: workoutLog.entries,
-        syncedAt: new Date().toISOString(),
-      });
-
-      // Try to save to backend (will work if online)
-      const online = isOnline();
-      if (online) {
-        try {
-          await workoutService.create({
-            date: today,
-            entries: workoutLog.entries,
-            notes: workoutLog.notes,
-            source: 'coach',
-            planName: workoutLog.planName,
-            duration: workoutLog.duration,
-            planMetadata: workoutLog.planMetadata,
-            completionPercentage: workoutLog.completionPercentage,
-          });
-          console.log('✅ Workout saved to backend');
-        } catch (error) {
-          console.warn('⚠️ Failed to save workout to backend, will sync later:', error);
-          // Add to outbox for later sync
-          await addToOutbox('workout', 'create', workoutLog);
-        }
-      } else {
-        // Offline: add to outbox for later sync
-        await addToOutbox('workout', 'create', workoutLog);
-        console.log('📦 Workout queued for sync when online');
+      // Save to backend
+      try {
+        await workoutService.create({
+          date: today,
+          entries: workoutLog.entries,
+          notes: workoutLog.notes,
+          source: 'coach',
+          planName: workoutLog.planName,
+          duration: workoutLog.duration,
+          planMetadata: workoutLog.planMetadata,
+          completionPercentage: workoutLog.completionPercentage,
+        });
+        console.log('✅ Workout saved to backend');
+      } catch (error) {
+        console.error('Failed to save workout to backend:', error);
+        throw error;
       }
 
       refreshWorkoutHistory();
@@ -740,31 +594,6 @@ export const MyTraining: React.FC = () => {
 
       // Save report to localStorage and backend
       await saveWorkoutReport(user.id, selectedBlock.title, report, 'coach', entries);
-
-      // Add points to player's weekly total
-      const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
-      const totalVolume = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
-        }
-        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
-      }, 0);
-      const totalDistance = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
-        }
-        return sum + (e.distance || 0);
-      }, 0);
-      addWorkoutPoints(
-        user.id,
-        selectedBlock.title,
-        duration,
-        'coach',
-        totalSets,
-        totalVolume,
-        totalDistance > 0 ? totalDistance : undefined,
-        notes
-      );
 
       setWorkoutReport(report);
       setLastWorkoutTitle(selectedBlock.title);
@@ -812,43 +641,27 @@ export const MyTraining: React.FC = () => {
         completionPercentage,
       };
 
-      // Save to localStorage first (offline support)
+      // Save to localStorage
       const allLogs = getWorkoutLogs();
       allLogs.push(workoutLog);
       localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
 
-      // Save to IndexedDB for offline persistence
-      await db.workouts.put({
-        ...workoutLog,
-        planId: workoutLog.planName,
-        trainingType: activeTab === 'strength_conditioning' ? 'strength' : 'sprints',
-        completedAt: workoutLog.createdAt,
-        exercises: workoutLog.entries,
-        syncedAt: new Date().toISOString(),
-      });
-
-      // Try to save to backend (will work if online)
-      const online = isOnline();
-      if (online) {
-        try {
-          await workoutService.create({
-            date: today,
-            entries: workoutLog.entries,
-            notes: workoutLog.notes,
-            source: 'coach',
-            planName: workoutLog.planName,
-            duration: workoutLog.duration,
-            planMetadata: workoutLog.planMetadata,
-            completionPercentage: workoutLog.completionPercentage,
-          });
-          console.log('✅ Workout saved to backend');
-        } catch (error) {
-          console.warn('⚠️ Failed to save workout to backend, will sync later:', error);
-          await addToOutbox('workout', 'create', workoutLog);
-        }
-      } else {
-        await addToOutbox('workout', 'create', workoutLog);
-        console.log('📦 Workout queued for sync when online');
+      // Save to backend
+      try {
+        await workoutService.create({
+          date: today,
+          entries: workoutLog.entries,
+          notes: workoutLog.notes,
+          source: 'coach',
+          planName: workoutLog.planName,
+          duration: workoutLog.duration,
+          planMetadata: workoutLog.planMetadata,
+          completionPercentage: workoutLog.completionPercentage,
+        });
+        console.log('✅ Workout saved to backend');
+      } catch (error) {
+        console.error('Failed to save workout to backend:', error);
+        throw error;
       }
 
       refreshWorkoutHistory();
@@ -862,31 +675,6 @@ export const MyTraining: React.FC = () => {
       );
 
       await saveWorkoutReport(user.id, dayName, report, 'coach', entries);
-
-      // Add points to player's weekly total
-      const totalSets = entries.reduce((sum, e) => sum + (e.setData?.length || e.sets || 0), 0);
-      const totalVolume = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + ((set.reps || 0) * (set.kg || 0)), 0);
-        }
-        return sum + ((e.reps || 0) * (e.kg || 0) * (e.sets || 0));
-      }, 0);
-      const totalDistance = entries.reduce((sum, e) => {
-        if (e.setData) {
-          return sum + e.setData.reduce((setSum, set) => setSum + (set.distance || 0), 0);
-        }
-        return sum + (e.distance || 0);
-      }, 0);
-      addWorkoutPoints(
-        user.id,
-        dayName,
-        duration,
-        'coach',
-        totalSets,
-        totalVolume,
-        totalDistance > 0 ? totalDistance : undefined,
-        notes
-      );
 
       setWorkoutReport(report);
       setLastWorkoutTitle(dayName);
@@ -1008,7 +796,14 @@ export const MyTraining: React.FC = () => {
       {/* TEAM SESSIONS VIEW */}
       {sessionView === 'team' && (
         <Box>
-          {activeAssignments.length > 0 ? (
+          {isLoadingData ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 8 }}>
+              <CircularProgress />
+              <Typography variant="caption" color="text.secondary">
+                Loading...
+              </Typography>
+            </Box>
+          ) : activeAssignments.length > 0 ? (
             <>
               {/* Team Session Tabs: Training Plan / History / My Reports */}
               <Tabs

@@ -130,12 +130,54 @@ export const TrainingSessions: React.FC = () => {
     }
   }, []);
 
-  // Subscribe to live updates via SSE (polls for team, RSVP for private)
+  // Handle new session created from SSE
+  const handleSessionCreated = useCallback((data: any) => {
+    console.log('[TrainingSessions] Received session created via SSE:', data);
+
+    // Don't add if it's our own session (we already added it locally)
+    if (data.creatorId === currentUser?.id) {
+      return;
+    }
+
+    const newSession = data.session;
+    if (newSession.sessionCategory === 'private') {
+      setPrivateSessions(prev => {
+        // Check if session already exists
+        if (prev.some(s => s.id === newSession.id)) {
+          return prev;
+        }
+        return [...prev, newSession];
+      });
+    } else if (newSession.sessionCategory === 'team') {
+      setTeamSessions(prev => {
+        // Check if session already exists
+        if (prev.some(s => s.id === newSession.id)) {
+          return prev;
+        }
+        return [...prev, newSession];
+      });
+    }
+  }, [currentUser?.id]);
+
+  // Handle session deleted from SSE
+  const handleSessionDeleted = useCallback((data: any) => {
+    console.log('[TrainingSessions] Received session deleted via SSE:', data);
+
+    if (data.sessionCategory === 'private') {
+      setPrivateSessions(prev => prev.filter(s => s.id !== data.sessionId));
+    } else if (data.sessionCategory === 'team') {
+      setTeamSessions(prev => prev.filter(s => s.id !== data.sessionId));
+    }
+  }, []);
+
+  // Subscribe to live updates via SSE (polls for team, RSVP for private, session create/delete)
   // Only enable SSE when user is authenticated
   usePollSSE({
     enabled: !!currentUser, // Only enable when user is authenticated
     onVoteUpdate: handleVoteUpdate,
     onRSVPUpdate: handleRSVPUpdate,
+    onSessionCreated: handleSessionCreated,
+    onSessionDeleted: handleSessionDeleted,
     onConnected: () => {
       console.log('[TrainingSessions] Connected to SSE');
     },

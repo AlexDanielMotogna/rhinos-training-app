@@ -26,6 +26,7 @@ const createTrainingSchema = z.object({
     userName: z.string(),
     status: z.enum(['going', 'maybe', 'not-going']),
   })).optional().default([]),
+  ageCategories: z.array(z.string()).optional().default([]), // Categories this session is visible to
 });
 
 const updateTrainingSchema = createTrainingSchema.partial();
@@ -60,9 +61,25 @@ router.get('/', async (req, res) => {
       orderBy: { date: 'asc' },
     });
 
-    // Filter sessions based on user role and session category
+    // Filter sessions based on user role, session category, and age category
     const filteredSessions = sessions.filter(session => {
-      // Team sessions: everyone can see
+      // First, check age category filtering
+      const sessionCategories = (session as any).ageCategories || [];
+      if (sessionCategories.length > 0) {
+        // Session has category restrictions
+        if (user.role === 'player' && user.ageCategory) {
+          if (!sessionCategories.includes(user.ageCategory)) {
+            return false; // Player's category not in session's categories
+          }
+        } else if (user.role === 'coach' && user.coachCategories && user.coachCategories.length > 0) {
+          const hasOverlap = sessionCategories.some((cat: string) => user.coachCategories!.includes(cat));
+          if (!hasOverlap) {
+            return false; // Coach's categories don't overlap with session's categories
+          }
+        }
+      }
+
+      // Team sessions: everyone (in their category) can see
       if (session.sessionCategory === 'team') {
         return true;
       }
@@ -97,6 +114,7 @@ router.get('/', async (req, res) => {
     res.json(filteredSessions.map(s => ({
       ...s,
       attendees: s.attendees as any,
+      ageCategories: (s as any).ageCategories || [],
       version: 1,
       updatedAt: s.updatedAt.toISOString(),
     })));
@@ -166,6 +184,16 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Use provided categories or default to creator's categories
+    let ageCategories: string[] = [];
+    if (data.ageCategories && data.ageCategories.length > 0) {
+      ageCategories = data.ageCategories;
+    } else if (user.role === 'coach' && user.coachCategories && user.coachCategories.length > 0) {
+      ageCategories = user.coachCategories;
+    } else if (user.role === 'player' && user.ageCategory) {
+      ageCategories = [user.ageCategory];
+    }
+
     // Create session with auto-created attendance poll
     const session = await prisma.trainingSession.create({
       data: {
@@ -180,8 +208,11 @@ router.post('/', async (req, res) => {
         time: data.time,
         description: data.description,
         attendees: data.attendees as any,
+        ageCategories: ageCategories,
       },
     });
+
+    console.log(`[TRAININGS] Session created: ${session.title} by ${user.email}, categories: ${ageCategories.join(', ') || 'all'}`);
 
     // Auto-create attendance poll ONLY for team sessions
     // Private sessions don't need polls since they work differently
@@ -206,9 +237,13 @@ router.post('/', async (req, res) => {
     let playersToNotify: Array<{ id: string; preferredLanguage: string | null }> = [];
 
     if (data.sessionCategory === 'team') {
-      // Team sessions: notify all players except creator
+      // Team sessions: notify players in the session's categories (or all if no categories)
+      const playerWhere: any = { role: 'player' };
+      if (ageCategories.length > 0) {
+        playerWhere.ageCategory = { in: ageCategories };
+      }
       const allPlayers = await prisma.user.findMany({
-        where: { role: 'player' },
+        where: playerWhere,
         select: { id: true, preferredLanguage: true },
       });
       playersToNotify = allPlayers.filter(p => p.id !== userId);
@@ -248,6 +283,20 @@ router.post('/', async (req, res) => {
         );
       }
     }
+
+    // Broadcast new session via SSE to all clients for real-time updates
+    sseManager.broadcastToAll('session-created', {
+      session: {
+        ...session,
+        attendees: session.attendees as any,
+        version: 1,
+        updatedAt: session.updatedAt.toISOString(),
+      },
+      creatorId: userId,
+      creatorName: user.name,
+    });
+
+    console.log(`[TRAININGS] Session created: ${session.id}, broadcasting to ${sseManager.getClientCount()} clients`);
 
     res.status(201).json({
       ...session,
@@ -325,6 +374,14 @@ router.delete('/:id', async (req, res) => {
     }
 
     await prisma.trainingSession.delete({ where: { id } });
+
+    // Broadcast session deleted via SSE to all clients for real-time updates
+    sseManager.broadcastToAll('session-deleted', {
+      sessionId: id,
+      sessionCategory: existing.sessionCategory,
+    });
+
+    console.log(`[TRAININGS] Session deleted: ${id}, broadcasting to ${sseManager.getClientCount()} clients`);
 
     res.json({ message: 'Training session deleted' });
   } catch (error) {

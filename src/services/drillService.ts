@@ -1,6 +1,5 @@
 import { Drill, DrillResourceSummary, CreateDrillData } from '../types/drill';
 import { drillService as drillApi } from './api';
-import { isOnline } from './sync';
 
 const DRILLS_STORAGE_KEY = 'rhinos_drills';
 
@@ -9,11 +8,6 @@ const DRILLS_STORAGE_KEY = 'rhinos_drills';
 // ========================================
 
 export async function syncDrillsFromBackend(): Promise<void> {
-  if (!isOnline()) {
-    console.log('📦 Offline - skipping drills sync');
-    return;
-  }
-
   try {
     console.log('🔄 Syncing drills from backend...');
     const backendDrills = await drillApi.getAll() as any[];
@@ -69,156 +63,136 @@ export const drillService = {
   },
 
   async createDrill(drill: CreateDrillData): Promise<Drill> {
-    if (isOnline()) {
-      try {
-        // Create on backend
-        const newDrill = await drillApi.create({
-          name: drill.name,
-          category: drill.category,
-          description: drill.description,
-          coachingPoints: drill.coachingPoints,
-          players: drill.players,
-          coaches: drill.coaches,
-          dummies: drill.dummies,
-          equipment: drill.equipment,
-          difficulty: drill.difficulty,
-          trainingContext: drill.trainingContext,
-          sketchUrl: drill.sketchUrl,
-          videoUrl: drill.videoUrl,
-          imageUrl: drill.imageUrl,
-        });
+    try {
+      // Create on backend
+      const newDrill = await drillApi.create({
+        name: drill.name,
+        category: drill.category,
+        description: drill.description,
+        coachingPoints: drill.coachingPoints,
+        players: drill.players,
+        coaches: drill.coaches,
+        dummies: drill.dummies,
+        equipment: drill.equipment,
+        difficulty: drill.difficulty,
+        trainingContext: drill.trainingContext,
+        sketchUrl: drill.sketchUrl,
+        videoUrl: drill.videoUrl,
+        imageUrl: drill.imageUrl,
+      });
 
-        // Normalize equipment field
-        const normalizedDrill = {
-          ...(newDrill as any),
-          equipment: Array.isArray((newDrill as any).equipment)
-            ? (newDrill as any).equipment
-            : (typeof (newDrill as any).equipment === 'string'
-              ? JSON.parse((newDrill as any).equipment)
-              : []),
-        } as Drill;
+      // Normalize equipment field
+      const normalizedDrill = {
+        ...(newDrill as any),
+        equipment: Array.isArray((newDrill as any).equipment)
+          ? (newDrill as any).equipment
+          : (typeof (newDrill as any).equipment === 'string'
+            ? JSON.parse((newDrill as any).equipment)
+            : []),
+      } as Drill;
 
-        // Update local cache
-        const drills = this.getAllDrills();
-        drills.push(normalizedDrill);
-        localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
+      // Update local cache
+      const drills = this.getAllDrills();
+      drills.push(normalizedDrill);
+      localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
 
-        return normalizedDrill;
-      } catch (error) {
-        console.error('Failed to create drill on backend:', error);
-        throw error;
-      }
-    } else {
-      throw new Error('Cannot create drill while offline');
+      return normalizedDrill;
+    } catch (error) {
+      console.error('Failed to create drill on backend:', error);
+      throw error;
     }
   },
 
   async updateDrill(id: string, updates: Partial<Omit<Drill, 'id' | 'createdAt'>>): Promise<Drill> {
-    if (isOnline()) {
-      try {
-        // Update on backend
-        const updatedDrill = await drillApi.update(id, updates);
+    try {
+      // Update on backend
+      const updatedDrill = await drillApi.update(id, updates);
 
-        // Normalize equipment field
-        const normalizedDrill = {
-          ...(updatedDrill as any),
-          equipment: Array.isArray((updatedDrill as any).equipment)
-            ? (updatedDrill as any).equipment
-            : (typeof (updatedDrill as any).equipment === 'string'
-              ? JSON.parse((updatedDrill as any).equipment)
-              : []),
-        } as Drill;
+      // Normalize equipment field
+      const normalizedDrill = {
+        ...(updatedDrill as any),
+        equipment: Array.isArray((updatedDrill as any).equipment)
+          ? (updatedDrill as any).equipment
+          : (typeof (updatedDrill as any).equipment === 'string'
+            ? JSON.parse((updatedDrill as any).equipment)
+            : []),
+      } as Drill;
 
-        // Update local cache
-        const drills = this.getAllDrills();
-        const index = drills.findIndex(d => d.id === id);
-        if (index !== -1) {
-          drills[index] = normalizedDrill;
-          localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
-        }
-
-        return normalizedDrill;
-      } catch (error) {
-        console.error('Failed to update drill on backend:', error);
-        throw error;
+      // Update local cache
+      const drills = this.getAllDrills();
+      const index = drills.findIndex(d => d.id === id);
+      if (index !== -1) {
+        drills[index] = normalizedDrill;
+        localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
       }
-    } else {
-      throw new Error('Cannot update drill while offline');
+
+      return normalizedDrill;
+    } catch (error) {
+      console.error('Failed to update drill on backend:', error);
+      throw error;
     }
   },
 
   async deleteDrill(id: string): Promise<boolean> {
-    if (isOnline()) {
-      try {
-        // Delete from backend
-        await drillApi.delete(id);
+    try {
+      // Delete from backend
+      await drillApi.delete(id);
 
-        // Update local cache
-        const drills = this.getAllDrills();
-        const filtered = drills.filter(d => d.id !== id);
-        localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(filtered));
+      // Update local cache
+      const drills = this.getAllDrills();
+      const filtered = drills.filter(d => d.id !== id);
+      localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(filtered));
 
-        return true;
-      } catch (error) {
-        console.error('Failed to delete drill from backend:', error);
-        throw error;
-      }
-    } else {
-      throw new Error('Cannot delete drill while offline');
+      return true;
+    } catch (error) {
+      console.error('Failed to delete drill from backend:', error);
+      throw error;
     }
   },
 
   async uploadSketch(drillId: string, file: File): Promise<{ sketchUrl: string; sketchPublicId: string }> {
-    if (isOnline()) {
-      try {
-        const result = await drillApi.uploadSketch(drillId, file);
+    try {
+      const result = await drillApi.uploadSketch(drillId, file);
 
-        // Update local cache with new sketch URL
-        const drills = this.getAllDrills();
-        const index = drills.findIndex(d => d.id === drillId);
-        if (index !== -1) {
-          drills[index].sketchUrl = result.sketchUrl;
-          drills[index].sketchPublicId = result.sketchPublicId;
-          localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
-        }
-
-        return {
-          sketchUrl: result.sketchUrl,
-          sketchPublicId: result.sketchPublicId,
-        };
-      } catch (error) {
-        console.error('Failed to upload sketch to backend:', error);
-        throw error;
+      // Update local cache with new sketch URL
+      const drills = this.getAllDrills();
+      const index = drills.findIndex(d => d.id === drillId);
+      if (index !== -1) {
+        drills[index].sketchUrl = result.sketchUrl;
+        drills[index].sketchPublicId = result.sketchPublicId;
+        localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
       }
-    } else {
-      throw new Error('Cannot upload sketch while offline');
+
+      return {
+        sketchUrl: result.sketchUrl,
+        sketchPublicId: result.sketchPublicId,
+      };
+    } catch (error) {
+      console.error('Failed to upload sketch to backend:', error);
+      throw error;
     }
   },
 
   async uploadImage(drillId: string, file: File): Promise<{ imageUrl: string; imagePublicId: string }> {
-    if (isOnline()) {
-      try {
-        const result = await drillApi.uploadImage(drillId, file);
+    try {
+      const result = await drillApi.uploadImage(drillId, file);
 
-        // Update local cache with new image URL
-        const drills = this.getAllDrills();
-        const index = drills.findIndex(d => d.id === drillId);
-        if (index !== -1) {
-          drills[index].imageUrl = result.imageUrl;
-          drills[index].imagePublicId = result.imagePublicId;
-          localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
-        }
-
-        return {
-          imageUrl: result.imageUrl,
-          imagePublicId: result.imagePublicId,
-        };
-      } catch (error) {
-        console.error('Failed to upload image to backend:', error);
-        throw error;
+      // Update local cache with new image URL
+      const drills = this.getAllDrills();
+      const index = drills.findIndex(d => d.id === drillId);
+      if (index !== -1) {
+        drills[index].imageUrl = result.imageUrl;
+        drills[index].imagePublicId = result.imagePublicId;
+        localStorage.setItem(DRILLS_STORAGE_KEY, JSON.stringify(drills));
       }
-    } else {
-      throw new Error('Cannot upload image while offline');
+
+      return {
+        imageUrl: result.imageUrl,
+        imagePublicId: result.imagePublicId,
+      };
+    } catch (error) {
+      console.error('Failed to upload image to backend:', error);
+      throw error;
     }
   },
 
