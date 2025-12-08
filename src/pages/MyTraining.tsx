@@ -257,7 +257,7 @@ export const MyTraining: React.FC = () => {
         setHistoryLoading(true);
         console.log('[MY TRAINING] Syncing workout history for tab change...');
         try {
-          if (isOnline()) {
+          if (navigator.onLine) {
             await syncWorkoutLogsFromBackend(user.id);
           }
           refreshWorkoutHistory();

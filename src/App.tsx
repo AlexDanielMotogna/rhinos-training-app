@@ -6,13 +6,11 @@ import 'react-toastify/dist/ReactToastify.css';
 import { createDynamicTheme } from './theme';
 import { I18nProvider } from './i18n/I18nProvider';
 import { AppShell } from './components/AppShell';
-import { HardNotification } from './components/HardNotification';
 import { AttendancePollModal } from './components/AttendancePollModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { getUser } from './services/userProfile';
 import { MyTraining } from './pages/MyTraining';
-import type { HardNotification as HardNotificationType } from './types/notification';
 import type { AttendancePoll } from './types/attendancePoll';
 import { getTeamBrandingAsync } from './services/teamSettings';
 import type { TeamBranding } from './types/teamSettings';
@@ -127,7 +125,6 @@ function App() {
   }, []);
 
   const [currentUser, setCurrentUser] = useState(() => getUser());
-  const [hardNotification, setHardNotification] = useState<HardNotificationType | null>(null);
   const [activePoll, setActivePoll] = useState<AttendancePoll | null>(null);
   const [showPollModal, setShowPollModal] = useState(false);
 
@@ -156,30 +153,6 @@ function App() {
       clearInterval(interval);
     };
   }, [currentUser]);
-
-  useEffect(() => {
-    // Simulate hard notification check (would come from backend in real app)
-    if (currentUser) {
-      const hasSeenNotification = localStorage.getItem('hardNotificationAcked');
-      if (!hasSeenNotification) {
-        // Simulate low adherence + high free share scenario
-        setTimeout(() => {
-          setHardNotification({
-            id: 'hard-1',
-            title: 'Action Required',
-            message: 'Your adherence to the coach plan is low (55%) and your free work share is high (45%). Please focus on completing your assigned plan to improve your performance and team standing.',
-            severity: 'high',
-            timestamp: new Date(),
-          });
-        }, 2000);
-      }
-    }
-  }, [currentUser]);
-
-  const handleAcknowledgeNotification = () => {
-    localStorage.setItem('hardNotificationAcked', 'true');
-    setHardNotification(null);
-  };
 
   // Check for active attendance poll - only once on mount
   useEffect(() => {
@@ -328,11 +301,6 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             )}
           </Routes>
-
-          <HardNotification
-            notification={hardNotification}
-            onAcknowledge={handleAcknowledgeNotification}
-          />
 
           {/* Attendance Poll Modal - Mandatory until voted */}
           {showPollModal && activePoll && (
