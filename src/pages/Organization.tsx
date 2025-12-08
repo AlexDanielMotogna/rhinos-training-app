@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -44,11 +45,24 @@ function a11yProps(index: number) {
 }
 
 export const Organization: React.FC = () => {
-  const [tabValue, setTabValue] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
   const branding = getTeamBranding();
+
+  // Get initial tab from URL, default to 0
+  const getInitialTab = () => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    return tab ? parseInt(tab, 10) : 0;
+  };
+
+  const [tabValue, setTabValue] = useState(getInitialTab);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    const params = new URLSearchParams(location.search);
+    params.set('tab', newValue.toString());
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   };
 
   return (

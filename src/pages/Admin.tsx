@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ExerciseCategoryManager } from '../components/admin/ExerciseCategoryManager';
 import {
   Box,
@@ -99,13 +100,31 @@ interface TrainingType {
 
 export const Admin: React.FC = () => {
   const { t, locale } = useI18n();
-  const [activeTab, setActiveTab] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Get initial tab from URL, default to 0
+  const getInitialTab = () => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    return tab ? parseInt(tab, 10) : 0;
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [exercisesMenuOpen, setExercisesMenuOpen] = useState(true);
   const [trainingMenuOpen, setTrainingMenuOpen] = useState(false);
   const [teamMenuOpen, setTeamMenuOpen] = useState(false);
   const [resourcesMenuOpen, setResourcesMenuOpen] = useState(false);
   const [systemMenuOpen, setSystemMenuOpen] = useState(false);
   const user = getUser();
+
+  // Update URL when tab changes
+  const handleTabChange = (newTab: number) => {
+    setActiveTab(newTab);
+    const params = new URLSearchParams(location.search);
+    params.set('tab', newTab.toString());
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  };
 
   // Exercise Management State
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -1159,10 +1178,10 @@ export const Admin: React.FC = () => {
               </ListItemButton>
               <Collapse in={exercisesMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 2} onClick={() => setActiveTab(2)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 2} onClick={() => handleTabChange(2)}>
                     <ListItemText primary={t('admin.exercisesTab')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 3} onClick={() => setActiveTab(3)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 3} onClick={() => handleTabChange(3)}>
                     <ListItemText primary={t('admin.exerciseCategoriesTab')} />
                   </ListItemButton>
                 </List>
@@ -1178,16 +1197,16 @@ export const Admin: React.FC = () => {
               </ListItemButton>
               <Collapse in={trainingMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 0} onClick={() => setActiveTab(0)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 0} onClick={() => handleTabChange(0)}>
                     <ListItemText primary={t('admin.trainingBuilderTab')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 1} onClick={() => setActiveTab(1)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 1} onClick={() => handleTabChange(1)}>
                     <ListItemText primary="Assign Programs" />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 5} onClick={() => setActiveTab(5)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 5} onClick={() => handleTabChange(5)}>
                     <ListItemText primary={t('admin.trainingTypesTab')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 7} onClick={() => setActiveTab(7)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 7} onClick={() => handleTabChange(7)}>
                     <ListItemText primary={t('admin.blockInfoTab')} />
                   </ListItemButton>
                 </List>
@@ -1203,7 +1222,7 @@ export const Admin: React.FC = () => {
               </ListItemButton>
               <Collapse in={teamMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 4} onClick={() => setActiveTab(4)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 4} onClick={() => handleTabChange(4)}>
                     <ListItemText primary={t('admin.sessionsTab')} />
                   </ListItemButton>
                 </List>
@@ -1219,22 +1238,22 @@ export const Admin: React.FC = () => {
               </ListItemButton>
               <Collapse in={resourcesMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 11} onClick={() => setActiveTab(11)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 11} onClick={() => handleTabChange(11)}>
                     <ListItemText primary={t('admin.drillbookTab')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 13} onClick={() => setActiveTab(13)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 13} onClick={() => handleTabChange(13)}>
                     <ListItemText primary={t('admin.drillCategoriesTab')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => setActiveTab(12)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => handleTabChange(12)}>
                     <ListItemText primary={t('admin.equipmentTab')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 16} onClick={() => setActiveTab(16)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 16} onClick={() => handleTabChange(16)}>
                     <ListItemText primary="Spielplan" />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 15} onClick={() => setActiveTab(15)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 15} onClick={() => handleTabChange(15)}>
                     <ListItemText primary={t('nav.videosAdmin')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 14} onClick={() => setActiveTab(14)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 14} onClick={() => handleTabChange(14)}>
                     <ListItemText primary="Video Tags" />
                   </ListItemButton>
                 </List>
@@ -1250,13 +1269,13 @@ export const Admin: React.FC = () => {
               </ListItemButton>
               <Collapse in={systemMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 8} onClick={() => setActiveTab(8)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 8} onClick={() => handleTabChange(8)}>
                     <ListItemText primary={t('admin.teamSettingsTab')} />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 17} onClick={() => setActiveTab(17)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 17} onClick={() => handleTabChange(17)}>
                     <ListItemText primary="Age Categories" />
                   </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 9} onClick={() => setActiveTab(9)}>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 9} onClick={() => handleTabChange(9)}>
                     <ListItemText primary={t('admin.aiCoachTab')} />
                   </ListItemButton>
                 </List>
