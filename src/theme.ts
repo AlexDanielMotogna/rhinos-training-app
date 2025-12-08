@@ -25,6 +25,31 @@ function darkenColor(hex: string, percent: number): string {
   return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
 }
 
+/**
+ * Check if a color is dark (for determining hover behavior)
+ */
+function isColorDark(hex: string): boolean {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const R = (num >> 16);
+  const G = ((num >> 8) & 0x00FF);
+  const B = (num & 0x0000FF);
+  // Calculate luminance - if below threshold, color is dark
+  const luminance = (0.299 * R + 0.587 * G + 0.114 * B) / 255;
+  return luminance < 0.4;
+}
+
+/**
+ * Get a suitable dark variant for a color
+ * For already dark colors, lighten slightly instead of darkening to black
+ */
+function getColorDark(hex: string, percent: number): string {
+  if (isColorDark(hex)) {
+    // For dark colors, lighten slightly for hover effect
+    return lightenColor(hex, percent * 0.5);
+  }
+  return darkenColor(hex, percent);
+}
+
 // Default Color Palette (kept for backwards compatibility)
 export const packersColors = {
   gold: {
@@ -69,10 +94,11 @@ export function createDynamicTheme(branding?: TeamBranding) {
   const secondaryColor = branding?.secondaryColor || '#ff9800';
 
   // Calculate light and dark variants dynamically
+  // Use getColorDark for dark colors to avoid turning them black on hover
   const primaryLight = lightenColor(primaryColor, 20);
-  const primaryDark = darkenColor(primaryColor, 15);
+  const primaryDark = getColorDark(primaryColor, 15);
   const secondaryLight = lightenColor(secondaryColor, 20);
-  const secondaryDark = darkenColor(secondaryColor, 15);
+  const secondaryDark = getColorDark(secondaryColor, 15);
 
   return createTheme({
     palette: {
@@ -164,11 +190,18 @@ export function createDynamicTheme(branding?: TeamBranding) {
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        html: {
+          // Inherit background from index.html to prevent flash
+          backgroundColor: 'inherit',
+        },
         body: {
           margin: 0,
           padding: 0,
           boxSizing: 'border-box',
           overflowX: 'hidden',
+          // Don't set background here - let pages control it
+          // This prevents the white/gray flash on page load
+          backgroundColor: 'inherit',
         },
         '*': {
           boxSizing: 'border-box',
@@ -196,6 +229,39 @@ export function createDynamicTheme(branding?: TeamBranding) {
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
+          },
+          // Fix for browser autofill not triggering label shrink
+          '& input:-webkit-autofill': {
+            WebkitBoxShadow: '0 0 0 100px white inset',
+            WebkitTextFillColor: 'inherit',
+          },
+          '& input:-webkit-autofill + fieldset': {
+            borderColor: 'rgba(0, 0, 0, 0.23)',
+          },
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          // Shrink label when input has autofill
+          '&.MuiInputLabel-outlined': {
+            '&.MuiInputLabel-shrink': {
+              transform: 'translate(14px, -9px) scale(0.75)',
+            },
+          },
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        input: {
+          // Detect autofill and notify MUI
+          '&:-webkit-autofill': {
+            WebkitBoxShadow: '0 0 0 100px white inset',
+            WebkitTextFillColor: 'inherit',
+            caretColor: 'inherit',
+            borderRadius: 'inherit',
           },
         },
       },

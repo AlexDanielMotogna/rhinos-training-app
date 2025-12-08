@@ -24,9 +24,8 @@ import { ForgotPasswordDialog } from '../components/ForgotPasswordDialog';
 import { calculateAge } from '../services/userProfile';
 import { authService } from '../services/api';
 import type { Position } from '../types/exercise';
-import { getTeamBrandingAsync } from '../services/teamSettings';
+import { getTeamBrandingAsync, getCachedBranding, cacheBranding } from '../services/teamSettings';
 import type { TeamBranding } from '../types/teamSettings';
-import { DEFAULT_TEAM_BRANDING } from '../types/teamSettings';
 import { toastService } from '../services/toast';
 
 const positions: Position[] = ['RB', 'WR', 'LB', 'OL', 'DB', 'QB', 'DL', 'TE', 'K/P'];
@@ -39,7 +38,8 @@ export const Auth: React.FC = () => {
   const navigate = useNavigate();
 
   const [isSignup, setIsSignup] = useState(false);
-  const [branding, setBranding] = useState<TeamBranding>(DEFAULT_TEAM_BRANDING);
+  // Initialize from cache for instant loading (no flash)
+  const [branding, setBranding] = useState<TeamBranding>(() => getCachedBranding());
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -58,10 +58,31 @@ export const Auth: React.FC = () => {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hasAutofill, setHasAutofill] = useState(false);
 
   // Load branding on mount (public endpoint, no auth required)
   useEffect(() => {
-    getTeamBrandingAsync().then(setBranding);
+    getTeamBrandingAsync().then((data) => {
+      setBranding(data);
+      // Cache for next time
+      cacheBranding(data);
+    });
+  }, []);
+
+  // Detect browser autofill after component mounts
+  useEffect(() => {
+    const checkAutofill = () => {
+      const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
+      const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
+
+      if (emailInput?.matches(':-webkit-autofill') || passwordInput?.matches(':-webkit-autofill')) {
+        setHasAutofill(true);
+      }
+    };
+
+    // Check after a small delay to allow browser autofill to complete
+    const timer = setTimeout(checkAutofill, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,6 +363,9 @@ export const Auth: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               fullWidth
+              InputLabelProps={{
+                shrink: email.length > 0 || hasAutofill || undefined,
+              }}
             />
 
             <TextField
@@ -352,6 +376,9 @@ export const Auth: React.FC = () => {
               required
               fullWidth
               inputProps={{ minLength: 6 }}
+              InputLabelProps={{
+                shrink: password.length > 0 || hasAutofill || undefined,
+              }}
               error={isSignup && password.length > 0 && password.length < 6}
               helperText={
                 isSignup

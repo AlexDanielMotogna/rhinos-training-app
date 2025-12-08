@@ -14,10 +14,12 @@ export const LoadingSpinner: React.FC = () => {
         justifyContent: 'center',
         minHeight: '100vh',
         gap: 2,
+        // Use primary color background to prevent white flash during lazy loading
+        backgroundColor: 'primary.main',
       }}
     >
-      <CircularProgress size={60} thickness={4} />
-      <Typography variant="h6" color="text.secondary">
+      <CircularProgress size={60} thickness={4} sx={{ color: 'white' }} />
+      <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.8)' }}>
         {t('common.loading')}
       </Typography>
     </Box>

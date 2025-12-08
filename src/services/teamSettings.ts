@@ -17,6 +17,15 @@ export async function syncTeamSettingsFromBackend(): Promise<void> {
     const backendSettings = await teamSettingsApi.get();
 
     // Convert backend format to frontend format
+    const branding: TeamBranding = {
+      teamName: backendSettings.teamName,
+      appName: backendSettings.appName || 'TeamTrainer',
+      logoUrl: backendSettings.logoUrl,
+      faviconUrl: backendSettings.faviconUrl,
+      primaryColor: backendSettings.primaryColor,
+      secondaryColor: backendSettings.secondaryColor,
+    };
+
     const settings: TeamSettings = {
       seasonPhase: backendSettings.seasonPhase as SeasonPhase,
       teamLevel: backendSettings.teamLevel as TeamLevel,
@@ -25,20 +34,17 @@ export async function syncTeamSettingsFromBackend(): Promise<void> {
       allowedCategories: Array.isArray(backendSettings.allowedCategories)
         ? backendSettings.allowedCategories
         : [],
-      branding: {
-        teamName: backendSettings.teamName,
-        appName: backendSettings.appName || 'TeamTrainer',
-        logoUrl: backendSettings.logoUrl,
-        faviconUrl: backendSettings.faviconUrl,
-        primaryColor: backendSettings.primaryColor,
-        secondaryColor: backendSettings.secondaryColor,
-      },
+      branding,
       updatedAt: backendSettings.updatedAt,
       updatedBy: backendSettings.updatedBy,
     };
 
     // Save in localStorage as cache
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+
+    // Also update dedicated branding cache for instant theme loading
+    cacheBranding(branding);
+
     console.log('✅ Team settings synced successfully');
 
     // Apply branding changes
@@ -93,6 +99,45 @@ export async function updateTeamSettings(
   } catch (error) {
     console.error('Failed to update team settings on backend:', error);
     throw error;
+  }
+}
+
+// Separate cache key for branding (used for instant theme loading)
+const BRANDING_CACHE_KEY = 'teamtrainer_branding_cache';
+
+/**
+ * Get cached branding for instant theme loading (no flash)
+ * This is called synchronously before React renders to avoid theme flash
+ */
+export function getCachedBranding(): TeamBranding {
+  try {
+    // First try dedicated branding cache
+    const brandingCache = localStorage.getItem(BRANDING_CACHE_KEY);
+    if (brandingCache) {
+      return JSON.parse(brandingCache);
+    }
+    // Fall back to team settings cache
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const settings = JSON.parse(stored);
+      if (settings.branding) {
+        return settings.branding;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading cached branding:', error);
+  }
+  return DEFAULT_TEAM_BRANDING;
+}
+
+/**
+ * Save branding to dedicated cache (for instant loading on refresh)
+ */
+export function cacheBranding(branding: TeamBranding): void {
+  try {
+    localStorage.setItem(BRANDING_CACHE_KEY, JSON.stringify(branding));
+  } catch (error) {
+    console.error('Error caching branding:', error);
   }
 }
 

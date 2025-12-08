@@ -12,9 +12,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { getUser } from './services/userProfile';
 import { MyTraining } from './pages/MyTraining';
 import type { AttendancePoll } from './types/attendancePoll';
-import { getTeamBrandingAsync } from './services/teamSettings';
+import { getTeamBrandingAsync, getCachedBranding, cacheBranding } from './services/teamSettings';
 import type { TeamBranding } from './types/teamSettings';
-import { DEFAULT_TEAM_BRANDING } from './types/teamSettings';
 import { initializeDrillData } from './services/drillDataInit';
 import { getActivePoll, hasUserVoted } from './services/attendancePollService';
 import { cleanupMockNotifications } from './services/mock';
@@ -93,8 +92,8 @@ function App() {
   //   initializeDrillData();
   // }, []);
 
-  // State for branding loaded from database
-  const [branding, setBranding] = useState<TeamBranding>(DEFAULT_TEAM_BRANDING);
+  // State for branding - initialized from cache to prevent color flash on refresh
+  const [branding, setBranding] = useState<TeamBranding>(() => getCachedBranding());
 
   // Clean up old mock data on app startup
   useEffect(() => {
@@ -106,6 +105,9 @@ function App() {
     const loadBranding = async () => {
       const brandingData = await getTeamBrandingAsync();
       setBranding(brandingData);
+
+      // Cache branding for instant loading on next refresh (prevents color flash)
+      cacheBranding(brandingData);
 
       // Update document title
       if (brandingData.appName) {
