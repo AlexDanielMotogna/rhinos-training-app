@@ -39,6 +39,12 @@
               document.body.style.backgroundColor = color;
               // Also set a CSS variable for use by components
               document.documentElement.style.setProperty('--cached-primary-color', color);
+
+              // Update theme-color meta tag for mobile browser chrome
+              var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+              if (themeColorMeta) {
+                themeColorMeta.setAttribute('content', color);
+              }
             }
           }
         } catch (e) {}

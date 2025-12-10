@@ -122,6 +122,14 @@ function App() {
         link.href = brandingData.faviconUrl;
         document.getElementsByTagName('head')[0].appendChild(link);
       }
+
+      // Update theme-color meta tag for mobile browser chrome
+      if (brandingData.primaryColor) {
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute('content', brandingData.primaryColor);
+        }
+      }
     };
     loadBranding();
   }, []);
