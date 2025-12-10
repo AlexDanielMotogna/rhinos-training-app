@@ -84,6 +84,17 @@ const DrillSessionsManage = createLazyComponent(() => import('./components/Drill
 const DrillbookView = createLazyComponent(() => import('./pages/DrillbookView').then(m => ({ default: m.DrillbookView })), 'DrillbookView');
 const Spielplan = createLazyComponent(() => import('./pages/Spielplan').then(m => ({ default: m.Spielplan })), 'Spielplan');
 
+/**
+ * Wrap lazy component with Suspense - no extra spinner since they're inside AppShell
+ */
+const withLazy = (Component: React.ComponentType) => (
+  <ErrorBoundary>
+    <Suspense fallback={<LoadingSpinner />}>
+      <Component />
+    </Suspense>
+  </ErrorBoundary>
+);
+
 function App() {
   // Initialize drill data on app startup
   // DISABLED: Drills/Equipment should be created manually by coaches via Admin panel
@@ -248,28 +259,28 @@ function App() {
             />
 
             {currentUser ? (
-              <Route element={<AppShell><ErrorBoundary><Suspense fallback={<LoadingSpinner />}><Outlet /></Suspense></ErrorBoundary></AppShell>}>
+              <Route element={<AppShell><Outlet /></AppShell>}>
                 <Route path="/training" element={<MyTraining />} />
-                <Route path="/stats" element={<MyStats />} />
-                <Route path="/spielplan" element={<Spielplan />} />
-                <Route path="/tests" element={<Tests />} />
-                <Route path="/tests/strength" element={<TestsStrength />} />
-                <Route path="/tests/speed" element={<TestsSpeed />} />
-                <Route path="/tests/power" element={<TestsPower />} />
-                <Route path="/tests/agility" element={<TestsAgility />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:playerId" element={<Profile />} />
-                <Route path="/team" element={<Team />} />
-                <Route path="/training-sessions" element={<TrainingSessions />} />
-                <Route path="/drillbook" element={<DrillbookView />} />
-                <Route path="/attendance" element={<Attendance />} />
-                <Route path="/leaderboard" element={<Leaderboard />} />
-                <Route path="/videos" element={<Videos />} />
+                <Route path="/stats" element={withLazy(MyStats)} />
+                <Route path="/spielplan" element={withLazy(Spielplan)} />
+                <Route path="/tests" element={withLazy(Tests)} />
+                <Route path="/tests/strength" element={withLazy(TestsStrength)} />
+                <Route path="/tests/speed" element={withLazy(TestsSpeed)} />
+                <Route path="/tests/power" element={withLazy(TestsPower)} />
+                <Route path="/tests/agility" element={withLazy(TestsAgility)} />
+                <Route path="/profile" element={withLazy(Profile)} />
+                <Route path="/profile/:playerId" element={withLazy(Profile)} />
+                <Route path="/team" element={withLazy(Team)} />
+                <Route path="/training-sessions" element={withLazy(TrainingSessions)} />
+                <Route path="/drillbook" element={withLazy(DrillbookView)} />
+                <Route path="/attendance" element={withLazy(Attendance)} />
+                <Route path="/leaderboard" element={withLazy(Leaderboard)} />
+                <Route path="/videos" element={withLazy(Videos)} />
                 <Route
                   path="/videos-admin"
                   element={
                     currentUser.role === 'coach'
-                      ? <VideosAdmin />
+                      ? withLazy(VideosAdmin)
                       : <Navigate to="/training" replace />
                   }
                 />
@@ -277,7 +288,7 @@ function App() {
                   path="/reports"
                   element={
                     currentUser.role === 'coach'
-                      ? <Reports />
+                      ? withLazy(Reports)
                       : <Navigate to="/training" replace />
                   }
                 />
@@ -285,7 +296,7 @@ function App() {
                   path="/admin"
                   element={
                     currentUser.role === 'coach'
-                      ? <Admin />
+                      ? withLazy(Admin)
                       : <Navigate to="/training" replace />
                   }
                 />
@@ -293,7 +304,7 @@ function App() {
                   path="/organization"
                   element={
                     currentUser.role === 'coach'
-                      ? <Organization />
+                      ? withLazy(Organization)
                       : <Navigate to="/training" replace />
                   }
                 />
@@ -301,7 +312,7 @@ function App() {
                   path="/drill-sessions-manage"
                   element={
                     currentUser.role === 'coach'
-                      ? <DrillSessionsManage />
+                      ? withLazy(DrillSessionsManage)
                       : <Navigate to="/training" replace />
                   }
                 />
