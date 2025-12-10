@@ -238,13 +238,13 @@ function App() {
             <Route
               path="/"
               element={
-                currentUser ? <Navigate to="/training" replace /> : <ErrorBoundary><Suspense fallback={<LoadingSpinner />}><Auth /></Suspense></ErrorBoundary>
+                currentUser ? <Navigate to="/training" replace /> : <ErrorBoundary><Suspense fallback={<LoadingSpinner fullPageBackground={true} />}><Auth /></Suspense></ErrorBoundary>
               }
             />
 
             <Route
               path="/reset-password"
-              element={<ErrorBoundary><Suspense fallback={<LoadingSpinner />}><ResetPassword /></Suspense></ErrorBoundary>}
+              element={<ErrorBoundary><Suspense fallback={<LoadingSpinner fullPageBackground={true} />}><ResetPassword /></Suspense></ErrorBoundary>}
             />
 
             {currentUser ? (
