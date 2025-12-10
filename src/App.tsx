@@ -85,11 +85,11 @@ const DrillbookView = createLazyComponent(() => import('./pages/DrillbookView').
 const Spielplan = createLazyComponent(() => import('./pages/Spielplan').then(m => ({ default: m.Spielplan })), 'Spielplan');
 
 /**
- * Wrap lazy component with Suspense - no extra spinner since they're inside AppShell
+ * Wrap lazy component with Suspense - inline spinner for pages inside AppShell
  */
 const withLazy = (Component: React.ComponentType) => (
   <ErrorBoundary>
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<LoadingSpinner inline={true} />}>
       <Component />
     </Suspense>
   </ErrorBoundary>

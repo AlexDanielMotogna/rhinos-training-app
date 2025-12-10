@@ -5,9 +5,11 @@ import { useI18n } from '../i18n/I18nProvider';
 interface LoadingSpinnerProps {
   /** If true, uses primary color background (for login/auth pages). Default: false */
   fullPageBackground?: boolean;
+  /** If true, uses smaller height for in-page loading (inside AppShell). Default: false */
+  inline?: boolean;
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ fullPageBackground = false }) => {
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ fullPageBackground = false, inline = false }) => {
   const { t } = useI18n();
 
   return (
@@ -17,7 +19,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ fullPageBackgrou
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh',
+        minHeight: inline ? 'calc(100vh - 120px)' : '100vh',
         gap: 2,
         // Only use primary background for login/auth pages to prevent white flash
         // For lazy-loaded pages, inherit background from body/theme
