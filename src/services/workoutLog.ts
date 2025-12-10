@@ -32,7 +32,22 @@ export interface WorkoutLog {
  */
 export function getWorkoutLogs(): WorkoutLog[] {
   const stored = localStorage.getItem(WORKOUTS_KEY);
-  return stored ? JSON.parse(stored) : [];
+  if (!stored) return [];
+
+  const logs = JSON.parse(stored);
+
+  // Deduplicate by ID to prevent duplicate entries in UI
+  const uniqueLogs = Array.from(
+    new Map(logs.map((log: WorkoutLog) => [log.id, log])).values()
+  );
+
+  // If duplicates were found, save the cleaned data back
+  if (uniqueLogs.length < logs.length) {
+    console.log(`🧹 Found and removed ${logs.length - uniqueLogs.length} duplicate workout logs`);
+    localStorage.setItem(WORKOUTS_KEY, JSON.stringify(uniqueLogs));
+  }
+
+  return uniqueLogs as WorkoutLog[];
 }
 
 /**
@@ -296,8 +311,18 @@ export async function syncWorkoutLogsFromBackend(userId: string): Promise<void> 
       }
     }
 
-    // Save merged logs to localStorage
-    localStorage.setItem(WORKOUTS_KEY, JSON.stringify(mergedLogs));
+    // Deduplicate logs by ID (safety check to prevent duplicates)
+    const uniqueLogs = Array.from(
+      new Map(mergedLogs.map(log => [log.id, log])).values()
+    );
+
+    // Save merged and deduplicated logs to localStorage
+    localStorage.setItem(WORKOUTS_KEY, JSON.stringify(uniqueLogs));
+
+    const duplicatesRemoved = mergedLogs.length - uniqueLogs.length;
+    if (duplicatesRemoved > 0) {
+      console.log(`🧹 Removed ${duplicatesRemoved} duplicate workout logs`);
+    }
     console.log(`✅ Synced workout logs: ${addedCount} added, ${updatedCount} updated`);
   } catch (error) {
     console.error('❌ Failed to sync workout logs from backend:', error);

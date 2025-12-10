@@ -82,13 +82,19 @@ define(['./workbox-9dc17825'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.6sro67h4vpc"
+    "revision": "0.c06n3lenq0s"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/]
   }));
-  workbox.registerRoute(/^https?:\/\/localhost:5000\/api\/.*/i, new workbox.NetworkFirst({
+  workbox.registerRoute(({
+    url
+  }) => {
+    const isApiUrl = url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/sse/");
+    const isValidOrigin = url.origin === "http://localhost:5000" || url.hostname.includes("railway.app");
+    return isApiUrl && isValidOrigin;
+  }, new workbox.NetworkFirst({
     "cacheName": "api-cache",
     "networkTimeoutSeconds": 10,
     plugins: [new workbox.ExpirationPlugin({
