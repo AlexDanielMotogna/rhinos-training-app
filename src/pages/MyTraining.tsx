@@ -461,9 +461,9 @@ export const MyTraining: React.FC = () => {
   };
 
   // Actual save function (called after duration confirmation)
-  const handleFinishWorkout = async (entries: WorkoutEntry[], notes: string, duration: number) => {
+  const handleFinishWorkout = async (entries: WorkoutEntry[], notes: string, duration: number, workoutDate?: string) => {
     if (user && startingPlan) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = workoutDate || new Date().toISOString().split('T')[0];
 
       // Calculate plan metadata for completion tracking
       const totalExercises = startingPlan.exercises.length;
@@ -580,9 +580,9 @@ export const MyTraining: React.FC = () => {
     setShowFinishDialog(true);
   };
 
-  const handleFinishBlockWorkout = async (entries: WorkoutEntry[], notes: string, duration: number) => {
+  const handleFinishBlockWorkout = async (entries: WorkoutEntry[], notes: string, duration: number, workoutDate?: string) => {
     if (user && selectedBlock) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = workoutDate || new Date().toISOString().split('T')[0];
 
       // Calculate plan metadata for completion tracking
       const totalExercises = selectedBlock.items.length;
@@ -1155,12 +1155,12 @@ export const MyTraining: React.FC = () => {
             setShowFinishDialog(false);
             setPendingWorkout(null);
           }}
-          onConfirm={(duration) => {
+          onConfirm={(duration, workoutDate) => {
             // Call the appropriate finish handler based on context
             if (startingPlan) {
-              handleFinishWorkout(pendingWorkout.entries, pendingWorkout.notes, duration);
+              handleFinishWorkout(pendingWorkout.entries, pendingWorkout.notes, duration, workoutDate);
             } else if (selectedBlock) {
-              handleFinishBlockWorkout(pendingWorkout.entries, pendingWorkout.notes, duration);
+              handleFinishBlockWorkout(pendingWorkout.entries, pendingWorkout.notes, duration, workoutDate);
             }
             setShowFinishDialog(false);
             setPendingWorkout(null);

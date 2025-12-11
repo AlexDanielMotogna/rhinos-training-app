@@ -11,11 +11,12 @@ import {
   Typography,
 } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface FinishWorkoutDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (duration: number) => void;
+  onConfirm: (duration: number, workoutDate?: string) => void;
   elapsedMinutes: number;
   estimatedMinutes: number;
   totalSets: number;
@@ -29,6 +30,7 @@ export const FinishWorkoutDialog: React.FC<FinishWorkoutDialogProps> = ({
   estimatedMinutes,
   totalSets,
 }) => {
+  const { t } = useI18n();
   // Detect suspicious timing: elapsed < 10 min but > 5 sets
   const isSuspicious = elapsedMinutes < 10 && totalSets > 5;
 
@@ -36,12 +38,14 @@ export const FinishWorkoutDialog: React.FC<FinishWorkoutDialogProps> = ({
   const defaultDuration = isSuspicious ? estimatedMinutes : elapsedMinutes;
 
   const [duration, setDuration] = useState(defaultDuration);
+  const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0]);
   const [error, setError] = useState('');
 
-  // Update default when dialog opens
+  // Update defaults when dialog opens
   useEffect(() => {
     if (open) {
       setDuration(defaultDuration);
+      setWorkoutDate(new Date().toISOString().split('T')[0]);
       setError('');
     }
   }, [open, defaultDuration]);
@@ -57,7 +61,7 @@ export const FinishWorkoutDialog: React.FC<FinishWorkoutDialogProps> = ({
       return;
     }
 
-    onConfirm(duration);
+    onConfirm(duration, workoutDate);
   };
 
   return (
@@ -101,7 +105,17 @@ export const FinishWorkoutDialog: React.FC<FinishWorkoutDialogProps> = ({
 
         <TextField
           fullWidth
-          label="Actual Workout Duration (minutes)"
+          label={t('workout.workoutDate')}
+          type="date"
+          value={workoutDate}
+          onChange={(e) => setWorkoutDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{ mb: 2 }}
+        />
+
+        <TextField
+          fullWidth
+          label={t('workout.actualDuration')}
           type="number"
           value={duration}
           onChange={(e) => {
@@ -109,7 +123,7 @@ export const FinishWorkoutDialog: React.FC<FinishWorkoutDialogProps> = ({
             setError('');
           }}
           error={!!error}
-          helperText={error || 'How long did your workout actually take?'}
+          helperText={error || t('workout.durationHelper')}
           inputProps={{ min: 1, max: 300 }}
           autoFocus
           sx={{ mt: 1 }}
