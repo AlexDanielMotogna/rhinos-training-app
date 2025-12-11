@@ -70,8 +70,7 @@ import { VideoTagsManager } from '../components/VideoTagsManager';
 import { VideosAdmin } from './VideosAdmin';
 import { SpielplanManager } from '../components/admin/SpielplanManager';
 import { DivisionManager } from '../components/admin/DivisionManager';
-import { getTeamSettings, updateTeamSettings, syncTeamSettingsFromBackend } from '../services/teamSettings';
-import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
+import { getTeamSettings, syncTeamSettingsFromBackend } from '../services/teamSettings';
 import { validateAPIKey } from '../services/aiInsights';
 import { getTeamBranding } from '../services/teamSettings';
 import { NotificationTemplates, getNotificationStatus, requestNotificationPermission } from '../services/notifications';
@@ -157,12 +156,8 @@ export const Admin: React.FC = () => {
     location: '',
     address: '',
   });
-
-  // Team Settings State
-  const [teamSettings, setTeamSettings] = useState(() => getTeamSettings());
-  const [seasonPhase, setSeasonPhase] = useState<SeasonPhase>(teamSettings.seasonPhase);
-  const [teamLevel, setTeamLevel] = useState<TeamLevel>(teamSettings.teamLevel);
-  const [settingsSaved, setSettingsSaved] = useState(false);
+  // Team Settings State (minimal - only for AI Coach initialization)
+  const [teamSettings] = useState(() => getTeamSettings());
 
   // AI Coach State
   const [teamApiKey, setTeamApiKey] = useState<string>(teamSettings.aiApiKey || '');
@@ -185,14 +180,11 @@ export const Admin: React.FC = () => {
   // Day Filter State
   const [selectedDayFilter, setSelectedDayFilter] = useState<string>('all');
 
-  // Sync team settings from backend on mount
+  // Sync team settings from backend on mount (for AI Coach key)
   useEffect(() => {
     const loadSettings = async () => {
       await syncTeamSettingsFromBackend();
       const settings = getTeamSettings();
-      setTeamSettings(settings);
-      setSeasonPhase(settings.seasonPhase);
-      setTeamLevel(settings.teamLevel);
       setTeamApiKey(settings.aiApiKey || '');
     };
     loadSettings();
@@ -559,26 +551,6 @@ export const Admin: React.FC = () => {
         console.error('Error deleting session:', error);
         toastService.deleteError('session', error instanceof Error ? error.message : undefined);
       }
-    }
-  };
-
-  // Team Settings Handlers
-  const handleSaveTeamSettings = async () => {
-    if (!user) return;
-
-    try {
-      const updated = await updateTeamSettings(seasonPhase, teamLevel, user.name);
-      setTeamSettings(updated);
-      setSettingsSaved(true);
-      toastService.updated('Team Settings');
-
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setSettingsSaved(false);
-      }, 3000);
-    } catch (error) {
-      console.error('Failed to save team settings:', error);
-      toastService.updateError('team settings', error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -1287,9 +1259,6 @@ export const Admin: React.FC = () => {
               </ListItemButton>
               <Collapse in={systemMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 8} onClick={() => handleTabChange(8)}>
-                    <ListItemText primary={t('admin.teamSettingsTab')} />
-                  </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 17} onClick={() => handleTabChange(17)}>
                     <ListItemText primary="Age Categories" />
                   </ListItemButton>
@@ -1895,128 +1864,6 @@ export const Admin: React.FC = () => {
 
       {/* Block Info Management Tab */}
       {activeTab === 7 && <BlockInfoManager />}
-
-      {/* Team Settings Tab */}
-      {activeTab === 8 && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 3 }}>
-            {t('teamSettings.title')}
-          </Typography>
-
-          {settingsSaved && (
-            <Alert severity="success" sx={{ mb: 3 }}>
-              {t('teamSettings.settingsSaved')}
-            </Alert>
-          )}
-
-          <Card>
-            <CardContent>
-              <Grid container spacing={3}>
-                {/* Season Phase */}
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('teamSettings.seasonPhase')}</InputLabel>
-                    <Select
-                      value={seasonPhase}
-                      label={t('teamSettings.seasonPhase')}
-                      onChange={(e) => setSeasonPhase(e.target.value as SeasonPhase)}
-                    >
-                      <MenuItem value="off-season">
-                        {t('teamSettings.phase.off-season')}
-                      </MenuItem>
-                      <MenuItem value="pre-season">
-                        {t('teamSettings.phase.pre-season')}
-                      </MenuItem>
-                      <MenuItem value="in-season">
-                        {t('teamSettings.phase.in-season')}
-                      </MenuItem>
-                      <MenuItem value="post-season">
-                        {t('teamSettings.phase.post-season')}
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    {t(`teamSettings.phaseDesc.${seasonPhase}`)}
-                  </Typography>
-                </Grid>
-
-                {/* Team Level */}
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('teamSettings.teamLevel')}</InputLabel>
-                    <Select
-                      value={teamLevel}
-                      label={t('teamSettings.teamLevel')}
-                      onChange={(e) => setTeamLevel(e.target.value as TeamLevel)}
-                    >
-                      <MenuItem value="amateur">
-                        {t('teamSettings.level.amateur')}
-                      </MenuItem>
-                      <MenuItem value="semi-pro">
-                        {t('teamSettings.level.semi-pro')}
-                      </MenuItem>
-                      <MenuItem value="college">
-                        {t('teamSettings.level.college')}
-                      </MenuItem>
-                      <MenuItem value="pro">
-                        {t('teamSettings.level.pro')}
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    {t(`teamSettings.levelDesc.${teamLevel}`)}
-                  </Typography>
-                </Grid>
-
-                {/* Current Settings Display */}
-                <Grid item xs={12}>
-                  <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      {t('teamSettings.currentConfig')}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>{t('teamSettings.seasonPhase')}:</strong> {t(`teamSettings.phase.${seasonPhase}`)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>{t('teamSettings.teamLevel')}:</strong> {t(`teamSettings.level.${teamLevel}`)}
-                    </Typography>
-                    {teamSettings.updatedAt && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        Last updated by {teamSettings.updatedBy} on {new Date(teamSettings.updatedAt).toLocaleString()}
-                      </Typography>
-                    )}
-                  </Box>
-                </Grid>
-
-                {/* Save Button */}
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Button
-                      variant="contained"
-                      onClick={handleSaveTeamSettings}
-                      disabled={
-                        seasonPhase === teamSettings.seasonPhase &&
-                        teamLevel === teamSettings.teamLevel
-                      }
-                    >
-                      {t('teamSettings.saveSettings')}
-                    </Button>
-                  </Box>
-                </Grid>
-
-                {/* Impact Info */}
-                <Grid item xs={12}>
-                  <Alert severity="info">
-                    <Typography variant="body2">
-                      {t('teamSettings.impact')}
-                    </Typography>
-                  </Alert>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Box>
-      )}
 
       {/* Exercise Dialog */}
       <Dialog
