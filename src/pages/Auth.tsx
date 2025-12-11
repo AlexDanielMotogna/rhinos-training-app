@@ -16,7 +16,6 @@ import {
   Checkbox,
   ListItemText,
 } from '@mui/material';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
@@ -180,18 +179,15 @@ export const Auth: React.FC = () => {
               />
             ) : (
               <Box
+                component="img"
+                src="/teamtrainer-logo.svg"
+                alt="TeamTrainer Logo"
                 sx={{
                   width: 120,
                   height: 120,
-                  borderRadius: '50%',
-                  backgroundColor: 'primary.main',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  objectFit: 'contain',
                 }}
-              >
-                <FitnessCenterIcon sx={{ fontSize: 60, color: 'white' }} />
-              </Box>
+              />
             )}
           </Box>
 

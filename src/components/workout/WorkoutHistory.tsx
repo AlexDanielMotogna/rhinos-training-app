@@ -460,9 +460,17 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
       >
         {selectedWorkout && (
           <>
-            <DialogTitle sx={{ pb: 1, pr: 6 }}>
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            <DialogTitle sx={{ pb: 1, pr: 10 }}>
+              <Box sx={{ maxWidth: 'calc(100% - 32px)' }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {selectedWorkout.planName || (selectedWorkout.source === 'coach' ? t('workout.coachPlan') : t('workout.freeSession'))}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
