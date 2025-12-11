@@ -4,6 +4,7 @@ import { z } from 'zod';
 import prisma from '../utils/prisma.js';
 import { generateToken, generatePasswordResetToken, verifyPasswordResetToken } from '../utils/jwt.js';
 import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/email.js';
+import { loginLimiter, signupLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -42,7 +43,7 @@ const resetPasswordSchema = z.object({
 const COACH_CODE = process.env.COACH_CODE || 'RHINOS2025';
 
 // POST /api/auth/signup
-router.post('/signup', async (req, res) => {
+router.post('/signup', signupLimiter, async (req, res) => {
   try {
     const data = signupSchema.parse(req.body);
 
@@ -139,7 +140,7 @@ router.post('/signup', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
 
@@ -208,7 +209,7 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/forgot-password
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
   try {
     const { email } = forgotPasswordSchema.parse(req.body);
 
@@ -249,7 +250,7 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // POST /api/auth/reset-password
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', passwordResetLimiter, async (req, res) => {
   try {
     const { token, newPassword } = resetPasswordSchema.parse(req.body);
 
