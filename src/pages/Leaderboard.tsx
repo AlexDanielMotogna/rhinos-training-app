@@ -90,6 +90,8 @@ export const Leaderboard: React.FC = () => {
 
   // Track request ID to prevent race conditions
   const requestIdRef = useRef(0);
+  // Track if initial category has been set to prevent re-triggering useEffect
+  const categoryInitializedRef = useRef(false);
 
   useEffect(() => {
     const loadLeaderboard = async () => {
@@ -116,8 +118,9 @@ export const Leaderboard: React.FC = () => {
         // Update available categories from response
         if (response.availableCategories) {
           setAvailableCategories(response.availableCategories);
-          // Set default category if not already set
-          if (!selectedCategory && response.currentCategory) {
+          // Set default category only once on initial load to prevent re-triggering
+          if (!categoryInitializedRef.current && !selectedCategory && response.currentCategory) {
+            categoryInitializedRef.current = true;
             setSelectedCategory(response.currentCategory);
           }
         }
