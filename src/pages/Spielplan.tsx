@@ -62,7 +62,8 @@ export const Spielplan: React.FC = () => {
   useEffect(() => {
     const loadBranding = async () => {
       const branding = await getTeamBrandingAsync();
-      setTeamName(branding.teamName || 'Rhinos');
+      // Use appName (full name) for matching team names in matches
+      setTeamName(branding.appName || branding.teamName || 'Rhinos');
     };
     loadBranding();
   }, []);
@@ -91,7 +92,7 @@ export const Spielplan: React.FC = () => {
     // Filter by view mode (show only matches involving our team)
     if (viewMode === 'team') {
       filtered = filtered.filter(
-        m => m.homeTeam.includes(teamName) || m.awayTeam.includes(teamName)
+        m => m.homeTeam === teamName || m.awayTeam === teamName
       );
     }
 
@@ -116,20 +117,24 @@ export const Spielplan: React.FC = () => {
   };
 
   const isTeamMatch = (match: Match) => {
-    return match.homeTeam.includes(teamName) || match.awayTeam.includes(teamName);
+    return match.homeTeam === teamName || match.awayTeam === teamName;
   };
 
   const isMatchPast = (match: Match): boolean => {
+    // A match is considered "past" if it has scores recorded OR if the date/time has passed
+    const hasScores = match.homeScore !== null && match.awayScore !== null;
+    if (hasScores) return true;
+
     const matchDateTime = new Date(`${match.date}T${match.kickoff}`);
     return matchDateTime < new Date();
   };
 
   const getOpponent = (match: Match): string => {
-    return match.homeTeam.includes(teamName) ? match.awayTeam : match.homeTeam;
+    return match.homeTeam === teamName ? match.awayTeam : match.homeTeam;
   };
 
   const isHomeGame = (match: Match): boolean => {
-    return match.homeTeam.includes(teamName);
+    return match.homeTeam === teamName;
   };
 
   const formatDate = (dateStr: string) => {
@@ -205,13 +210,13 @@ export const Spielplan: React.FC = () => {
   // Calculate games won and lost
   const gamesWon = pastTeamMatches.filter(match => {
     if (match.homeScore === null || match.awayScore === null) return false;
-    const isHome = match.homeTeam.includes(teamName);
+    const isHome = match.homeTeam === teamName;
     return isHome ? match.homeScore > match.awayScore : match.awayScore > match.homeScore;
   }).length;
 
   const gamesLost = pastTeamMatches.filter(match => {
     if (match.homeScore === null || match.awayScore === null) return false;
-    const isHome = match.homeTeam.includes(teamName);
+    const isHome = match.homeTeam === teamName;
     return isHome ? match.homeScore < match.awayScore : match.awayScore < match.homeScore;
   }).length;
 
