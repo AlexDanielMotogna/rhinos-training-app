@@ -94,8 +94,15 @@ router.post('/signup', async (req, res) => {
       console.error('Failed to send welcome email:', err)
     );
 
+    // Set httpOnly cookie with token
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     res.status(201).json({
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -149,8 +156,15 @@ router.post('/login', async (req, res) => {
       role: user.role,
     });
 
+    // Set httpOnly cookie with token
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     res.json({
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -274,6 +288,18 @@ router.post('/reset-password', async (req, res) => {
     console.error('Reset password error:', error);
     res.status(500).json({ error: 'Failed to reset password' });
   }
+});
+
+// POST /api/auth/logout
+router.post('/logout', (req, res) => {
+  // Clear the auth cookie
+  res.clearCookie('auth_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  res.json({ message: 'Logged out successfully' });
 });
 
 export default router;

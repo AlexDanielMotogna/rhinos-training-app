@@ -90,17 +90,25 @@ export function getUser(): MockUser | null {
   return data ? JSON.parse(data) : null;
 }
 
-export function logout(): void {
-  // Remove all auth-related data from localStorage
+export async function logout(): Promise<void> {
+  try {
+    // Call backend logout endpoint to clear httpOnly cookie
+    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include', // IMPORTANT: Send cookie
+    });
+  } catch (error) {
+    console.error('Logout API call failed:', error);
+    // Continue with local logout even if API call fails
+  }
+
+  // Remove user data from localStorage (token is in httpOnly cookie now)
   localStorage.removeItem('currentUser');
-  localStorage.removeItem('auth_token');
 
   // Dispatch a custom event to notify all components of the logout
   // This allows immediate UI updates without polling
   window.dispatchEvent(new CustomEvent('user-logout'));
 
-  // Also clear any cached data that should be user-specific
-  // This ensures a clean logout experience
   console.log('🔓 User logged out successfully');
 }
 

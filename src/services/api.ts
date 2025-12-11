@@ -24,7 +24,6 @@ export interface LoginData {
 }
 
 export interface AuthResponse {
-  token: string;
   user: {
     id: string;
     email: string;
@@ -49,29 +48,16 @@ export interface AuthResponse {
   };
 }
 
-// Helper to get auth token from localStorage
-export const getAuthToken = (): string | null => {
-  return localStorage.getItem('auth_token');
-};
-
-// Helper to set auth token
-export const setAuthToken = (token: string): void => {
-  localStorage.setItem('auth_token', token);
-};
-
-// Helper to clear auth token
-export const clearAuthToken = (): void => {
-  localStorage.removeItem('auth_token');
+// Helper to clear user data from localStorage
+export const clearAuthData = (): void => {
   localStorage.removeItem('currentUser');
 };
 
-// API call helper with auth headers
+// API call helper with credentials (cookies)
 export const apiCall = async <T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> => {
-  const token = getAuthToken();
-
   // Don't set Content-Type for FormData - browser will set it automatically with boundary
   const isFormData = options.body instanceof FormData;
 
@@ -80,15 +66,12 @@ export const apiCall = async <T>(
     ...(options.headers as Record<string, string>),
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   console.log(`[API REQUEST] ${options.method || 'GET'} ${API_URL}${endpoint}`);
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include', // IMPORTANT: Send cookies with requests
   });
 
   console.log(`[API RESPONSE] ${endpoint} - Status: ${response.status} ${response.statusText}`);
@@ -123,8 +106,7 @@ export const authService = {
       body: JSON.stringify(data),
     });
 
-    // Store token and user
-    setAuthToken(response.token);
+    // Store user in localStorage (not the token - it's in httpOnly cookie now)
     localStorage.setItem('currentUser', JSON.stringify(response.user));
 
     return response;
@@ -136,11 +118,19 @@ export const authService = {
       body: JSON.stringify(data),
     });
 
-    // Store token and user
-    setAuthToken(response.token);
+    // Store user in localStorage (not the token - it's in httpOnly cookie now)
     localStorage.setItem('currentUser', JSON.stringify(response.user));
 
     return response;
+  },
+
+  async logout(): Promise<void> {
+    await apiCall('/auth/logout', {
+      method: 'POST',
+    });
+
+    // Clear user data from localStorage
+    clearAuthData();
   },
 
   async forgotPassword(email: string): Promise<{ message: string }> {
@@ -155,10 +145,6 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify({ token, newPassword }),
     });
-  },
-
-  logout(): void {
-    clearAuthToken();
   },
 };
 
