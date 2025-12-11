@@ -26,11 +26,14 @@ import type { Video, VideoType, PositionTag, RouteTag, CoverageTag, RunConceptTa
 
 export const Videos: React.FC = () => {
   const user = getUser();
+  const [videosSynced, setVideosSynced] = useState(false);
 
   // Sync videos from backend on mount
   useEffect(() => {
     if (user) {
-      syncVideosFromBackend();
+      syncVideosFromBackend().then(() => {
+        setVideosSynced(true);
+      });
     }
   }, [user]);
   const [activeTab, setActiveTab] = useState<VideoType>('position');
@@ -45,7 +48,7 @@ export const Videos: React.FC = () => {
 
   const VIDEOS_PER_PAGE = 30;
 
-  const videos = useMemo(() => getPublishedVideos(), []);
+  const videos = useMemo(() => getPublishedVideos(), [videosSynced]);
   const progress = useMemo(
     () => (user ? getPlayerProgressForAllVideos(user.id) : {}),
     [user]
