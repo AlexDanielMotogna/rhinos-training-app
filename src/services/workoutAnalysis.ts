@@ -467,40 +467,20 @@ function calculateAthleticFocus(entries: WorkoutEntry[]): {
 
 /**
  * Compare with last week's workouts
+ * NOTE: This function is synchronous but needs async data - returns null for now
+ * TODO: Refactor to async if needed in future
  */
 function compareWithLastWeek(
-  userId: string,
+  _userId: string,
   _currentVolume: number,
   _currentRPE: number
 ): {
   volumeChange: number | null;
   intensityChange: number | null;
 } {
-  try {
-    const allLogs = getWorkoutLogsByUser(userId, false);
-    const now = new Date();
-    const lastWeekStart = new Date(now);
-    lastWeekStart.setDate(lastWeekStart.getDate() - 14); // 2 weeks ago
-    const lastWeekEnd = new Date(now);
-    lastWeekEnd.setDate(lastWeekEnd.getDate() - 7); // 1 week ago
-
-    const lastWeekLogs = allLogs.filter(log => {
-      const logDate = new Date(log.date);
-      return logDate >= lastWeekStart && logDate <= lastWeekEnd;
-    });
-
-    if (lastWeekLogs.length === 0) {
-      return { volumeChange: null, intensityChange: null };
-    }
-
-    // Calculate average volume from last week
-    // Note: stored logs don't have volume, would need to calculate
-    // For MVP, we'll return null or estimate
-    return { volumeChange: null, intensityChange: null };
-
-  } catch (e) {
-    return { volumeChange: null, intensityChange: null };
-  }
+  // Note: getWorkoutLogsByUser is now async, but this function is called synchronously
+  // For now, return null - this feature needs to be refactored if we want to enable it
+  return { volumeChange: null, intensityChange: null };
 }
 
 /**
@@ -544,8 +524,9 @@ function generateStrengths(athletic: number, intensity: number, capacity: number
 
 /**
  * Generate warnings based on analysis
+ * NOTE: userId parameter is no longer used (was for async workout frequency check)
  */
-function generateWarnings(entries: WorkoutEntry[], userId: string, athleticScore: number): string[] {
+function generateWarnings(entries: WorkoutEntry[], _userId: string, athleticScore: number): string[] {
   const warnings: string[] = [];
 
   // Check session type
@@ -576,22 +557,8 @@ function generateWarnings(entries: WorkoutEntry[], userId: string, athleticScore
     }
   }
 
-  // Check recent workout frequency
-  try {
-    const recentLogs = getWorkoutLogsByUser(userId, false);
-    const last3Days = recentLogs.filter(log => {
-      const logDate = new Date(log.date);
-      const now = new Date();
-      const diffDays = (now.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24);
-      return diffDays <= 3;
-    });
-
-    if (last3Days.length >= 3) {
-      warnings.push('report.warning.highFrequency');
-    }
-  } catch (e) {
-    // Ignore
-  }
+  // Note: Workout frequency check removed - getWorkoutLogsByUser is now async
+  // This feature needs to be refactored if we want to enable it
 
   return warnings;
 }

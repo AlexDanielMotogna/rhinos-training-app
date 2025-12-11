@@ -38,8 +38,8 @@ import { PlanCard } from '../components/plan/PlanCard';
 import { PlanBuilderDialog } from '../components/plan/PlanBuilderDialog';
 import { StartWorkoutDialog } from '../components/plan/StartWorkoutDialog';
 import { getUser } from '../services/userProfile';
-import { assignmentService, trainingTypeService, workoutService } from '../services/api';
-import { saveWorkoutLog, getWorkoutLogsByUser, getWorkoutLogs, deleteWorkoutLog, updateWorkoutLog, syncWorkoutLogsFromBackend, type WorkoutLog } from '../services/workoutLog';
+import { assignmentService, trainingTypeService } from '../services/api';
+import { saveWorkoutLog, getWorkoutLogsByUser, deleteWorkoutLog, updateWorkoutLog, type WorkoutLog } from '../services/workoutLog';
 import { getUserPlans, getUserPlansFromBackend, createUserPlan, updateUserPlan, deleteUserPlan, duplicateUserPlan, markPlanAsUsed } from '../services/userPlan';
 import type { TrainingTypeKey, TemplateBlock } from '../types/template';
 import type { WorkoutPayload, WorkoutEntry } from '../types/workout';
@@ -493,15 +493,10 @@ export const MyTraining: React.FC = () => {
         completionPercentage,
       };
 
-      // Save to localStorage
-      const allLogs = getWorkoutLogs();
-      allLogs.push(workoutLog);
-      localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
-
       // Save to backend
       try {
-        const backendWorkout = await workoutService.create({
-          date: today,
+        await saveWorkoutLog(user.id, {
+          dateISO: today,
           entries: workoutLog.entries,
           notes: workoutLog.notes,
           source: 'player',
@@ -512,18 +507,6 @@ export const MyTraining: React.FC = () => {
           completionPercentage: workoutLog.completionPercentage,
         });
         console.log('✅ Player workout saved to backend');
-
-        // Update local workout with backend ID to prevent duplicates
-        if (backendWorkout && backendWorkout.id) {
-          workoutLog.id = backendWorkout.id;
-          const allLogs = getWorkoutLogs();
-          const index = allLogs.findIndex(log => log.id !== backendWorkout.id && log.date === workoutLog.date && log.createdAt === workoutLog.createdAt);
-          if (index !== -1) {
-            allLogs[index] = workoutLog;
-            localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
-            console.log('✅ Updated local workout with backend ID:', backendWorkout.id);
-          }
-        }
       } catch (error) {
         console.error('Failed to save player workout to backend:', error);
         throw error;
@@ -611,15 +594,10 @@ export const MyTraining: React.FC = () => {
         completionPercentage,
       };
 
-      // Save to localStorage
-      const allLogs = getWorkoutLogs();
-      allLogs.push(workoutLog);
-      localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
-
       // Save to backend
       try {
-        const backendWorkout = await workoutService.create({
-          date: today,
+        await saveWorkoutLog(user.id, {
+          dateISO: today,
           entries: workoutLog.entries,
           notes: workoutLog.notes,
           source: 'coach',
@@ -629,18 +607,6 @@ export const MyTraining: React.FC = () => {
           completionPercentage: workoutLog.completionPercentage,
         });
         console.log('✅ Workout saved to backend');
-
-        // Update local workout with backend ID to prevent duplicates
-        if (backendWorkout && backendWorkout.id) {
-          workoutLog.id = backendWorkout.id;
-          const allLogsUpdated = getWorkoutLogs();
-          const index = allLogsUpdated.findIndex(log => log.id !== backendWorkout.id && log.date === workoutLog.date && log.createdAt === workoutLog.createdAt);
-          if (index !== -1) {
-            allLogsUpdated[index] = workoutLog;
-            localStorage.setItem('rhinos_workouts', JSON.stringify(allLogsUpdated));
-            console.log('✅ Updated local workout with backend ID:', backendWorkout.id);
-          }
-        }
       } catch (error) {
         console.error('Failed to save workout to backend:', error);
         throw error;
@@ -705,15 +671,10 @@ export const MyTraining: React.FC = () => {
         completionPercentage,
       };
 
-      // Save to localStorage
-      const allLogs = getWorkoutLogs();
-      allLogs.push(workoutLog);
-      localStorage.setItem('rhinos_workouts', JSON.stringify(allLogs));
-
       // Save to backend
       try {
-        const backendWorkout = await workoutService.create({
-          date: today,
+        await saveWorkoutLog(user.id, {
+          dateISO: today,
           entries: workoutLog.entries,
           notes: workoutLog.notes,
           source: 'coach',
@@ -723,18 +684,6 @@ export const MyTraining: React.FC = () => {
           completionPercentage: workoutLog.completionPercentage,
         });
         console.log('✅ Workout saved to backend');
-
-        // Update local workout with backend ID to prevent duplicates
-        if (backendWorkout && backendWorkout.id) {
-          workoutLog.id = backendWorkout.id;
-          const allLogsUpdated = getWorkoutLogs();
-          const index = allLogsUpdated.findIndex(log => log.id !== backendWorkout.id && log.date === workoutLog.date && log.createdAt === workoutLog.createdAt);
-          if (index !== -1) {
-            allLogsUpdated[index] = workoutLog;
-            localStorage.setItem('rhinos_workouts', JSON.stringify(allLogsUpdated));
-            console.log('✅ Updated local workout with backend ID:', backendWorkout.id);
-          }
-        }
       } catch (error) {
         console.error('Failed to save workout to backend:', error);
         throw error;
