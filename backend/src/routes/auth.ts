@@ -109,7 +109,8 @@ router.post('/signup', signupLimiter, async (req, res) => {
     res.cookie('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // 'lax' works with subdomain
+      domain: process.env.NODE_ENV === 'production' ? '.rhinos-training.at' : undefined, // Share cookie across subdomain
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -171,7 +172,8 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.cookie('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // 'lax' works with subdomain
+      domain: process.env.NODE_ENV === 'production' ? '.rhinos-training.at' : undefined, // Share cookie across subdomain
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -307,7 +309,8 @@ router.post('/logout', (req, res) => {
   res.clearCookie('auth_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Must match cookie settings
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // Must match cookie settings
+    domain: process.env.NODE_ENV === 'production' ? '.rhinos-training.at' : undefined, // Must match cookie settings
   });
 
   res.json({ message: 'Logged out successfully' });
