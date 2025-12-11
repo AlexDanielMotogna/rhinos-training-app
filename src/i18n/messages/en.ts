@@ -22,6 +22,8 @@ export const messagesEN = {
   'spielplan.title': 'Season Schedule 2025',
   'spielplan.upcomingGames': 'Upcoming Games',
   'spielplan.gamesPlayed': 'Games Played',
+  'spielplan.gamesWon': 'Games Won',
+  'spielplan.gamesLost': 'Games Lost',
   'spielplan.totalGames': 'Total Games',
   'spielplan.winRate': 'Win Rate',
   'spielplan.teamMatches': '{{teamName}} Matches',

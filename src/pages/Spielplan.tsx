@@ -202,6 +202,19 @@ export const Spielplan: React.FC = () => {
   const upcomingTeamMatches = teamMatches.filter(m => !isMatchPast(m));
   const pastTeamMatches = teamMatches.filter(m => isMatchPast(m));
 
+  // Calculate games won and lost
+  const gamesWon = pastTeamMatches.filter(match => {
+    if (match.homeScore === null || match.awayScore === null) return false;
+    const isHome = match.homeTeam.includes(teamName);
+    return isHome ? match.homeScore > match.awayScore : match.awayScore > match.homeScore;
+  }).length;
+
+  const gamesLost = pastTeamMatches.filter(match => {
+    if (match.homeScore === null || match.awayScore === null) return false;
+    const isHome = match.homeTeam.includes(teamName);
+    return isHome ? match.homeScore < match.awayScore : match.awayScore < match.homeScore;
+  }).length;
+
   return (
     <Box>
       {/* Header */}
@@ -217,11 +230,11 @@ export const Spielplan: React.FC = () => {
         <Grid item xs={6} sm={3}>
           <Card>
             <CardContent>
-              <Typography variant="h4" color="success.main">
-                {upcomingTeamMatches.length}
+              <Typography variant="h4" color="error.main">
+                {gamesLost}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {t('spielplan.upcomingGames')}
+                {t('spielplan.gamesLost')}
               </Typography>
             </CardContent>
           </Card>
@@ -253,11 +266,11 @@ export const Spielplan: React.FC = () => {
         <Grid item xs={6} sm={3}>
           <Card>
             <CardContent>
-              <Typography variant="h4" color="primary">
-                {availableConferences.length}
+              <Typography variant="h4" color="success.main">
+                {gamesWon}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {t('spielplan.conferences')}
+                {t('spielplan.gamesWon')}
               </Typography>
             </CardContent>
           </Card>

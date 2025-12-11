@@ -149,15 +149,6 @@ export const Leaderboard: React.FC = () => {
     return 'transparent';
   };
 
-  // Show full page loader during any loading state
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 3 }}>

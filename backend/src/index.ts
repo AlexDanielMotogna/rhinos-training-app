@@ -27,6 +27,8 @@ import leaderboardRoutes from './routes/leaderboard.js';
 import exerciseCategoryRoutes from './routes/exerciseCategories.js';
 import reportsRoutes from './routes/reports.js';
 import matchRoutes from './routes/matches.js';
+import divisionRoutes from './routes/divisions.js';
+import teamRoutes from './routes/teams.js';
 import sseRoutes from './routes/sse.js';
 import { startCronJobs } from './utils/cronJobs.js';
 
@@ -101,6 +103,8 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/exercise-categories', exerciseCategoryRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/matches', matchRoutes);
+app.use('/api/divisions', divisionRoutes);
+app.use('/api/teams', teamRoutes);
 app.use('/api/sse', sseRoutes);
 
 // 404 handler

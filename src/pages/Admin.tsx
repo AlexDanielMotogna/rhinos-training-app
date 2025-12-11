@@ -51,6 +51,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useI18n } from '../i18n/I18nProvider';
@@ -68,10 +69,10 @@ import { DrillCategoryManager } from '../components/DrillCategoryManager';
 import { VideoTagsManager } from '../components/VideoTagsManager';
 import { VideosAdmin } from './VideosAdmin';
 import { SpielplanManager } from '../components/admin/SpielplanManager';
+import { DivisionManager } from '../components/admin/DivisionManager';
 import { getTeamSettings, updateTeamSettings, syncTeamSettingsFromBackend } from '../services/teamSettings';
 import type { SeasonPhase, TeamLevel } from '../types/teamSettings';
 import { validateAPIKey } from '../services/aiInsights';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { getTeamBranding } from '../services/teamSettings';
 import { NotificationTemplates, getNotificationStatus, requestNotificationPermission } from '../services/notifications';
 import { toastService } from '../services/toast';
@@ -114,6 +115,7 @@ export const Admin: React.FC = () => {
   const [exercisesMenuOpen, setExercisesMenuOpen] = useState(true);
   const [trainingMenuOpen, setTrainingMenuOpen] = useState(false);
   const [teamMenuOpen, setTeamMenuOpen] = useState(false);
+  const [seasonMenuOpen, setSeasonMenuOpen] = useState(false);
   const [resourcesMenuOpen, setResourcesMenuOpen] = useState(false);
   const [systemMenuOpen, setSystemMenuOpen] = useState(false);
   const user = getUser();
@@ -1230,6 +1232,25 @@ export const Admin: React.FC = () => {
 
               <Divider />
 
+              {/* Season Management Menu */}
+              <ListItemButton onClick={() => setSeasonMenuOpen(!seasonMenuOpen)}>
+                <ListItemIcon><CalendarMonthIcon /></ListItemIcon>
+                <ListItemText primary="Season Management" />
+                {seasonMenuOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={seasonMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 16} onClick={() => handleTabChange(16)}>
+                    <ListItemText primary="Spielplan" />
+                  </ListItemButton>
+                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 18} onClick={() => handleTabChange(18)}>
+                    <ListItemText primary="Divisions & Teams" />
+                  </ListItemButton>
+                </List>
+              </Collapse>
+
+              <Divider />
+
               {/* Resources Menu */}
               <ListItemButton onClick={() => setResourcesMenuOpen(!resourcesMenuOpen)}>
                 <ListItemIcon><LibraryBooksIcon /></ListItemIcon>
@@ -1246,9 +1267,6 @@ export const Admin: React.FC = () => {
                   </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 12} onClick={() => handleTabChange(12)}>
                     <ListItemText primary={t('admin.equipmentTab')} />
-                  </ListItemButton>
-                  <ListItemButton sx={{ pl: 4 }} selected={activeTab === 16} onClick={() => handleTabChange(16)}>
-                    <ListItemText primary="Spielplan" />
                   </ListItemButton>
                   <ListItemButton sx={{ pl: 4 }} selected={activeTab === 15} onClick={() => handleTabChange(15)}>
                     <ListItemText primary={t('nav.videosAdmin')} />
@@ -3172,6 +3190,9 @@ export const Admin: React.FC = () => {
 
       {/* Spielplan Tab */}
       {activeTab === 16 && <SpielplanManager />}
+
+      {/* Divisions & Teams Tab */}
+      {activeTab === 18 && <DivisionManager />}
 
       {/* Videos Admin Tab */}
       {activeTab === 15 && <VideosAdmin />}

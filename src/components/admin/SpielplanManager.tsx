@@ -42,10 +42,13 @@ import {
   bulkCreateMatches,
 } from '../../services/matches';
 import { getUser } from '../../services/userProfile';
+import { getAllTeams } from '../../services/divisions';
+import type { Team } from '../../types/division';
 
 export const SpielplanManager: React.FC = () => {
   const user = getUser();
   const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [formData, setFormData] = useState<MatchFormData>({
@@ -65,7 +68,33 @@ export const SpielplanManager: React.FC = () => {
 
   useEffect(() => {
     loadMatches();
+    loadTeams();
   }, []);
+
+  // Auto-calculate week label when date or week number changes
+  useEffect(() => {
+    if (formData.date && formData.week) {
+      const date = new Date(formData.date);
+      // Format: "Woche X - DD.MM"
+      const day = date.getDate();
+      const month = date.getMonth() + 1; // Months are 0-indexed
+      const weekLabel = `Woche ${formData.week} - ${day}.${month < 10 ? '0' + month : month}`;
+
+      // Only update if it's different to avoid infinite loops
+      if (formData.weekLabel !== weekLabel) {
+        setFormData(prev => ({ ...prev, weekLabel }));
+      }
+    }
+  }, [formData.date, formData.week]);
+
+  const loadTeams = async () => {
+    try {
+      const data = await getAllTeams();
+      setTeams(data);
+    } catch (error) {
+      console.error('Failed to load teams:', error);
+    }
+  };
 
   const loadMatches = async () => {
     const data = await getAllMatches();
@@ -168,10 +197,16 @@ export const SpielplanManager: React.FC = () => {
         </Button>
       </Box>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Manage the season schedule (Spielplan). All matches will be visible to players.
-        Rhinos matches will be highlighted automatically.
-      </Alert>
+      {teams.length === 0 ? (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          No teams found! Please create divisions and teams in the "Divisions & Teams" tab first before adding matches.
+        </Alert>
+      ) : (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Manage the season schedule (Spielplan). All matches will be visible to players.
+          Teams are managed in the "Divisions & Teams" tab.
+        </Alert>
+      )}
 
       {/* Statistics Card */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -350,22 +385,36 @@ export const SpielplanManager: React.FC = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Home Team"
-                value={formData.homeTeam}
-                onChange={(e) => setFormData({ ...formData, homeTeam: e.target.value })}
-                placeholder="Gladiators"
-              />
+              <FormControl fullWidth>
+                <InputLabel>Home Team</InputLabel>
+                <Select
+                  value={formData.homeTeam}
+                  label="Home Team"
+                  onChange={(e) => setFormData({ ...formData, homeTeam: e.target.value })}
+                >
+                  {teams.map((team) => (
+                    <MenuItem key={team.id} value={team.name}>
+                      {team.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Away Team"
-                value={formData.awayTeam}
-                onChange={(e) => setFormData({ ...formData, awayTeam: e.target.value })}
-                placeholder="Rhinos"
-              />
+              <FormControl fullWidth>
+                <InputLabel>Away Team</InputLabel>
+                <Select
+                  value={formData.awayTeam}
+                  label="Away Team"
+                  onChange={(e) => setFormData({ ...formData, awayTeam: e.target.value })}
+                >
+                  {teams.map((team) => (
+                    <MenuItem key={team.id} value={team.name}>
+                      {team.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -411,8 +460,9 @@ export const SpielplanManager: React.FC = () => {
                 fullWidth
                 label="Week Label"
                 value={formData.weekLabel}
-                onChange={(e) => setFormData({ ...formData, weekLabel: e.target.value })}
-                placeholder="Woche 1 - 29./30.März"
+                placeholder="Auto-calculated"
+                disabled
+                helperText="Automatically generated from week number and date"
               />
             </Grid>
             <Grid item xs={12}>

@@ -690,3 +690,32 @@ model Match {
   @@index([week])
   @@index([conference])
 }
+
+// ========================================
+// DIVISIONS & TEAMS (Season Management)
+// ========================================
+
+model Division {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String   // Division name (e.g., "North Division", "GFL2 Nord")
+  conference String   // Conference (A, B, C, D)
+  season     String   // Season year (e.g., "2025")
+  teams      Team[]   // Teams in this division
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([season, conference])
+}
+
+model Team {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String   // Team name
+  divisionId String   @db.ObjectId // Division this team belongs to
+  logoUrl    String?  // Optional team logo URL
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@index([divisionId])
+}
