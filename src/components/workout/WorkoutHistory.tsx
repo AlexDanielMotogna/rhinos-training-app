@@ -260,7 +260,15 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                           {entry.setData[0].reps && `${entry.setData[0].reps} reps`}
                           {entry.setData[0].reps && entry.setData[0].kg && ' × '}
                           {entry.setData[0].kg && `${entry.setData[0].kg}kg`}
-                          {entry.setData[0].durationSec && `${entry.setData[0].durationSec} seconds`}
+                          {entry.setData[0].durationSec && (() => {
+                            const duration = entry.setData[0].durationSec;
+                            if (duration >= 60) {
+                              const mins = Math.floor(duration / 60);
+                              const secs = duration % 60;
+                              return secs > 0 ? `${mins}min ${secs}s` : `${mins}min`;
+                            }
+                            return `${duration}s`;
+                          })()}
                         </Typography>
                       ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
@@ -274,7 +282,15 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                               {set.reps && `${set.reps} reps`}
                               {set.reps && set.kg && ' × '}
                               {set.kg && `${set.kg}kg`}
-                              {set.durationSec && `${set.durationSec} seconds`}
+                              {set.durationSec && (() => {
+                                const duration = set.durationSec;
+                                if (duration >= 60) {
+                                  const mins = Math.floor(duration / 60);
+                                  const secs = duration % 60;
+                                  return secs > 0 ? ` - ${mins}min ${secs}s` : ` - ${mins}min`;
+                                }
+                                return ` - ${duration}s`;
+                              })()}
                             </Typography>
                           ))}
                         </Box>
@@ -284,7 +300,15 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem', pl: 1 }}>
                       {entry.sets && entry.reps && `${entry.sets} sets × ${entry.reps} reps`}
                       {entry.kg && ` with ${entry.kg}kg`}
-                      {entry.durationSec && ` for ${entry.durationSec} seconds`}
+                      {entry.durationSec && (() => {
+                        const duration = entry.durationSec;
+                        if (duration >= 60) {
+                          const mins = Math.floor(duration / 60);
+                          const secs = duration % 60;
+                          return secs > 0 ? ` for ${mins}min ${secs}s` : ` for ${mins}min`;
+                        }
+                        return ` for ${duration}s`;
+                      })()}
                     </Typography>
                   )}
 
