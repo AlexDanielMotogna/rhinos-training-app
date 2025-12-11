@@ -8,6 +8,7 @@ import {
   Chip,
   Button,
   Avatar,
+  useTheme,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import EditIcon from '@mui/icons-material/Edit';
@@ -33,6 +34,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   onDuplicate,
 }) => {
   const { t } = useI18n();
+  const theme = useTheme();
 
   const formatLastUsed = (dateStr?: string) => {
     if (!dateStr) return 'Never used';
@@ -69,7 +71,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
       <Box
         sx={{
           height: 80,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           position: 'relative',
           display: 'flex',
           alignItems: 'center',

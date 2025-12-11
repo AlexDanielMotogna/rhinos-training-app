@@ -23,6 +23,7 @@ import {
   Divider,
   TextField,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import SportsFootballIcon from '@mui/icons-material/SportsFootball';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -45,6 +46,7 @@ type ViewMode = 'all' | 'team';
 
 export const Spielplan: React.FC = () => {
   const { t } = useI18n();
+  const theme = useTheme();
   const user = getUser();
   const isCoach = user?.role === 'coach';
   const [teamName, setTeamName] = useState<string>('Rhinos'); // Default fallback
@@ -576,7 +578,7 @@ export const Spielplan: React.FC = () => {
                                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                                           <Box
                                             sx={{
-                                              background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+                                              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
                                               borderRadius: '50%',
                                               width: 56,
                                               height: 56,
