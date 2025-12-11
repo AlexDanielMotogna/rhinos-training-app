@@ -87,6 +87,7 @@ export const Leaderboard: React.FC = () => {
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   // Track request ID to prevent race conditions
   const requestIdRef = useRef(0);
@@ -134,6 +135,7 @@ export const Leaderboard: React.FC = () => {
         // Only update loading state if this is still the latest request
         if (currentRequestId === requestIdRef.current) {
           setLoading(false);
+          setInitialLoadComplete(true);
         }
       }
     };
@@ -148,6 +150,15 @@ export const Leaderboard: React.FC = () => {
     if (rank === 3) return '#CD7F32'; // Bronze
     return 'transparent';
   };
+
+  // Show full page loader only on initial load to prevent double spinner effect
+  if (!initialLoadComplete && loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
