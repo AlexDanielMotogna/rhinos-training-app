@@ -105,8 +105,22 @@ export const Profile: React.FC = () => {
   useEffect(() => {
     const loadKPIs = async () => {
       if (user) {
-        const kpisData = await calculateKPIs(user.id);
-        setKpis(kpisData);
+        try {
+          const kpisData = await calculateKPIs(user.id);
+          setKpis(kpisData);
+        } catch (error) {
+          console.warn('[PROFILE] Failed to load KPIs:', error);
+          // Set empty KPIs to prevent infinite loading
+          setKpis({
+            currentPoints: 0,
+            weeklyChange: 0,
+            monthlyChange: 0,
+            rank: 0,
+            totalPlayers: 0,
+            streak: 0,
+            compliancePercent: 0,
+          });
+        }
       }
     };
 
@@ -155,6 +169,8 @@ export const Profile: React.FC = () => {
     } catch (error) {
       console.warn(`[PROFILE] ⚠️ Failed to load ${testType} test from backend:`, error);
       console.log(`[PROFILE] 📭 No ${testType} test data available`);
+      // Set to null to indicate no data available (prevents .filter() error on undefined)
+      setSummary(null);
     }
   };
 
