@@ -262,12 +262,13 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                           {entry.setData[0].kg && `${entry.setData[0].kg}kg`}
                           {entry.setData[0].durationSec && (() => {
                             const duration = entry.setData[0].durationSec;
+                            const prefix = (entry.setData[0].reps || entry.setData[0].kg) ? ' - ' : '';
                             if (duration >= 60) {
                               const mins = Math.floor(duration / 60);
                               const secs = duration % 60;
-                              return secs > 0 ? `${mins}min ${secs}s` : `${mins}min`;
+                              return secs > 0 ? `${prefix}${mins}min ${secs}s` : `${prefix}${mins}min`;
                             }
-                            return `${duration}s`;
+                            return `${prefix}${duration}s`;
                           })()}
                         </Typography>
                       ) : (
