@@ -1,11 +1,12 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// POST /api/admin/populate-users - Poblar usuarios mock en la DB
-router.post('/populate-users', async (req, res) => {
+// POST /api/admin/populate-users - Poblar usuarios mock en la DB (Coach only)
+router.post('/populate-users', authenticate, requireCoach, async (req, res) => {
   try {
     console.log('[ADMIN] Starting user population...');
     

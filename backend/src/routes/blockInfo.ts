@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -58,13 +58,8 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/block-info - Create new block info (Coach only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireCoach, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create block info' });
-    }
-
     const data = blockInfoSchema.parse(req.body);
 
     // Check if block info already exists for this combination
@@ -94,13 +89,8 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PATCH /api/block-info/:id - Update block info (Coach only)
-router.patch('/:id', authenticate, async (req, res) => {
+router.patch('/:id', authenticate, requireCoach, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update block info' });
-    }
-
     const { id } = req.params;
     const data = blockInfoSchema.partial().parse(req.body);
 
@@ -129,13 +119,8 @@ router.patch('/:id', authenticate, async (req, res) => {
 });
 
 // DELETE /api/block-info/:id - Delete block info (Coach only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireCoach, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete block info' });
-    }
-
     const { id } = req.params;
 
     // Check if block info exists

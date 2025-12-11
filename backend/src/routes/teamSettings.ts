@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 import { upload, uploadTeamLogo, uploadImage } from '../utils/cloudinary.js';
 
 const router = express.Router();
@@ -84,14 +84,9 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // PUT /api/team-settings - Update team settings (coach only)
-router.put('/', authenticate, async (req, res) => {
+router.put('/', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can update team settings
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update team settings' });
-    }
 
     const validatedData = updateTeamSettingsSchema.parse(req.body);
 
@@ -138,14 +133,9 @@ router.put('/', authenticate, async (req, res) => {
 });
 
 // POST /api/team-settings/logo - Upload team logo (coach only)
-router.post('/logo', authenticate, upload.single('logo'), async (req, res) => {
+router.post('/logo', authenticate, requireCoach, upload.single('logo'), async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can upload logo
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can upload team logo' });
-    }
 
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -187,14 +177,9 @@ router.post('/logo', authenticate, upload.single('logo'), async (req, res) => {
 });
 
 // POST /api/team-settings/favicon - Upload favicon (coach only)
-router.post('/favicon', authenticate, upload.single('favicon'), async (req, res) => {
+router.post('/favicon', authenticate, requireCoach, upload.single('favicon'), async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can upload favicon
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can upload favicon' });
-    }
 
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });

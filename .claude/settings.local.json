@@ -25,7 +25,11 @@
       "Bash(python:*)",
       "Bash(git checkout:*)",
       "Bash(del \"c:\\Users\\user\\rhinos-training-app\\src\\services\\online.ts\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

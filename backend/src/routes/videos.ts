@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -128,14 +128,9 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/videos - Create video (coach only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can create videos
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create videos' });
-    }
 
     const data = createVideoSchema.parse(req.body);
 
@@ -182,15 +177,10 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PUT /api/videos/:id - Update video (coach only)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-
-    // Only coaches can update videos
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update videos' });
-    }
 
     // Check if video exists
     const existingVideo = await prisma.video.findUnique({
@@ -235,15 +225,10 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // DELETE /api/videos/:id - Delete video (coach only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-
-    // Only coaches can delete videos
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete videos' });
-    }
 
     // Check if video exists
     const existingVideo = await prisma.video.findUnique({

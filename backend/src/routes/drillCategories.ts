@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -35,14 +35,9 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // POST /api/drill-categories/seed - Seed default categories (coach only)
-router.post('/seed', authenticate, async (req, res) => {
+router.post('/seed', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can seed categories
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can seed categories' });
-    }
 
     const defaultCategories = [
       {
@@ -135,14 +130,9 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/drill-categories - Create category (coach only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can create categories
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create categories' });
-    }
 
     const validatedData = createCategorySchema.parse(req.body);
 
@@ -168,15 +158,10 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PUT /api/drill-categories/:id - Update category (coach only)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-
-    // Only coaches can update categories
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update categories' });
-    }
 
     const validatedData = updateCategorySchema.parse(req.body);
 
@@ -203,15 +188,10 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // DELETE /api/drill-categories/:id - Delete category (coach only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-
-    // Only coaches can delete categories
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete categories' });
-    }
 
     // Check if category is being used by any drills
     const drillsUsingCategory = await prisma.drill.findFirst({

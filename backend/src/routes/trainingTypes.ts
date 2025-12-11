@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -49,13 +49,8 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/training-types - Create new training type (Coach only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireCoach, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create training types' });
-    }
-
     const data = trainingTypeSchema.parse(req.body);
 
     // Check if key already exists
@@ -82,13 +77,8 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PATCH /api/training-types/:id - Update training type (Coach only)
-router.patch('/:id', authenticate, async (req, res) => {
+router.patch('/:id', authenticate, requireCoach, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update training types' });
-    }
-
     const { id } = req.params;
     const data = trainingTypeSchema.partial().parse(req.body);
 
@@ -128,13 +118,8 @@ router.patch('/:id', authenticate, async (req, res) => {
 });
 
 // DELETE /api/training-types/:id - Delete training type (Coach only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireCoach, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete training types' });
-    }
-
     const { id } = req.params;
 
     // Check if training type exists

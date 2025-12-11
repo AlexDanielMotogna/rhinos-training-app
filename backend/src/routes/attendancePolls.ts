@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 import { createNotificationsForUsers } from './notifications.js';
 import { t, formatPollMessage } from '../utils/i18n.js';
 import { sseManager } from '../utils/sseManager.js';
@@ -154,7 +154,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/attendance-polls - Create new poll
-router.post('/', async (req, res) => {
+router.post('/', requireCoach, async (req, res) => {
   try {
     const data = createPollSchema.parse(req.body);
     const userId = (req as any).user.userId;
@@ -162,11 +162,6 @@ router.post('/', async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Only coaches can create polls
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create attendance polls' });
     }
 
     const poll = await prisma.attendancePoll.create({
@@ -420,15 +415,9 @@ router.get('/:id/attendees', async (req, res) => {
 });
 
 // PATCH /api/attendance-polls/:id/close - Close/deactivate a poll
-router.patch('/:id/close', async (req, res) => {
+router.patch('/:id/close', requireCoach, async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user.userId;
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-
-    if (!user || user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can close polls' });
-    }
 
     const poll = await prisma.attendancePoll.update({
       where: { id },
@@ -444,15 +433,9 @@ router.patch('/:id/close', async (req, res) => {
 });
 
 // DELETE /api/attendance-polls/:id - Delete a poll
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireCoach, async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user.userId;
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-
-    if (!user || user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete polls' });
-    }
 
     await prisma.attendancePoll.delete({ where: { id } });
 

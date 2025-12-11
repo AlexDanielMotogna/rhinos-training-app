@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 import { upload, uploadDrillSketch, deleteImage } from '../utils/cloudinary.js';
 
 const router = express.Router();
@@ -127,7 +127,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/drills - Create drill (coach only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
 
@@ -137,11 +137,6 @@ router.post('/', authenticate, async (req, res) => {
       userId: user.userId
     });
     console.log('[DRILLS] Request body:', JSON.stringify(req.body, null, 2));
-
-    // Only coaches can create drills
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create drills' });
-    }
 
     const data = createDrillSchema.parse(req.body);
 
@@ -187,15 +182,10 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PUT /api/drills/:id - Update drill (coach only)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-
-    // Only coaches can update drills
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update drills' });
-    }
 
     // Check if drill exists
     const existingDrill = await prisma.drill.findUnique({
@@ -225,15 +215,10 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // DELETE /api/drills/:id - Delete drill (coach only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-
-    // Only coaches can delete drills
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete drills' });
-    }
 
     // Check if drill exists
     const existingDrill = await prisma.drill.findUnique({
@@ -266,19 +251,13 @@ router.delete('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/drills/:id/upload-sketch - Upload drill sketch (coach only)
-router.post('/:id/upload-sketch', authenticate, upload.single('sketch'), async (req, res) => {
+router.post('/:id/upload-sketch', authenticate, requireCoach, upload.single('sketch'), async (req, res) => {
   try {
     console.log('[DRILLS] Upload sketch request received for drill:', req.params.id);
     const user = (req as any).user;
     const { id } = req.params;
 
     console.log('[DRILLS] User authenticated:', { email: user.email, role: user.role });
-
-    // Only coaches can upload drill sketches
-    if (user.role !== 'coach') {
-      console.warn('[DRILLS] Non-coach user attempted upload:', user.email);
-      return res.status(403).json({ error: 'Only coaches can upload drill sketches' });
-    }
 
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -327,19 +306,13 @@ router.post('/:id/upload-sketch', authenticate, upload.single('sketch'), async (
 });
 
 // POST /api/drills/:id/upload-image - Upload drill thumbnail image (coach only)
-router.post('/:id/upload-image', authenticate, upload.single('image'), async (req, res) => {
+router.post('/:id/upload-image', authenticate, requireCoach, upload.single('image'), async (req, res) => {
   try {
     console.log('[DRILLS] Upload image request received for drill:', req.params.id);
     const user = (req as any).user;
     const { id } = req.params;
 
     console.log('[DRILLS] User authenticated:', { email: user.email, role: user.role });
-
-    // Only coaches can upload drill images
-    if (user.role !== 'coach') {
-      console.warn('[DRILLS] Non-coach user attempted upload:', user.email);
-      return res.status(403).json({ error: 'Only coaches can upload drill images' });
-    }
 
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });

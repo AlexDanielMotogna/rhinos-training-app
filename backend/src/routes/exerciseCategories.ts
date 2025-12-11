@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 import { initializeExerciseCategories } from '../utils/initExerciseCategories.js';
 
 const router = express.Router();
@@ -55,14 +55,9 @@ router.get('/active', authenticate, async (req, res) => {
 });
 
 // POST /api/exercise-categories/init - Initialize default categories (coach only)
-router.post('/init', authenticate, async (req, res) => {
+router.post('/init', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can initialize categories
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can initialize categories' });
-    }
 
     await initializeExerciseCategories();
 
@@ -81,14 +76,9 @@ router.post('/init', authenticate, async (req, res) => {
 });
 
 // POST /api/exercise-categories - Create new category (coach only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can create categories
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create categories' });
-    }
 
     const data = createCategorySchema.parse(req.body);
 
@@ -120,14 +110,9 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PATCH /api/exercise-categories/:id - Update category (coach only)
-router.patch('/:id', authenticate, async (req, res) => {
+router.patch('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can update categories
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update categories' });
-    }
 
     const { id } = req.params;
     const data = updateCategorySchema.parse(req.body);
@@ -169,14 +154,9 @@ router.patch('/:id', authenticate, async (req, res) => {
 });
 
 // DELETE /api/exercise-categories/:id - Delete category (coach only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can delete categories
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete categories' });
-    }
 
     const { id } = req.params;
 

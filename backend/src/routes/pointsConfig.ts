@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -106,13 +106,8 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // PUT /api/points-config - Update or create points configuration (Coach only)
-router.put('/', authenticate, async (req, res) => {
+router.put('/', authenticate, requireCoach, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update points configuration' });
-    }
-
     const data = pointsConfigSchema.parse(req.body);
 
     // Check if config already exists
@@ -143,13 +138,8 @@ router.put('/', authenticate, async (req, res) => {
 });
 
 // DELETE /api/points-config - Reset to defaults (Coach only)
-router.delete('/', authenticate, async (req, res) => {
+router.delete('/', authenticate, requireCoach, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can reset points configuration' });
-    }
-
     // Delete existing config
     const existing = await prisma.pointsConfig.findFirst();
     if (existing) {

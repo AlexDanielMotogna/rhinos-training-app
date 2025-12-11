@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -64,14 +64,9 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/video-tags - Create tag (coach only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can create tags
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create tags' });
-    }
 
     const data = createTagSchema.parse(req.body);
 
@@ -111,15 +106,10 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PUT /api/video-tags/:id - Update tag (coach only)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-
-    // Only coaches can update tags
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update tags' });
-    }
 
     // Check if tag exists
     const existingTag = await prisma.videoTag.findUnique({
@@ -169,15 +159,10 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // DELETE /api/video-tags/:id - Delete tag (coach only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-
-    // Only coaches can delete tags
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete tags' });
-    }
 
     // Check if tag exists
     const existingTag = await prisma.videoTag.findUnique({
@@ -206,14 +191,9 @@ router.delete('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/video-tags/initialize - Initialize default tags (coach only)
-router.post('/initialize', authenticate, async (req, res) => {
+router.post('/initialize', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can initialize tags
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can initialize tags' });
-    }
 
     // Check if tags already initialized
     const existingTags = await prisma.videoTag.count();

@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import prisma from '../utils/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -133,14 +133,9 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/templates - Create new template (Coach only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Check if user is coach
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create templates' });
-    }
 
     const data = templateSchema.parse(req.body);
 
@@ -199,14 +194,9 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PATCH /api/templates/:id - Update template (Coach only)
-router.patch('/:id', authenticate, async (req, res) => {
+router.patch('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Check if user is coach
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update templates' });
-    }
 
     const { id } = req.params;
     const data = templateSchema.partial().parse(req.body);
@@ -259,14 +249,9 @@ router.patch('/:id', authenticate, async (req, res) => {
 });
 
 // DELETE /api/templates/:id - Delete template (Coach only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Check if user is coach
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete templates' });
-    }
 
     const { id } = req.params;
 

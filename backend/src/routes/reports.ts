@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 import prisma from '../utils/prisma.js';
 
 const router = express.Router();
@@ -9,14 +9,9 @@ const router = express.Router();
  * Simple weekly training overview for coaches
  * Returns: players with their training days (self/team) for the week
  */
-router.get('/weekly-overview/:startDate?', authenticate, async (req, res) => {
+router.get('/weekly-overview/:startDate?', authenticate, requireCoach, async (req, res) => {
   try {
     const user = (req as any).user;
-
-    // Only coaches can access reports
-    if (user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can access reports' });
-    }
 
     // Get coach's categories for filtering
     const coach = await prisma.user.findUnique({

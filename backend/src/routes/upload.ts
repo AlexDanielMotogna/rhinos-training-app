@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireCoach } from '../middleware/auth.js';
 import { upload, uploadAvatar, uploadTeamLogo, deleteImage } from '../utils/cloudinary.js';
 import prisma from '../utils/prisma.js';
 
@@ -91,12 +91,8 @@ router.delete('/avatar', authenticate, async (req, res) => {
 });
 
 // POST /api/upload/team-logo - Upload team logo (coaches only)
-router.post('/team-logo', authenticate, upload.single('logo'), async (req, res) => {
+router.post('/team-logo', authenticate, requireCoach, upload.single('logo'), async (req, res) => {
   try {
-    if (req.user!.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can upload team logo' });
-    }
-
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
