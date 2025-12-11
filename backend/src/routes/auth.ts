@@ -105,16 +105,9 @@ router.post('/signup', signupLimiter, async (req, res) => {
       console.error('Failed to send welcome email:', err)
     );
 
-    // Set httpOnly cookie with token
-    res.cookie('auth_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // 'lax' works with subdomain
-      domain: process.env.NODE_ENV === 'production' ? '.rhinos-training.at' : undefined, // Share cookie across subdomain
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
+    // Return token in response body (Option 1: Bearer token approach)
     res.status(201).json({
+      token, // Include token in response for localStorage storage
       user: {
         id: user.id,
         email: user.email,
@@ -168,16 +161,9 @@ router.post('/login', loginLimiter, async (req, res) => {
       role: user.role,
     });
 
-    // Set httpOnly cookie with token
-    res.cookie('auth_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // 'lax' works with subdomain
-      domain: process.env.NODE_ENV === 'production' ? '.rhinos-training.at' : undefined, // Share cookie across subdomain
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
+    // Return token in response body (Option 1: Bearer token approach)
     res.json({
+      token, // Include token in response for localStorage storage
       user: {
         id: user.id,
         email: user.email,
@@ -305,14 +291,8 @@ router.post('/reset-password', passwordResetLimiter, async (req, res) => {
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  // Clear the auth cookie
-  res.clearCookie('auth_token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // Must match cookie settings
-    domain: process.env.NODE_ENV === 'production' ? '.rhinos-training.at' : undefined, // Must match cookie settings
-  });
-
+  // No cookie to clear with Bearer token approach
+  // Client will remove token from localStorage
   res.json({ message: 'Logged out successfully' });
 });
 

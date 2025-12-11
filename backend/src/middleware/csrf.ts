@@ -9,9 +9,8 @@ const {
   cookieName: 'x-csrf-token',
   cookieOptions: {
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // 'lax' works with subdomain
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
     secure: process.env.NODE_ENV === 'production',
-    domain: process.env.NODE_ENV === 'production' ? '.rhinos-training.at' : undefined, // Share cookie across subdomain
     path: '/',
   },
   size: 64,

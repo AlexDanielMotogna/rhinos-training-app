@@ -26,6 +26,7 @@ export interface LoginData {
 }
 
 export interface AuthResponse {
+  token?: string; // JWT token for Bearer authentication
   user: {
     id: string;
     email: string;
@@ -50,9 +51,20 @@ export interface AuthResponse {
   };
 }
 
+// Helper to get auth token from localStorage
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem('authToken');
+};
+
+// Helper to store auth token in localStorage
+export const setAuthToken = (token: string): void => {
+  localStorage.setItem('authToken', token);
+};
+
 // Helper to clear user data from localStorage
 export const clearAuthData = (): void => {
   localStorage.removeItem('currentUser');
+  localStorage.removeItem('authToken');
 };
 
 // CSRF token management
@@ -93,6 +105,12 @@ export const apiCall = async <T>(
     ...(options.headers as Record<string, string>),
   };
 
+  // Add Authorization header with Bearer token if available
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   // Add CSRF token for state-changing requests (POST, PUT, PATCH, DELETE)
   const method = options.method?.toUpperCase() || 'GET';
   const needsCsrf = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
@@ -111,7 +129,7 @@ export const apiCall = async <T>(
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
-    credentials: 'include', // IMPORTANT: Send cookies with requests
+    credentials: 'include', // Keep for CSRF cookie
   });
 
   logger.apiResponse(options.method || 'GET', endpoint, response.status);
@@ -149,7 +167,10 @@ export const authService = {
       body: JSON.stringify(data),
     });
 
-    // Store user in localStorage (not the token - it's in httpOnly cookie now)
+    // Store token and user in localStorage
+    if (response.token) {
+      setAuthToken(response.token);
+    }
     localStorage.setItem('currentUser', JSON.stringify(response.user));
 
     return response;
@@ -161,7 +182,10 @@ export const authService = {
       body: JSON.stringify(data),
     });
 
-    // Store user in localStorage (not the token - it's in httpOnly cookie now)
+    // Store token and user in localStorage
+    if (response.token) {
+      setAuthToken(response.token);
+    }
     localStorage.setItem('currentUser', JSON.stringify(response.user));
 
     return response;
