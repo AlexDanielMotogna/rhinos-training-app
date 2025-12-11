@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, JWTPayload } from '../utils/jwt.js';
+import { logger } from '../utils/logger.js';
 
 // Extend Express Request type
 declare global {
@@ -24,23 +25,17 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     }
 
     if (!token) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('[AUTH] No token provided in cookie or header');
-      }
+      logger.debug('No auth token provided in cookie or header');
       return res.status(401).json({ error: 'No token provided' });
     }
 
     const decoded = verifyToken(token);
     req.user = decoded;
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[AUTH] Authenticated user: ${decoded.email} (${decoded.role})`);
-    }
+    logger.debug(`Authenticated user: ${decoded.email}`, { role: decoded.role });
     next();
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('[AUTH] Authentication error:', error);
-    }
+    logger.error('Authentication error', error);
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }

@@ -1,4 +1,6 @@
 // API service for backend communication
+import { logger } from './logger';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export interface SignupData {
@@ -66,7 +68,7 @@ export const apiCall = async <T>(
     ...(options.headers as Record<string, string>),
   };
 
-  console.log(`[API REQUEST] ${options.method || 'GET'} ${API_URL}${endpoint}`);
+  logger.apiRequest(options.method || 'GET', endpoint);
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
@@ -74,25 +76,28 @@ export const apiCall = async <T>(
     credentials: 'include', // IMPORTANT: Send cookies with requests
   });
 
-  console.log(`[API RESPONSE] ${endpoint} - Status: ${response.status} ${response.statusText}`);
+  logger.apiResponse(options.method || 'GET', endpoint, response.status);
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    console.error(`[API ERROR] ${endpoint}:`, error);
+    logger.error(`API error on ${endpoint}`, error);
     throw new Error(error.error || `HTTP ${response.status}`);
   }
 
   const data = await response.json();
 
-  // Special logging for exercises endpoint to debug muscle groups
+  // Debug logging only in development
   if (endpoint === '/exercises' && Array.isArray(data)) {
-    console.log(`[API DATA] ${endpoint}: Received ${data.length} items`);
-    console.log('[API DATA] First exercise:', data[0]);
-    console.log('[API DATA] First exercise muscleGroups:', data[0]?.muscleGroups);
-    const withLegs = data.filter((e: any) => e.muscleGroups?.includes('legs'));
-    console.log(`[API DATA] Exercises with 'legs' in API response: ${withLegs.length}`);
+    logger.debug(`Received ${data.length} exercises`, {
+      firstExercise: data[0],
+      muscleGroups: data[0]?.muscleGroups,
+      withLegs: data.filter((e: any) => e.muscleGroups?.includes('legs')).length,
+    });
   } else {
-    console.log(`[API DATA] ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'single item');
+    logger.debug(`API data from ${endpoint}`, {
+      type: Array.isArray(data) ? 'array' : 'object',
+      count: Array.isArray(data) ? data.length : 1,
+    });
   }
 
   return data;
@@ -756,38 +761,29 @@ export const drillService = {
     const formData = new FormData();
     formData.append('sketch', file);
 
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      console.error('[API] No authentication token found');
-      throw new Error('No authentication token found. Please log in again.');
-    }
-
-    console.log('[API] Uploading sketch for drill:', id, 'File size:', file.size, 'bytes');
-    console.log('[API] Token exists:', !!token, 'Token length:', token.length);
+    logger.debug(`Uploading sketch for drill ${id}`, { fileSize: file.size });
 
     const response = await fetch(`${API_URL}/drills/${id}/upload-sketch`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      credentials: 'include', // Send cookie for authentication
       body: formData,
     });
 
-    console.log('[API] Upload response status:', response.status);
+    logger.apiResponse('POST', `/drills/${id}/upload-sketch`, response.status);
 
     if (!response.ok) {
       if (response.status === 401) {
         const errorBody = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('[API] 401 Unauthorized. Error body:', errorBody);
+        logger.error('401 Unauthorized on sketch upload', errorBody);
         throw new Error('Authentication failed. Please log in again.');
       }
       const error = await response.json().catch(() => ({ error: 'Failed to upload sketch' }));
-      console.error('[API] Upload failed:', error);
+      logger.error('Sketch upload failed', error);
       throw new Error(error.error || 'Failed to upload sketch');
     }
 
     const result = await response.json();
-    console.log('[API] Upload successful:', result);
+    logger.debug('Sketch upload successful', result);
     return result;
   },
 
@@ -795,38 +791,29 @@ export const drillService = {
     const formData = new FormData();
     formData.append('image', file);
 
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      console.error('[API] No authentication token found');
-      throw new Error('No authentication token found. Please log in again.');
-    }
-
-    console.log('[API] Uploading image for drill:', id, 'File size:', file.size, 'bytes');
-    console.log('[API] Token exists:', !!token, 'Token length:', token.length);
+    logger.debug(`Uploading image for drill ${id}`, { fileSize: file.size });
 
     const response = await fetch(`${API_URL}/drills/${id}/upload-image`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      credentials: 'include', // Send cookie for authentication
       body: formData,
     });
 
-    console.log('[API] Upload response status:', response.status);
+    logger.apiResponse('POST', `/drills/${id}/upload-image`, response.status);
 
     if (!response.ok) {
       if (response.status === 401) {
         const errorBody = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('[API] 401 Unauthorized. Error body:', errorBody);
+        logger.error('401 Unauthorized on image upload', errorBody);
         throw new Error('Authentication failed. Please log in again.');
       }
       const error = await response.json().catch(() => ({ error: 'Failed to upload image' }));
-      console.error('[API] Upload failed:', error);
+      logger.error('Image upload failed', error);
       throw new Error(error.error || 'Failed to upload image');
     }
 
     const result = await response.json();
-    console.log('[API] Upload successful:', result);
+    logger.debug('Image upload successful', result);
     return result;
   },
 };
