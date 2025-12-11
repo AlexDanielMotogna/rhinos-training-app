@@ -74,14 +74,9 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// POST /api/exercises - Create new exercise (Coach only)
+// POST /api/exercises - Create new exercise (All users)
 router.post('/', authenticate, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can create exercises' });
-    }
-
     const data = exerciseSchema.parse(req.body);
 
     // Check if exercise with same name already exists
@@ -111,14 +106,9 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// PATCH /api/exercises/:id - Update exercise (Coach only)
+// PATCH /api/exercises/:id - Update exercise (All users, own exercises or coach can edit all)
 router.patch('/:id', authenticate, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can update exercises' });
-    }
-
     const { id } = req.params;
     const data = exerciseSchema.partial().parse(req.body);
 
@@ -129,6 +119,11 @@ router.patch('/:id', authenticate, async (req, res) => {
 
     if (!existing) {
       return res.status(404).json({ error: 'Exercise not found' });
+    }
+
+    // Players can only edit their own exercises, coaches can edit all
+    if (req.user.role !== 'coach' && existing.createdBy !== req.user.userId) {
+      return res.status(403).json({ error: 'You can only edit exercises you created' });
     }
 
     // If updating name, check for duplicates
@@ -160,14 +155,9 @@ router.patch('/:id', authenticate, async (req, res) => {
   }
 });
 
-// DELETE /api/exercises/:id - Delete exercise (Coach only)
+// DELETE /api/exercises/:id - Delete exercise (All users, own exercises or coach can delete all)
 router.delete('/:id', authenticate, async (req, res) => {
   try {
-    // Check if user is coach
-    if (req.user.role !== 'coach') {
-      return res.status(403).json({ error: 'Only coaches can delete exercises' });
-    }
-
     const { id } = req.params;
 
     // Check if exercise exists
@@ -177,6 +167,11 @@ router.delete('/:id', authenticate, async (req, res) => {
 
     if (!existing) {
       return res.status(404).json({ error: 'Exercise not found' });
+    }
+
+    // Players can only delete their own exercises, coaches can delete all
+    if (req.user.role !== 'coach' && existing.createdBy !== req.user.userId) {
+      return res.status(403).json({ error: 'You can only delete exercises you created' });
     }
 
     await prisma.exercise.delete({
