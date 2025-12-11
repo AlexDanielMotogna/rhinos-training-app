@@ -312,13 +312,13 @@ export const TrainingSessions: React.FC = () => {
   const getSessionTypeColor = (type: SessionType): string => {
     switch (type) {
       case 'gym':
-        return '#2196f3';
+        return '#4caf50'; // Green - Team Workout
       case 'outdoor':
-        return '#4caf50';
+        return '#ff9800'; // Orange - Team Session
       case 'coach-plan':
-        return '#ff9800';
+        return '#fdd835'; // Yellow - Free Workout (changed from orange to yellow for better distinction)
       case 'free-training':
-        return '#9c27b0';
+        return '#9c27b0'; // Purple - Private Session
       default:
         return '#757575';
     }
