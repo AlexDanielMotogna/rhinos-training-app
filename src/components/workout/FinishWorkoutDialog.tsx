@@ -9,8 +9,12 @@ import {
   Alert,
   Box,
   Typography,
+  Chip,
+  Stack,
+  Divider,
 } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { useI18n } from '../../i18n/I18nProvider';
 
 interface FinishWorkoutDialogProps {

@@ -151,6 +151,16 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
       minute: '2-digit'
     });
 
+    // Format duration nicely
+    const formatDuration = (minutes: number) => {
+      if (minutes >= 60) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+      }
+      return `${minutes} min`;
+    };
+
     return (
       <Card key={workout.id} sx={{ mb: 1.5 }}>
         <CardActionArea onClick={() => setSelectedWorkout(workout)}>
@@ -165,15 +175,19 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
 
                 {/* Time and stats */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <AccessTimeIcon sx={{ fontSize: '0.9rem', color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                      {time}
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                    •
-                  </Typography>
+                  {workout.duration && (
+                    <>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <AccessTimeIcon sx={{ fontSize: '0.9rem', color: 'primary.main' }} />
+                        <Typography variant="body2" color="primary.main" sx={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                          {formatDuration(workout.duration)}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                        •
+                      </Typography>
+                    </>
+                  )}
                   <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                     {totalExercises} {totalExercises === 1 ? 'exercise' : 'exercises'}
                   </Typography>
@@ -182,6 +196,12 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                     {totalSets} sets
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                    •
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                    {time}
                   </Typography>
                 </Box>
               </Box>
@@ -431,13 +451,26 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                     minute: '2-digit'
                   })}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 0.5, mt: 1 }}>
+                <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
                   <Chip
                     label={selectedWorkout.source === 'coach' ? t('workout.coachPlan') : t('workout.freeSession')}
                     size="small"
                     color={selectedWorkout.source === 'coach' ? 'primary' : 'secondary'}
                     sx={{ height: 24 }}
                   />
+                  {selectedWorkout.duration && (
+                    <Chip
+                      icon={<AccessTimeIcon sx={{ fontSize: '0.9rem !important' }} />}
+                      label={
+                        selectedWorkout.duration >= 60
+                          ? `${Math.floor(selectedWorkout.duration / 60)}h ${selectedWorkout.duration % 60}min`
+                          : `${selectedWorkout.duration} min`
+                      }
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 24 }}
+                    />
+                  )}
                   {selectedWorkout.completionPercentage !== undefined && (
                     <Chip
                       label={`${selectedWorkout.completionPercentage}% completed`}
