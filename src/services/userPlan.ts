@@ -1,198 +1,132 @@
 /**
  * User Plan Service
- * Manages user-created workout plan templates with backend + localStorage support
+ * Manages user-created workout plan templates - reads from backend only
  */
 
 import type { UserPlanTemplate, UserPlanPayload } from '../types/userPlan';
 import { userPlanService } from './api';
 
-const USER_PLANS_KEY = 'rhinos_user_plans';
-const DELETED_PLANS_KEY = 'rhinos_deleted_plans'; // Track plans deleted by user
-
-/**
- * Get all plans for a user (synchronous - localStorage only)
- */
-export function getUserPlans(userId: string): UserPlanTemplate[] {
-  const data = localStorage.getItem(USER_PLANS_KEY);
-  const allPlans: UserPlanTemplate[] = data ? JSON.parse(data) : [];
-  return allPlans.filter(plan => plan.userId === userId);
-}
-
 /**
  * Get all plans for a user from backend
  */
-export async function getUserPlansFromBackend(userId: string): Promise<UserPlanTemplate[]> {
-  console.log('[USER PLANS] Loading plans from backend for user:', userId);
-
+export async function getUserPlans(userId: string): Promise<UserPlanTemplate[]> {
   try {
+    console.log('[USER PLANS] Loading plans from backend for user:', userId);
     const backendPlans = await userPlanService.getAll() as UserPlanTemplate[];
 
-    // Filter plans for this user (backend returns all user's plans already)
-    const userBackendPlans = backendPlans.filter(p => p.userId === userId);
-
-    // Update localStorage cache
-    const allPlans = JSON.parse(localStorage.getItem(USER_PLANS_KEY) || '[]');
-    const otherPlans = allPlans.filter((p: UserPlanTemplate) => p.userId !== userId);
-    const mergedPlans = [...otherPlans, ...userBackendPlans];
-    localStorage.setItem(USER_PLANS_KEY, JSON.stringify(mergedPlans));
-
-    console.log('[USER PLANS] Loaded', userBackendPlans.length, 'plans from backend');
-    return userBackendPlans;
+    // Backend already filters by userId
+    console.log('[USER PLANS] Loaded', backendPlans.length, 'plans from backend');
+    return backendPlans || [];
   } catch (error) {
     console.error('[USER PLANS] Failed to load from backend:', error);
-    // Fallback to localStorage
-    return getUserPlans(userId);
+    return [];
   }
 }
 
 /**
- * Get a specific plan by ID
+ * Alias for getUserPlans - for backwards compatibility
  */
-export function getUserPlan(planId: string): UserPlanTemplate | null {
-  const data = localStorage.getItem(USER_PLANS_KEY);
-  const allPlans: UserPlanTemplate[] = data ? JSON.parse(data) : [];
-  return allPlans.find(plan => plan.id === planId) || null;
-}
+export const getUserPlansFromBackend = getUserPlans;
 
 /**
- * Create a new plan
+ * Get a specific plan by ID from backend
  */
-export async function createUserPlan(payload: UserPlanPayload): Promise<UserPlanTemplate> {
-  const data = localStorage.getItem(USER_PLANS_KEY);
-  const allPlans: UserPlanTemplate[] = data ? JSON.parse(data) : [];
-
-  const now = new Date().toISOString();
-  const newPlan: UserPlanTemplate = {
-    id: crypto.randomUUID(),
-    ...payload,
-    createdAt: now,
-    updatedAt: now,
-    timesCompleted: 0,
-  };
-
-  // Save to localStorage first (immediate feedback)
-  allPlans.push(newPlan);
-  localStorage.setItem(USER_PLANS_KEY, JSON.stringify(allPlans));
-
-  // Try to save to backend
+export async function getUserPlan(planId: string): Promise<UserPlanTemplate | null> {
   try {
-    console.log('[USER PLANS] Saving plan to backend:', newPlan.name);
-      const backendPlan = await userPlanService.create({
-        name: newPlan.name,
-        trainingType: 'custom', // Default training type
-        exercises: newPlan.exercises,
-        notes: '',
-        timesCompleted: newPlan.timesCompleted,
-        createdAt: newPlan.createdAt,
-        updatedAt: newPlan.updatedAt,
-      });
-
-      // Update local plan with backend ID
-      newPlan.id = backendPlan.id;
-      const index = allPlans.findIndex(p => p.createdAt === newPlan.createdAt && p.name === newPlan.name);
-      if (index !== -1) {
-        allPlans[index] = newPlan;
-        localStorage.setItem(USER_PLANS_KEY, JSON.stringify(allPlans));
-      }
-
-      console.log('[USER PLANS] Plan saved to backend:', backendPlan.id);
+    // Note: Backend doesn't have a getById endpoint for plans yet
+    // So we fetch all and filter
+    const allPlans = await userPlanService.getAll() as UserPlanTemplate[];
+    return allPlans.find(plan => plan.id === planId) || null;
   } catch (error) {
-    console.error('[USER PLANS] Failed to save plan to backend:', error);
-    // Continue with localStorage version
-  }
-
-  return newPlan;
-}
-
-/**
- * Update an existing plan
- */
-export async function updateUserPlan(planId: string, updates: Partial<UserPlanPayload>): Promise<UserPlanTemplate | null> {
-  const data = localStorage.getItem(USER_PLANS_KEY);
-  const allPlans: UserPlanTemplate[] = data ? JSON.parse(data) : [];
-  const index = allPlans.findIndex(plan => plan.id === planId);
-
-  if (index === -1) {
+    console.error('[USER PLANS] Failed to get plan from backend:', error);
     return null;
   }
+}
 
-  const updatedPlan: UserPlanTemplate = {
-    ...allPlans[index],
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
+/**
+ * Create a new plan in backend
+ */
+export async function createUserPlan(payload: UserPlanPayload): Promise<UserPlanTemplate> {
+  try {
+    console.log('[USER PLANS] Creating plan on backend:', payload.name);
+    const backendPlan = await userPlanService.create({
+      name: payload.name,
+      trainingType: 'custom',
+      exercises: payload.exercises,
+      notes: '',
+      timesCompleted: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }) as UserPlanTemplate;
 
-  // Update localStorage first
-  allPlans[index] = updatedPlan;
-  localStorage.setItem(USER_PLANS_KEY, JSON.stringify(allPlans));
+    console.log('[USER PLANS] Plan created on backend:', backendPlan.id);
+    return backendPlan;
+  } catch (error) {
+    console.error('[USER PLANS] Failed to create plan on backend:', error);
+    throw error;
+  }
+}
 
-  // Update backend
+/**
+ * Update an existing plan in backend
+ */
+export async function updateUserPlan(planId: string, updates: Partial<UserPlanPayload>): Promise<UserPlanTemplate | null> {
   try {
     console.log('[USER PLANS] Updating plan on backend:', planId);
-    await userPlanService.update(planId, {
-      name: updatedPlan.name,
+    const updatedPlan = await userPlanService.update(planId, {
+      name: updates.name,
       trainingType: 'custom',
-      exercises: updatedPlan.exercises,
+      exercises: updates.exercises,
       notes: '',
-      timesCompleted: updatedPlan.timesCompleted,
-      updatedAt: updatedPlan.updatedAt,
-    });
+      updatedAt: new Date().toISOString(),
+    }) as UserPlanTemplate;
+
     console.log('[USER PLANS] Plan updated successfully on backend');
+    return updatedPlan;
   } catch (error) {
     console.error('[USER PLANS] Failed to update plan on backend:', error);
     throw error;
   }
-
-  return updatedPlan;
 }
 
 /**
- * Delete a plan
+ * Delete a plan from backend
  */
 export async function deleteUserPlan(planId: string): Promise<boolean> {
-  const data = localStorage.getItem(USER_PLANS_KEY);
-  const allPlans: UserPlanTemplate[] = data ? JSON.parse(data) : [];
-  const filtered = allPlans.filter(plan => plan.id !== planId);
-
-  if (filtered.length === allPlans.length) {
-    return false;
-  }
-
-  // Delete from localStorage first
-  localStorage.setItem(USER_PLANS_KEY, JSON.stringify(filtered));
-
-  // Mark plan as deleted to prevent re-sync
-  const deletedData = localStorage.getItem(DELETED_PLANS_KEY);
-  const deletedPlans = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
-  deletedPlans.add(planId);
-  localStorage.setItem(DELETED_PLANS_KEY, JSON.stringify(Array.from(deletedPlans)));
-  console.log('[USER PLANS] Marked plan as deleted:', planId);
-
-  // Try to delete from backend
   try {
     console.log('[USER PLANS] Deleting plan from backend:', planId);
     await userPlanService.delete(planId);
     console.log('[USER PLANS] Plan deleted from backend');
+    return true;
   } catch (error) {
-    console.warn('[USER PLANS] Failed to delete plan from backend:', error);
+    console.error('[USER PLANS] Failed to delete plan from backend:', error);
+    throw error;
   }
-
-  return true;
 }
 
 /**
  * Mark a plan as used (update lastUsed and increment timesCompleted)
  */
-export function markPlanAsUsed(planId: string): void {
-  const data = localStorage.getItem(USER_PLANS_KEY);
-  const allPlans: UserPlanTemplate[] = data ? JSON.parse(data) : [];
-  const index = allPlans.findIndex(plan => plan.id === planId);
+export async function markPlanAsUsed(planId: string): Promise<void> {
+  try {
+    // Fetch current plan
+    const plan = await getUserPlan(planId);
+    if (!plan) {
+      console.warn('[USER PLANS] Plan not found:', planId);
+      return;
+    }
 
-  if (index !== -1) {
-    allPlans[index].lastUsed = new Date().toISOString();
-    allPlans[index].timesCompleted += 1;
-    allPlans[index].updatedAt = new Date().toISOString();
-    localStorage.setItem(USER_PLANS_KEY, JSON.stringify(allPlans));
+    // Update with new usage data
+    await userPlanService.update(planId, {
+      lastUsed: new Date().toISOString(),
+      timesCompleted: (plan.timesCompleted || 0) + 1,
+      updatedAt: new Date().toISOString(),
+    });
+
+    console.log('[USER PLANS] Plan marked as used:', planId);
+  } catch (error) {
+    console.error('[USER PLANS] Failed to mark plan as used:', error);
+    // Don't throw - this is not critical
   }
 }
 
@@ -200,15 +134,28 @@ export function markPlanAsUsed(planId: string): void {
  * Duplicate a plan
  */
 export async function duplicateUserPlan(planId: string): Promise<UserPlanTemplate | null> {
-  const originalPlan = getUserPlan(planId);
-  if (!originalPlan) return null;
+  try {
+    const originalPlan = await getUserPlan(planId);
+    if (!originalPlan) return null;
 
-  const duplicatedPlan = await createUserPlan({
-    userId: originalPlan.userId,
-    name: `${originalPlan.name} (Copy)`,
-    exercises: originalPlan.exercises.map(ex => ({ ...ex, id: crypto.randomUUID() })),
-  });
+    const duplicatedPlan = await createUserPlan({
+      userId: originalPlan.userId,
+      name: `${originalPlan.name} (Copy)`,
+      exercises: originalPlan.exercises.map(ex => ({ ...ex, id: crypto.randomUUID() })),
+    });
 
-  return duplicatedPlan;
+    return duplicatedPlan;
+  } catch (error) {
+    console.error('[USER PLANS] Failed to duplicate plan:', error);
+    return null;
+  }
 }
 
+/**
+ * Clear legacy localStorage data
+ */
+export function clearLegacyStorage(): void {
+  console.log('[USER PLANS] Clearing legacy localStorage');
+  localStorage.removeItem('rhinos_user_plans');
+  localStorage.removeItem('rhinos_deleted_plans');
+}

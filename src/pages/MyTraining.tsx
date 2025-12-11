@@ -529,7 +529,7 @@ export const MyTraining: React.FC = () => {
         throw error;
       }
 
-      markPlanAsUsed(startingPlan.id);
+      await markPlanAsUsed(startingPlan.id);
       await refreshUserPlans();
       await refreshWorkoutHistory();
 
