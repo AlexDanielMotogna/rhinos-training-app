@@ -136,7 +136,7 @@ export function saveWorkoutEntry(userId: string, entry: WorkoutEntry): WorkoutLo
 /**
  * Update a workout log
  */
-export function updateWorkoutLog(logId: string, updates: Partial<Omit<WorkoutLog, 'id' | 'userId' | 'createdAt'>>): WorkoutLog | null {
+export async function updateWorkoutLog(logId: string, updates: Partial<Omit<WorkoutLog, 'id' | 'userId' | 'createdAt'>>): Promise<WorkoutLog | null> {
   const allLogs = getWorkoutLogs();
   const index = allLogs.findIndex(log => log.id === logId);
 
@@ -149,8 +149,24 @@ export function updateWorkoutLog(logId: string, updates: Partial<Omit<WorkoutLog
     ...updates,
   };
 
+  // Update localStorage immediately for optimistic UI
   allLogs[index] = updatedLog;
   localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
+
+  // Sync to backend if the workout has a MongoDB ID (not local-only)
+  const isMongoId = /^[0-9a-f]{24}$/i.test(logId);
+  if (isMongoId) {
+    try {
+      console.log('[WORKOUT LOGS] Updating workout in backend:', logId);
+      await workoutService.update(logId, updates);
+      console.log('[WORKOUT LOGS] Workout updated in backend');
+    } catch (error) {
+      console.warn('[WORKOUT LOGS] Failed to update workout in backend:', error);
+      // Don't revert localStorage update - user's local changes are preserved
+    }
+  } else {
+    console.log('[WORKOUT LOGS] Skipping backend update for local-only workout:', logId);
+  }
 
   return updatedLog;
 }
@@ -216,7 +232,7 @@ export async function hardDeleteWorkoutLog(logId: string): Promise<void> {
 /**
  * Restore a soft-deleted workout log
  */
-export function restoreWorkoutLog(logId: string): void {
+export async function restoreWorkoutLog(logId: string): Promise<void> {
   const allLogs = getWorkoutLogs();
   const index = allLogs.findIndex(log => log.id === logId);
 
@@ -227,6 +243,18 @@ export function restoreWorkoutLog(logId: string): void {
   delete allLogs[index].deletedAt;
 
   localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
+
+  // Sync to backend if the workout has a MongoDB ID
+  const isMongoId = /^[0-9a-f]{24}$/i.test(logId);
+  if (isMongoId) {
+    try {
+      console.log('[WORKOUT LOGS] Restoring workout in backend:', logId);
+      await workoutService.update(logId, { isDeleted: false, deletedAt: undefined });
+      console.log('[WORKOUT LOGS] Workout restored in backend');
+    } catch (error) {
+      console.warn('[WORKOUT LOGS] Failed to restore workout in backend:', error);
+    }
+  }
 }
 
 /**

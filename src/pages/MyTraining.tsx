@@ -364,8 +364,8 @@ export const MyTraining: React.FC = () => {
     setEditWorkout(workout);
   };
 
-  const handleSaveEditedWorkout = (workoutId: string, entries: WorkoutEntry[], notes?: string, date?: string) => {
-    updateWorkoutLog(workoutId, { entries, notes, date });
+  const handleSaveEditedWorkout = async (workoutId: string, entries: WorkoutEntry[], notes?: string, date?: string) => {
+    await updateWorkoutLog(workoutId, { entries, notes, date });
     refreshWorkoutHistory();
     setEditWorkout(null);
     toastService.saved('Workout');
