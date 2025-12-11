@@ -90,8 +90,8 @@ export const workoutTypeColors = {
  * Colors are calculated dynamically from the primary and secondary colors
  */
 export function createDynamicTheme(branding?: TeamBranding) {
-  const primaryColor = branding?.primaryColor || '#1976d2';
-  const secondaryColor = branding?.secondaryColor || '#ff9800';
+  const primaryColor = branding?.primaryColor || '#203731';
+  const secondaryColor = branding?.secondaryColor || '#FFB612';
 
   // Calculate light and dark variants dynamically
   // Use getColorDark for dark colors to avoid turning them black on hover
