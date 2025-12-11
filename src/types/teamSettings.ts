@@ -60,7 +60,7 @@ export const DEFAULT_TEAM_BRANDING: TeamBranding = {
   appName: 'TeamTrainer',
   logoUrl: '/teamtrainer-logo.svg',
   faviconUrl: '/teamtrainer-logo.svg',
-  primaryColor: '#1976d2',  // Default Blue
+  primaryColor: '#ffffffff',  // Default Blue
   secondaryColor: '#ff9800', // Default Orange
 };
 

@@ -137,9 +137,7 @@ export const MyTraining: React.FC = () => {
   const [trainingTypes, setTrainingTypes] = useState<any[]>([]);
   const [activeAssignments, setActiveAssignments] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(!!user); // Only loading if user exists
-  const [workoutHistory, setWorkoutHistory] = useState(() =>
-    user ? getWorkoutLogsByUser(user.id) : []
-  );
+  const [workoutHistory, setWorkoutHistory] = useState<WorkoutLog[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   // Load all data from backend in parallel
@@ -180,7 +178,7 @@ export const MyTraining: React.FC = () => {
         setTrainingTypes(types);
         setActiveAssignments(playerAssignments);
         setUserPlans(userPlans);
-        refreshWorkoutHistory();
+        await refreshWorkoutHistory();
       } catch (error) {
         console.error('Failed to load training data:', error);
         toastService.error('Failed to load training data');
@@ -238,9 +236,10 @@ export const MyTraining: React.FC = () => {
   //   }
   // }, [user?.position, activeTab]);
 
-  const refreshWorkoutHistory = () => {
+  const refreshWorkoutHistory = async () => {
     if (user) {
-      setWorkoutHistory(getWorkoutLogsByUser(user.id));
+      const logs = await getWorkoutLogsByUser(user.id);
+      setWorkoutHistory(logs);
     }
   };
 
@@ -257,10 +256,7 @@ export const MyTraining: React.FC = () => {
         setHistoryLoading(true);
         console.log('[MY TRAINING] Syncing workout history for tab change...');
         try {
-          if (navigator.onLine) {
-            await syncWorkoutLogsFromBackend(user.id);
-          }
-          refreshWorkoutHistory();
+          await refreshWorkoutHistory();
         } finally {
           setHistoryLoading(false);
         }
@@ -325,8 +321,8 @@ export const MyTraining: React.FC = () => {
 
   const handleSaveFreeSession = async (payload: WorkoutPayload) => {
     if (user) {
-      saveWorkoutLog(user.id, payload);
-      refreshWorkoutHistory();
+      await saveWorkoutLog(user.id, payload);
+      await refreshWorkoutHistory();
       setShowFreeSession(false);
 
       // Default duration for free sessions (60 minutes)
@@ -351,7 +347,7 @@ export const MyTraining: React.FC = () => {
       try {
         // Soft delete - hides from history but keeps for stats
         await deleteWorkoutLog(logId);
-        refreshWorkoutHistory();
+        await refreshWorkoutHistory();
         toastService.deleted('Workout');
         setSuccessMessage('');
       } catch (error) {
@@ -366,7 +362,7 @@ export const MyTraining: React.FC = () => {
 
   const handleSaveEditedWorkout = async (workoutId: string, entries: WorkoutEntry[], notes?: string, date?: string) => {
     await updateWorkoutLog(workoutId, { entries, notes, date });
-    refreshWorkoutHistory();
+    await refreshWorkoutHistory();
     setEditWorkout(null);
     toastService.saved('Workout');
     setSuccessMessage('');
@@ -535,7 +531,7 @@ export const MyTraining: React.FC = () => {
 
       markPlanAsUsed(startingPlan.id);
       await refreshUserPlans();
-      refreshWorkoutHistory();
+      await refreshWorkoutHistory();
 
       // Generate and save workout report
       const report = await generateWorkoutReport(
@@ -650,7 +646,7 @@ export const MyTraining: React.FC = () => {
         throw error;
       }
 
-      refreshWorkoutHistory();
+      await refreshWorkoutHistory();
 
       // Generate and save workout report
       const report = await generateWorkoutReport(
@@ -744,7 +740,7 @@ export const MyTraining: React.FC = () => {
         throw error;
       }
 
-      refreshWorkoutHistory();
+      await refreshWorkoutHistory();
 
       // Generate and save workout report
       const report = await generateWorkoutReport(

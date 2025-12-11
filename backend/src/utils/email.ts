@@ -45,7 +45,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #1976d2; color: white; padding: 20px; text-align: center; }
+        .header { background-color: #ffffffff; color: white; padding: 20px; text-align: center; }
         .content { padding: 30px; background-color: #f5f5f5; }
         .button { display: inline-block; padding: 12px 30px; background-color: #ff9800; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
         .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
@@ -93,7 +93,7 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #1976d2; color: white; padding: 20px; text-align: center; }
+        .header { background-color: #ffffffff; color: white; padding: 20px; text-align: center; }
         .content { padding: 30px; background-color: #f5f5f5; }
         .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
       </style>

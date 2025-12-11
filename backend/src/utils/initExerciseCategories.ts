@@ -44,7 +44,7 @@ export async function initializeExerciseCategories() {
       key: 'mobility',
       nameEN: 'Mobility',
       nameDE: 'Mobilität',
-      color: '#1976d2',
+      color: '#ffffffff',
       icon: 'SelfImprovement',
       active: true,
     },

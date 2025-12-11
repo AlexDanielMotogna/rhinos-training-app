@@ -310,7 +310,7 @@ export const DrillManager: React.FC = () => {
   };
 
   const getCategoryColor = (categoryKey: string): string => {
-    return categories.find(c => (c.key || c.name) === categoryKey)?.color || '#1976d2';
+    return categories.find(c => (c.key || c.name) === categoryKey)?.color || '#ffffffff';
   };
 
   const formatEquipmentList = (drillEquipment: DrillEquipment[]): string => {

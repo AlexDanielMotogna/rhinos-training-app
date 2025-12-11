@@ -291,7 +291,7 @@ model ExerciseCategory {
   key       String   @unique  // Unique key (e.g., "strength", "speed", "cod")
   nameEN    String   // English name
   nameDE    String   // German translation
-  color     String   @default("#1976d2")  // Color for UI display
+  color     String   @default("#ffffffff")  // Color for UI display
   icon      String?  // Optional icon name for UI
   active    Boolean  @default(true)  // Active/inactive flag
   createdBy String?  @db.ObjectId  // Coach who created it (null for system categories)
@@ -636,7 +636,7 @@ model DrillCategory {
   key       String   @unique  // Unique key (e.g., "athletik", "fundamentals", "offense")
   name      String   @unique  // Category name (e.g., "Offense", "Defense", "Team")
   nameDE    String?  // German translation
-  color     String   @default("#1976d2")  // Color for UI display
+  color     String   @default("#ffffffff")  // Color for UI display
   createdBy String   @db.ObjectId
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -25,7 +25,7 @@ export const DrillCategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<DrillCategory[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<DrillCategory | null>(null);
-  const [formData, setFormData] = useState({ name: '', nameDE: '', color: '#1976d2', key: '' });
+  const [formData, setFormData] = useState({ name: '', nameDE: '', color: '#ffffffff', key: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
@@ -50,7 +50,7 @@ export const DrillCategoryManager: React.FC = () => {
       });
     } else {
       setEditingCategory(null);
-      setFormData({ name: '', nameDE: '', color: '#1976d2', key: '' });
+      setFormData({ name: '', nameDE: '', color: '#ffffffff', key: '' });
     }
     setDialogOpen(true);
   };
@@ -58,7 +58,7 @@ export const DrillCategoryManager: React.FC = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingCategory(null);
-    setFormData({ name: '', nameDE: '', color: '#1976d2', key: '' });
+    setFormData({ name: '', nameDE: '', color: '#ffffffff', key: '' });
   };
 
   const handleSave = async () => {

@@ -337,7 +337,7 @@ export const BrandingManager: React.FC<BrandingManagerProps> = ({
                         fullWidth
                         label="Primary Color"
                         type="color"
-                        value={branding.primaryColor || '#1976d2'}
+                        value={branding.primaryColor || '#ffffffff'}
                         onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
                         helperText="Main theme color"
                         InputLabelProps={{ shrink: true }}

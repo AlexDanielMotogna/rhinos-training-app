@@ -18,7 +18,7 @@ export const Tests: React.FC = () => {
       description: t('tests.strength.description'),
       icon: <FitnessCenterIcon sx={{ fontSize: 60 }} />,
       path: '/tests/strength',
-      color: '#1976d2',
+      color: '#ffffffff',
     },
     {
       key: 'speed',

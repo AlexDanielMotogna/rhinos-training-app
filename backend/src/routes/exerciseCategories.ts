@@ -11,7 +11,7 @@ const createCategorySchema = z.object({
   key: z.string().min(1, 'Category key is required').regex(/^[a-z0-9_]+$/, 'Key must be lowercase alphanumeric with underscores'),
   nameEN: z.string().min(1, 'English name is required'),
   nameDE: z.string().min(1, 'German name is required'),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').default('#1976d2'),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').default('#ffffffff'),
   icon: z.string().optional(),
   active: z.boolean().default(true),
 });

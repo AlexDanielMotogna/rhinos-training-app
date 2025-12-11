@@ -9,7 +9,7 @@ const router = express.Router();
 const createCategorySchema = z.object({
   name: z.string().min(1, 'Category name is required'),
   nameDE: z.string().optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').default('#1976d2'),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format').default('#ffffffff'),
   key: z.string().min(1, 'Category key is required'), // Unique identifier (e.g., "offense", "defense")
 });
 

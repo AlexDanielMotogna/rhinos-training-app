@@ -17,7 +17,7 @@ router.get('/branding', async (req, res) => {
       return res.json({
         teamName: 'TeamTrainer',
         appName: 'TeamTrainer',
-        primaryColor: '#1976d2',
+        primaryColor: '#ffffffff',
         secondaryColor: '#ff9800',
         logoUrl: '/teamtrainer-logo.svg',
         faviconUrl: '/teamtrainer-logo.svg',
@@ -65,7 +65,7 @@ router.get('/', authenticate, async (req, res) => {
         data: {
           teamName: 'TeamTrainer',
           appName: 'TeamTrainer',
-          primaryColor: '#1976d2',
+          primaryColor: '##ffffffff',
           secondaryColor: '#ff9800',
           logoUrl: '/teamtrainer-logo.svg',
           faviconUrl: '/teamtrainer-logo.svg',
@@ -104,7 +104,7 @@ router.put('/', authenticate, async (req, res) => {
         data: {
           teamName: validatedData.teamName || 'TeamTrainer',
           appName: validatedData.appName || 'TeamTrainer',
-          primaryColor: validatedData.primaryColor || '#1976d2',
+          primaryColor: validatedData.primaryColor || '##ffffffff',
           secondaryColor: validatedData.secondaryColor || '#ff9800',
           logoUrl: validatedData.logoUrl || '/teamtrainer-logo.svg',
           faviconUrl: validatedData.faviconUrl || '/teamtrainer-logo.svg',
@@ -162,7 +162,7 @@ router.post('/logo', authenticate, upload.single('logo'), async (req, res) => {
         data: {
           teamName: 'TeamTrainer',
           appName: 'TeamTrainer',
-          primaryColor: '#1976d2',
+          primaryColor: '#ffffffff',
           secondaryColor: '#ff9800',
           logoUrl: result.url,
           updatedBy: user.userId,
@@ -211,7 +211,7 @@ router.post('/favicon', authenticate, upload.single('favicon'), async (req, res)
         data: {
           teamName: 'TeamTrainer',
           appName: 'TeamTrainer',
-          primaryColor: '#1976d2',
+          primaryColor: '#ffffffff',
           secondaryColor: '#ff9800',
           faviconUrl: result.url,
           updatedBy: user.userId,

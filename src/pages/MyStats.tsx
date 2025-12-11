@@ -52,9 +52,15 @@ export const MyStats: React.FC = () => {
   const [selectedSessions, setSelectedSessions] = useState<DayData['sessions']>([]);
 
   // Get all workout logs for the user
-  const allWorkoutLogs = useMemo(() => {
-    if (!user) return [];
-    return getWorkoutLogsByUser(user.id, true); // includeDeleted = true
+  const [allWorkoutLogs, setAllWorkoutLogs] = useState<WorkoutLog[]>([]);
+
+  useEffect(() => {
+    const loadWorkoutLogs = async () => {
+      if (!user) return;
+      const logs = await getWorkoutLogsByUser(user.id, true); // includeDeleted = true
+      setAllWorkoutLogs(logs);
+    };
+    loadWorkoutLogs();
   }, [user]);
 
   // Get all training sessions (team + private)

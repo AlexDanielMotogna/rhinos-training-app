@@ -1,9 +1,6 @@
 import type { WorkoutEntry, WorkoutPayload } from '../types/workout';
 import { workoutService } from './api';
 
-const WORKOUTS_KEY = 'rhinos_workouts';
-const DELETED_LOGS_KEY = 'rhinos_deleted_logs'; // Track logs deleted by user
-
 export interface WorkoutLog {
   id: string;
   userId: string;
@@ -28,100 +25,103 @@ export interface WorkoutLog {
 }
 
 /**
- * Get all workout logs
+ * Get all workout logs from backend
  */
-export function getWorkoutLogs(): WorkoutLog[] {
-  const stored = localStorage.getItem(WORKOUTS_KEY);
-  if (!stored) return [];
-
-  const logs = JSON.parse(stored);
-
-  // Deduplicate by ID to prevent duplicate entries in UI
-  const uniqueLogs = Array.from(
-    new Map(logs.map((log: WorkoutLog) => [log.id, log])).values()
-  );
-
-  // If duplicates were found, save the cleaned data back
-  if (uniqueLogs.length < logs.length) {
-    console.log(`🧹 Found and removed ${logs.length - uniqueLogs.length} duplicate workout logs`);
-    localStorage.setItem(WORKOUTS_KEY, JSON.stringify(uniqueLogs));
+export async function getWorkoutLogs(): Promise<WorkoutLog[]> {
+  try {
+    console.log('[WORKOUT LOGS] Fetching all workouts from backend');
+    const workouts = await workoutService.getAll() as WorkoutLog[];
+    return workouts || [];
+  } catch (error) {
+    console.error('[WORKOUT LOGS] Failed to fetch workouts:', error);
+    return [];
   }
-
-  return uniqueLogs as WorkoutLog[];
 }
 
 /**
- * Clear all workout logs (for development/testing)
- */
-export function clearAllWorkoutLogs(): void {
-  localStorage.removeItem(WORKOUTS_KEY);
-}
-
-/**
- * Get workout logs for a specific user
+ * Get workout logs for a specific user from backend
  * @param includeDeleted - If true, includes soft-deleted workouts (for stats). Default: false (for history UI)
  */
-export function getWorkoutLogsByUser(userId: string, includeDeleted: boolean = false): WorkoutLog[] {
-  const allLogs = getWorkoutLogs();
-  const userLogs = allLogs.filter(log => log.userId === userId);
+export async function getWorkoutLogsByUser(userId: string, includeDeleted: boolean = false): Promise<WorkoutLog[]> {
+  try {
+    console.log('[WORKOUT LOGS] Fetching workouts for user:', userId);
+    const workouts = await workoutService.getAll({ userId }) as WorkoutLog[];
 
-  if (includeDeleted) {
-    return userLogs; // Return all logs including deleted ones
+    if (includeDeleted) {
+      return workouts || [];
+    }
+
+    // Filter out deleted workouts for UI
+    return (workouts || []).filter(log => !log.isDeleted);
+  } catch (error) {
+    console.error('[WORKOUT LOGS] Failed to fetch user workouts:', error);
+    return [];
   }
-
-  return userLogs.filter(log => !log.isDeleted); // Only non-deleted logs for UI
 }
 
 /**
  * Get workout logs for a user within a date range
  */
-export function getWorkoutLogsByDateRange(
+export async function getWorkoutLogsByDateRange(
   userId: string,
   startDate: string,
   endDate: string
-): WorkoutLog[] {
-  const userLogs = getWorkoutLogsByUser(userId);
-  return userLogs.filter(log => log.date >= startDate && log.date <= endDate);
+): Promise<WorkoutLog[]> {
+  try {
+    console.log('[WORKOUT LOGS] Fetching workouts for date range:', startDate, 'to', endDate);
+    const workouts = await workoutService.getAll({
+      userId,
+      startDate,
+      endDate
+    }) as WorkoutLog[];
+    return (workouts || []).filter(log => !log.isDeleted);
+  } catch (error) {
+    console.error('[WORKOUT LOGS] Failed to fetch workouts by date range:', error);
+    return [];
+  }
 }
 
 /**
  * Get the last workout log for a specific exercise
  */
-export function getLastWorkoutForExercise(userId: string, exerciseId: string): WorkoutLog | null {
-  const userLogs = getWorkoutLogsByUser(userId);
-  const logsWithExercise = userLogs
-    .filter(log => log.entries.some(entry => entry.exerciseId === exerciseId))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+export async function getLastWorkoutForExercise(userId: string, exerciseId: string): Promise<WorkoutLog | null> {
+  try {
+    const userLogs = await getWorkoutLogsByUser(userId);
+    const logsWithExercise = userLogs
+      .filter(log => log.entries.some(entry => entry.exerciseId === exerciseId))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  return logsWithExercise[0] || null;
+    return logsWithExercise[0] || null;
+  } catch (error) {
+    console.error('[WORKOUT LOGS] Failed to get last workout for exercise:', error);
+    return null;
+  }
 }
 
 /**
- * Save a workout log
+ * Save a workout log to backend
  */
-export function saveWorkoutLog(userId: string, payload: WorkoutPayload): WorkoutLog {
-  const allLogs = getWorkoutLogs();
+export async function saveWorkoutLog(userId: string, payload: WorkoutPayload): Promise<WorkoutLog> {
+  try {
+    console.log('[WORKOUT LOGS] Saving workout to backend');
+    const newLog = await workoutService.create({
+      ...payload,
+      userId,
+      date: payload.dateISO,
+    }) as WorkoutLog;
 
-  const newLog: WorkoutLog = {
-    id: `workout-${Date.now()}`,
-    userId,
-    date: payload.dateISO,
-    entries: payload.entries,
-    notes: payload.notes,
-    source: payload.source,
-    createdAt: new Date().toISOString(),
-  };
-
-  allLogs.push(newLog);
-  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
-
-  return newLog;
+    console.log('[WORKOUT LOGS] Workout saved:', newLog.id);
+    return newLog;
+  } catch (error) {
+    console.error('[WORKOUT LOGS] Failed to save workout:', error);
+    throw error;
+  }
 }
 
 /**
  * Save a single workout entry (for plan exercises)
  */
-export function saveWorkoutEntry(userId: string, entry: WorkoutEntry): WorkoutLog {
+export async function saveWorkoutEntry(userId: string, entry: WorkoutEntry): Promise<WorkoutLog> {
   const today = new Date().toISOString().split('T')[0];
 
   const payload: WorkoutPayload = {
@@ -134,72 +134,31 @@ export function saveWorkoutEntry(userId: string, entry: WorkoutEntry): WorkoutLo
 }
 
 /**
- * Update a workout log
+ * Update a workout log in backend
  */
 export async function updateWorkoutLog(logId: string, updates: Partial<Omit<WorkoutLog, 'id' | 'userId' | 'createdAt'>>): Promise<WorkoutLog | null> {
-  const allLogs = getWorkoutLogs();
-  const index = allLogs.findIndex(log => log.id === logId);
-
-  if (index === -1) {
-    return null;
+  try {
+    console.log('[WORKOUT LOGS] Updating workout in backend:', logId);
+    const updatedLog = await workoutService.update(logId, updates) as WorkoutLog;
+    console.log('[WORKOUT LOGS] Workout updated successfully');
+    return updatedLog;
+  } catch (error) {
+    console.error('[WORKOUT LOGS] Failed to update workout:', error);
+    throw error;
   }
-
-  const updatedLog = {
-    ...allLogs[index],
-    ...updates,
-  };
-
-  // Update localStorage immediately for optimistic UI
-  allLogs[index] = updatedLog;
-  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
-
-  // Sync to backend if the workout has a MongoDB ID (not local-only)
-  const isMongoId = /^[0-9a-f]{24}$/i.test(logId);
-  if (isMongoId) {
-    try {
-      console.log('[WORKOUT LOGS] Updating workout in backend:', logId);
-      await workoutService.update(logId, updates);
-      console.log('[WORKOUT LOGS] Workout updated in backend');
-    } catch (error) {
-      console.warn('[WORKOUT LOGS] Failed to update workout in backend:', error);
-      // Don't revert localStorage update - user's local changes are preserved
-    }
-  } else {
-    console.log('[WORKOUT LOGS] Skipping backend update for local-only workout:', logId);
-  }
-
-  return updatedLog;
 }
 
 /**
  * Soft delete a workout log (marks as deleted but keeps in database for stats)
  */
 export async function deleteWorkoutLog(logId: string): Promise<void> {
-  const allLogs = getWorkoutLogs();
-  const index = allLogs.findIndex(log => log.id === logId);
-
-  if (index === -1) return;
-
-  // Mark as deleted instead of removing
-  allLogs[index].isDeleted = true;
-  allLogs[index].deletedAt = new Date().toISOString();
-
-  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
-
-  // Mark log as deleted to prevent re-sync
-  const deletedData = localStorage.getItem(DELETED_LOGS_KEY);
-  const deletedLogs = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
-  deletedLogs.add(logId);
-  localStorage.setItem(DELETED_LOGS_KEY, JSON.stringify(Array.from(deletedLogs)));
-  console.log('[WORKOUT LOGS] Marked log as deleted:', logId);
-
-  // Try to delete from backend
   try {
-    console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
+    console.log('[WORKOUT LOGS] Deleting workout from backend:', logId);
     await workoutService.delete(logId);
-    console.log('[WORKOUT LOGS] Log deleted from backend');
+    console.log('[WORKOUT LOGS] Workout deleted successfully');
   } catch (error) {
-    console.warn('[WORKOUT LOGS] Failed to delete log from backend:', error);
+    console.error('[WORKOUT LOGS] Failed to delete workout:', error);
+    throw error;
   }
 }
 
@@ -208,24 +167,13 @@ export async function deleteWorkoutLog(logId: string): Promise<void> {
  * This should only be used by admins or for data cleanup
  */
 export async function hardDeleteWorkoutLog(logId: string): Promise<void> {
-  const allLogs = getWorkoutLogs();
-  const filtered = allLogs.filter(log => log.id !== logId);
-  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(filtered));
-
-  // Mark log as deleted to prevent re-sync
-  const deletedData = localStorage.getItem(DELETED_LOGS_KEY);
-  const deletedLogs = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
-  deletedLogs.add(logId);
-  localStorage.setItem(DELETED_LOGS_KEY, JSON.stringify(Array.from(deletedLogs)));
-  console.log('[WORKOUT LOGS] Marked log as hard deleted:', logId);
-
-  // Try to delete from backend
   try {
-    console.log('[WORKOUT LOGS] Deleting log from backend:', logId);
+    console.log('[WORKOUT LOGS] Hard deleting workout from backend:', logId);
     await workoutService.delete(logId);
-    console.log('[WORKOUT LOGS] Log deleted from backend');
+    console.log('[WORKOUT LOGS] Workout hard deleted successfully');
   } catch (error) {
-    console.warn('[WORKOUT LOGS] Failed to delete log from backend:', error);
+    console.error('[WORKOUT LOGS] Failed to hard delete workout:', error);
+    throw error;
   }
 }
 
@@ -233,157 +181,71 @@ export async function hardDeleteWorkoutLog(logId: string): Promise<void> {
  * Restore a soft-deleted workout log
  */
 export async function restoreWorkoutLog(logId: string): Promise<void> {
-  const allLogs = getWorkoutLogs();
-  const index = allLogs.findIndex(log => log.id === logId);
-
-  if (index === -1) return;
-
-  // Remove delete flags
-  delete allLogs[index].isDeleted;
-  delete allLogs[index].deletedAt;
-
-  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(allLogs));
-
-  // Sync to backend if the workout has a MongoDB ID
-  const isMongoId = /^[0-9a-f]{24}$/i.test(logId);
-  if (isMongoId) {
-    try {
-      console.log('[WORKOUT LOGS] Restoring workout in backend:', logId);
-      await workoutService.update(logId, { isDeleted: false, deletedAt: undefined });
-      console.log('[WORKOUT LOGS] Workout restored in backend');
-    } catch (error) {
-      console.warn('[WORKOUT LOGS] Failed to restore workout in backend:', error);
-    }
-  }
-}
-
-/**
- * Sync workout logs from backend to localStorage
- */
-export async function syncWorkoutLogsFromBackend(userId: string): Promise<void> {
   try {
-    console.log('🔄 Syncing workout logs from backend...');
-    const backendLogs = await workoutService.getAll({ userId }) as WorkoutLog[];
-
-    if (!backendLogs || backendLogs.length === 0) {
-      console.log('ℹ️ No workout logs found in backend');
-      return;
-    }
-
-    // Get existing local logs
-    const localLogs = getWorkoutLogs();
-
-    // Get list of deleted logs to filter them out
-    const deletedData = localStorage.getItem(DELETED_LOGS_KEY);
-    const deletedLogs = new Set<string>(deletedData ? JSON.parse(deletedData) : []);
-
-    // Create a map of existing local logs by ID for quick lookup
-    const localLogsMap = new Map(localLogs.map(log => [log.id, log]));
-
-    // Merge backend logs with local logs
-    const mergedLogs: WorkoutLog[] = [];
-    let addedCount = 0;
-    let updatedCount = 0;
-
-    for (const backendLog of backendLogs) {
-      // Skip logs that were marked as deleted by user
-      if (deletedLogs.has(backendLog.id)) {
-        console.log('[WORKOUT LOGS] Skipping log marked as deleted:', backendLog.id);
-        continue;
-      }
-
-      const existingLog = localLogsMap.get(backendLog.id);
-
-      if (!existingLog) {
-        // New log from backend - add it
-        console.log('[WORKOUT LOGS] Adding new log:', backendLog.id);
-        mergedLogs.push(backendLog);
-        addedCount++;
-      } else {
-        // Log exists - check if backend version is newer
-        const backendDate = new Date(backendLog.createdAt || 0);
-        const localDate = new Date(existingLog.createdAt || 0);
-
-        if (backendDate > localDate) {
-          // Backend version is newer - update it
-          console.log('[WORKOUT LOGS] Updating log:', backendLog.id);
-          mergedLogs.push(backendLog);
-          updatedCount++;
-        } else {
-          // Keep existing local version
-          mergedLogs.push(existingLog);
-        }
-      }
-    }
-
-    // Add local-only logs (not yet synced to backend)
-    for (const localLog of localLogs) {
-      if (!backendLogs.find(l => l.id === localLog.id)) {
-        // Skip logs that were marked as deleted
-        if (deletedLogs.has(localLog.id)) {
-          console.log('[WORKOUT LOGS] Log was deleted by user, removing from local cache:', localLog.id);
-          continue;
-        }
-
-        // Check if this log has a MongoDB ID (24 hex chars)
-        const isMongoId = /^[0-9a-f]{24}$/i.test(localLog.id);
-
-        if (isMongoId) {
-          // This log was deleted from backend, don't re-add it
-          console.log('[WORKOUT LOGS] Log was deleted from backend, removing from local cache:', localLog.id);
-          continue;
-        }
-
-        console.log('[WORKOUT LOGS] Found local-only log (not yet synced):', localLog.id);
-        mergedLogs.push(localLog);
-      }
-    }
-
-    // Deduplicate logs by ID (safety check to prevent duplicates)
-    const uniqueLogs = Array.from(
-      new Map(mergedLogs.map(log => [log.id, log])).values()
-    );
-
-    // Save merged and deduplicated logs to localStorage
-    localStorage.setItem(WORKOUTS_KEY, JSON.stringify(uniqueLogs));
-
-    const duplicatesRemoved = mergedLogs.length - uniqueLogs.length;
-    if (duplicatesRemoved > 0) {
-      console.log(`🧹 Removed ${duplicatesRemoved} duplicate workout logs`);
-    }
-    console.log(`✅ Synced workout logs: ${addedCount} added, ${updatedCount} updated`);
+    console.log('[WORKOUT LOGS] Restoring workout in backend:', logId);
+    await workoutService.update(logId, { isDeleted: false, deletedAt: undefined });
+    console.log('[WORKOUT LOGS] Workout restored successfully');
   } catch (error) {
-    console.error('❌ Failed to sync workout logs from backend:', error);
+    console.error('[WORKOUT LOGS] Failed to restore workout:', error);
+    throw error;
   }
 }
 
 /**
  * Get workout statistics for a user
  */
-export function getWorkoutStats(userId: string) {
-  const userLogs = getWorkoutLogsByUser(userId);
+export async function getWorkoutStats(userId: string) {
+  try {
+    const userLogs = await getWorkoutLogsByUser(userId);
 
-  const totalWorkouts = userLogs.length;
-  const totalExercises = userLogs.reduce((sum, log) => sum + log.entries.length, 0);
+    const totalWorkouts = userLogs.length;
+    const totalExercises = userLogs.reduce((sum, log) => sum + log.entries.length, 0);
 
-  // Get workouts in the last 7 days
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const recentWorkouts = userLogs.filter(
-    log => new Date(log.date) >= sevenDaysAgo
-  ).length;
+    // Get workouts in the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentWorkouts = userLogs.filter(
+      log => new Date(log.date) >= sevenDaysAgo
+    ).length;
 
-  // Get workouts in the last 30 days
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const monthlyWorkouts = userLogs.filter(
-    log => new Date(log.date) >= thirtyDaysAgo
-  ).length;
+    // Get workouts in the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const monthlyWorkouts = userLogs.filter(
+      log => new Date(log.date) >= thirtyDaysAgo
+    ).length;
 
-  return {
-    totalWorkouts,
-    totalExercises,
-    workoutsLast7Days: recentWorkouts,
-    workoutsLast30Days: monthlyWorkouts,
-  };
+    return {
+      totalWorkouts,
+      totalExercises,
+      workoutsLast7Days: recentWorkouts,
+      workoutsLast30Days: monthlyWorkouts,
+    };
+  } catch (error) {
+    console.error('[WORKOUT LOGS] Failed to get workout stats:', error);
+    return {
+      totalWorkouts: 0,
+      totalExercises: 0,
+      workoutsLast7Days: 0,
+      workoutsLast30Days: 0,
+    };
+  }
+}
+
+/**
+ * Clear all workout logs from localStorage (legacy - for migration)
+ * This is kept for backwards compatibility but no longer used
+ */
+export function clearAllWorkoutLogs(): void {
+  console.log('[WORKOUT LOGS] Clearing legacy localStorage (no longer used)');
+  localStorage.removeItem('rhinos_workouts');
+  localStorage.removeItem('rhinos_deleted_logs');
+}
+
+/**
+ * Sync workout logs from backend (legacy compatibility - now this is the default)
+ * All data is now read directly from backend, so this is a no-op
+ */
+export async function syncWorkoutLogsFromBackend(userId: string): Promise<void> {
+  console.log('[WORKOUT LOGS] All workout data is now read directly from backend');
 }

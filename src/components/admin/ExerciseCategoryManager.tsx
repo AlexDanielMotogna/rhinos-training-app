@@ -33,7 +33,7 @@ export const ExerciseCategoryManager: React.FC = () => {
     key: '',
     nameEN: '',
     nameDE: '',
-    color: '#1976d2',
+    color: '#ffffffff',
     icon: '',
     active: true,
   });
@@ -73,7 +73,7 @@ export const ExerciseCategoryManager: React.FC = () => {
         key: '',
         nameEN: '',
         nameDE: '',
-        color: '#1976d2',
+        color: '#ffffffff',
         icon: '',
         active: true,
       });

@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'TeamTrainer',
         short_name: 'TeamTrainer',
         description: 'Team Training App - Works Offline',
-        theme_color: '#1976d2',
-        background_color: '#1976d2',
+        theme_color: '#ffffffff',
+        background_color: '#ffffffff',
         display: 'standalone',
         icons: [
           {
@@ -37,11 +37,11 @@ export default defineConfig({
             urlPattern: ({ url }) => {
               // Match both localhost and production API URLs
               const isApiUrl = url.pathname.startsWith('/api/') &&
-                              !url.pathname.startsWith('/api/sse/');
+                !url.pathname.startsWith('/api/sse/');
 
               // Check if it's localhost or Railway domain
               const isValidOrigin = url.origin === 'http://localhost:5000' ||
-                                   url.hostname.includes('railway.app');
+                url.hostname.includes('railway.app');
 
               return isApiUrl && isValidOrigin;
             },
