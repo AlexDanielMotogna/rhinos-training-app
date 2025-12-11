@@ -179,15 +179,28 @@ export const Auth: React.FC = () => {
               />
             ) : (
               <Box
-                component="img"
-                src="/teamtrainer-logo.svg"
-                alt="TeamTrainer Logo"
                 sx={{
                   width: 120,
                   height: 120,
-                  objectFit: 'contain',
+                  borderRadius: '50%',
+                  backgroundColor: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
                 }}
-              />
+              >
+                <Box
+                  component="img"
+                  src="/USR_Allgemein_Quard_Transparent.png"
+                  alt="Rhinos Logo"
+                  sx={{
+                    width: '80%',
+                    height: '80%',
+                    objectFit: 'contain',
+                  }}
+                />
+              </Box>
             )}
           </Box>
 
