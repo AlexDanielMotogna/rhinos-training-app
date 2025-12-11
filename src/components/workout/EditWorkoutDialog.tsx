@@ -17,7 +17,7 @@ interface EditWorkoutDialogProps {
   open: boolean;
   workout: WorkoutLog | null;
   onClose: () => void;
-  onSave: (workoutId: string, entries: WorkoutEntry[], notes?: string) => void;
+  onSave: (workoutId: string, entries: WorkoutEntry[], notes?: string, date?: string) => void;
 }
 
 export const EditWorkoutDialog: React.FC<EditWorkoutDialogProps> = ({
@@ -29,12 +29,14 @@ export const EditWorkoutDialog: React.FC<EditWorkoutDialogProps> = ({
   const { t } = useI18n();
   const [editedEntries, setEditedEntries] = useState<WorkoutEntry[]>([]);
   const [editedNotes, setEditedNotes] = useState('');
+  const [editedDate, setEditedDate] = useState('');
   const [currentEditIndex, setCurrentEditIndex] = useState<number | null>(null);
 
   React.useEffect(() => {
     if (workout) {
       setEditedEntries(workout.entries);
       setEditedNotes(workout.notes || '');
+      setEditedDate(workout.date);
       setCurrentEditIndex(null);
     }
   }, [workout]);
@@ -51,7 +53,7 @@ export const EditWorkoutDialog: React.FC<EditWorkoutDialogProps> = ({
   };
 
   const handleSave = () => {
-    onSave(workout.id, editedEntries, editedNotes || undefined);
+    onSave(workout.id, editedEntries, editedNotes || undefined, editedDate);
     onClose();
   };
 
@@ -64,6 +66,16 @@ export const EditWorkoutDialog: React.FC<EditWorkoutDialogProps> = ({
 
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            {/* Workout date selector */}
+            <TextField
+              label={t('workout.workoutDate')}
+              type="date"
+              value={editedDate}
+              onChange={(e) => setEditedDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
+
             {/* List of exercises */}
             <Box>
               {editedEntries.map((entry, index) => (
