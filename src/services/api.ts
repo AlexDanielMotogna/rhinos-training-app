@@ -111,18 +111,7 @@ export const apiCall = async <T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Add CSRF token for state-changing requests (POST, PUT, PATCH, DELETE)
-  const method = options.method?.toUpperCase() || 'GET';
-  const needsCsrf = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-
-  if (needsCsrf && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/signup')) {
-    try {
-      const token = await getCsrfToken();
-      headers['X-CSRF-Token'] = token;
-    } catch (error) {
-      logger.warn('Proceeding without CSRF token', { endpoint });
-    }
-  }
+  // CSRF protection disabled - using Bearer tokens provides sufficient protection
 
   logger.apiRequest(options.method || 'GET', endpoint);
 

@@ -60,6 +60,7 @@ export async function saveTestResult(
 
   try {
     console.log('[TEST RESULTS] Syncing test result to backend...', { testType, score, tier });
+    console.log('[TEST RESULTS] Auth token exists?', localStorage.getItem('authToken') ? 'YES' : 'NO');
 
     const dateISO = testData.dateISO || new Date().toISOString().split('T')[0];
 
@@ -71,10 +72,12 @@ export async function saveTestResult(
       tier,
     });
 
-    console.log('[TEST RESULTS] Test result synced to backend successfully');
+    console.log('[TEST RESULTS] ✅ Test result synced to backend successfully');
   } catch (error) {
-    console.warn('[TEST RESULTS] Failed to sync to backend:', error);
-    throw error;
+    console.error('[TEST RESULTS] ❌ Failed to sync to backend:', error);
+    console.error('[TEST RESULTS] Error details:', error instanceof Error ? error.message : error);
+    // Don't throw - test was saved locally, backend sync can fail
+    console.warn('[TEST RESULTS] Test saved locally but not synced to backend');
   }
 }
 

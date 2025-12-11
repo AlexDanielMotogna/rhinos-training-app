@@ -83,21 +83,9 @@ app.get('/health', (req, res) => {
 // CSRF token endpoint (must be before CSRF protection middleware)
 app.use('/api', csrfRoutes);
 
-// Apply CSRF protection to all routes except GET, HEAD, OPTIONS
-// Note: Auth routes (login/register) are excluded as they don't have cookies yet
-app.use((req, res, next) => {
-  // Skip CSRF for auth endpoints since user doesn't have cookie yet
-  if (req.path.startsWith('/api/auth/login') ||
-      req.path.startsWith('/api/auth/register') ||
-      req.path.startsWith('/api/auth/reset-password') ||
-      req.path.startsWith('/api/auth/request-reset') ||
-      req.path.startsWith('/api/csrf-token') ||
-      req.path.startsWith('/api/sse') ||
-      req.path.startsWith('/api/team-settings/branding')) {
-    return next();
-  }
-  doubleCsrfProtection(req, res, next);
-});
+// CSRF protection DISABLED - using Bearer tokens instead
+// Bearer tokens in Authorization header already provide CSRF protection
+// since they are not automatically sent by the browser like cookies
 
 // Routes
 app.use('/api/auth', authRoutes);

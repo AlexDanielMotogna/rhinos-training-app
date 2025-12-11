@@ -110,15 +110,26 @@ export const Profile: React.FC = () => {
           setKpis(kpisData);
         } catch (error) {
           console.warn('[PROFILE] Failed to load KPIs:', error);
-          // Set empty KPIs to prevent infinite loading
+          // Set empty KPIs matching KPISnapshot interface to prevent infinite loading
           setKpis({
-            currentPoints: 0,
-            weeklyChange: 0,
-            monthlyChange: 0,
-            rank: 0,
-            totalPlayers: 0,
-            streak: 0,
-            compliancePercent: 0,
+            currentWeek: 1,
+            totalWeeks: 52,
+            trainingCompliance: 0,
+            coachPlansCompleted: 0,
+            coachPlansAssigned: 0,
+            teamSessionsAttended: 0,
+            teamSessionsTotal: 0,
+            freeWorkouts: 0,
+            freeWorkoutsMinutes: 0,
+            totalVolume: 0,
+            strengthScore: { score: 0, change: null, lastTestDate: null },
+            speedScore: { score: 0, change: null, lastTestDate: null },
+            powerScore: { score: 0, change: null, lastTestDate: null },
+            agilityScore: { score: 0, change: null, lastTestDate: null },
+            totalTeamSessionsAttended: 0,
+            totalTeamSessionsScheduled: 0,
+            attendanceRate: 0,
+            attendanceStatus: 'no_recent_session' as const,
           });
         }
       }
