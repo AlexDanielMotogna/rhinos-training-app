@@ -31,7 +31,9 @@ import matchRoutes from './routes/matches.js';
 import divisionRoutes from './routes/divisions.js';
 import teamRoutes from './routes/teams.js';
 import sseRoutes from './routes/sse.js';
+import csrfRoutes from './routes/csrf.js';
 import { startCronJobs } from './utils/cronJobs.js';
+import { doubleCsrfProtection } from './middleware/csrf.js';
 
 // Load environment variables
 dotenv.config();
@@ -64,7 +66,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cache-Control'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cache-Control', 'X-CSRF-Token'],
   exposedHeaders: ['Content-Length', 'Content-Type'],
   preflightContinue: false,
   optionsSuccessStatus: 204
@@ -76,6 +78,25 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// CSRF token endpoint (must be before CSRF protection middleware)
+app.use('/api', csrfRoutes);
+
+// Apply CSRF protection to all routes except GET, HEAD, OPTIONS
+// Note: Auth routes (login/register) are excluded as they don't have cookies yet
+app.use((req, res, next) => {
+  // Skip CSRF for auth endpoints since user doesn't have cookie yet
+  if (req.path.startsWith('/api/auth/login') ||
+      req.path.startsWith('/api/auth/register') ||
+      req.path.startsWith('/api/auth/reset-password') ||
+      req.path.startsWith('/api/auth/request-reset') ||
+      req.path.startsWith('/api/csrf-token') ||
+      req.path.startsWith('/api/sse') ||
+      req.path.startsWith('/api/team-settings/branding')) {
+    return next();
+  }
+  doubleCsrfProtection(req, res, next);
 });
 
 // Routes

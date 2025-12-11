@@ -55,7 +55,32 @@ export const clearAuthData = (): void => {
   localStorage.removeItem('currentUser');
 };
 
-// API call helper with credentials (cookies)
+// CSRF token management
+let csrfToken: string | null = null;
+
+// Get CSRF token from backend
+const getCsrfToken = async (): Promise<string> => {
+  if (csrfToken) return csrfToken;
+
+  try {
+    const response = await fetch(`${API_URL}/csrf-token`, {
+      credentials: 'include',
+    });
+    const data = await response.json();
+    csrfToken = data.csrfToken;
+    return csrfToken!;
+  } catch (error) {
+    logger.error('Failed to get CSRF token', error);
+    throw new Error('CSRF token unavailable');
+  }
+};
+
+// Clear CSRF token (call on logout)
+export const clearCsrfToken = (): void => {
+  csrfToken = null;
+};
+
+// API call helper with credentials (cookies) and CSRF protection
 export const apiCall = async <T>(
   endpoint: string,
   options: RequestInit = {}
@@ -67,6 +92,19 @@ export const apiCall = async <T>(
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string>),
   };
+
+  // Add CSRF token for state-changing requests (POST, PUT, PATCH, DELETE)
+  const method = options.method?.toUpperCase() || 'GET';
+  const needsCsrf = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+
+  if (needsCsrf && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/signup')) {
+    try {
+      const token = await getCsrfToken();
+      headers['X-CSRF-Token'] = token;
+    } catch (error) {
+      logger.warn('Proceeding without CSRF token', { endpoint });
+    }
+  }
 
   logger.apiRequest(options.method || 'GET', endpoint);
 
@@ -134,8 +172,9 @@ export const authService = {
       method: 'POST',
     });
 
-    // Clear user data from localStorage
+    // Clear user data from localStorage and CSRF token
     clearAuthData();
+    clearCsrfToken();
   },
 
   async forgotPassword(email: string): Promise<{ message: string }> {
