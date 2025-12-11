@@ -47,8 +47,18 @@ router.post('/signup', async (req, res) => {
     const data = signupSchema.parse(req.body);
 
     // Validate coach code if signing up as coach
-    if (data.role === 'coach' && data.coachCode !== COACH_CODE) {
-      return res.status(400).json({ error: 'Invalid coach code' });
+    if (data.role === 'coach') {
+      if (!data.coachCode) {
+        console.log(`[AUTH SECURITY] Coach signup attempt without code - Email: ${data.email}`);
+        return res.status(400).json({ error: 'Coach code is required' });
+      }
+
+      if (data.coachCode !== COACH_CODE) {
+        console.log(`[AUTH SECURITY] Invalid coach code attempt - Email: ${data.email}, Code: ${data.coachCode}`);
+        return res.status(400).json({ error: 'Invalid coach code' });
+      }
+
+      console.log(`[AUTH SECURITY] Valid coach signup - Email: ${data.email}`);
     }
 
     // Check if email already exists
