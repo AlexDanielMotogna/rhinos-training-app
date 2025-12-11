@@ -35,10 +35,21 @@ export function getUser(): MockUser | null {
 
 /**
  * Get current user from localStorage
+ * Also validates that auth token exists - if not, clear user data
  */
 export function getCurrentUser(): MockUser | null {
   const stored = localStorage.getItem(CURRENT_USER_KEY);
-  return stored ? JSON.parse(stored) : null;
+  if (!stored) return null;
+
+  // Verify auth token exists - if user exists but token doesn't, clear user data
+  const authToken = localStorage.getItem('authToken');
+  if (!authToken) {
+    console.warn('[AUTH] User found but no auth token - clearing user data');
+    localStorage.removeItem(CURRENT_USER_KEY);
+    return null;
+  }
+
+  return JSON.parse(stored);
 }
 
 /**
