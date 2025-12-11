@@ -259,10 +259,11 @@ function calculateWorkCapacityScore(volume: number, duration: number, sets: numb
 
 /**
  * Calculate athletic quality score (0-100)
- * Evaluates if workout is athletic vs bodybuilding - NO FREE POINTS
+ * Evaluates if workout is athletic vs bodybuilding - CONTEXT AWARE
+ * For recovery/mobility sessions, this score measures comprehensiveness, not intensity
  */
 function calculateAthleticQualityScore(entries: WorkoutEntry[]): number {
-  let score = 0; // Start from ZERO
+  let score = 0;
 
   const categories = entries.map(e => e.category);
   const exerciseNames = entries.map(e => e.name.toLowerCase());
@@ -276,7 +277,7 @@ function calculateAthleticQualityScore(entries: WorkoutEntry[]): number {
   if (isSingleCategorySession && primaryCategory) {
     switch (primaryCategory) {
       case 'Conditioning': {
-        // Conditioning is athletic! Give 60-85 base score
+        // Conditioning is athletic! Give 65-85 base score
         score += 65;
         const totalDistance = entries.reduce((sum, e) => sum + (e.distance || 0), 0);
         if (totalDistance >= 3) score += 10; // 3+ km
@@ -285,17 +286,18 @@ function calculateAthleticQualityScore(entries: WorkoutEntry[]): number {
       }
 
       case 'Mobility': {
-        // Mobility is important for athletes but not primary athletic quality
-        score += 50; // Base score for mobility work
-        if (entries.length >= 4) score += 10; // Good variety of mobility exercises
+        // Mobility is important - score based on variety and comprehensiveness
+        score += 60; // Higher base - mobility IS athletic
+        if (entries.length >= 4) score += 15; // Good variety of mobility exercises
         if (entries.length >= 6) score += 10; // Excellent mobility session
         return Math.round(Math.max(0, Math.min(100, score)));
       }
 
       case 'Recovery': {
-        // Recovery is essential but not high athletic quality
-        score += 40; // Base score for recovery work
-        if (entries.length >= 3) score += 10; // Comprehensive recovery
+        // Recovery sessions should score based on comprehensiveness and time
+        score += 55; // Higher base - recovery IS part of athletic training
+        if (entries.length >= 3) score += 15; // Multiple recovery modalities
+        if (entries.length >= 4) score += 10; // Comprehensive recovery protocol
         return Math.round(Math.max(0, Math.min(100, score)));
       }
 
@@ -369,13 +371,25 @@ function calculateAthleticQualityScore(entries: WorkoutEntry[]): number {
 
 /**
  * Calculate position relevance score (0-100)
- * NO FREE POINTS - start from zero
+ * Context-aware: Recovery/Mobility/Conditioning sessions are relevant for ALL positions
  */
 function calculatePositionRelevance(entries: WorkoutEntry[], position: Position): number {
-  let score = 0; // Start from ZERO
+  let score = 0;
 
   const categories = entries.map(e => e.category);
   const exerciseNames = entries.map(e => e.name.toLowerCase());
+
+  // Check if this is a specialized session
+  const uniqueCategories = new Set(categories);
+  const isSingleCategorySession = uniqueCategories.size === 1;
+  const primaryCategory = isSingleCategorySession ? categories[0] : null;
+
+  // Recovery, Mobility, and Conditioning are UNIVERSALLY relevant for all positions
+  if (primaryCategory === 'Recovery' || primaryCategory === 'Mobility' || primaryCategory === 'Conditioning') {
+    score += 70; // High base score - these are essential for ALL positions
+    if (entries.length >= 3) score += 15; // Comprehensive session
+    return Math.round(Math.max(0, Math.min(100, score)));
+  }
 
   // Check for key compound lifts (good for all positions)
   const hasSquat = exerciseNames.some(n => n.includes('squat'));
