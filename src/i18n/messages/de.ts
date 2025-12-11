@@ -671,7 +671,7 @@ export const messagesDE = {
   'reports.playersTrained': 'Spieler haben diese Woche trainiert',
   'reports.noOneTrainedYet': 'Noch niemand trainiert',
   'reports.everyoneTrained': 'Alle haben trainiert!',
-  'reports.selfTraining': 'Eigentraining',
+  'reports.selfTraining': 'Training',
   'reports.teamSession': 'Team-Session',
   'reports.noTraining': 'Kein Training',
   'reports.noPlayers': 'Keine Spieler gefunden',

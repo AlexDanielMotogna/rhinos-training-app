@@ -683,7 +683,7 @@ export const messagesEN = {
   'reports.playersTrained': 'players trained this week',
   'reports.noOneTrainedYet': 'No one trained yet',
   'reports.everyoneTrained': 'Everyone trained!',
-  'reports.selfTraining': 'Self Training',
+  'reports.selfTraining': 'Training',
   'reports.teamSession': 'Team Session',
   'reports.noTraining': 'No Training',
   'reports.noPlayers': 'No players found',

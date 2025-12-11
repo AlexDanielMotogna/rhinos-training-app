@@ -97,9 +97,12 @@ router.get('/weekly-overview/:startDate?', authenticate, requireCoach, async (re
 
       weekDays.forEach(day => {
         const dayWorkouts = playerWorkouts.filter(w => w.date === day);
-        const hasTeamSession = dayWorkouts.some(w => w.source === 'team') ||
-          (teamSessionDates.has(day) && dayWorkouts.length > 0);
-        const hasSelfTraining = dayWorkouts.some(w => w.source !== 'team');
+
+        // Only mark as 'team' if explicitly from team session source
+        const hasTeamSession = dayWorkouts.some(w => w.source === 'team');
+
+        // Mark as 'self' for player self-training or coach plan workouts
+        const hasSelfTraining = dayWorkouts.some(w => w.source === 'player' || w.source === 'coach');
 
         if (hasTeamSession) {
           days[day] = 'team';
