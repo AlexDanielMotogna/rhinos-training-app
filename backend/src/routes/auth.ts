@@ -74,6 +74,11 @@ router.post('/signup', signupLimiter, async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(data.password, 10);
 
+    // Debug logging for coach categories
+    if (data.role === 'coach') {
+      console.log('[AUTH DEBUG] Coach signup - coachCategories:', data.coachCategories);
+    }
+
     // Create user
     const user = await prisma.user.create({
       data: {

@@ -22,7 +22,7 @@ export const loginLimiter = rateLimit({
 // Prevents mass account creation
 export const signupLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit each IP to 3 signup requests per hour
+  max: 10, // Limit each IP to 10 signup requests per hour
   message: {
     error: 'Too many accounts created from this IP, please try again after an hour'
   },

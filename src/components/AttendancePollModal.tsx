@@ -66,6 +66,20 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
 
   useEffect(() => {
     loadPollData();
+
+    // Listen for vote updates from other tabs/windows
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `poll_vote_${poll.id}` && e.newValue) {
+        console.log('[POLL] Vote detected in another tab, reloading...');
+        loadPollData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poll.id]);
 
@@ -118,6 +132,9 @@ export const AttendancePollModal: React.FC<AttendancePollModalProps> = ({
       console.log('[POLL DEBUG] Vote submission result:', success);
 
       if (success) {
+        // Notify other tabs/windows about the vote
+        localStorage.setItem(`poll_vote_${poll.id}`, Date.now().toString());
+
         // Reload all poll data
         await loadPollData();
 
