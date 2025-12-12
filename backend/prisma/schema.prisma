@@ -682,6 +682,11 @@ model Match {
   isRelegation Boolean  @default(false) // Relegation game
   isSemifinal  Boolean  @default(false) // Semifinal
   isIronBowl   Boolean  @default(false) // Iron Bowl (Championship)
+
+  // Age category filtering (SaaS-ready)
+  // Categories this match is visible to (empty = all categories)
+  ageCategories String[] @default([])
+
   createdBy    String   @db.ObjectId
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
