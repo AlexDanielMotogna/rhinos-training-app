@@ -48,17 +48,30 @@ router.get('/', async (req, res) => {
     let filteredPolls = polls;
     if (dbUser) {
       if (dbUser.role === 'player' && dbUser.ageCategory) {
-        // Players see polls for sessions with no category restriction OR including their category
         filteredPolls = polls.filter(poll => {
+          // Skip polls without a session (orphaned)
+          if (!poll.session) return false;
+
           const sessionCategories = (poll.session as any)?.ageCategories || [];
-          return sessionCategories.length === 0 || sessionCategories.includes(dbUser.ageCategory);
+
+          // Empty categories = data quality issue, don't show
+          if (sessionCategories.length === 0) return false;
+
+          // Show only if player's category matches
+          return sessionCategories.includes(dbUser.ageCategory);
         });
       } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
-        // Coaches see polls for sessions with no category restriction OR overlapping with their categories
         filteredPolls = polls.filter(poll => {
+          // Skip polls without a session (orphaned)
+          if (!poll.session) return false;
+
           const sessionCategories = (poll.session as any)?.ageCategories || [];
-          return sessionCategories.length === 0 ||
-            sessionCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+
+          // Empty categories = data quality issue, don't show
+          if (sessionCategories.length === 0) return false;
+
+          // Show only if coach manages at least one category
+          return sessionCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
         });
       }
     }
@@ -102,14 +115,31 @@ router.get('/active', async (req, res) => {
     if (dbUser) {
       if (dbUser.role === 'player' && dbUser.ageCategory) {
         filteredPolls = activePolls.filter(poll => {
+          // Skip polls without a session (orphaned polls)
+          if (!poll.session) return false;
+
           const sessionCategories = (poll.session as any)?.ageCategories || [];
-          return sessionCategories.length === 0 || sessionCategories.includes(dbUser.ageCategory);
+
+          // IMPORTANT: Empty categories means session has NO category assigned
+          // This should NOT be visible to anyone (data quality issue)
+          if (sessionCategories.length === 0) return false;
+
+          // Show only if player's category matches session's categories
+          return sessionCategories.includes(dbUser.ageCategory);
         });
       } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
         filteredPolls = activePolls.filter(poll => {
+          // Skip polls without a session (orphaned polls)
+          if (!poll.session) return false;
+
           const sessionCategories = (poll.session as any)?.ageCategories || [];
-          return sessionCategories.length === 0 ||
-            sessionCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+
+          // IMPORTANT: Empty categories means session has NO category assigned
+          // This should NOT be visible to anyone (data quality issue)
+          if (sessionCategories.length === 0) return false;
+
+          // Show only if coach manages at least one of the session's categories
+          return sessionCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
         });
       }
     }

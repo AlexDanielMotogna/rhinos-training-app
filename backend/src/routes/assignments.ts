@@ -43,8 +43,8 @@ router.get('/', authenticate, async (req, res) => {
       if (dbUser?.coachCategories && dbUser.coachCategories.length > 0) {
         assignments = assignments.filter(a => {
           const templateCategories = (a.template as any).ageCategories || [];
-          return templateCategories.length === 0 ||
-            templateCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+          if (templateCategories.length === 0) return false; // Don't show empty
+          return templateCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
         });
       }
       // Additional filters for coaches

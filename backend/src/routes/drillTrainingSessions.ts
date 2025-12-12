@@ -41,17 +41,18 @@ router.get('/', authenticate, async (req, res) => {
     let filteredSessions = sessions;
     if (dbUser) {
       if (dbUser.role === 'player' && dbUser.ageCategory) {
-        // Players see sessions that: have no category restriction OR include their category
+        // Players see sessions where their ageCategory is in session.ageCategories
         filteredSessions = sessions.filter(session => {
           const sessionCategories = (session as any).ageCategories || [];
-          return sessionCategories.length === 0 || sessionCategories.includes(dbUser.ageCategory);
+          if (sessionCategories.length === 0) return false; // Don't show empty
+          return sessionCategories.includes(dbUser.ageCategory);
         });
       } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
-        // Coaches see sessions that: have no category restriction OR overlap with their categories
+        // Coaches see sessions where ANY of their coachCategories overlap with session.ageCategories
         filteredSessions = sessions.filter(session => {
           const sessionCategories = (session as any).ageCategories || [];
-          return sessionCategories.length === 0 ||
-            sessionCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+          if (sessionCategories.length === 0) return false; // Don't show empty
+          return sessionCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
         });
       }
       // If no category set, show all sessions (admin/superuser behavior)

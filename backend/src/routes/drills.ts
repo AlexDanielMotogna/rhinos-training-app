@@ -83,17 +83,18 @@ router.get('/', authenticate, async (req, res) => {
     let filteredDrills = drills;
     if (dbUser) {
       if (dbUser.role === 'player' && dbUser.ageCategory) {
-        // Players see drills that: have no category restriction OR include their category
+        // Players see drills where their ageCategory is in drill.ageCategories
         filteredDrills = drills.filter(drill => {
           const drillCategories = (drill as any).ageCategories || [];
-          return drillCategories.length === 0 || drillCategories.includes(dbUser.ageCategory);
+          if (drillCategories.length === 0) return false; // Don't show empty
+          return drillCategories.includes(dbUser.ageCategory);
         });
       } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
-        // Coaches see drills that: have no category restriction OR overlap with their categories
+        // Coaches see drills where ANY of their coachCategories overlap with drill.ageCategories
         filteredDrills = drills.filter(drill => {
           const drillCategories = (drill as any).ageCategories || [];
-          return drillCategories.length === 0 ||
-            drillCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+          if (drillCategories.length === 0) return false; // Don't show empty
+          return drillCategories.some((cat: string) => dbUser.coachCategories!.includes(cat));
         });
       }
       // If no category set, show all drills (admin/superuser behavior)

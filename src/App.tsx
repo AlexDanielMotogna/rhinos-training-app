@@ -197,7 +197,8 @@ function App() {
 
     const checkForPolls = async () => {
       // Don't check if modal is already open (prevents resetting user's selection)
-      if (showPollModal) return;
+      const currentModalState = showPollModal;
+      if (currentModalState) return;
 
       const poll = await getActivePoll();
       const user = getUser(); // Get fresh user data
@@ -211,7 +212,7 @@ function App() {
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showPollModal]); // Only depend on showPollModal, not currentUser
+  }, [currentUser]); // Re-run when user changes (login/logout)
 
   const handleClosePollModal = async () => {
     // Only allow closing if user has voted

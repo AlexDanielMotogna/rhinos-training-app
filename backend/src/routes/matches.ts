@@ -7,13 +7,40 @@ const prisma = new PrismaClient();
 // Get all matches
 router.get('/', async (req, res) => {
   try {
+    const currentUser = (req as any).user;
+
+    // Get current user's category info
+    const dbUser = currentUser ? await prisma.user.findUnique({
+      where: { id: currentUser.userId },
+      select: { role: true, ageCategory: true, coachCategories: true },
+    }) : null;
+
     const matches = await prisma.match.findMany({
       orderBy: [
         { week: 'asc' },
         { date: 'asc' },
       ],
     });
-    res.json(matches);
+
+    // Filter by category
+    let filtered = matches;
+    if (dbUser) {
+      if (dbUser.role === 'player' && dbUser.ageCategory) {
+        filtered = matches.filter(match => {
+          const categories = (match as any).ageCategories || [];
+          if (categories.length === 0) return false; // Don't show empty
+          return categories.includes(dbUser.ageCategory);
+        });
+      } else if (dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+        filtered = matches.filter(match => {
+          const categories = (match as any).ageCategories || [];
+          if (categories.length === 0) return false; // Don't show empty
+          return categories.some((cat: string) => dbUser.coachCategories!.includes(cat));
+        });
+      }
+    }
+
+    res.json(filtered);
   } catch (error) {
     console.error('Error fetching matches:', error);
     res.status(500).json({ error: 'Failed to fetch matches' });

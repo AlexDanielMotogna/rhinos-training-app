@@ -48,6 +48,14 @@ router.get('/me', authenticate, async (req, res) => {
 // GET /api/users - Get all users (for team directory)
 router.get('/', authenticate, async (req, res) => {
   try {
+    const currentUser = (req as any).user;
+
+    // Get current user's info for filtering
+    const dbUser = await prisma.user.findUnique({
+      where: { id: currentUser.userId },
+      select: { role: true, coachCategories: true },
+    });
+
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -70,7 +78,22 @@ router.get('/', authenticate, async (req, res) => {
       ],
     });
 
-    res.json(users);
+    // Filter users based on role
+    let filteredUsers = users;
+    if (dbUser && dbUser.role === 'coach' && dbUser.coachCategories && dbUser.coachCategories.length > 0) {
+      // Coaches only see:
+      // 1. Other coaches (all coaches can see each other)
+      // 2. Players in their assigned categories
+      filteredUsers = users.filter(user => {
+        if (user.role === 'coach') return true; // Show all coaches
+        if (user.role === 'player' && user.ageCategory) {
+          return dbUser.coachCategories!.includes(user.ageCategory);
+        }
+        return false; // Don't show players without category
+      });
+    }
+
+    res.json(filteredUsers);
   } catch (error) {
     console.error('Get users error:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
