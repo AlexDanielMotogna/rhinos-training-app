@@ -186,7 +186,31 @@ router.post('/', async (req, res) => {
 
     // Use provided categories or default to creator's categories
     let ageCategories: string[] = [];
-    if (data.ageCategories && data.ageCategories.length > 0) {
+
+    // For team sessions created by coaches, enforce strict category rules
+    if (data.sessionCategory === 'team' && user.role === 'coach') {
+      if (!user.coachCategories || user.coachCategories.length === 0) {
+        return res.status(400).json({
+          error: 'Coaches must have assigned categories to create team sessions'
+        });
+      }
+
+      // Validate provided categories are subset of coach's categories
+      if (data.ageCategories && data.ageCategories.length > 0) {
+        const invalidCategories = data.ageCategories.filter(
+          cat => !user.coachCategories!.includes(cat)
+        );
+        if (invalidCategories.length > 0) {
+          return res.status(403).json({
+            error: `Cannot create session for categories: ${invalidCategories.join(', ')}`
+          });
+        }
+        ageCategories = data.ageCategories;
+      } else {
+        // Default to ALL coach's categories
+        ageCategories = user.coachCategories;
+      }
+    } else if (data.ageCategories && data.ageCategories.length > 0) {
       ageCategories = data.ageCategories;
     } else if (user.role === 'coach' && user.coachCategories && user.coachCategories.length > 0) {
       ageCategories = user.coachCategories;

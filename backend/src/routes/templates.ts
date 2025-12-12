@@ -145,10 +145,29 @@ router.post('/', authenticate, requireCoach, async (req, res) => {
       select: { coachCategories: true },
     });
 
-    // Use provided categories or default to coach's categories
-    const ageCategories = (data.ageCategories && data.ageCategories.length > 0)
-      ? data.ageCategories
-      : (coach?.coachCategories || []);
+    // Enforce coach category validation
+    if (!coach?.coachCategories || coach.coachCategories.length === 0) {
+      return res.status(400).json({
+        error: 'Coaches must have assigned categories to create templates'
+      });
+    }
+
+    // Validate provided categories are subset of coach's categories
+    let ageCategories: string[] = [];
+    if (data.ageCategories && data.ageCategories.length > 0) {
+      const invalidCategories = data.ageCategories.filter(
+        cat => !coach.coachCategories!.includes(cat)
+      );
+      if (invalidCategories.length > 0) {
+        return res.status(403).json({
+          error: `Cannot create template for categories: ${invalidCategories.join(', ')}`
+        });
+      }
+      ageCategories = data.ageCategories;
+    } else {
+      // Default to ALL coach's categories
+      ageCategories = coach.coachCategories;
+    }
 
     const template = await prisma.trainingTemplate.create({
       data: {

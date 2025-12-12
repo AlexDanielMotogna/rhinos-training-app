@@ -462,6 +462,9 @@ export const messagesDE = {
   'admin.aiCoachUsageInfo': 'Wenn ein Team-API-Schlüssel konfiguriert ist, können Spieler keine eigenen API-Schlüssel konfigurieren. Wenn Sie möchten, dass Spieler ihre eigenen API-Schlüssel verwenden, lassen Sie dieses Feld leer.',
   'admin.editTrainingType': 'Trainingstyp bearbeiten',
   'admin.editBlock': 'Block bearbeiten',
+  'admin.categoryRequired': 'Sie müssen zugewiesene Kategorien haben, um dies zu erstellen',
+  'admin.invalidCategories': 'Kann nicht für Kategorien erstellen, die Sie nicht verwalten',
+  'admin.playersFiltered': 'Zeigt nur Spieler in Ihren Kategorien',
 
   // MyTraining assigned programs
   'training.yourAssignedPrograms': 'Ihre zugewiesenen Programme',

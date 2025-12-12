@@ -474,6 +474,9 @@ export const messagesEN = {
   'admin.aiCoachUsageInfo': 'When a team API key is configured, players cannot configure their own API keys. If you want players to use their own API keys, leave this field empty.',
   'admin.editTrainingType': 'Edit Training Type',
   'admin.editBlock': 'Edit Block',
+  'admin.categoryRequired': 'You must have assigned categories to create this',
+  'admin.invalidCategories': 'Cannot create for categories you don\'t manage',
+  'admin.playersFiltered': 'Showing only players in your categories',
 
   // MyTraining assigned programs
   'training.yourAssignedPrograms': 'Your Assigned Programs',

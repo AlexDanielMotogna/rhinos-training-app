@@ -923,11 +923,23 @@ export const Admin: React.FC = () => {
   };
 
   // Assignment Handlers
+  // Get players that match coach's categories
+  const getPlayersInCoachCategories = (): any[] => {
+    const currentUser = getUser();
+    if (!currentUser || currentUser.role !== 'coach') return players;
+    if (!currentUser.coachCategories || currentUser.coachCategories.length === 0) return players;
+
+    return players.filter((player: any) =>
+      player.ageCategory && currentUser.coachCategories!.includes(player.ageCategory)
+    );
+  };
+
   const getPlayersForTemplate = (templateId: string): string[] => {
     const template = templates.find(t => t.id === templateId);
     if (!template || !template.positions) return [];
 
-    return players
+    const coachPlayers = getPlayersInCoachCategories();
+    return coachPlayers
       .filter((player: any) => template.positions?.includes(player.position))
       .map((player: any) => player.id);
   };
@@ -2837,9 +2849,9 @@ export const Admin: React.FC = () => {
                   },
                 }}
               >
-                {players
+                {getPlayersInCoachCategories()
                   .filter((player: any) => {
-                    // If no template selected, show all players
+                    // If no template selected, show all players in coach's categories
                     if (!newAssignment.templateId) return true;
 
                     const template = templates.find(t => t.id === newAssignment.templateId);
@@ -2849,6 +2861,11 @@ export const Admin: React.FC = () => {
                     if (!player.position) return false;
 
                     return template.positions.includes(player.position);
+                  })
+                  .sort((a: any, b: any) => {
+                    const numA = parseInt(a.jerseyNumber) || 999;
+                    const numB = parseInt(b.jerseyNumber) || 999;
+                    return numA - numB;
                   })
                   .map((player: any) => (
                     <MenuItem key={player.id} value={player.id}>
