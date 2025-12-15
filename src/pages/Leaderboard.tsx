@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -90,11 +90,20 @@ export const Leaderboard: React.FC = () => {
 
   // Track request ID to prevent race conditions
   const requestIdRef = useRef(0);
-  // Track if initial category has been set to prevent re-triggering useEffect
-  const categoryInitializedRef = useRef(false);
+  // Track the last loaded month/category to avoid duplicate requests
+  const lastLoadedRef = useRef<string>('');
 
+  // Load leaderboard data
   useEffect(() => {
     const loadLeaderboard = async () => {
+      // Create a key for current filters
+      const filterKey = `${selectedMonth}:${selectedCategory}`;
+
+      // Skip if we already loaded this exact combination
+      if (lastLoadedRef.current === filterKey && data.length > 0) {
+        return;
+      }
+
       // Increment request ID to track this specific request
       const currentRequestId = ++requestIdRef.current;
 
@@ -112,16 +121,21 @@ export const Leaderboard: React.FC = () => {
           return;
         }
 
+        // Update last loaded key
+        lastLoadedRef.current = filterKey;
+
         // Backend already filters by user's category, just use the data
         setData(response.leaderboard || []);
 
         // Update available categories from response
         if (response.availableCategories) {
           setAvailableCategories(response.availableCategories);
-          // Set default category only once on initial load to prevent re-triggering
-          if (!categoryInitializedRef.current && !selectedCategory && response.currentCategory) {
-            categoryInitializedRef.current = true;
+
+          // Set default category only if not set yet
+          if (!selectedCategory && response.currentCategory) {
             setSelectedCategory(response.currentCategory);
+            // Update the filter key to include the new category
+            lastLoadedRef.current = `${selectedMonth}:${response.currentCategory}`;
           }
         }
       } catch (error) {

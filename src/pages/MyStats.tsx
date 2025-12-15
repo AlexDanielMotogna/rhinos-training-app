@@ -23,7 +23,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import type { WorkoutLog } from '../services/workoutLog';
 import CardMedia from '@mui/material/CardMedia';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-import { getUpcomingSessions } from '../services/trainingSessions';
+import { getAllSessions } from '../services/trainingSessions';
 import { workoutTypeColors } from '../theme';
 
 interface DayData {
@@ -56,19 +56,19 @@ export const MyStats: React.FC = () => {
 
   useEffect(() => {
     const loadWorkoutLogs = async () => {
-      if (!user) return;
+      if (!user?.id) return;
       const logs = await getWorkoutLogsByUser(user.id, true); // includeDeleted = true
       setAllWorkoutLogs(logs);
     };
     loadWorkoutLogs();
-  }, [user]);
+  }, [user?.id]); // Use user.id instead of user object to prevent infinite loop
 
   // Get all training sessions (team + private)
   const [allSessions, setAllSessions] = useState<any[]>([]);
 
   useEffect(() => {
     const loadSessions = async () => {
-      const sessions = await getUpcomingSessions();
+      const sessions = await getAllSessions();
       setAllSessions(sessions);
     };
     loadSessions();

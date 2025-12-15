@@ -1,21 +1,30 @@
 import type { KPISnapshot, PerformanceScore } from '../types/kpi';
 import { getWorkoutLogsByUser } from './workoutLog';
 import { getTrainingAssignments } from './trainingBuilder';
-import { getTeamSessions } from './trainingSessions';
+import { getAllPolls } from './attendancePollService';
 
 /**
  * Calculate KPIs for a user
+ * @param userId - User ID
+ * @param weekOffset - Optional: 0 = current week, -1 = last week, etc.
  */
-export async function calculateKPIs(userId: string): Promise<KPISnapshot> {
+export async function calculateKPIs(userId: string, weekOffset: number = 0): Promise<KPISnapshot> {
   const now = new Date();
-  const currentWeek = getWeekNumber(now);
+
+  // Calculate target week based on offset
+  const targetDate = new Date(now);
+  targetDate.setDate(targetDate.getDate() + (weekOffset * 7));
+
+  const currentWeek = getWeekNumber(targetDate);
 
   // Get week boundaries (Monday to Sunday)
-  const weekStart = getWeekStart(now);
-  const weekEnd = getWeekEnd(now);
+  const weekStart = getWeekStart(targetDate);
+  const weekEnd = getWeekEnd(targetDate);
 
-  // Get all workout logs for this week
-  const allLogs = getWorkoutLogsByUser(userId, false);
+  // Get ALL workout logs for this user (from backend)
+  const allLogs = await getWorkoutLogsByUser(userId, false);
+
+  // Filter logs for selected week
   const thisWeekLogs = allLogs.filter(log => {
     const logDate = new Date(log.date);
     return logDate >= weekStart && logDate <= weekEnd;
@@ -25,53 +34,49 @@ export async function calculateKPIs(userId: string): Promise<KPISnapshot> {
   const assignments = getTrainingAssignments();
   const activeAssignments = assignments.filter((a: any) => {
     const startDate = new Date(a.startDate);
-    return startDate <= now && a.playerIds?.includes(userId);
+    return startDate <= targetDate && a.playerIds?.includes(userId);
   });
 
   // For this week, count expected coach plan workouts
-  // Assuming 2-3 workouts per week based on template frequency
   const coachPlansAssigned = activeAssignments.length > 0 ? 3 : 0;
   const coachPlansCompleted = thisWeekLogs.filter(log => log.source === 'coach').length;
 
-  // Calculate team session attendance for this week
-  const allTeamSessions = await getTeamSessions();
-  const teamSessionsThisWeek = allTeamSessions.filter(session => {
-    const sessionDate = new Date(session.date);
-    return sessionDate >= weekStart && sessionDate <= weekEnd;
+  // Get all polls for attendance tracking
+  const allPolls = await getAllPolls();
+
+  // Filter polls for selected week
+  const pollsThisWeek = allPolls.filter(poll => {
+    const pollDate = new Date(poll.sessionDate);
+    return pollDate >= weekStart && pollDate <= weekEnd;
   });
 
+  // Count attendance based on poll votes (training or present = attended)
   let teamSessionsAttended = 0;
   let attendanceStatus: 'on_time' | 'late' | 'absent' | 'no_recent_session' = 'no_recent_session';
 
-  teamSessionsThisWeek.forEach(session => {
-    const checkIn = session.checkIns?.find(c => c.userId === userId);
-    if (checkIn) {
-      teamSessionsAttended++;
-      if (checkIn.status === 'on_time' && attendanceStatus === 'no_recent_session') {
-        attendanceStatus = 'on_time';
-      } else if (checkIn.status === 'late' && attendanceStatus !== 'on_time') {
-        attendanceStatus = 'late';
-      }
-    } else {
-      // Check if session already happened
-      const sessionDateTime = new Date(`${session.date}T${session.time}`);
-      if (sessionDateTime < now) {
+  pollsThisWeek.forEach(poll => {
+    const userVote = poll.votes?.find(v => v.userId === userId);
+    if (userVote) {
+      if (userVote.option === 'training' || userVote.option === 'present') {
+        teamSessionsAttended++;
+        attendanceStatus = 'on_time'; // Voted to attend
+      } else if (userVote.option === 'absent') {
         attendanceStatus = 'absent';
       }
     }
   });
 
-  // Free workouts
+  // Free workouts for selected week
   const freeWorkouts = thisWeekLogs.filter(log => log.source === 'player');
   const freeWorkoutsMinutes = freeWorkouts.reduce((sum, log) => {
     return sum + (log.duration || 0);
   }, 0);
 
-  // Total volume
+  // Total volume for selected week
   const totalVolume = thisWeekLogs.reduce((sum, log) => sum + (log.duration || 60), 0);
 
-  // Calculate overall compliance
-  const totalExpected = coachPlansAssigned + teamSessionsThisWeek.length;
+  // Calculate overall compliance for selected week
+  const totalExpected = coachPlansAssigned + pollsThisWeek.length;
   const totalCompleted = coachPlansCompleted + teamSessionsAttended;
   const trainingCompliance = totalExpected > 0 ? Math.round((totalCompleted / totalExpected) * 100) : 100;
 
@@ -81,13 +86,19 @@ export async function calculateKPIs(userId: string): Promise<KPISnapshot> {
   const powerScore = getPerformanceScore('lastPowerTest');
   const agilityScore = getPerformanceScore('lastAgilityTest');
 
-  // Overall attendance stats (all time) - reuse allTeamSessions from above
-  const totalTeamSessionsScheduled = allTeamSessions.length;
-  let totalTeamSessionsAttended = 0;
+  // OVERALL TOTALS (all time)
+  const overallTotalWorkouts = allLogs.length;
+  const overallTotalMinutes = allLogs.reduce((sum, log) => sum + (log.duration || 60), 0);
+  const overallCoachWorkouts = allLogs.filter(log => log.source === 'coach').length;
+  const overallFreeWorkouts = allLogs.filter(log => log.source === 'player').length;
 
-  allTeamSessions.forEach(session => {
-    const checkIn = session.checkIns?.find(c => c.userId === userId);
-    if (checkIn) {
+  // Overall attendance stats (all time) - based on poll votes
+  let totalTeamSessionsAttended = 0;
+  const totalTeamSessionsScheduled = allPolls.length;
+
+  allPolls.forEach(poll => {
+    const userVote = poll.votes?.find(v => v.userId === userId);
+    if (userVote && (userVote.option === 'training' || userVote.option === 'present')) {
       totalTeamSessionsAttended++;
     }
   });
@@ -103,14 +114,21 @@ export async function calculateKPIs(userId: string): Promise<KPISnapshot> {
     coachPlansCompleted,
     coachPlansAssigned,
     teamSessionsAttended,
-    teamSessionsTotal: teamSessionsThisWeek.length,
+    teamSessionsTotal: pollsThisWeek.length,
     freeWorkouts: freeWorkouts.length,
     freeWorkoutsMinutes,
     totalVolume,
+    // Overall totals
+    overallTotalWorkouts,
+    overallTotalMinutes,
+    overallCoachWorkouts,
+    overallFreeWorkouts,
+    // Performance scores
     strengthScore,
     speedScore,
     powerScore,
     agilityScore,
+    // Attendance
     totalTeamSessionsAttended,
     totalTeamSessionsScheduled,
     attendanceRate,
@@ -204,7 +222,9 @@ function getWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  return new Date(d.setDate(diff));
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 /**
@@ -212,5 +232,7 @@ function getWeekStart(date: Date): Date {
  */
 function getWeekEnd(date: Date): Date {
   const start = getWeekStart(date);
-  return new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+  end.setHours(23, 59, 59, 999);
+  return end;
 }

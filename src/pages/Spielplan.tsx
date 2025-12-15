@@ -86,14 +86,30 @@ export const Spielplan: React.FC = () => {
     setAllMatches(matches);
   };
 
+  // Extract key words from team name for matching (e.g., "Rhinos" from "Rhinos Training")
+  const getTeamKeyWords = (name: string): string[] => {
+    const commonWords = ['training', 'team', 'club', 'fc', 'sc', 'sv', 'upper', 'lower', 'north', 'south', 'east', 'west'];
+    return name.toLowerCase().split(/\s+/).filter(word =>
+      word.length > 2 && !commonWords.includes(word)
+    );
+  };
+
+  // Helper function to check if a match involves our team
+  const matchInvolvesOurTeam = (match: Match): boolean => {
+    const ourKeyWords = getTeamKeyWords(teamName);
+    const homeWords = match.homeTeam.toLowerCase();
+    const awayWords = match.awayTeam.toLowerCase();
+    return ourKeyWords.some(keyword =>
+      homeWords.includes(keyword) || awayWords.includes(keyword)
+    );
+  };
+
   const filterMatches = () => {
     let filtered = [...allMatches];
 
     // Filter by view mode (show only matches involving our team)
     if (viewMode === 'team') {
-      filtered = filtered.filter(
-        m => m.homeTeam === teamName || m.awayTeam === teamName
-      );
+      filtered = filtered.filter(matchInvolvesOurTeam);
     }
 
     // Filter by conference
@@ -116,9 +132,8 @@ export const Spielplan: React.FC = () => {
     return null;
   };
 
-  const isTeamMatch = (match: Match) => {
-    return match.homeTeam === teamName || match.awayTeam === teamName;
-  };
+  // Reuse the matchInvolvesOurTeam function defined above
+  const isTeamMatch = matchInvolvesOurTeam;
 
   const isMatchPast = (match: Match): boolean => {
     // A match is considered "past" if it has scores recorded OR if the date/time has passed
@@ -130,11 +145,18 @@ export const Spielplan: React.FC = () => {
   };
 
   const getOpponent = (match: Match): string => {
-    return match.homeTeam === teamName ? match.awayTeam : match.homeTeam;
+    const ourKeyWords = getTeamKeyWords(teamName);
+    const isHome = ourKeyWords.some(keyword =>
+      match.homeTeam.toLowerCase().includes(keyword)
+    );
+    return isHome ? match.awayTeam : match.homeTeam;
   };
 
   const isHomeGame = (match: Match): boolean => {
-    return match.homeTeam === teamName;
+    const ourKeyWords = getTeamKeyWords(teamName);
+    return ourKeyWords.some(keyword =>
+      match.homeTeam.toLowerCase().includes(keyword)
+    );
   };
 
   const formatDate = (dateStr: string) => {
@@ -204,19 +226,26 @@ export const Spielplan: React.FC = () => {
   const availableWeeks = Array.from(new Set(allMatches.map(m => m.week))).sort((a, b) => a - b);
 
   const teamMatches = allMatches.filter(isTeamMatch);
-  const upcomingTeamMatches = teamMatches.filter(m => !isMatchPast(m));
   const pastTeamMatches = teamMatches.filter(m => isMatchPast(m));
+
+  // Helper to check if our team is home
+  const isOurTeamHome = (match: Match): boolean => {
+    const ourKeyWords = getTeamKeyWords(teamName);
+    return ourKeyWords.some(keyword =>
+      match.homeTeam.toLowerCase().includes(keyword)
+    );
+  };
 
   // Calculate games won and lost
   const gamesWon = pastTeamMatches.filter(match => {
-    if (match.homeScore === null || match.awayScore === null) return false;
-    const isHome = match.homeTeam === teamName;
+    if (match.homeScore == null || match.awayScore == null) return false;
+    const isHome = isOurTeamHome(match);
     return isHome ? match.homeScore > match.awayScore : match.awayScore > match.homeScore;
   }).length;
 
   const gamesLost = pastTeamMatches.filter(match => {
-    if (match.homeScore === null || match.awayScore === null) return false;
-    const isHome = match.homeTeam === teamName;
+    if (match.homeScore == null || match.awayScore == null) return false;
+    const isHome = isOurTeamHome(match);
     return isHome ? match.homeScore < match.awayScore : match.awayScore < match.homeScore;
   }).length;
 

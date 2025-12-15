@@ -38,11 +38,25 @@ export async function getUpcomingSessions(): Promise<TrainingSession[]> {
 }
 
 /**
- * Get team sessions only
+ * Get team sessions only (upcoming)
  */
 export async function getTeamSessions(): Promise<TrainingSession[]> {
   const sessions = await getUpcomingSessions();
   return sessions.filter(s => s.sessionCategory === 'team');
+}
+
+/**
+ * Get ALL team sessions (past and future) for attendance history
+ */
+export async function getAllTeamSessions(): Promise<TrainingSession[]> {
+  const sessions = await getAllSessions();
+  return sessions
+    .filter(s => s.sessionCategory === 'team')
+    .sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time}`);
+      const dateB = new Date(`${b.date}T${b.time}`);
+      return dateB.getTime() - dateA.getTime(); // Most recent first
+    });
 }
 
 /**

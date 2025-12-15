@@ -1,34 +1,37 @@
 import type { TeamSession, AttendanceRow, Weekday } from '../types/attendance';
+import { getAllTeamSessions } from './trainingSessions';
 
 /**
- * Generate team training sessions for Tue & Thu 19:00-21:00 (Europe/Vienna)
- * Returns the next 4 sessions from today
+ * Get all team training sessions from the database (past and future)
+ * Returns sessions created by coaches
  */
-export function getUpcomingTeamSessions(): TeamSession[] {
-  const sessions: TeamSession[] = [];
-  const now = new Date();
+export async function getUpcomingTeamSessions(): Promise<TeamSession[]> {
+  try {
+    const trainingSessions = await getAllTeamSessions();
 
-  // Get next 14 days to ensure we capture at least 4 Tue/Thu
-  for (let i = 0; i < 14; i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() + i);
+    // Convert TrainingSession to TeamSession format
+    return trainingSessions.map(session => {
+      const [year, month, day] = session.date.split('-').map(Number);
+      const [hours, minutes] = session.time.split(':').map(Number);
 
-    const dayOfWeek = date.getDay();
-    // Tuesday = 2, Thursday = 4
-    if (dayOfWeek === 2 || dayOfWeek === 4) {
-      const start = new Date(date);
-      start.setHours(19, 0, 0, 0);
+      const start = new Date(year, month - 1, day, hours, minutes, 0, 0);
 
-      const end = new Date(date);
-      end.setHours(21, 0, 0, 0);
+      // Default end time: 2 hours after start
+      const end = new Date(start);
+      end.setHours(end.getHours() + 2);
 
-      sessions.push({ start, end });
-
-      if (sessions.length >= 4) break;
-    }
+      return {
+        id: session.id,
+        title: session.title,
+        location: session.location,
+        start,
+        end,
+      };
+    });
+  } catch (error) {
+    console.error('Failed to load team sessions:', error);
+    return [];
   }
-
-  return sessions;
 }
 
 /**
@@ -41,13 +44,27 @@ export function sessionsToAttendanceRows(
   return sessions.map((session) => {
     const dateISO = session.start.toISOString().split('T')[0];
     const dayOfWeek = session.start.getDay();
-    const weekday: Weekday = dayOfWeek === 2 ? 'Tue' : 'Thu';
+    const weekdays: Weekday[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekday = weekdays[dayOfWeek];
+
+    const startTime = session.start.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const endTime = session.end.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
 
     return {
       dateISO,
       weekday,
-      start: '19:00',
-      end: '21:00',
+      start: startTime,
+      end: endTime,
+      title: (session as any).title,
+      location: (session as any).location,
       status: checkedInSessions.has(dateISO) ? 'on_time' : 'absent',
       editable: false, // Only coach can edit
     };

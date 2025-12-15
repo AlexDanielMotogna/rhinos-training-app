@@ -1,6 +1,6 @@
 export const messagesDE = {
   // App
-  'app.title': 'TeamTrainer',
+  'app.title': 'Rhinos Training',
 
   // Navigation
   'nav.myTraining': 'Mein Training',
@@ -249,8 +249,17 @@ export const messagesDE = {
   'profile.compliance': 'Einhaltung',
   'profile.totalMinutes': 'Gesamtminuten',
 
-  // Profile - This Week Metrics
+  // Profile - Overall Totals
+  'profile.overallTotals': 'Gesamt-Statistik',
+  'profile.totalWorkouts': 'Trainings gesamt',
+  'profile.totalHours': 'Stunden gesamt',
+  'profile.coachWorkouts': 'Trainerpläne',
+  'profile.freeWorkoutsTotal': 'Freie Trainings',
+
+  // Profile - Weekly Metrics
   'profile.thisWeek': 'Diese Woche',
+  'profile.lastWeek': 'Letzte Woche',
+  'profile.week': 'Woche',
   'profile.trainingCompliance': 'Trainingseinhaltung',
   'profile.coachPlans': 'Trainerpläne',
   'profile.teamSessions': 'Team-Einheiten',
@@ -296,9 +305,10 @@ export const messagesDE = {
   'attendance.late': 'Verspätet',
   'attendance.absent': 'Abwesend',
   'attendance.onlyCoachCanEdit': 'Nur Trainer/Admin kann Anwesenheit bearbeiten',
-  'attendance.teamSessions': 'Team-Einheiten (Di & Do 19:00-21:00)',
+  'attendance.teamSessions': 'Vom Trainer erstellte Team-Einheiten werden hier angezeigt.',
   'attendance.defaultAbsent': 'Standardstatus ist Abwesend ohne Check-in',
   'attendance.checkedIn': 'Erfolgreich eingecheckt',
+  'attendance.noUpcomingSessions': 'Keine Team-Einheiten gefunden. Frag deinen Trainer.',
   'attendance.playerCanOnlyCheckIn': 'Sie können nur für Ihre eigene Anwesenheit einchecken. Sie können die Anwesenheit anderer Spieler nicht ändern.',
   'attendance.coachViewOnly': 'Als Trainer können Sie die Anwesenheit aller Spieler einsehen. Um die Anwesenheit zu ändern, wenden Sie sich an einen Admin.',
 
@@ -857,7 +867,7 @@ export const messagesDE = {
   'drills.downloadPDF': 'PDF herunterladen',
   'drills.downloadSessionPDF': 'Einheit-PDF herunterladen',
   'drills.sketch': 'Drill-Skizze',
-  'drills.generatedBy': 'Erstellt von TeamTrainer',
+  'drills.generatedBy': 'Erstellt von Rhinos Training',
   'drills.uploadSketchError': 'Fehler beim Hochladen der Skizze. Bitte versuchen Sie es erneut.',
   'drills.saveError': 'Fehler beim Speichern des Drills. Bitte versuchen Sie es erneut.',
   'drills.deleteError': 'Fehler beim Löschen des Drills. Bitte versuchen Sie es erneut.',
@@ -950,7 +960,7 @@ export const messagesDE = {
   'notifications.coachComment.title': 'Neuer Trainerkommentar',
   'notifications.newVideo.title': 'Neues Video verfügbar',
   'notifications.testNotification.title': 'Test-Benachrichtigung',
-  'notifications.testNotification.body': 'Dies ist eine Test-Benachrichtigung von TeamTrainer',
+  'notifications.testNotification.body': 'Dies ist eine Test-Benachrichtigung von Rhinos Training',
 
   // Navigation - Additional
   'nav.myCalendar': 'Mein Kalender',

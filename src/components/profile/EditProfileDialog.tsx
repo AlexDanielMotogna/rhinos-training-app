@@ -91,11 +91,11 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
         heightCm: Number(heightCm),
         sex,
         ageCategory: ageCategory || undefined,
-        phone: phone && phone !== '+43' ? phone : undefined,
-        instagram: instagram || undefined,
-        snapchat: snapchat || undefined,
-        tiktok: tiktok || undefined,
-        hudl: hudl || undefined,
+        phone: phone && phone !== '+43' ? phone : null,
+        instagram: instagram || null,
+        snapchat: snapchat || null,
+        tiktok: tiktok || null,
+        hudl: hudl || null,
       };
 
       // Use the new sync service that handles backend sync

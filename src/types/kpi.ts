@@ -7,7 +7,7 @@ export interface PerformanceScore {
 }
 
 export interface KPISnapshot {
-  // This Week
+  // Selected Week (or current if not specified)
   currentWeek: number; // Week number (1-52)
   totalWeeks: number; // Total weeks in year (52)
   trainingCompliance: number; // Overall compliance percentage
@@ -19,14 +19,20 @@ export interface KPISnapshot {
   freeWorkoutsMinutes: number;
   totalVolume: number; // Total minutes this week
 
+  // Overall Totals (all time)
+  overallTotalWorkouts: number;
+  overallTotalMinutes: number;
+  overallCoachWorkouts: number;
+  overallFreeWorkouts: number;
+
   // Performance Scores
   strengthScore: PerformanceScore;
   speedScore: PerformanceScore;
   powerScore: PerformanceScore;
   agilityScore: PerformanceScore;
 
-  // Attendance
-  totalTeamSessionsAttended: number;
+  // Attendance (based on poll votes)
+  totalTeamSessionsAttended: number; // Voted 'training' or 'present'
   totalTeamSessionsScheduled: number;
   attendanceRate: number; // Percentage
   attendanceStatus: 'on_time' | 'late' | 'absent' | 'no_recent_session';

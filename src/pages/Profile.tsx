@@ -16,6 +16,10 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhoneIcon from '@mui/icons-material/Phone';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import {
@@ -70,6 +74,7 @@ export const Profile: React.FC = () => {
 
   const isViewingOtherPlayer = playerId && playerId !== currentUser?.id;
   const [kpis, setKpis] = useState<KPISnapshot | null>(null);
+  const [weekOffset, setWeekOffset] = useState(0); // 0 = current week, -1 = last week, etc.
   const [strengthSummary, setStrengthSummary] = useState<StrengthSummary | null>(null);
   const [speedSummary, setSpeedSummary] = useState<SpeedSummary | null>(null);
   const [powerSummary, setPowerSummary] = useState<PowerSummary | null>(null);
@@ -106,7 +111,7 @@ export const Profile: React.FC = () => {
     const loadKPIs = async () => {
       if (user) {
         try {
-          const kpisData = await calculateKPIs(user.id);
+          const kpisData = await calculateKPIs(user.id, weekOffset);
           setKpis(kpisData);
         } catch (error) {
           console.warn('[PROFILE] Failed to load KPIs:', error);
@@ -122,6 +127,10 @@ export const Profile: React.FC = () => {
             freeWorkouts: 0,
             freeWorkoutsMinutes: 0,
             totalVolume: 0,
+            overallTotalWorkouts: 0,
+            overallTotalMinutes: 0,
+            overallCoachWorkouts: 0,
+            overallFreeWorkouts: 0,
             strengthScore: { score: 0, change: null, lastTestDate: null },
             speedScore: { score: 0, change: null, lastTestDate: null },
             powerScore: { score: 0, change: null, lastTestDate: null },
@@ -135,6 +144,10 @@ export const Profile: React.FC = () => {
       }
     };
 
+    loadKPIs();
+  }, [user?.id, weekOffset]); // Re-load when weekOffset changes
+
+  useEffect(() => {
     const loadTestResults = async () => {
       if (!user) return;
 
@@ -147,9 +160,8 @@ export const Profile: React.FC = () => {
       await loadTestResult('agility', setAgilitySummary, 'lastAgilityTest');
     };
 
-    loadKPIs();
     loadTestResults();
-  }, [user]);
+  }, [user?.id]); // Only load test results once
 
   // Helper function to load test result from backend only (no localStorage)
   const loadTestResult = async (
@@ -296,7 +308,7 @@ export const Profile: React.FC = () => {
                   >
                     <Box
                       component="img"
-                      src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
+                      src="/icons/instagram.svg"
                       alt="Instagram"
                       sx={{ width: 24, height: 24, objectFit: 'contain' }}
                     />
@@ -320,7 +332,7 @@ export const Profile: React.FC = () => {
                   >
                     <Box
                       component="img"
-                      src="https://upload.wikimedia.org/wikipedia/en/c/c4/Snapchat_logo.svg"
+                      src="/icons/snapchat.svg"
                       alt="Snapchat"
                       sx={{ width: 24, height: 24, objectFit: 'contain' }}
                     />
@@ -344,7 +356,7 @@ export const Profile: React.FC = () => {
                   >
                     <Box
                       component="img"
-                      src="https://sf-tb-sg.ibytedtos.com/obj/eden-sg/uhtyvueh7nulogpoguhm/tiktok-icon2.png"
+                      src="/icons/tiktok.svg"
                       alt="TikTok"
                       sx={{ width: 24, height: 24, objectFit: 'contain' }}
                     />
@@ -368,7 +380,7 @@ export const Profile: React.FC = () => {
                   >
                     <Box
                       component="img"
-                      src="https://www.freelogovectors.net/wp-content/uploads/2018/10/Hudl_logo.png"
+                      src="/icons/hudl.svg"
                       alt="Hudl"
                       sx={{ width: 24, height: 24, objectFit: 'contain' }}
                     />
@@ -501,95 +513,164 @@ export const Profile: React.FC = () => {
             {t('profile.metrics')}
           </Typography>
 
-          {/* This Week Section */}
+          {/* Overall Totals Section */}
+          <Card sx={{ mb: 3, backgroundColor: 'secondary.main', color: 'white' }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <FitnessCenterIcon /> {t('profile.overallTotals')}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6} sm={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" fontWeight="bold">
+                      {kpis.overallTotalWorkouts}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      {t('profile.totalWorkouts')}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" fontWeight="bold">
+                      {Math.round(kpis.overallTotalMinutes / 60)}h
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      {t('profile.totalHours')}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" fontWeight="bold">
+                      {kpis.overallCoachWorkouts}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      {t('profile.coachWorkouts')}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" fontWeight="bold">
+                      {kpis.overallFreeWorkouts}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      {t('profile.freeWorkoutsTotal')}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Weekly Section with Navigation */}
           <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            {t('profile.thisWeek')} (Week {kpis.currentWeek}/{kpis.totalWeeks})
-          </Typography>
-
-          {/* Training Compliance */}
-          <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                {t('profile.trainingCompliance')}
-              </Typography>
-              <Typography variant="h6" sx={{ color: getComplianceColor(kpis.trainingCompliance) }}>
-                {kpis.trainingCompliance}%
-              </Typography>
-            </Box>
-            <Box sx={{ width: '100%', height: 8, backgroundColor: 'grey.200', borderRadius: 1, overflow: 'hidden' }}>
-              <Box
-                sx={{
-                  width: `${kpis.trainingCompliance}%`,
-                  height: '100%',
-                  backgroundColor: getComplianceColor(kpis.trainingCompliance),
-                  transition: 'width 0.3s ease',
-                }}
-              />
-            </Box>
-          </Box>
-
-          {/* Breakdown */}
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={12} sm={4}>
-              <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {t('profile.coachPlans')}
-                </Typography>
-                <Typography variant="h6">
-                  {kpis.coachPlansCompleted}/{kpis.coachPlansAssigned}
-                  {kpis.coachPlansAssigned > 0 && (
-                    <Typography component="span" variant="body2" color={kpis.coachPlansCompleted === kpis.coachPlansAssigned ? 'success.main' : 'text.secondary'} sx={{ ml: 1 }}>
-                      {kpis.coachPlansCompleted === kpis.coachPlansAssigned ? '✓ 100%' : `${Math.round((kpis.coachPlansCompleted / kpis.coachPlansAssigned) * 100)}%`}
-                    </Typography>
-                  )}
-                </Typography>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {t('profile.teamSessions')}
-                </Typography>
-                <Typography variant="h6">
-                  {kpis.teamSessionsAttended}/{kpis.teamSessionsTotal}
-                  {kpis.teamSessionsTotal > 0 && (
-                    <Typography component="span" variant="body2" color={kpis.teamSessionsAttended === kpis.teamSessionsTotal ? 'success.main' : 'text.secondary'} sx={{ ml: 1 }}>
-                      {kpis.teamSessionsAttended === kpis.teamSessionsTotal ? '✓ 100%' : `${Math.round((kpis.teamSessionsAttended / kpis.teamSessionsTotal) * 100)}%`}
-                    </Typography>
-                  )}
-                </Typography>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {t('profile.freeWorkouts')}
-                </Typography>
-                <Typography variant="h6">
-                  {kpis.freeWorkouts}
-                  <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                    +{kpis.freeWorkoutsMinutes} min
+            <CardContent>
+              {/* Week Navigation Header */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <IconButton onClick={() => setWeekOffset(weekOffset - 1)} size="small">
+                  <ChevronLeftIcon />
+                </IconButton>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h6">
+                    {weekOffset === 0 ? t('profile.thisWeek') : weekOffset === -1 ? t('profile.lastWeek') : `${t('profile.week')} ${kpis.currentWeek}`}
                   </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('profile.week')} {kpis.currentWeek}/{kpis.totalWeeks}
+                  </Typography>
+                </Box>
+                <IconButton
+                  onClick={() => setWeekOffset(weekOffset + 1)}
+                  size="small"
+                  disabled={weekOffset >= 0}
+                >
+                  <ChevronRightIcon />
+                </IconButton>
+              </Box>
+
+              {/* Training Compliance */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('profile.trainingCompliance')}
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: getComplianceColor(kpis.trainingCompliance) }}>
+                    {kpis.trainingCompliance}%
+                  </Typography>
+                </Box>
+                <Box sx={{ width: '100%', height: 8, backgroundColor: 'grey.200', borderRadius: 1, overflow: 'hidden' }}>
+                  <Box
+                    sx={{
+                      width: `${kpis.trainingCompliance}%`,
+                      height: '100%',
+                      backgroundColor: getComplianceColor(kpis.trainingCompliance),
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              {/* Breakdown */}
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12} sm={4}>
+                  <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('profile.coachPlans')}
+                    </Typography>
+                    <Typography variant="h6">
+                      {kpis.coachPlansCompleted}/{kpis.coachPlansAssigned}
+                      {kpis.coachPlansAssigned > 0 && (
+                        <Typography component="span" variant="body2" color={kpis.coachPlansCompleted === kpis.coachPlansAssigned ? 'success.main' : 'text.secondary'} sx={{ ml: 1 }}>
+                          {kpis.coachPlansCompleted === kpis.coachPlansAssigned ? '✓ 100%' : `${Math.round((kpis.coachPlansCompleted / kpis.coachPlansAssigned) * 100)}%`}
+                        </Typography>
+                      )}
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('profile.teamSessions')}
+                    </Typography>
+                    <Typography variant="h6">
+                      {kpis.teamSessionsAttended}/{kpis.teamSessionsTotal}
+                      {kpis.teamSessionsTotal > 0 && (
+                        <Typography component="span" variant="body2" color={kpis.teamSessionsAttended === kpis.teamSessionsTotal ? 'success.main' : 'text.secondary'} sx={{ ml: 1 }}>
+                          {kpis.teamSessionsAttended === kpis.teamSessionsTotal ? '✓ 100%' : `${Math.round((kpis.teamSessionsAttended / kpis.teamSessionsTotal) * 100)}%`}
+                        </Typography>
+                      )}
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('profile.freeWorkouts')}
+                    </Typography>
+                    <Typography variant="h6">
+                      {kpis.freeWorkouts}
+                      <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                        +{kpis.freeWorkoutsMinutes} min
+                      </Typography>
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {/* Total Volume */}
+              <Box sx={{ textAlign: 'center', pt: 2, borderTop: '1px solid', borderColor: 'grey.200' }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('profile.totalVolume')}
+                </Typography>
+                <Typography variant="h5" color="primary.main">
+                  {kpis.totalVolume} {t('profile.minutes')}
                 </Typography>
               </Box>
-            </Grid>
-          </Grid>
-
-          {/* Total Volume */}
-          <Box sx={{ textAlign: 'center', pt: 2, borderTop: '1px solid', borderColor: 'grey.200' }}>
-            <Typography variant="caption" color="text.secondary">
-              {t('profile.totalVolume')}
-            </Typography>
-            <Typography variant="h5" color="primary.main">
-              {kpis.totalVolume} {t('profile.minutes')}
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
       {/* Attendance */}
       <Card sx={{ mb: 3 }}>
